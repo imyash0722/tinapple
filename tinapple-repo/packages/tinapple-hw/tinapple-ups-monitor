@@ -1,0 +1,146 @@
+#!/usr/bin/env bash
+# tinapple-ups-monitor - NUT/apcupsd integration for external UPS
+
+set -euo pipefail
+
+CONFIG="/etc/tinapple/ups.json"
+STATE_DIR="/run/tinapple"
+
+# Default config
+UPS_DRIVER="usbhid-ups"
+UPS_PORT="auto"
+UPS_DESC="External UPS"
+SHUTDOWN_THRESHOLD=5
+SHUTDOWN_DELAY=60
+NOTIFY_CMD="wall"
+
+load_config() {
+    if [[ -f "$CONFIG" ]]; then
+        UPS_DRIVER=$(jq -r '.driver // "usbhid-ups"' "$CONFIG")
+        UPS_PORT=$(jq -r '.port // "auto"' "$CONFIG")
+        UPS_DESC=$(jq -r '.desc // "External UPS"' "$CONFIG")
+        SHUTDOWN_THRESHOLD=$(jq -r '.shutdown_threshold // 5' "$CONFIG")
+        SHUTDOWN_DELAY=$(jq -r '.shutdown_delay // 60' "$CONFIG")
+        NOTIFY_CMD=$(jq -r '.notify_cmd // "wall"' "$CONFIG")
+    fi
+}
+
+notify() {
+    local msg="$1"
+    case "$NOTIFY_CMD" in
+        wall) wall "tinapple-ups: $msg" ;;
+        logger) logger -t tinapple-ups "$msg" ;;
+        *) eval "$NOTIFY_CMD \"$msg\"" ;;
+    esac
+}
+
+check_nut() {
+    if ! command -v upsc >/dev/null 2>&1; then
+        echo "NUT (Network UPS Tools) not installed. Install 'nut' package."
+        return 1
+    fi
+    return 0
+}
+
+check_apcupsd() {
+    if ! command -v apcaccess >/dev/null 2>&1; then
+        echo "apcupsd not installed. Install 'apcupsd' package."
+        return 1
+    fi
+    return 0
+}
+
+cmd_status() {
+    load_config
+    if check_nut; then
+        echo "=== NUT Status ==="
+        upsc "$UPS_DESC" 2>/dev/null | head -20 || echo "UPS not found or not responding"
+    fi
+    if check_apcupsd; then
+        echo "=== apcupsd Status ==="
+        apcaccess status 2>/dev/null | head -20 || echo "UPS not found or not responding"
+    fi
+}
+
+cmd_daemon() {
+    load_config
+    mkdir -p "$STATE_DIR"
+    
+    local notified=false
+    
+    while true; do
+        local on_battery=false
+        local charge=100
+        
+        # Check NUT
+        if check_nut; then
+            local status
+            status=$(upsc "$UPS_DESC" ups.status 2>/dev/null || echo "UNKNOWN")
+            if [[ "$status" == "OB" ]] || [[ "$status" == "OB DISCHRG" ]]; then
+                on_battery=true
+            fi
+            local bat_charge
+            bat_charge=$(upsc "$UPS_DESC" battery.charge 2>/dev/null || echo "100")
+            charge=$bat_charge
+        fi
+        
+        # Check apcupsd
+        if check_apcupsd; then
+            local apc_status
+            apc_status=$(apcaccess -p STATUS 2>/dev/null | awk '{print $NF}')
+            if [[ "$apc_status" == "ONBATT" ]]; then
+                on_battery=true
+            fi
+            local apc_charge
+            apc_charge=$(apcaccess -p BCHARGE 2>/dev/null | awk '{print $1}' | cut -d. -f1)
+            [[ -n "$apc_charge" ]] && charge=$apc_charge
+        fi
+        
+        if [[ "$on_battery" == "true" ]] && [[ "$notified" == "false" ]]; then
+            notify "UPS on battery! Charge: ${charge}%"
+            notified=true
+        elif [[ "$on_battery" == "false" ]] && [[ "$notified" == "true" ]]; then
+            notify "UPS power restored. Charge: ${charge}%"
+            notified=false
+        fi
+        
+        # Check critical threshold
+        if [[ "$on_battery" == "true" ]] && (( charge <= SHUTDOWN_THRESHOLD )); then
+            notify "CRITICAL: UPS battery at ${charge}%, initiating shutdown in ${SHUTDOWN_DELAY}s"
+            sleep "$SHUTDOWN_DELAY"
+            # Double-check
+            if upsc "$UPS_DESC" ups.status 2>/dev/null | grep -q "OB"; then
+                notify "Shutting down now"
+                systemctl hibernate 2>/dev/null || systemctl poweroff
+            fi
+        fi
+        
+        sleep 30
+    done
+}
+
+cmd_config() {
+    mkdir -p /etc/tinapple
+    if [[ ! -f "$CONFIG" ]]; then
+        cat > "$CONFIG" <<EOF
+{
+  "driver": "usbhid-ups",
+  "port": "auto",
+  "desc": "External UPS",
+  "shutdown_threshold": 5,
+  "shutdown_delay": 60,
+  "notify_cmd": "wall"
+}
+EOF
+        echo "Created default config at $CONFIG"
+    else
+        echo "Config already exists at $CONFIG"
+    fi
+}
+
+case "${1:-status}" in
+    status) cmd_status ;;
+    daemon) cmd_daemon ;;
+    config) cmd_config ;;
+    *) echo "Usage: $0 {status|daemon|config}"; exit 1 ;;
+esac

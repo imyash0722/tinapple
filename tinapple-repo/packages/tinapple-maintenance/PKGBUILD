@@ -1,0 +1,21 @@
+# Maintainer: tinapple Project <https://github.com/tinapple/tinapple-arch>
+pkgname=tinapple-maintenance
+pkgver=0.0.1
+pkgrel=1
+pkgdesc="System health checks, update hooks, and rollback for tinapple"
+arch=(any)
+url="https://github.com/tinapple/tinapple-arch"
+license=(MIT)
+depends=('snapper' 'pacman-contrib' 'smartmontools' 'openssl' 'limine')
+install=tinapple-maintenance.install
+source=()
+sha256sums=()
+
+package() {
+  cd "$startdir"
+  install -Dm755 bin/tinapple-health-check "$pkgdir/usr/bin/tinapple-health-check"
+  install -Dm755 bin/tinapple-update-hook "$pkgdir/usr/bin/tinapple-update-hook"
+  install -Dm755 bin/tinapple-rollback "$pkgdir/usr/bin/tinapple-rollback"
+  install -Dm644 hooks/90-tinapple-update.hook "$pkgdir/usr/share/libalpm/hooks/90-tinapple-update.hook"
+  install -Dm644 hooks/91-tinapple-update.hook "$pkgdir/usr/share/libalpm/hooks/91-tinapple-update.hook"
+}

@@ -1,0 +1,10 @@
+[Unit]
+Description=Run SnapRAID sync weekly
+
+[Timer]
+OnCalendar=weekly
+Persistent=true
+RandomizedDelaySec=2h
+
+[Install]
+WantedBy=timers.target

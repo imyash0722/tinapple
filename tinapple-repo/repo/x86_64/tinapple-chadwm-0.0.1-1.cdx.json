@@ -1,0 +1,62 @@
+{
+  "$schema": "http://cyclonedx.org/schema/bom-1.5.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "serialNumber": "urn:uuid:4cb38e71-b2ae-4a60-844d-9913eb68aa5a",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-09-27T19:56:43.272587+00:00",
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "name": "tinapple-sbom-generator",
+          "version": "0.0.1"
+        }
+      ]
+    },
+    "component": {
+      "type": "operating-system",
+      "name": "tinapple-chadwm",
+      "version": "0.0.1",
+      "description": "Tinapple homelab OS custom package repository"
+    }
+  },
+  "components": [
+    {
+      "type": "application",
+      "bom-ref": "pkg:alpm/tinapple/tinapple-chadwm@0.0.1-1?arch=x86_64",
+      "name": "tinapple-chadwm",
+      "version": "0.0.1-1",
+      "description": "Chadwm window manager, rices, preflight check, and session toggle for tinapple",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:alpm/tinapple/tinapple-chadwm@0.0.1-1?arch=x86_64",
+      "properties": [
+        {
+          "name": "arch",
+          "value": "x86_64"
+        },
+        {
+          "name": "distribution",
+          "value": "tinapple"
+        },
+        {
+          "name": "dependencies",
+          "value": "xorg-server, xorg-xinit, picom, polybar, rofi, sxhkd, dunst"
+        }
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "pkg:alpm/tinapple/tinapple-chadwm@0.0.1-1?arch=x86_64",
+      "depends": []
+    }
+  ]
+}

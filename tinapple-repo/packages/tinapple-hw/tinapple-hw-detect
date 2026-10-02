@@ -1,0 +1,119 @@
+#!/usr/bin/env go
+//go:build ignore
+// +build ignore
+
+package main
+
+import (
+	"encoding/json"
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+)
+
+type HardwareInfo struct {
+	IsLaptop        bool     `json:"is_laptop"`
+	HasBattery      bool     `json:"has_battery"`
+	BatteryVendor   string   `json:"battery_vendor,omitempty"`
+	BatteryModel    string   `json:"battery_model,omitempty"`
+	GPUVendors      []string `json:"gpu_vendors"`
+	ThermalZones    int      `json:"thermal_zones"`
+	CPUVendor       string   `json:"cpu_vendor"`
+	HasTPM2         bool     `json:"has_tpm2"`
+	ChassisType     string   `json:"chassis_type"`
+}
+
+func main() {
+	info := HardwareInfo{}
+
+	// Detect laptop vs desktop via chassis type
+	if data, err := os.ReadFile("/sys/class/dmi/id/chassis_type"); err == nil {
+		ct := strings.TrimSpace(string(data))
+		info.ChassisType = ct
+		// Laptop chassis types: 8, 9, 10, 11, 12, 14, 18, 21, 30, 31, 32
+		laptopTypes := map[string]bool{"8": true, "9": true, "10": true, "11": true, "12": true, "14": true, "18": true, "21": true, "30": true, "31": true, "32": true}
+		if laptopTypes[ct] {
+			info.IsLaptop = true
+		}
+	}
+
+	// Detect battery
+	if entries, err := os.ReadDir("/sys/class/power_supply"); err == nil {
+		for _, e := range entries {
+			if strings.HasPrefix(e.Name(), "BAT") || strings.HasPrefix(e.Name(), "battery") {
+				info.HasBattery = true
+				// Read vendor/model
+				if v, err := os.ReadFile(filepath.Join("/sys/class/power_supply", e.Name(), "manufacturer")); err == nil {
+					info.BatteryVendor = strings.TrimSpace(string(v))
+				}
+				if m, err := os.ReadFile(filepath.Join("/sys/class/power_supply", e.Name(), "model_name")); err == nil {
+					info.BatteryModel = strings.TrimSpace(string(m))
+				}
+			}
+		}
+	}
+
+	// Detect GPU vendors
+	if entries, err := os.ReadDir("/sys/class/drm"); err == nil {
+		vendorMap := map[string]bool{}
+		for _, e := range entries {
+			if strings.HasPrefix(e.Name(), "card") {
+				vendorPath := filepath.Join("/sys/class/drm", e.Name(), "device/vendor")
+				if v, err := os.ReadFile(vendorPath); err == nil {
+					vendorID := strings.TrimSpace(string(v))
+					switch vendorID {
+					case "0x10de":
+						vendorMap["nvidia"] = true
+					case "0x1002", "0x1022":
+						vendorMap["amd"] = true
+					case "0x8086":
+						vendorMap["intel"] = true
+					}
+				}
+			}
+		}
+		for v := range vendorMap {
+			info.GPUVendors = append(info.GPUVendors, v)
+		}
+	}
+
+	// Count thermal zones
+	if entries, err := os.ReadDir("/sys/class/thermal"); err == nil {
+		for _, e := range entries {
+			if strings.HasPrefix(e.Name(), "thermal_zone") {
+				info.ThermalZones++
+			}
+		}
+	}
+
+	// Detect CPU vendor
+	if v, err := os.ReadFile("/sys/devices/system/cpu/cpu0/uevent"); err == nil {
+		for _, line := range strings.Split(string(v), "\n") {
+			if strings.HasPrefix(line, "VENDOR=") {
+				info.CPUVendor = strings.TrimPrefix(line, "VENDOR=")
+			}
+		}
+	}
+
+	// Detect TPM2
+	if _, err := os.Stat("/dev/tpmrm0"); err == nil {
+		info.HasTPM2 = true
+	} else if _, err := os.Stat("/dev/tpm0"); err == nil {
+		info.HasTPM2 = true
+	}
+
+	// Write to /etc/tinapple/hardware.json
+	os.MkdirAll("/etc/tinapple", 0755)
+	out, _ := json.MarshalIndent(info, "", "  ")
+	os.WriteFile("/etc/tinapple/hardware.json", out, 0644)
+
+	fmt.Println("Hardware detection complete:")
+	fmt.Printf("  Laptop: %v\n", info.IsLaptop)
+	fmt.Printf("  Battery: %v (%s %s)\n", info.HasBattery, info.BatteryVendor, info.BatteryModel)
+	fmt.Printf("  GPUs: %v\n", info.GPUVendors)
+	fmt.Printf("  Thermal zones: %d\n", info.ThermalZones)
+	fmt.Printf("  CPU Vendor: %s\n", info.CPUVendor)
+	fmt.Printf("  TPM2: %v\n", info.HasTPM2)
+	fmt.Printf("  Chassis: %s\n", info.ChassisType)
+}

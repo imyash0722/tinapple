@@ -1,0 +1,22 @@
+[Unit]
+Description=chadwm Window Manager for %i
+Documentation=https://github.com/siduck/chadwm
+After=graphical-session.target
+Requires=graphical-session.target
+
+[Service]
+Type=simple
+User=%i
+Environment=DISPLAY=:0
+Environment=XDG_RUNTIME_DIR=/run/user/%U
+Environment=XDG_SESSION_TYPE=x11
+Environment=XDG_CURRENT_DESKTOP=chadwm
+ExecStartPre=/usr/bin/tinapple-chadwm-preflight
+ExecStart=/usr/bin/startx /etc/tinapple/chadwm/xinitrc -- :0 vt1
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=graphical-session.target

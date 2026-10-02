@@ -1,0 +1,21 @@
+post_install() {
+  systemctl enable postgresql.service >/dev/null 2>&1 || true
+  systemctl enable mariadb.service >/dev/null 2>&1 || true
+  systemctl enable redis.service >/dev/null 2>&1 || true
+  systemctl enable mongod.service >/dev/null 2>&1 || true
+  systemctl enable influxdb.service >/dev/null 2>&1 || true
+
+  # Initialize databases on first install
+  /usr/bin/postgresql-setup --initdb >/dev/null 2>&1 || true
+  /usr/bin/mariadb-install-db --user=mysql --basedir=/usr --datadir=/var/lib/mysql >/dev/null 2>&1 || true
+}
+
+post_upgrade() { post_install; }
+
+pre_remove() {
+  systemctl disable postgresql.service >/dev/null 2>&1 || true
+  systemctl disable mariadb.service >/dev/null 2>&1 || true
+  systemctl disable redis.service >/dev/null 2>&1 || true
+  systemctl disable mongod.service >/dev/null 2>&1 || true
+  systemctl disable influxdb.service >/dev/null 2>&1 || true
+}

@@ -1,0 +1,12 @@
+[mysqld]
+bind-address = 127.0.0.1
+port = 3306
+datadir = /var/lib/mysql
+socket = /run/mysqld/mysqld.sock
+pid-file = /run/mysqld/mysqld.pid
+log-error = /var/log/mariadb/mariadb.log
+character-set-server = utf8mb4
+collation-server = utf8mb4_unicode_ci
+innodb_buffer_pool_size = 256M
+innodb_log_file_size = 64M
+max_connections = 100

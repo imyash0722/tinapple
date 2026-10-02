@@ -1,0 +1,22 @@
+[meta]
+  dir = "/var/lib/influxdb/meta"
+  retention-autocreate = true
+
+[data]
+  dir = "/var/lib/influxdb/data"
+  wal-dir = "/var/lib/influxdb/wal"
+  series-id-set-cache-size = 100
+  index-version = "tsi1"
+
+[http]
+  bind-address = ":8086"
+  auth-enabled = false
+  log-enabled = true
+  write-tracing = false
+  pprof-enabled = true
+  https-enabled = false
+
+[data]
+  index-version = "tsi1"
+  max-values-per-tag = 100000
+  max-series-per-database = 1000000

@@ -1,0 +1,34 @@
+[Unit]
+Description=Jellyfin Media Server
+Documentation=https://jellyfin.org/docs/general/
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=exec
+User=jellyfin
+Group=jellyfin
+ExecStart=/usr/bin/jellyfin --config /etc/jellyfin --data /var/lib/jellyfin --cache /var/cache/jellyfin --log /var/log/jellyfin
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+# Security hardening
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=read-only
+ProtectControlGroups=yes
+ProtectKernelModules=yes
+ProtectKernelTunables=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictNamespaces=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
+CapabilityBoundingSet=CAP_DAC_OVERRIDE CAP_CHOWN CAP_FOWNER
+
+[Install]
+WantedBy=multi-user.target

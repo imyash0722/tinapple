@@ -1,0 +1,7 @@
+[remote]
+type = s3
+provider = AWS
+env_auth = false
+access_key_id = YOUR_ACCESS_KEY
+secret_access_key = YOUR_SECRET_KEY
+region = us-east-1

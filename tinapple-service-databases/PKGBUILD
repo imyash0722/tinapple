@@ -1,0 +1,16 @@
+# Maintainer: tinapple Project <https://github.com/tinapple/tinapple-arch>
+pkgname=tinapple-service-databases
+pkgver=0.0.1
+pkgrel=1
+pkgdesc="Database servers for tinapple (postgresql, mariadb, redis, mongodb, influxdb)"
+arch=(any)
+url="https://github.com/tinapple/tinapple-arch"
+license=(MIT)
+depends=('postgresql' 'mariadb' 'redis' 'mongodb' 'influxdb')
+install=tinapple-service-databases.install
+source=()
+sha256sums=()
+
+package() {
+  install -dm755 "$pkgdir/usr/share/tinapple-service-databases"
+}

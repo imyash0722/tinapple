@@ -1,0 +1,2483 @@
+{
+  "version": "1.0",
+  "updated_at": "2026-09-28",
+  "devices": [
+    {
+      "bus": "pci",
+      "vendor_id": "14e4",
+      "device_id": "4359",
+      "name": "BCM943228HMB 802.11abgn Dual-Band Wireless Network Adapter",
+      "vendor_name": "Broadcom Inc.",
+      "packages": [
+        "broadcom-wl-dkms"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "extra",
+      "license": "Proprietary (Broadcom)",
+      "notes": "Requires proprietary broadcom-wl driver"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "14e4",
+      "device_id": "43a0",
+      "name": "BCM4360 802.11ac Wireless Network Adapter",
+      "vendor_name": "Broadcom Inc.",
+      "packages": [
+        "broadcom-wl-dkms"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "extra",
+      "license": "Proprietary (Broadcom)",
+      "notes": "Requires proprietary broadcom-wl driver"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "14e4",
+      "device_id": "4365",
+      "name": "BCM43142 802.11bgn Wireless Network Adapter",
+      "vendor_name": "Broadcom Inc.",
+      "packages": [
+        "broadcom-wl-dkms"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "extra",
+      "license": "Proprietary (Broadcom)",
+      "notes": "Requires proprietary broadcom-wl driver"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "14e4",
+      "device_id": "4358",
+      "name": "BCM43227 802.11bgn Wireless Network Adapter",
+      "vendor_name": "Broadcom Inc.",
+      "packages": [
+        "broadcom-wl-dkms"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "extra",
+      "license": "Proprietary (Broadcom)",
+      "notes": "Requires proprietary broadcom-wl driver"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "14e4",
+      "device_id": "4331",
+      "name": "BCM4331 802.11abgn Wireless Network Adapter",
+      "vendor_name": "Broadcom Inc.",
+      "packages": [
+        "broadcom-wl-dkms"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "extra",
+      "license": "Proprietary (Broadcom)",
+      "notes": "Requires proprietary broadcom-wl driver"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "14e4",
+      "device_id": "43b1",
+      "name": "BCM4352 802.11ac Wireless Network Adapter",
+      "vendor_name": "Broadcom Inc.",
+      "packages": [
+        "broadcom-wl-dkms"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "extra",
+      "license": "Proprietary (Broadcom)",
+      "notes": "Requires proprietary broadcom-wl driver"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "14e4",
+      "device_id": "432b",
+      "name": "BCM4322 802.11abgn Wireless Network Adapter",
+      "vendor_name": "Broadcom Inc.",
+      "packages": [
+        "broadcom-wl-dkms"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "extra",
+      "license": "Proprietary (Broadcom)",
+      "notes": "Requires proprietary broadcom-wl driver"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "14e4",
+      "device_id": "4727",
+      "name": "BCM4313 802.11bgn Wireless Network Adapter",
+      "vendor_name": "Broadcom Inc.",
+      "packages": [
+        "broadcom-wl-dkms"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "extra",
+      "license": "Proprietary (Broadcom)",
+      "notes": "Requires proprietary broadcom-wl driver"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "10de",
+      "device_id": "1c82",
+      "name": "GeForce GTX 1050 Ti",
+      "vendor_name": "NVIDIA Corporation",
+      "packages": [
+        "nvidia-dkms",
+        "nvidia-utils"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "extra",
+      "license": "Proprietary (NVIDIA)",
+      "notes": "Proprietary NVIDIA GPU driver for GP107"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "10de",
+      "device_id": "1c03",
+      "name": "GeForce GTX 1060 6GB",
+      "vendor_name": "NVIDIA Corporation",
+      "packages": [
+        "nvidia-dkms",
+        "nvidia-utils"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "extra",
+      "license": "Proprietary (NVIDIA)",
+      "notes": "Proprietary NVIDIA GPU driver for GP106"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "10de",
+      "device_id": "1b81",
+      "name": "GeForce GTX 1070",
+      "vendor_name": "NVIDIA Corporation",
+      "packages": [
+        "nvidia-dkms",
+        "nvidia-utils"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "extra",
+      "license": "Proprietary (NVIDIA)",
+      "notes": "Proprietary NVIDIA GPU driver for GP104"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "10de",
+      "device_id": "1b80",
+      "name": "GeForce GTX 1080",
+      "vendor_name": "NVIDIA Corporation",
+      "packages": [
+        "nvidia-dkms",
+        "nvidia-utils"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "extra",
+      "license": "Proprietary (NVIDIA)",
+      "notes": "Proprietary NVIDIA GPU driver for GP104"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "10de",
+      "device_id": "1f82",
+      "name": "GeForce GTX 1650",
+      "vendor_name": "NVIDIA Corporation",
+      "packages": [
+        "nvidia-dkms",
+        "nvidia-utils"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "extra",
+      "license": "Proprietary (NVIDIA)",
+      "notes": "Proprietary NVIDIA GPU driver for TU117"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "10de",
+      "device_id": "21c4",
+      "name": "GeForce GTX 1660 SUPER",
+      "vendor_name": "NVIDIA Corporation",
+      "packages": [
+        "nvidia-dkms",
+        "nvidia-utils"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "extra",
+      "license": "Proprietary (NVIDIA)",
+      "notes": "Proprietary NVIDIA GPU driver for TU116"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "10de",
+      "device_id": "1f08",
+      "name": "GeForce RTX 2060",
+      "vendor_name": "NVIDIA Corporation",
+      "packages": [
+        "nvidia-dkms",
+        "nvidia-utils"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "extra",
+      "license": "Proprietary (NVIDIA)",
+      "notes": "Proprietary NVIDIA GPU driver for TU106"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "10de",
+      "device_id": "1e84",
+      "name": "GeForce RTX 2070 SUPER",
+      "vendor_name": "NVIDIA Corporation",
+      "packages": [
+        "nvidia-dkms",
+        "nvidia-utils"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "extra",
+      "license": "Proprietary (NVIDIA)",
+      "notes": "Proprietary NVIDIA GPU driver for TU104"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "10de",
+      "device_id": "2503",
+      "name": "GeForce RTX 3060",
+      "vendor_name": "NVIDIA Corporation",
+      "packages": [
+        "nvidia-dkms",
+        "nvidia-utils"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "extra",
+      "license": "Proprietary (NVIDIA)",
+      "notes": "Proprietary NVIDIA GPU driver for GA106"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "10de",
+      "device_id": "2484",
+      "name": "GeForce RTX 3070",
+      "vendor_name": "NVIDIA Corporation",
+      "packages": [
+        "nvidia-dkms",
+        "nvidia-utils"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "extra",
+      "license": "Proprietary (NVIDIA)",
+      "notes": "Proprietary NVIDIA GPU driver for GA104"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "10de",
+      "device_id": "2206",
+      "name": "GeForce RTX 3080",
+      "vendor_name": "NVIDIA Corporation",
+      "packages": [
+        "nvidia-dkms",
+        "nvidia-utils"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "extra",
+      "license": "Proprietary (NVIDIA)",
+      "notes": "Proprietary NVIDIA GPU driver for GA102"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "10de",
+      "device_id": "2786",
+      "name": "GeForce RTX 4070",
+      "vendor_name": "NVIDIA Corporation",
+      "packages": [
+        "nvidia-dkms",
+        "nvidia-utils"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "extra",
+      "license": "Proprietary (NVIDIA)",
+      "notes": "Proprietary NVIDIA GPU driver for AD104"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "10de",
+      "device_id": "2704",
+      "name": "GeForce RTX 4080",
+      "vendor_name": "NVIDIA Corporation",
+      "packages": [
+        "nvidia-dkms",
+        "nvidia-utils"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "extra",
+      "license": "Proprietary (NVIDIA)",
+      "notes": "Proprietary NVIDIA GPU driver for AD103"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "10de",
+      "device_id": "2684",
+      "name": "GeForce RTX 4090",
+      "vendor_name": "NVIDIA Corporation",
+      "packages": [
+        "nvidia-dkms",
+        "nvidia-utils"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "extra",
+      "license": "Proprietary (NVIDIA)",
+      "notes": "Proprietary NVIDIA GPU driver for AD102"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "10de",
+      "device_id": "1cb6",
+      "name": "Quadro P620",
+      "vendor_name": "NVIDIA Corporation",
+      "packages": [
+        "nvidia-dkms",
+        "nvidia-utils"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "extra",
+      "license": "Proprietary (NVIDIA)",
+      "notes": "Workstation GPU driver"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "10de",
+      "device_id": "1fb0",
+      "name": "Quadro T1000 Mobile",
+      "vendor_name": "NVIDIA Corporation",
+      "packages": [
+        "nvidia-dkms",
+        "nvidia-utils"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "extra",
+      "license": "Proprietary (NVIDIA)",
+      "notes": "Mobile workstation GPU driver"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "10de",
+      "device_id": "1eb8",
+      "name": "Tesla T4",
+      "vendor_name": "NVIDIA Corporation",
+      "packages": [
+        "nvidia-dkms",
+        "nvidia-utils"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "extra",
+      "license": "Proprietary (NVIDIA)",
+      "notes": "Data center / inference accelerator"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "10ec",
+      "device_id": "c821",
+      "name": "RTL8821CE 802.11ac PCIe Wireless Network Adapter",
+      "vendor_name": "Realtek Semiconductor Corp.",
+      "packages": [
+        "rtl8821ce-dkms"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "aur",
+      "license": "GPLv2",
+      "notes": "Out-of-tree DKMS driver for RTL8821CE"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "10ec",
+      "device_id": "8168",
+      "name": "RTL8111/8168/8411 PCI Express Gigabit Ethernet Controller",
+      "vendor_name": "Realtek Semiconductor Corp.",
+      "packages": [
+        "r8168-dkms"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "extra",
+      "license": "GPLv2",
+      "notes": "Vendor driver option if kernel r8169 experiences link drops"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "10ec",
+      "device_id": "8125",
+      "name": "RTL8125 2.5GbE Controller",
+      "vendor_name": "Realtek Semiconductor Corp.",
+      "packages": [
+        "r8125-dkms"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "extra",
+      "license": "GPLv2",
+      "notes": "Vendor driver option for 2.5GbE Realtek NICs"
+    },
+    {
+      "bus": "usb",
+      "vendor_id": "0bda",
+      "device_id": "b812",
+      "name": "RTL88x2bu 802.11ac USB WiFi Adapter",
+      "vendor_name": "Realtek Semiconductor Corp.",
+      "packages": [
+        "rtl88x2bu-dkms-git"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "aur",
+      "license": "GPLv2",
+      "notes": "USB Realtek 802.11ac adapter DKMS driver"
+    },
+    {
+      "bus": "usb",
+      "vendor_id": "0bda",
+      "device_id": "c811",
+      "name": "RTL8821CU 802.11ac USB WiFi Adapter",
+      "vendor_name": "Realtek Semiconductor Corp.",
+      "packages": [
+        "rtl8821cu-morrownr-dkms-git"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "aur",
+      "license": "GPLv2",
+      "notes": "USB Realtek 802.11ac adapter DKMS driver"
+    },
+    {
+      "bus": "usb",
+      "vendor_id": "0bda",
+      "device_id": "8812",
+      "name": "RTL8812AU 802.11ac USB WiFi Adapter",
+      "vendor_name": "Realtek Semiconductor Corp.",
+      "packages": [
+        "rtl8812au-dkms-git"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "aur",
+      "license": "GPLv2",
+      "notes": "USB Realtek 802.11ac high-gain adapter DKMS driver"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "10de",
+      "device_id": "2507",
+      "name": "GeForce RTX 3050 8GB",
+      "vendor_name": "NVIDIA Corporation",
+      "packages": [
+        "nvidia-dkms",
+        "nvidia-utils"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "extra",
+      "license": "Proprietary (NVIDIA)",
+      "notes": "Proprietary NVIDIA GPU driver for GA106"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "10de",
+      "device_id": "2582",
+      "name": "GeForce RTX 3050 6GB",
+      "vendor_name": "NVIDIA Corporation",
+      "packages": [
+        "nvidia-dkms",
+        "nvidia-utils"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "extra",
+      "license": "Proprietary (NVIDIA)",
+      "notes": "Proprietary NVIDIA GPU driver for GA107"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "10de",
+      "device_id": "2486",
+      "name": "GeForce RTX 3060 Ti",
+      "vendor_name": "NVIDIA Corporation",
+      "packages": [
+        "nvidia-dkms",
+        "nvidia-utils"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "extra",
+      "license": "Proprietary (NVIDIA)",
+      "notes": "Proprietary NVIDIA GPU driver for GA104"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "10de",
+      "device_id": "2482",
+      "name": "GeForce RTX 3070 Ti",
+      "vendor_name": "NVIDIA Corporation",
+      "packages": [
+        "nvidia-dkms",
+        "nvidia-utils"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "extra",
+      "license": "Proprietary (NVIDIA)",
+      "notes": "Proprietary NVIDIA GPU driver for GA104"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "10de",
+      "device_id": "2208",
+      "name": "GeForce RTX 3080 Ti",
+      "vendor_name": "NVIDIA Corporation",
+      "packages": [
+        "nvidia-dkms",
+        "nvidia-utils"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "extra",
+      "license": "Proprietary (NVIDIA)",
+      "notes": "Proprietary NVIDIA GPU driver for GA102"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "10de",
+      "device_id": "2204",
+      "name": "GeForce RTX 3090",
+      "vendor_name": "NVIDIA Corporation",
+      "packages": [
+        "nvidia-dkms",
+        "nvidia-utils"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "extra",
+      "license": "Proprietary (NVIDIA)",
+      "notes": "Proprietary NVIDIA GPU driver for GA102"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "10de",
+      "device_id": "2882",
+      "name": "GeForce RTX 4060",
+      "vendor_name": "NVIDIA Corporation",
+      "packages": [
+        "nvidia-dkms",
+        "nvidia-utils"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "extra",
+      "license": "Proprietary (NVIDIA)",
+      "notes": "Proprietary NVIDIA GPU driver for AD107"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "10de",
+      "device_id": "2803",
+      "name": "GeForce RTX 4060 Ti 8GB",
+      "vendor_name": "NVIDIA Corporation",
+      "packages": [
+        "nvidia-dkms",
+        "nvidia-utils"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "extra",
+      "license": "Proprietary (NVIDIA)",
+      "notes": "Proprietary NVIDIA GPU driver for AD106"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "10de",
+      "device_id": "2783",
+      "name": "GeForce RTX 4070 SUPER",
+      "vendor_name": "NVIDIA Corporation",
+      "packages": [
+        "nvidia-dkms",
+        "nvidia-utils"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "extra",
+      "license": "Proprietary (NVIDIA)",
+      "notes": "Proprietary NVIDIA GPU driver for AD104"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "10de",
+      "device_id": "2782",
+      "name": "GeForce RTX 4070 Ti",
+      "vendor_name": "NVIDIA Corporation",
+      "packages": [
+        "nvidia-dkms",
+        "nvidia-utils"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "extra",
+      "license": "Proprietary (NVIDIA)",
+      "notes": "Proprietary NVIDIA GPU driver for AD104"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "10de",
+      "device_id": "2703",
+      "name": "GeForce RTX 4080 SUPER",
+      "vendor_name": "NVIDIA Corporation",
+      "packages": [
+        "nvidia-dkms",
+        "nvidia-utils"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "extra",
+      "license": "Proprietary (NVIDIA)",
+      "notes": "Proprietary NVIDIA GPU driver for AD103"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "10de",
+      "device_id": "2688",
+      "name": "GeForce RTX 4090 D",
+      "vendor_name": "NVIDIA Corporation",
+      "packages": [
+        "nvidia-dkms",
+        "nvidia-utils"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "extra",
+      "license": "Proprietary (NVIDIA)",
+      "notes": "Proprietary NVIDIA GPU driver for AD102"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "10de",
+      "device_id": "2571",
+      "name": "RTX A2000",
+      "vendor_name": "NVIDIA Corporation",
+      "packages": [
+        "nvidia-dkms",
+        "nvidia-utils"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "extra",
+      "license": "Proprietary (NVIDIA)",
+      "notes": "Workstation GPU driver"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "10de",
+      "device_id": "24b0",
+      "name": "RTX A4000",
+      "vendor_name": "NVIDIA Corporation",
+      "packages": [
+        "nvidia-dkms",
+        "nvidia-utils"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "extra",
+      "license": "Proprietary (NVIDIA)",
+      "notes": "Workstation GPU driver"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "10de",
+      "device_id": "2230",
+      "name": "RTX A6000",
+      "vendor_name": "NVIDIA Corporation",
+      "packages": [
+        "nvidia-dkms",
+        "nvidia-utils"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "extra",
+      "license": "Proprietary (NVIDIA)",
+      "notes": "Workstation GPU driver"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "10ec",
+      "device_id": "8169",
+      "name": "RTL8169 PCI Gigabit Ethernet Controller",
+      "vendor_name": "Realtek Semiconductor Corp.",
+      "packages": [
+        "linux-firmware"
+      ],
+      "dependencies": [],
+      "repository": "core",
+      "license": "GPLv2",
+      "notes": "In-kernel r8169 driver"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "10ec",
+      "device_id": "8852",
+      "name": "RTL8852BE WiFi 6 802.11ax PCIe Network Adapter",
+      "vendor_name": "Realtek Semiconductor Corp.",
+      "packages": [
+        "rtl8852be-dkms"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "aur",
+      "license": "GPLv2",
+      "notes": "Realtek RTL8852BE WiFi 6 PCIe DKMS driver"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "10ec",
+      "device_id": "c852",
+      "name": "RTL8852CE WiFi 6E 802.11ax PCIe Network Adapter",
+      "vendor_name": "Realtek Semiconductor Corp.",
+      "packages": [
+        "linux-firmware"
+      ],
+      "dependencies": [],
+      "repository": "core",
+      "license": "GPLv2",
+      "notes": "In-kernel rtw89 driver"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "10ec",
+      "device_id": "8821",
+      "name": "RTL8821CE 802.11ac PCIe Wireless Network Adapter",
+      "vendor_name": "Realtek Semiconductor Corp.",
+      "packages": [
+        "rtl8821ce-dkms"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "aur",
+      "license": "GPLv2",
+      "notes": "Out-of-tree DKMS driver for RTL8821CE"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "10ec",
+      "device_id": "8822",
+      "name": "RTL8822CE 802.11ac PCIe Wireless Network Adapter",
+      "vendor_name": "Realtek Semiconductor Corp.",
+      "packages": [
+        "rtl8822ce-dkms"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "aur",
+      "license": "GPLv2",
+      "notes": "DKMS driver for RTL8822CE"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "10ec",
+      "device_id": "c822",
+      "name": "RTL8822CE 802.11ac PCIe Wireless Network Adapter",
+      "vendor_name": "Realtek Semiconductor Corp.",
+      "packages": [
+        "rtl8822ce-dkms"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "aur",
+      "license": "GPLv2",
+      "notes": "DKMS driver for RTL8822CE"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "10ec",
+      "device_id": "b822",
+      "name": "RTL8822BE 802.11ac PCIe Wireless Network Adapter",
+      "vendor_name": "Realtek Semiconductor Corp.",
+      "packages": [
+        "rtl8822ce-dkms"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "aur",
+      "license": "GPLv2",
+      "notes": "DKMS driver for RTL8822BE"
+    },
+    {
+      "bus": "usb",
+      "vendor_id": "0bda",
+      "device_id": "c820",
+      "name": "RTL8822BU 802.11ac USB WiFi Adapter",
+      "vendor_name": "Realtek Semiconductor Corp.",
+      "packages": [
+        "rtl8822bu-dkms-git"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "aur",
+      "license": "GPLv2",
+      "notes": "USB Realtek 802.11ac adapter DKMS driver"
+    },
+    {
+      "bus": "usb",
+      "vendor_id": "0bda",
+      "device_id": "2822",
+      "name": "RTL8822BU 802.11ac USB WiFi Adapter",
+      "vendor_name": "Realtek Semiconductor Corp.",
+      "packages": [
+        "rtl8822bu-dkms-git"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "aur",
+      "license": "GPLv2",
+      "notes": "USB Realtek 802.11ac adapter DKMS driver"
+    },
+    {
+      "bus": "usb",
+      "vendor_id": "0bda",
+      "device_id": "1a2b",
+      "name": "RTL8821CU 802.11ac USB WiFi Adapter",
+      "vendor_name": "Realtek Semiconductor Corp.",
+      "packages": [
+        "rtl8821cu-dkms-git"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "aur",
+      "license": "GPLv2",
+      "notes": "USB Realtek 802.11ac adapter DKMS driver"
+    },
+    {
+      "bus": "usb",
+      "vendor_id": "0bda",
+      "device_id": "8813",
+      "name": "RTL8814AU 802.11ac Wireless Adapter",
+      "vendor_name": "Realtek Semiconductor Corp.",
+      "packages": [
+        "rtl8814au-dkms-git"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "aur",
+      "license": "GPLv2",
+      "notes": "USB Realtek 802.11ac 4T4R high-power adapter DKMS driver"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "0e8d",
+      "device_id": "7961",
+      "name": "MT7921 802.11ax PCIe Wireless Network Adapter",
+      "vendor_name": "MediaTek Inc.",
+      "packages": [
+        "linux-firmware"
+      ],
+      "dependencies": [],
+      "repository": "core",
+      "license": "GPLv2",
+      "notes": "In-kernel mt7921e driver"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "0e8d",
+      "device_id": "0616",
+      "name": "MT7922 RZ616 802.11ax PCIe Wireless Network Adapter",
+      "vendor_name": "MediaTek Inc.",
+      "packages": [
+        "linux-firmware"
+      ],
+      "dependencies": [],
+      "repository": "core",
+      "license": "GPLv2",
+      "notes": "In-kernel mt7921e driver for Wi-Fi 6E"
+    },
+    {
+      "bus": "usb",
+      "vendor_id": "0e8d",
+      "device_id": "7610",
+      "name": "MT7610U 802.11ac Wireless Adapter",
+      "vendor_name": "MediaTek Inc.",
+      "packages": [
+        "linux-firmware"
+      ],
+      "dependencies": [],
+      "repository": "core",
+      "license": "GPLv2",
+      "notes": "In-kernel mt76x0u driver with linux-firmware"
+    },
+    {
+      "bus": "usb",
+      "vendor_id": "0e8d",
+      "device_id": "7650",
+      "name": "MT7650U 802.11ac Wireless Adapter",
+      "vendor_name": "MediaTek Inc.",
+      "packages": [
+        "linux-firmware"
+      ],
+      "dependencies": [],
+      "repository": "core",
+      "license": "GPLv2",
+      "notes": "In-kernel mt76x0u driver with linux-firmware"
+    },
+    {
+      "bus": "usb",
+      "vendor_id": "0e8d",
+      "device_id": "7961",
+      "name": "MT7921U 802.11ax Wireless Adapter",
+      "vendor_name": "MediaTek Inc.",
+      "packages": [
+        "linux-firmware"
+      ],
+      "dependencies": [],
+      "repository": "core",
+      "license": "GPLv2",
+      "notes": "In-kernel mt7921u driver with linux-firmware"
+    },
+    {
+      "bus": "usb",
+      "vendor_id": "148f",
+      "device_id": "761a",
+      "name": "MT7612U 802.11ac Wireless Adapter",
+      "vendor_name": "MediaTek Inc. / Ralink",
+      "packages": [
+        "linux-firmware"
+      ],
+      "dependencies": [],
+      "repository": "core",
+      "license": "GPLv2",
+      "notes": "In-kernel mt76x2u driver with linux-firmware"
+    },
+    {
+      "bus": "usb",
+      "vendor_id": "148f",
+      "device_id": "760a",
+      "name": "MT7601U 802.11n Wireless Adapter",
+      "vendor_name": "MediaTek Inc. / Ralink",
+      "packages": [
+        "linux-firmware"
+      ],
+      "dependencies": [],
+      "repository": "core",
+      "license": "GPLv2",
+      "notes": "In-kernel mt7601u driver with linux-firmware"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "8086",
+      "device_id": "4680",
+      "name": "Alder Lake-S GT1 UHD Graphics 770",
+      "vendor_name": "Intel Corporation",
+      "packages": [
+        "intel-media-driver",
+        "intel-gpu-tools",
+        "mesa",
+        "vulkan-intel"
+      ],
+      "dependencies": [],
+      "repository": "extra",
+      "license": "MIT",
+      "notes": "Intel Gen12 graphics driver and video acceleration"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "8086",
+      "device_id": "56a0",
+      "name": "Arc A770",
+      "vendor_name": "Intel Corporation",
+      "packages": [
+        "intel-media-driver",
+        "intel-gpu-tools",
+        "mesa",
+        "vulkan-intel"
+      ],
+      "dependencies": [],
+      "repository": "extra",
+      "license": "MIT",
+      "notes": "Intel Alchemist discrete GPU driver and video acceleration"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "8086",
+      "device_id": "56a5",
+      "name": "Arc A380",
+      "vendor_name": "Intel Corporation",
+      "packages": [
+        "intel-media-driver",
+        "intel-gpu-tools",
+        "mesa",
+        "vulkan-intel"
+      ],
+      "dependencies": [],
+      "repository": "extra",
+      "license": "MIT",
+      "notes": "Intel Alchemist discrete GPU driver and video acceleration"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "1002",
+      "device_id": "73bf",
+      "name": "Radeon RX 6800 / 6800 XT / 6900 XT",
+      "vendor_name": "Advanced Micro Devices, Inc. [AMD/ATI]",
+      "packages": [
+        "xf86-video-amdgpu",
+        "mesa",
+        "vulkan-radeon"
+      ],
+      "dependencies": [],
+      "repository": "extra",
+      "license": "MIT",
+      "notes": "AMD Navi 21 open-source driver stack"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "1002",
+      "device_id": "73df",
+      "name": "Radeon RX 6700 XT / 6750 XT",
+      "vendor_name": "Advanced Micro Devices, Inc. [AMD/ATI]",
+      "packages": [
+        "xf86-video-amdgpu",
+        "mesa",
+        "vulkan-radeon"
+      ],
+      "dependencies": [],
+      "repository": "extra",
+      "license": "MIT",
+      "notes": "AMD Navi 22 open-source driver stack"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "1002",
+      "device_id": "744c",
+      "name": "Radeon RX 7900 XT / 7900 XTX",
+      "vendor_name": "Advanced Micro Devices, Inc. [AMD/ATI]",
+      "packages": [
+        "xf86-video-amdgpu",
+        "mesa",
+        "vulkan-radeon"
+      ],
+      "dependencies": [],
+      "repository": "extra",
+      "license": "MIT",
+      "notes": "AMD Navi 31 open-source driver stack"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "1002",
+      "device_id": "7480",
+      "name": "Radeon RX 7600",
+      "vendor_name": "Advanced Micro Devices, Inc. [AMD/ATI]",
+      "packages": [
+        "xf86-video-amdgpu",
+        "mesa",
+        "vulkan-radeon"
+      ],
+      "dependencies": [],
+      "repository": "extra",
+      "license": "MIT",
+      "notes": "AMD Navi 33 open-source driver stack"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "8086",
+      "device_id": "2723",
+      "name": "Wi-Fi 6 AX200",
+      "vendor_name": "Intel Corporation",
+      "packages": [
+        "linux-firmware"
+      ],
+      "dependencies": [],
+      "repository": "core",
+      "license": "Redistributable",
+      "notes": "In-kernel iwlwifi driver with linux-firmware"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "8086",
+      "device_id": "06f0",
+      "name": "Wi-Fi 6 AX201",
+      "vendor_name": "Intel Corporation",
+      "packages": [
+        "linux-firmware"
+      ],
+      "dependencies": [],
+      "repository": "core",
+      "license": "Redistributable",
+      "notes": "In-kernel iwlwifi driver with linux-firmware"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "8086",
+      "device_id": "2725",
+      "name": "Wi-Fi 6E AX210",
+      "vendor_name": "Intel Corporation",
+      "packages": [
+        "linux-firmware"
+      ],
+      "dependencies": [],
+      "repository": "core",
+      "license": "Redistributable",
+      "notes": "In-kernel iwlwifi driver with linux-firmware"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "8086",
+      "device_id": "272b",
+      "name": "Wi-Fi 7 BE200",
+      "vendor_name": "Intel Corporation",
+      "packages": [
+        "linux-firmware"
+      ],
+      "dependencies": [],
+      "repository": "core",
+      "license": "Redistributable",
+      "notes": "In-kernel iwlwifi driver with linux-firmware"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "14e4",
+      "device_id": "43a3",
+      "name": "BCM4350 802.11ac Wireless Network Adapter",
+      "vendor_name": "Broadcom Inc.",
+      "packages": [
+        "broadcom-wl-dkms"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "extra",
+      "license": "Proprietary (Broadcom)",
+      "notes": "Requires broadcom-wl or brcmfmac"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "14e4",
+      "device_id": "43ba",
+      "name": "BCM43602 802.11ac Wireless LAN SoC",
+      "vendor_name": "Broadcom Inc.",
+      "packages": [
+        "broadcom-wl-dkms"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "extra",
+      "license": "Proprietary (Broadcom)",
+      "notes": "Broadcom 802.11ac dual band adapter"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "14e4",
+      "device_id": "43ec",
+      "name": "BCM4356 802.11ac Wireless Network Adapter",
+      "vendor_name": "Broadcom Inc.",
+      "packages": [
+        "broadcom-wl-dkms"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "extra",
+      "license": "Proprietary (Broadcom)",
+      "notes": "Broadcom 802.11ac adapter"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "14e4",
+      "device_id": "43ef",
+      "name": "BCM43570 802.11ac Wireless Network Adapter",
+      "vendor_name": "Broadcom Inc.",
+      "packages": [
+        "broadcom-wl-dkms"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "extra",
+      "license": "Proprietary (Broadcom)",
+      "notes": "Broadcom 802.11ac adapter"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "14e4",
+      "device_id": "4353",
+      "name": "BCM43224 802.11a/b/g/n Wireless LAN Controller",
+      "vendor_name": "Broadcom Inc.",
+      "packages": [
+        "broadcom-wl-dkms"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "extra",
+      "license": "Proprietary (Broadcom)",
+      "notes": "Broadcom dual-band adapter"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "14e4",
+      "device_id": "4357",
+      "name": "BCM43225 802.11b/g/n Wireless LAN Controller",
+      "vendor_name": "Broadcom Inc.",
+      "packages": [
+        "broadcom-wl-dkms"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "extra",
+      "license": "Proprietary (Broadcom)",
+      "notes": "Broadcom wireless adapter"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "10de",
+      "device_id": "1b82",
+      "name": "GeForce GTX 1070 Ti",
+      "vendor_name": "NVIDIA Corporation",
+      "packages": [
+        "nvidia-dkms",
+        "nvidia-utils"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "extra",
+      "license": "Proprietary (NVIDIA)",
+      "notes": "Pascal GP104"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "10de",
+      "device_id": "1b06",
+      "name": "GeForce GTX 1080 Ti",
+      "vendor_name": "NVIDIA Corporation",
+      "packages": [
+        "nvidia-dkms",
+        "nvidia-utils"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "extra",
+      "license": "Proprietary (NVIDIA)",
+      "notes": "Pascal GP102"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "10de",
+      "device_id": "1c02",
+      "name": "GeForce GTX 1060 3GB",
+      "vendor_name": "NVIDIA Corporation",
+      "packages": [
+        "nvidia-dkms",
+        "nvidia-utils"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "extra",
+      "license": "Proprietary (NVIDIA)",
+      "notes": "Pascal GP106"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "10de",
+      "device_id": "1d01",
+      "name": "GeForce GT 1030",
+      "vendor_name": "NVIDIA Corporation",
+      "packages": [
+        "nvidia-dkms",
+        "nvidia-utils"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "extra",
+      "license": "Proprietary (NVIDIA)",
+      "notes": "Pascal GP108"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "10de",
+      "device_id": "2182",
+      "name": "GeForce GTX 1660 Ti",
+      "vendor_name": "NVIDIA Corporation",
+      "packages": [
+        "nvidia-dkms",
+        "nvidia-utils"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "extra",
+      "license": "Proprietary (NVIDIA)",
+      "notes": "Turing TU116"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "10de",
+      "device_id": "2184",
+      "name": "GeForce GTX 1660",
+      "vendor_name": "NVIDIA Corporation",
+      "packages": [
+        "nvidia-dkms",
+        "nvidia-utils"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "extra",
+      "license": "Proprietary (NVIDIA)",
+      "notes": "Turing TU116"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "10de",
+      "device_id": "2188",
+      "name": "GeForce GTX 1650 SUPER",
+      "vendor_name": "NVIDIA Corporation",
+      "packages": [
+        "nvidia-dkms",
+        "nvidia-utils"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "extra",
+      "license": "Proprietary (NVIDIA)",
+      "notes": "Turing TU116"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "10de",
+      "device_id": "1f02",
+      "name": "GeForce RTX 2070",
+      "vendor_name": "NVIDIA Corporation",
+      "packages": [
+        "nvidia-dkms",
+        "nvidia-utils"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "extra",
+      "license": "Proprietary (NVIDIA)",
+      "notes": "Turing TU106"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "10de",
+      "device_id": "1f06",
+      "name": "GeForce RTX 2060 SUPER",
+      "vendor_name": "NVIDIA Corporation",
+      "packages": [
+        "nvidia-dkms",
+        "nvidia-utils"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "extra",
+      "license": "Proprietary (NVIDIA)",
+      "notes": "Turing TU106"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "10de",
+      "device_id": "1e81",
+      "name": "GeForce RTX 2080 SUPER",
+      "vendor_name": "NVIDIA Corporation",
+      "packages": [
+        "nvidia-dkms",
+        "nvidia-utils"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "extra",
+      "license": "Proprietary (NVIDIA)",
+      "notes": "Turing TU104"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "10de",
+      "device_id": "1e82",
+      "name": "GeForce RTX 2080",
+      "vendor_name": "NVIDIA Corporation",
+      "packages": [
+        "nvidia-dkms",
+        "nvidia-utils"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "extra",
+      "license": "Proprietary (NVIDIA)",
+      "notes": "Turing TU104"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "10de",
+      "device_id": "1e04",
+      "name": "GeForce RTX 2080 Ti",
+      "vendor_name": "NVIDIA Corporation",
+      "packages": [
+        "nvidia-dkms",
+        "nvidia-utils"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "extra",
+      "license": "Proprietary (NVIDIA)",
+      "notes": "Turing TU102"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "10de",
+      "device_id": "1e02",
+      "name": "TITAN RTX",
+      "vendor_name": "NVIDIA Corporation",
+      "packages": [
+        "nvidia-dkms",
+        "nvidia-utils"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "extra",
+      "license": "Proprietary (NVIDIA)",
+      "notes": "Turing TU102"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "10de",
+      "device_id": "2487",
+      "name": "GeForce RTX 3070 Mobile",
+      "vendor_name": "NVIDIA Corporation",
+      "packages": [
+        "nvidia-dkms",
+        "nvidia-utils"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "extra",
+      "license": "Proprietary (NVIDIA)",
+      "notes": "Ampere GA104M"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "10de",
+      "device_id": "249d",
+      "name": "GeForce RTX 3070 Mobile / Max-Q",
+      "vendor_name": "NVIDIA Corporation",
+      "packages": [
+        "nvidia-dkms",
+        "nvidia-utils"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "extra",
+      "license": "Proprietary (NVIDIA)",
+      "notes": "Ampere GA104M"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "10de",
+      "device_id": "2520",
+      "name": "GeForce RTX 3060 Mobile / Max-Q",
+      "vendor_name": "NVIDIA Corporation",
+      "packages": [
+        "nvidia-dkms",
+        "nvidia-utils"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "extra",
+      "license": "Proprietary (NVIDIA)",
+      "notes": "Ampere GA106M"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "10de",
+      "device_id": "2560",
+      "name": "GeForce RTX 3050 Mobile",
+      "vendor_name": "NVIDIA Corporation",
+      "packages": [
+        "nvidia-dkms",
+        "nvidia-utils"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "extra",
+      "license": "Proprietary (NVIDIA)",
+      "notes": "Ampere GA107M"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "10de",
+      "device_id": "28e0",
+      "name": "GeForce RTX 4060 Max-Q / Mobile",
+      "vendor_name": "NVIDIA Corporation",
+      "packages": [
+        "nvidia-dkms",
+        "nvidia-utils"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "extra",
+      "license": "Proprietary (NVIDIA)",
+      "notes": "Ada Lovelace AD107M"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "10de",
+      "device_id": "2820",
+      "name": "GeForce RTX 4070 Max-Q / Mobile",
+      "vendor_name": "NVIDIA Corporation",
+      "packages": [
+        "nvidia-dkms",
+        "nvidia-utils"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "extra",
+      "license": "Proprietary (NVIDIA)",
+      "notes": "Ada Lovelace AD106M"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "10de",
+      "device_id": "27e0",
+      "name": "GeForce RTX 4080 Max-Q / Mobile",
+      "vendor_name": "NVIDIA Corporation",
+      "packages": [
+        "nvidia-dkms",
+        "nvidia-utils"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "extra",
+      "license": "Proprietary (NVIDIA)",
+      "notes": "Ada Lovelace AD104M"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "10de",
+      "device_id": "2717",
+      "name": "GeForce RTX 4090 Max-Q / Mobile",
+      "vendor_name": "NVIDIA Corporation",
+      "packages": [
+        "nvidia-dkms",
+        "nvidia-utils"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "extra",
+      "license": "Proprietary (NVIDIA)",
+      "notes": "Ada Lovelace AD103M"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "10de",
+      "device_id": "2881",
+      "name": "GeForce RTX 4060 Ti 16GB",
+      "vendor_name": "NVIDIA Corporation",
+      "packages": [
+        "nvidia-dkms",
+        "nvidia-utils"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "extra",
+      "license": "Proprietary (NVIDIA)",
+      "notes": "Ada Lovelace AD106"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "10de",
+      "device_id": "2705",
+      "name": "GeForce RTX 4070 Ti SUPER",
+      "vendor_name": "NVIDIA Corporation",
+      "packages": [
+        "nvidia-dkms",
+        "nvidia-utils"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "extra",
+      "license": "Proprietary (NVIDIA)",
+      "notes": "Ada Lovelace AD103"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "1002",
+      "device_id": "747e",
+      "name": "Radeon RX 7700 XT / 7800 XT",
+      "vendor_name": "Advanced Micro Devices, Inc.",
+      "packages": [
+        "xf86-video-amdgpu",
+        "mesa",
+        "vulkan-radeon"
+      ],
+      "dependencies": [
+        "linux-firmware"
+      ],
+      "repository": "extra",
+      "license": "Open Source (Mesa/MIT)",
+      "notes": "RDNA3 Navi 32"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "1002",
+      "device_id": "7483",
+      "name": "Radeon RX 7600 XT",
+      "vendor_name": "Advanced Micro Devices, Inc.",
+      "packages": [
+        "xf86-video-amdgpu",
+        "mesa",
+        "vulkan-radeon"
+      ],
+      "dependencies": [
+        "linux-firmware"
+      ],
+      "repository": "extra",
+      "license": "Open Source (Mesa/MIT)",
+      "notes": "RDNA3 Navi 33"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "1002",
+      "device_id": "7448",
+      "name": "Radeon RX 7900 GRE",
+      "vendor_name": "Advanced Micro Devices, Inc.",
+      "packages": [
+        "xf86-video-amdgpu",
+        "mesa",
+        "vulkan-radeon"
+      ],
+      "dependencies": [
+        "linux-firmware"
+      ],
+      "repository": "extra",
+      "license": "Open Source (Mesa/MIT)",
+      "notes": "RDNA3 Navi 31"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "1002",
+      "device_id": "73ff",
+      "name": "Radeon RX 6600 / 6600 XT / 6650 XT",
+      "vendor_name": "Advanced Micro Devices, Inc.",
+      "packages": [
+        "xf86-video-amdgpu",
+        "mesa",
+        "vulkan-radeon"
+      ],
+      "dependencies": [
+        "linux-firmware"
+      ],
+      "repository": "extra",
+      "license": "Open Source (Mesa/MIT)",
+      "notes": "RDNA2 Navi 23"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "1002",
+      "device_id": "743f",
+      "name": "Radeon RX 6500 XT",
+      "vendor_name": "Advanced Micro Devices, Inc.",
+      "packages": [
+        "xf86-video-amdgpu",
+        "mesa",
+        "vulkan-radeon"
+      ],
+      "dependencies": [
+        "linux-firmware"
+      ],
+      "repository": "extra",
+      "license": "Open Source (Mesa/MIT)",
+      "notes": "RDNA2 Navi 24"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "1002",
+      "device_id": "7422",
+      "name": "Radeon RX 6400",
+      "vendor_name": "Advanced Micro Devices, Inc.",
+      "packages": [
+        "xf86-video-amdgpu",
+        "mesa",
+        "vulkan-radeon"
+      ],
+      "dependencies": [
+        "linux-firmware"
+      ],
+      "repository": "extra",
+      "license": "Open Source (Mesa/MIT)",
+      "notes": "RDNA2 Navi 24"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "1002",
+      "device_id": "731f",
+      "name": "Radeon RX 5700 / 5700 XT",
+      "vendor_name": "Advanced Micro Devices, Inc.",
+      "packages": [
+        "xf86-video-amdgpu",
+        "mesa",
+        "vulkan-radeon"
+      ],
+      "dependencies": [
+        "linux-firmware"
+      ],
+      "repository": "extra",
+      "license": "Open Source (Mesa/MIT)",
+      "notes": "RDNA1 Navi 10"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "1002",
+      "device_id": "7340",
+      "name": "Radeon RX 5500 / 5500 XT",
+      "vendor_name": "Advanced Micro Devices, Inc.",
+      "packages": [
+        "xf86-video-amdgpu",
+        "mesa",
+        "vulkan-radeon"
+      ],
+      "dependencies": [
+        "linux-firmware"
+      ],
+      "repository": "extra",
+      "license": "Open Source (Mesa/MIT)",
+      "notes": "RDNA1 Navi 14"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "1002",
+      "device_id": "67df",
+      "name": "Radeon RX 470/480/570/580/590",
+      "vendor_name": "Advanced Micro Devices, Inc.",
+      "packages": [
+        "xf86-video-amdgpu",
+        "mesa",
+        "vulkan-radeon"
+      ],
+      "dependencies": [
+        "linux-firmware"
+      ],
+      "repository": "extra",
+      "license": "Open Source (Mesa/MIT)",
+      "notes": "Polaris 10/20"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "1002",
+      "device_id": "1681",
+      "name": "Rembrandt Radeon 680M Graphics",
+      "vendor_name": "Advanced Micro Devices, Inc.",
+      "packages": [
+        "xf86-video-amdgpu",
+        "mesa",
+        "vulkan-radeon"
+      ],
+      "dependencies": [
+        "linux-firmware"
+      ],
+      "repository": "extra",
+      "license": "Open Source (Mesa/MIT)",
+      "notes": "RDNA2 integrated GPU"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "1002",
+      "device_id": "15bf",
+      "name": "Phoenix Radeon 780M Graphics",
+      "vendor_name": "Advanced Micro Devices, Inc.",
+      "packages": [
+        "xf86-video-amdgpu",
+        "mesa",
+        "vulkan-radeon"
+      ],
+      "dependencies": [
+        "linux-firmware"
+      ],
+      "repository": "extra",
+      "license": "Open Source (Mesa/MIT)",
+      "notes": "RDNA3 integrated GPU"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "1002",
+      "device_id": "15e7",
+      "name": "Cezanne / Barcelo Radeon Vega 8",
+      "vendor_name": "Advanced Micro Devices, Inc.",
+      "packages": [
+        "xf86-video-amdgpu",
+        "mesa",
+        "vulkan-radeon"
+      ],
+      "dependencies": [
+        "linux-firmware"
+      ],
+      "repository": "extra",
+      "license": "Open Source (Mesa/MIT)",
+      "notes": "Vega integrated GPU"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "8086",
+      "device_id": "56a1",
+      "name": "Arc A750 Graphics",
+      "vendor_name": "Intel Corporation",
+      "packages": [
+        "intel-media-driver",
+        "intel-gpu-tools",
+        "mesa",
+        "vulkan-intel"
+      ],
+      "dependencies": [
+        "linux-firmware"
+      ],
+      "repository": "extra",
+      "license": "Open Source (MIT)",
+      "notes": "Alchemist ACM-G10"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "8086",
+      "device_id": "56a2",
+      "name": "Arc A580 Graphics",
+      "vendor_name": "Intel Corporation",
+      "packages": [
+        "intel-media-driver",
+        "intel-gpu-tools",
+        "mesa",
+        "vulkan-intel"
+      ],
+      "dependencies": [
+        "linux-firmware"
+      ],
+      "repository": "extra",
+      "license": "Open Source (MIT)",
+      "notes": "Alchemist ACM-G10"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "8086",
+      "device_id": "56a6",
+      "name": "Arc A310 Graphics",
+      "vendor_name": "Intel Corporation",
+      "packages": [
+        "intel-media-driver",
+        "intel-gpu-tools",
+        "mesa",
+        "vulkan-intel"
+      ],
+      "dependencies": [
+        "linux-firmware"
+      ],
+      "repository": "extra",
+      "license": "Open Source (MIT)",
+      "notes": "Alchemist ACM-G11"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "8086",
+      "device_id": "7d55",
+      "name": "Meteor Lake-P Intel Arc Graphics",
+      "vendor_name": "Intel Corporation",
+      "packages": [
+        "intel-media-driver",
+        "intel-gpu-tools",
+        "mesa",
+        "vulkan-intel"
+      ],
+      "dependencies": [
+        "linux-firmware"
+      ],
+      "repository": "extra",
+      "license": "Open Source (MIT)",
+      "notes": "Xe-LPG integrated GPU"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "8086",
+      "device_id": "a780",
+      "name": "Raptor Lake-S UHD Graphics 770",
+      "vendor_name": "Intel Corporation",
+      "packages": [
+        "intel-media-driver",
+        "intel-gpu-tools",
+        "mesa",
+        "vulkan-intel"
+      ],
+      "dependencies": [
+        "linux-firmware"
+      ],
+      "repository": "extra",
+      "license": "Open Source (MIT)",
+      "notes": "Xe LP integrated GPU"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "8086",
+      "device_id": "9a49",
+      "name": "TigerLake-LP GT2 Iris Xe Graphics",
+      "vendor_name": "Intel Corporation",
+      "packages": [
+        "intel-media-driver",
+        "intel-gpu-tools",
+        "mesa",
+        "vulkan-intel"
+      ],
+      "dependencies": [
+        "linux-firmware"
+      ],
+      "repository": "extra",
+      "license": "Open Source (MIT)",
+      "notes": "Tiger Lake Iris Xe"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "8086",
+      "device_id": "3e92",
+      "name": "CoffeeLake-S GT2 UHD Graphics 630",
+      "vendor_name": "Intel Corporation",
+      "packages": [
+        "intel-media-driver",
+        "intel-gpu-tools",
+        "mesa",
+        "vulkan-intel"
+      ],
+      "dependencies": [
+        "linux-firmware"
+      ],
+      "repository": "extra",
+      "license": "Open Source (MIT)",
+      "notes": "Gen 9.5 UHD Graphics"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "10ec",
+      "device_id": "8126",
+      "name": "RTL8126 5GbE Ethernet Controller",
+      "vendor_name": "Realtek Semiconductor Co., Ltd.",
+      "packages": [
+        "r8125-dkms"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "extra",
+      "license": "GPLv2",
+      "notes": "Realtek 5-gigabit controller"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "10ec",
+      "device_id": "8851",
+      "name": "RTL8851BE 802.11ax PCIe Network Adapter",
+      "vendor_name": "Realtek Semiconductor Co., Ltd.",
+      "packages": [
+        "linux-firmware"
+      ],
+      "dependencies": [],
+      "repository": "core",
+      "license": "Open Source",
+      "notes": "In-tree rtw89 driver"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "10ec",
+      "device_id": "b723",
+      "name": "RTL8723BE 802.11bgn PCIe Adapter",
+      "vendor_name": "Realtek Semiconductor Co., Ltd.",
+      "packages": [
+        "linux-firmware"
+      ],
+      "dependencies": [],
+      "repository": "core",
+      "license": "Open Source",
+      "notes": "In-tree rtl8723be driver"
+    },
+    {
+      "bus": "usb",
+      "vendor_id": "0bda",
+      "device_id": "a811",
+      "name": "RTL8811AU 802.11ac USB WiFi Adapter",
+      "vendor_name": "Realtek Semiconductor Co., Ltd.",
+      "packages": [
+        "rtl8812au-dkms-git"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "aur",
+      "license": "GPLv2",
+      "notes": "Realtek USB WiFi"
+    },
+    {
+      "bus": "usb",
+      "vendor_id": "0bda",
+      "device_id": "b82c",
+      "name": "RTL8812BU 802.11ac USB WiFi Adapter",
+      "vendor_name": "Realtek Semiconductor Co., Ltd.",
+      "packages": [
+        "rtl88x2bu-dkms-git"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "aur",
+      "license": "GPLv2",
+      "notes": "Realtek USB WiFi"
+    },
+    {
+      "bus": "usb",
+      "vendor_id": "0bda",
+      "device_id": "0821",
+      "name": "RTL8821AU 802.11ac USB WiFi Adapter",
+      "vendor_name": "Realtek Semiconductor Co., Ltd.",
+      "packages": [
+        "rtl8812au-dkms-git"
+      ],
+      "dependencies": [
+        "linux-headers",
+        "dkms"
+      ],
+      "repository": "aur",
+      "license": "GPLv2",
+      "notes": "Realtek USB WiFi"
+    },
+    {
+      "bus": "usb",
+      "vendor_id": "0bda",
+      "device_id": "8153",
+      "name": "RTL8153 Gigabit Ethernet Adapter",
+      "vendor_name": "Realtek Semiconductor Co., Ltd.",
+      "packages": [
+        "linux-firmware"
+      ],
+      "dependencies": [],
+      "repository": "core",
+      "license": "Open Source",
+      "notes": "In-tree r8152 driver"
+    },
+    {
+      "bus": "usb",
+      "vendor_id": "0bda",
+      "device_id": "8156",
+      "name": "RTL8156 2.5GbE USB Ethernet Controller",
+      "vendor_name": "Realtek Semiconductor Co., Ltd.",
+      "packages": [
+        "linux-firmware"
+      ],
+      "dependencies": [],
+      "repository": "core",
+      "license": "Open Source",
+      "notes": "In-tree r8152 driver"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "14c3",
+      "device_id": "0616",
+      "name": "MT7922 RZ616 802.11ax PCIe Adapter",
+      "vendor_name": "MediaTek Inc.",
+      "packages": [
+        "linux-firmware"
+      ],
+      "dependencies": [],
+      "repository": "core",
+      "license": "Open Source",
+      "notes": "In-tree mt7921e driver"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "14c3",
+      "device_id": "7961",
+      "name": "MT7921 802.11ax PCIe Adapter",
+      "vendor_name": "MediaTek Inc.",
+      "packages": [
+        "linux-firmware"
+      ],
+      "dependencies": [],
+      "repository": "core",
+      "license": "Open Source",
+      "notes": "In-tree mt7921e driver"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "14c3",
+      "device_id": "7922",
+      "name": "MT7922 802.11ax PCIe Adapter",
+      "vendor_name": "MediaTek Inc.",
+      "packages": [
+        "linux-firmware"
+      ],
+      "dependencies": [],
+      "repository": "core",
+      "license": "Open Source",
+      "notes": "In-tree mt7921e driver"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "8086",
+      "device_id": "7af0",
+      "name": "Wi-Fi 6E AX211 160MHz",
+      "vendor_name": "Intel Corporation",
+      "packages": [
+        "linux-firmware"
+      ],
+      "dependencies": [],
+      "repository": "core",
+      "license": "Open Source",
+      "notes": "In-tree iwlwifi driver"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "8086",
+      "device_id": "7f0e",
+      "name": "Wi-Fi 6E AX411 160MHz",
+      "vendor_name": "Intel Corporation",
+      "packages": [
+        "linux-firmware"
+      ],
+      "dependencies": [],
+      "repository": "core",
+      "license": "Open Source",
+      "notes": "In-tree iwlwifi driver"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "8086",
+      "device_id": "272c",
+      "name": "Wi-Fi 7 BE202 160MHz",
+      "vendor_name": "Intel Corporation",
+      "packages": [
+        "linux-firmware"
+      ],
+      "dependencies": [],
+      "repository": "core",
+      "license": "Open Source",
+      "notes": "In-tree iwlwifi driver"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "8086",
+      "device_id": "a370",
+      "name": "Wireless-AC 9560",
+      "vendor_name": "Intel Corporation",
+      "packages": [
+        "linux-firmware"
+      ],
+      "dependencies": [],
+      "repository": "core",
+      "license": "Open Source",
+      "notes": "In-tree iwlwifi driver"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "8086",
+      "device_id": "2526",
+      "name": "Wireless-AC 9260",
+      "vendor_name": "Intel Corporation",
+      "packages": [
+        "linux-firmware"
+      ],
+      "dependencies": [],
+      "repository": "core",
+      "license": "Open Source",
+      "notes": "In-tree iwlwifi driver"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "8086",
+      "device_id": "24fd",
+      "name": "Dual Band Wireless-AC 8265",
+      "vendor_name": "Intel Corporation",
+      "packages": [
+        "linux-firmware"
+      ],
+      "dependencies": [],
+      "repository": "core",
+      "license": "Open Source",
+      "notes": "In-tree iwlwifi driver"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "8086",
+      "device_id": "095a",
+      "name": "Wireless 7265",
+      "vendor_name": "Intel Corporation",
+      "packages": [
+        "linux-firmware"
+      ],
+      "dependencies": [],
+      "repository": "core",
+      "license": "Open Source",
+      "notes": "In-tree iwlwifi driver"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "168c",
+      "device_id": "003e",
+      "name": "QCA6174 802.11ac Wireless Network Adapter",
+      "vendor_name": "Qualcomm Atheros",
+      "packages": [
+        "linux-firmware"
+      ],
+      "dependencies": [],
+      "repository": "core",
+      "license": "Open Source",
+      "notes": "In-tree ath10k driver"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "168c",
+      "device_id": "0042",
+      "name": "QCA9377 802.11ac Wireless Network Adapter",
+      "vendor_name": "Qualcomm Atheros",
+      "packages": [
+        "linux-firmware"
+      ],
+      "dependencies": [],
+      "repository": "core",
+      "license": "Open Source",
+      "notes": "In-tree ath10k driver"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "168c",
+      "device_id": "002b",
+      "name": "AR9285 Wireless Network Adapter",
+      "vendor_name": "Qualcomm Atheros",
+      "packages": [
+        "linux-firmware"
+      ],
+      "dependencies": [],
+      "repository": "core",
+      "license": "Open Source",
+      "notes": "In-tree ath9k driver"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "168c",
+      "device_id": "002e",
+      "name": "AR9287 Wireless Network Adapter",
+      "vendor_name": "Qualcomm Atheros",
+      "packages": [
+        "linux-firmware"
+      ],
+      "dependencies": [],
+      "repository": "core",
+      "license": "Open Source",
+      "notes": "In-tree ath9k driver"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "168c",
+      "device_id": "0032",
+      "name": "AR9485 Wireless Network Adapter",
+      "vendor_name": "Qualcomm Atheros",
+      "packages": [
+        "linux-firmware"
+      ],
+      "dependencies": [],
+      "repository": "core",
+      "license": "Open Source",
+      "notes": "In-tree ath9k driver"
+    },
+    {
+      "bus": "pci",
+      "vendor_id": "17cb",
+      "device_id": "1103",
+      "name": "WCN6855 Wi-Fi 6E Dual Band",
+      "vendor_name": "Qualcomm",
+      "packages": [
+        "linux-firmware"
+      ],
+      "dependencies": [],
+      "repository": "core",
+      "license": "Open Source",
+      "notes": "In-tree ath11k driver"
+    }
+  ]
+}

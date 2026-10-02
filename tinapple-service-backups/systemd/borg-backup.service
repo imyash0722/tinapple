@@ -1,0 +1,13 @@
+[Unit]
+Description=Borg Backup
+Documentation=https://borgbackup.readthedocs.io/
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+EnvironmentFile=/etc/borg/borg.env
+ExecStart=/usr/bin/borg create --compression lz4 --exclude-from /etc/borg/exclude.txt ${BORG_REPOSITORY}::{hostname}-{now:%Y-%m-%dT%H:%M:%S} ${BORG_PATHS}
+StandardOutput=journal
+StandardError=journal

@@ -1,0 +1,54 @@
+# Maintainer: tinapple Project <https://github.com/tinapple/tinapple-arch>
+pkgname=tinapple-base
+pkgver=0.0.1
+pkgrel=1
+pkgdesc="Core meta-package for tinapple homelab OS"
+arch=(any)
+url="https://github.com/tinapple/tinapple-arch"
+license=(MIT)
+depends=(
+  'base' 'linux-lts' 'linux-lts-headers' 'linux-firmware'
+  'systemd' 'systemd-sysvcompat' 'systemd-resolved' 'systemd-networkd'
+  'networkmanager' 'polkit' 'sudo' 'vim' 'zsh' 'git' 'curl' 'wget'
+  'tinapple-keyring' 'tinapple-mirrorlist'
+  'tinapple-hw' 'tinapple-boot-apply' 'tinapple-firstboot'
+  'tinapple-nginx'
+)
+optdepends=(
+  'tinapple-chadwm: minimal GUI for local admin'
+  'tinapple-media: media server stack'
+  'tinapple-downloads: download clients'
+  'tinapple-backups: backup tools'
+  'tinapple-infrastructure: monitoring stack'
+  'tinapple-databases: database servers'
+)
+install=tinapple-base.install
+source=(
+  pacman.conf
+  manifest.yaml
+  logind.conf.d/tinapple-lid.conf
+  systemd-preset/90-tinapple.preset
+  bin/tinapple-boot-apply
+)
+sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP')
+
+package() {
+  # Install pacman configuration
+  install -Dm644 pacman.conf "$pkgdir/etc/pacman.conf"
+
+  # Install default manifest
+  install -Dm644 manifest.yaml "$pkgdir/etc/tinapple/manifest.yaml"
+
+  # Install logind configuration (lid behavior)
+  install -Dm644 logind.conf.d/tinapple-lid.conf "$pkgdir/etc/systemd/logind.conf.d/tinapple-lid.conf"
+
+  # Install systemd preset
+  install -Dm644 systemd-preset/90-tinapple.preset "$pkgdir/usr/lib/systemd/system-preset/90-tinapple.preset"
+
+  # Install boot apply hook
+  install -Dm755 bin/tinapple-boot-apply "$pkgdir/usr/bin/tinapple-boot-apply"
+
+  # Create required directories
+  install -dm755 "$pkgdir/etc/tinapple"
+  install -dm755 "$pkgdir/var/lib/tinapple"
+}

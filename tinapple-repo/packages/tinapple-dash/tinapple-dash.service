@@ -1,0 +1,14 @@
+[Unit]
+Description=Tinapple Web Dashboard
+Documentation=https://github.com/tinapple/tinapple-arch
+After=network.target tinapple-nginx.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/tinapple-dash
+Restart=always
+RestartSec=5
+Environment=PORT=8088
+
+[Install]
+WantedBy=multi-user.target

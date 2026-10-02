@@ -1,0 +1,62 @@
+{
+  "$schema": "http://cyclonedx.org/schema/bom-1.5.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "serialNumber": "urn:uuid:c2a01024-29d5-40e2-90b4-27bc5ae7b678",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-09-27T19:56:43.298132+00:00",
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "name": "tinapple-sbom-generator",
+          "version": "0.0.1"
+        }
+      ]
+    },
+    "component": {
+      "type": "operating-system",
+      "name": "tinapple-maintenance",
+      "version": "0.0.1",
+      "description": "Tinapple homelab OS custom package repository"
+    }
+  },
+  "components": [
+    {
+      "type": "application",
+      "bom-ref": "pkg:alpm/tinapple/tinapple-maintenance@0.0.1-1?arch=any",
+      "name": "tinapple-maintenance",
+      "version": "0.0.1-1",
+      "description": "System health checks, update hooks, and rollback for tinapple",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:alpm/tinapple/tinapple-maintenance@0.0.1-1?arch=any",
+      "properties": [
+        {
+          "name": "arch",
+          "value": "any"
+        },
+        {
+          "name": "distribution",
+          "value": "tinapple"
+        },
+        {
+          "name": "dependencies",
+          "value": "snapper, pacman-contrib, smartmontools, openssl, limine"
+        }
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "pkg:alpm/tinapple/tinapple-maintenance@0.0.1-1?arch=any",
+      "depends": []
+    }
+  ]
+}

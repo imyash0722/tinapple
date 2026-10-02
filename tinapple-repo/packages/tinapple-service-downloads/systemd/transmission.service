@@ -1,0 +1,23 @@
+[Unit]
+Description=Transmission BitTorrent Daemon
+Documentation=https://transmissionbt.com/
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=exec
+User=transmission
+Group=transmission
+ExecStart=/usr/bin/transmission-daemon -f --config-dir /var/lib/transmission
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=read-only
+
+[Install]
+WantedBy=multi-user.target

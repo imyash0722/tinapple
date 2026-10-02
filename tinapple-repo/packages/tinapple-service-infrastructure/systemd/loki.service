@@ -1,0 +1,23 @@
+[Unit]
+Description=Grafana Loki Log Aggregation
+Documentation=https://grafana.com/docs/loki/
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=exec
+User=loki
+Group=loki
+ExecStart=/usr/bin/loki -config.file=/etc/loki/loki.yaml
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=read-only
+
+[Install]
+WantedBy=multi-user.target

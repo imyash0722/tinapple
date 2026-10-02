@@ -1,0 +1,23 @@
+[Unit]
+Description=Syncthing - Continuous File Synchronization (%i)
+Documentation=https://syncthing.net/
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=exec
+User=%i
+Group=%i
+ExecStart=/usr/bin/syncthing -no-browser -home=/var/lib/syncthing/%i
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=read-only
+
+[Install]
+WantedBy=multi-user.target

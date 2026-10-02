@@ -1,0 +1,62 @@
+{
+  "$schema": "http://cyclonedx.org/schema/bom-1.5.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "serialNumber": "urn:uuid:f88b4a70-f29e-45d3-87d0-033e2b5972d7",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-09-27T19:56:43.328502+00:00",
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "name": "tinapple-sbom-generator",
+          "version": "0.0.1"
+        }
+      ]
+    },
+    "component": {
+      "type": "operating-system",
+      "name": "tinapple-service-media",
+      "version": "0.0.1",
+      "description": "Tinapple homelab OS custom package repository"
+    }
+  },
+  "components": [
+    {
+      "type": "application",
+      "bom-ref": "pkg:alpm/tinapple/tinapple-service-media@0.0.1-1?arch=any",
+      "name": "tinapple-service-media",
+      "version": "0.0.1-1",
+      "description": "Media server stack for tinapple (jellyfin, *arr stack)",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:alpm/tinapple/tinapple-service-media@0.0.1-1?arch=any",
+      "properties": [
+        {
+          "name": "arch",
+          "value": "any"
+        },
+        {
+          "name": "distribution",
+          "value": "tinapple"
+        },
+        {
+          "name": "dependencies",
+          "value": "jellyfin, sonarr, radarr, prowlarr, bazarr"
+        }
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "pkg:alpm/tinapple/tinapple-service-media@0.0.1-1?arch=any",
+      "depends": []
+    }
+  ]
+}

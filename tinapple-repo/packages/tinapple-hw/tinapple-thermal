@@ -1,0 +1,169 @@
+#!/usr/bin/env go
+//go:build ignore
+// +build ignore
+
+package main
+
+import (
+	"encoding/json"
+	"fmt"
+	"os"
+)
+
+type ThermalConfig struct {
+	Vendor  string            `json:"vendor"`  // intel, amd, generic
+	Profile string            `json:"profile"` // balanced, performance, quiet, server
+	Params  map[string]string `json:"params"`
+}
+
+func main() {
+	configPath := "/etc/tinapple/thermal.json"
+
+	// Default config
+	defaultConfig := ThermalConfig{
+		Vendor:  detectVendor(),
+		Profile: "server",
+		Params:  map[string]string{},
+	}
+
+	var cfg ThermalConfig
+	if data, err := os.ReadFile(configPath); err == nil {
+		json.Unmarshal(data, &cfg)
+	} else {
+		cfg = defaultConfig
+		saveConfig(configPath, cfg)
+	}
+
+	if len(os.Args) < 2 {
+		printUsage()
+		os.Exit(1)
+	}
+
+	cmd := os.Args[1]
+	switch cmd {
+	case "detect":
+		fmt.Printf("Vendor: %s\n", detectVendor())
+	case "status":
+		fmt.Printf("Vendor: %s\n", cfg.Vendor)
+		fmt.Printf("Profile: %s\n", cfg.Profile)
+	case "set-profile":
+		if len(os.Args) < 3 {
+			fmt.Println("Usage: tinapple-thermal set-profile <balanced|performance|quiet|server>")
+			os.Exit(1)
+		}
+		profile := os.Args[2]
+		valid := map[string]bool{"balanced": true, "performance": true, "quiet": true, "server": true}
+		if !valid[profile] {
+			fmt.Println("Invalid profile")
+			os.Exit(1)
+		}
+		cfg.Profile = profile
+		applyProfile(cfg)
+		saveConfig(configPath, cfg)
+	case "daemon":
+		runDaemon(cfg)
+	default:
+		printUsage()
+		os.Exit(1)
+	}
+}
+
+func printUsage() {
+	fmt.Println(`Usage: tinapple-thermal {detect|status|set-profile|daemon}
+  detect       - Show detected CPU vendor
+  status       - Show current vendor and profile
+  set-profile  - Set thermal profile (balanced|performance|quiet|server)
+  daemon       - Run thermal daemon (applies profile at boot)`)
+}
+
+func detectVendor() string {
+	// Check Intel pstate
+	if _, err := os.Stat("/sys/devices/system/cpu/intel_pstate"); err == nil {
+		return "intel"
+	}
+	// Check AMD pstate
+	if _, err := os.Stat("/sys/devices/system/cpu/amd_pstate"); err == nil {
+		return "amd"
+	}
+	// Check for ryzenadj (mobile AMD)
+	if _, err := os.Stat("/sys/class/hwmon"); err == nil {
+		// Could check for specific AMD sensors
+	}
+	return "generic"
+}
+
+func applyProfile(cfg ThermalConfig) {
+	switch cfg.Vendor {
+	case "intel":
+		applyIntel(cfg.Profile)
+	case "amd":
+		applyAMD(cfg.Profile)
+	case "generic":
+		applyGeneric(cfg.Profile)
+	}
+	fmt.Printf("Applied thermal profile: %s (vendor: %s)\n", cfg.Profile, cfg.Vendor)
+}
+
+func applyIntel(profile string) {
+	// Intel: use thermald or intel_pstate directly
+	// thermald config would be in /etc/thermald/thermal-conf.xml
+	// For now, set intel_pstate params
+	noTurboPath := "/sys/devices/system/cpu/intel_pstate/no_turbo"
+	switch profile {
+	case "performance":
+		writeFile(noTurboPath, "0")
+	case "quiet", "balanced":
+		writeFile(noTurboPath, "1")
+	case "server":
+		writeFile(noTurboPath, "1") // disable turbo for sustained throughput
+	}
+}
+
+func applyAMD(profile string) {
+	// AMD: use amd_pstate_epp
+	eppPath := "/sys/devices/system/cpu/cpu0/cpufreq/energy_performance_preference"
+	if _, err := os.Stat(eppPath); err != nil {
+		return
+	}
+	var epp string
+	switch profile {
+	case "performance":
+		epp = "performance"
+	case "balanced":
+		epp = "balance_performance"
+	case "quiet":
+		epp = "power"
+	case "server":
+		epp = "balance_performance"
+	}
+	// Apply to all CPUs
+	for i := 0; ; i++ {
+		p := fmt.Sprintf("/sys/devices/system/cpu/cpu%d/cpufreq/energy_performance_preference", i)
+		if _, err := os.Stat(p); err != nil {
+			break
+		}
+		writeFile(p, epp)
+	}
+}
+
+func applyGeneric(profile string) {
+	// Generic ACPI thermal zones - limited control
+	// Could adjust trip points via /sys/class/thermal/thermal_zone*/trip_point_*_temp
+}
+
+func runDaemon(cfg ThermalConfig) {
+	// Apply profile at startup
+	applyProfile(cfg)
+	fmt.Println("Thermal daemon started, profile applied")
+	// In production, would monitor thermal zones and adjust dynamically
+	select {} // block forever
+}
+
+func saveConfig(path string, cfg ThermalConfig) {
+	data, _ := json.MarshalIndent(cfg, "", "  ")
+	os.WriteFile(path, data, 0644)
+}
+
+func writeFile(path, content string) {
+	os.WriteFile(path, []byte(content), 0644)
+}

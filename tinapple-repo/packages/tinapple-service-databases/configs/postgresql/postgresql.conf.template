@@ -1,0 +1,16 @@
+listen_addresses = 'localhost'
+port = 5432
+max_connections = 100
+shared_buffers = 256MB
+effective_cache_size = 1GB
+work_mem = 4MB
+maintenance_work_mem = 64MB
+wal_level = replica
+max_wal_senders = 3
+wal_keep_segments = 32
+hot_standby = on
+log_destination = 'stderr'
+logging_collector = on
+log_directory = 'log'
+log_filename = 'postgresql-%Y-%m-%d.log'
+log_min_duration_statement = 1000

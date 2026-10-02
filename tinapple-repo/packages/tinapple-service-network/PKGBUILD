@@ -1,0 +1,16 @@
+# Maintainer: tinapple Project <https://github.com/tinapple/tinapple-arch>
+pkgname=tinapple-service-network
+pkgver=0.0.1
+pkgrel=1
+pkgdesc="Network services for tinapple (tailscale, wireguard, pihole, unbound)"
+arch=(any)
+url="https://github.com/tinapple/tinapple-arch"
+license=(MIT)
+depends=('tailscale' 'wireguard-tools' 'pihole' 'unbound')
+install=tinapple-service-network.install
+source=()
+sha256sums=()
+
+package() {
+  install -dm755 "$pkgdir/usr/share/tinapple-service-network"
+}

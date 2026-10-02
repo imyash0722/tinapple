@@ -1,0 +1,24 @@
+[Unit]
+Description=Radarr - Movie Collection Manager
+Documentation=https://radarr.video/
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=exec
+User=radarr
+Group=radarr
+ExecStart=/usr/bin/radarr -nobrowser -data=/var/lib/radarr
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+# Security hardening
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=read-only
+
+[Install]
+WantedBy=multi-user.target

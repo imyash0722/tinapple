@@ -1,0 +1,60 @@
+post_install() {
+  # Enable core systemd services
+  systemctl enable systemd-resolved.service >/dev/null 2>&1 || true
+  systemctl enable systemd-networkd.service >/dev/null 2>&1 || true
+  systemctl enable NetworkManager.service >/dev/null 2>&1 || true
+
+  # Enable hardware abstraction services
+  systemctl enable tinapple-hw-detect.service >/dev/null 2>&1 || true
+  systemctl enable tinapple-power-profile-apply.service >/dev/null 2>&1 || true
+  systemctl enable tinapple-battery-daemon.service >/dev/null 2>&1 || true
+  systemctl enable tinapple-thermal-daemon.service >/dev/null 2>&1 || true
+
+  # Enable boot apply hook
+  systemctl enable tinapple-boot-apply.path >/dev/null 2>&1 || true
+
+  # Enable firstboot service
+  systemctl enable tinapple-firstboot.service >/dev/null 2>&1 || true
+
+  # Enable nginx (Caddy reverse proxy)
+  systemctl enable tinapple-nginx.service >/dev/null 2>&1 || true
+
+  # Enable fstrim timer
+  systemctl enable fstrim.timer >/dev/null 2>&1 || true
+
+  # Install bootloader (Limine if UEFI, GRUB if BIOS)
+  if [[ -d /sys/firmware/efi ]]; then
+    limine-install $(findmnt -no SOURCE /boot) 2>/dev/null || true
+  else
+    grub-install --target=i386-pc $(findmnt -no SOURCE /) 2>/dev/null || true
+  fi
+
+  # Configure snapper for Btrfs (if root is Btrfs)
+  if findmnt -no FSTYPE / | grep -q btrfs; then
+    snapper -c root create-config / 2>/dev/null || true
+    snapper -c home create-config /home 2>/dev/null || true
+  fi
+
+  # Reload systemd presets
+  systemctl daemon-reload >/dev/null 2>&1 || true
+  systemctl preset-all >/dev/null 2>&1 || true
+}
+
+post_upgrade() {
+  post_install
+}
+
+pre_remove() {
+  # Disable services on removal
+  systemctl disable systemd-resolved.service >/dev/null 2>&1 || true
+  systemctl disable systemd-networkd.service >/dev/null 2>&1 || true
+  systemctl disable NetworkManager.service >/dev/null 2>&1 || true
+  systemctl disable tinapple-hw-detect.service >/dev/null 2>&1 || true
+  systemctl disable tinapple-power-profile-apply.service >/dev/null 2>&1 || true
+  systemctl disable tinapple-battery-daemon.service >/dev/null 2>&1 || true
+  systemctl disable tinapple-thermal-daemon.service >/dev/null 2>&1 || true
+  systemctl disable tinapple-boot-apply.path >/dev/null 2>&1 || true
+  systemctl disable tinapple-firstboot.service >/dev/null 2>&1 || true
+  systemctl disable tinapple-nginx.service >/dev/null 2>&1 || true
+  systemctl disable fstrim.timer >/dev/null 2>&1 || true
+}

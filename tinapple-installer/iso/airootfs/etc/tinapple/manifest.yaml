@@ -1,0 +1,30 @@
+# Default manifest for live ISO
+version: 1
+hostname: tinapple-live
+kernel_profile: lts
+session_mode: interactive
+hardware_profile: auto
+cachyos_repos: true
+ease_of_use_mode: true
+filesystem: ext4
+bootloader: auto
+profiles:
+  - base
+services: {}
+hardware:
+  battery:
+    charge_limit: 80
+    charge_limit_min: 40
+    critical_action: hibernate
+    critical_threshold: 5
+  power_profile: balanced
+  thermal_profile: server
+  lid_policy: ignore
+  ups_monitor: true
+network:
+  interface: eth0
+  dhcp: true
+  static_fallback:
+    address: 192.168.1.100/24
+    gateway: 192.168.1.1
+    dns: [1.1.1.1, 9.9.9.9]

@@ -1,0 +1,20 @@
+# Maintainer: tinapple Project <https://github.com/tinapple/tinapple-arch>
+pkgname=tinapple-firstboot
+pkgver=0.0.1
+pkgrel=1
+pkgdesc="First-boot setup wizard for tinapple"
+arch=('any')
+url="https://github.com/tinapple/tinapple-arch"
+license=('MIT')
+depends=('tinapple-config-generator' 'tinapple-hw' 'tailscale')
+install=tinapple-firstboot.install
+source=(
+  'tinapple-setup'
+  'tinapple-firstboot.service'
+)
+sha256sums=('SKIP' 'SKIP')
+
+package() {
+  install -Dm755 "$srcdir/tinapple-setup" "$pkgdir/usr/bin/tinapple-setup"
+  install -Dm644 "$srcdir/tinapple-firstboot.service" "$pkgdir/usr/lib/systemd/system/tinapple-firstboot.service"
+}

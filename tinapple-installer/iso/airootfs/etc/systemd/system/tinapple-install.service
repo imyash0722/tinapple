@@ -1,0 +1,19 @@
+[Unit]
+Description=Tinapple Interactive Installer
+Documentation=https://github.com/tinapple/tinapple-arch
+After=systemd-user-sessions.service
+ConditionPathExists=/dev/tty1
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/tinapple-install
+StandardInput=tty
+StandardOutput=journal+console
+StandardError=journal+console
+TTYPath=/dev/tty1
+TTYReset=yes
+TTYVHangup=yes
+TTYVTDisallocate=yes
+
+[Install]
+WantedBy=graphical.target

@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.title}} - v{{.version}}</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍍</text></svg>">
+</head>
+<body>
+    <div id="app">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <div class="logo">🍍</div>
+                <h1>tinapple</h1>
+            </div>
+            <div class="header-center">
+                <div id="system-status" class="status-indicator">
+                    <span class="status-dot"></span>
+                    <span id="status-text">Loading...</span>
+                </div>
+            </div>
+            <div class="header-right">
+                <div id="session-mode" class="session-badge">headless</div>
+                <button id="session-toggle" class="btn btn-secondary" title="Toggle session mode">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                        <line x1="8" y1="21" x2="16" y2="21"></rect>
+                        <line x1="12" y1="17" x2="12" y2="21"></line>
+                    </svg>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main">
+            <!-- Sidebar Navigation -->
+            <aside class="sidebar">
+                <nav class="nav">
+                    <a href="#" class="nav-item active" data-section="dashboard">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="3" width="7" height="7"></rect>
+                            <rect x="3" y="14" width="7" height="7"></rect>
+                            <rect x="14" y="14" width="7" height="7"></rect>
+                        </svg>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="#" class="nav-item" data-section="services">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="2" y="2" width="20" height="20" rx="2"></rect>
+                            <line x1="6" y1="10" x2="6.01" y2="10"></line>
+                            <line x1="6" y1="14" x2="6.01" y2="14"></line>
+                        </svg>
+                        <span>Services</span>
+                    </a>
+                    <a href="#" class="nav-item" data-section="hardware">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="2" y="3" width="20" height="14" rx="2"></rect>
+                            <path d="M8 21h8"></path>
+                            <path d="M12 17v4"></path>
+                        </svg>
+                        <span>Hardware</span>
+                    </a>
+                    <a href="#" class="nav-item" data-section="network">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                        </svg>
+                        <span>Network</span>
+                    </a>
+                    <a href="#" class="nav-item" data-section="storage">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="22" y1="12" x2="2" y2="12"></line>
+                            <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path>
+                        </svg>
+                        <span>Storage</span>
+                    </a>
+                    <a href="#" class="nav-item" data-section="settings">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="3"></circle>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                        </svg>
+                        <span>Settings</span>
+                    </a>
+                </nav>
+            </aside>
+
+            <!-- Content Area -->
+            <section class="content" id="content">
+                <!-- Dashboard Section -->
+                <section id="section-dashboard" class="section active">
+                    <div class="section-header">
+                        <h2>Dashboard</h2>
+                        <div class="section-actions">
+                            <button class="btn btn-primary" id="refresh-btn">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="23 4 23 10 17 10"></polyline>
+                                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                                </svg>
+                                Refresh
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- System Overview Cards -->
+                    <div class="grid grid-4" id="system-cards">
+                        <div class="card">
+                            <div class="card-icon cpu">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="2" y="3" width="20" height="14" rx="2"></rect>
+                                    <path d="M8 21h8"></path>
+                                    <path d="M12 17v4"></path>
+                                </svg>
+                            </div>
+                            <div class="card-info">
+                                <span class="card-label">CPU Usage</span>
+                                <span class="card-value" id="cpu-usage">--%</span>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-icon memory">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="2" y="3" width="20" height="14" rx="2"></rect>
+                                    <path d="M8 21h8"></path>
+                                </svg>
+                            </div>
+                            <div class="card-info">
+                                <span class="card-label">Memory Usage</span>
+                                <span class="card-value" id="mem-usage">--%</span>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-icon disk">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="22" y1="12" x2="2" y2="12"></line>
+                                    <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path>
+                                </svg>
+                            </div>
+                            <div class="card-info">
+                                <span class="card-label">Disk Usage</span>
+                                <span class="card-value" id="disk-usage">--%</span>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-icon network">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                                </svg>
+                            </div>
+                            <div class="card-info">
+                                <span class="card-label">Network</span>
+                                <span class="card-value" id="net-speed">↑ -- ↓ --</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Charts Row -->
+                    <div class="grid grid-2">
+                        <div class="card chart-card">
+                            <h3>CPU Usage (24h)</h3>
+                            <canvas id="cpu-chart" width="400" height="200"></canvas>
+                        </div>
+                        <div class="card chart-card">
+                            <h3>Memory Usage (24h)</h3>
+                            <canvas id="mem-chart" width="400" height="200"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Service Status Summary -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Service Status</h3>
+                        </div>
+                        <div class="table-container">
+                            <table id="services-table">
+                                <thead>
+                                    <tr>
+                                        <th>Service</th>
+                                        <th>Status</th>
+                                        <th>Port</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="services-tbody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Services Section -->
+                <section id="section-services" class="section">
+                    <div class="section-header">
+                        <h2>Services</h2>
+                        <div class="section-actions">
+                            <input type="text" id="service-search" placeholder="Search services..." class="search-input">
+                        </div>
+                    </div>
+                    <div class="grid grid-3" id="services-grid"></div>
+                </section>
+
+                <!-- Hardware Section -->
+                <section id="section-hardware" class="section">
+                    <div class="section-header">
+                        <h2>Hardware</h2>
+                    </div>
+                    <div class="grid grid-2">
+                        <div class="card">
+                            <h3>Battery</h3>
+                            <div class="battery-display">
+                                <div class="battery-bar">
+                                    <div class="battery-fill" id="battery-fill" style="width: 80%"></div>
+                                </div>
+                                <div class="battery-info">
+                                    <span id="battery-percent">80%</span>
+                                    <span id="battery-status">Charging</span>
+                                </div>
+                                <div class="battery-controls">
+                                    <label>Charge Limit: <span id="charge-limit-value">80%</span></label>
+                                    <input type="range" id="charge-limit" min="50" max="100" value="80">
+                                    <button class="btn btn-primary" id="set-charge-limit">Apply</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <h3>Thermal</h3>
+                            <div class="thermal-display">
+                                <div class="temp-display" id="max-temp">--°C</div>
+                                <div class="thermal-profile">
+                                    <label>Profile: <select id="thermal-profile">
+                                        <option value="balanced">Balanced</option>
+                                        <option value="performance">Performance</option>
+                                        <option value="quiet">Quiet</option>
+                                        <option value="server" selected>Server</option>
+                                    </select></label>
+                                    <button class="btn btn-primary" id="set-thermal-profile">Apply</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <h3>Power Profile</h3>
+                            <div class="power-profile-display">
+                                <select id="power-profile">
+                                    <option value="balanced" selected>Balanced</option>
+                                    <option value="performance">Performance</option>
+                                    <option value="power-saver">Power Saver</option>
+                                    <option value="custom">Custom</option>
+                                </select>
+                                <button class="btn btn-primary" id="set-power-profile">Apply</button>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <h3>Hardware Info</h3>
+                            <dl id="hardware-info">
+                                <dt>Profile</dt><dd id="hw-profile">auto</dd>
+                                <dt>CPU</dt><dd id="hw-cpu">--</dd>
+                                <dt>GPU</dt><dd id="hw-gpu">--</dd>
+                                <dt>TPM2</dt><dd id="hw-tpm2">--</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Network Section -->
+                <section id="section-network" class="section">
+                    <div class="section-header">
+                        <h2>Network</h2>
+                    </div>
+                    <div class="grid grid-2">
+                        <div class="card">
+                            <h3>Interfaces</h3>
+                            <div id="network-interfaces"></div>
+                        </div>
+                        <div class="card">
+                            <h3>Firewall</h3>
+                            <div id="firewall-status"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Storage Section -->
+                <section id="section-storage" class="section">
+                    <div class="section-header">
+                        <h2>Storage</h2>
+                    </div>
+                    <div class="grid grid-2">
+                        <div class="card">
+                            <h3>Filesystems</h3>
+                            <div id="filesystems"></div>
+                        </div>
+                        <div class="card">
+                            <h3>Storage Pools</h3>
+                            <div id="storage-pools"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Settings Section -->
+                <section id="section-settings" class="section">
+                    <div class="section-header">
+                        <h2>Settings</h2>
+                    </div>
+                    <div class="grid grid-2">
+                        <div class="card">
+                            <h3>General</h3>
+                            <form id="general-settings">
+                                <div class="form-group">
+                                    <label>Hostname</label>
+                                    <input type="text" id="setting-hostname" value="tinapple-server">
+                                </div>
+                                <div class="form-group">
+                                    <label>Kernel Profile</label>
+                                    <select id="setting-kernel">
+                                        <option value="lts" selected>LTS (Recommended)</option>
+                                        <option value="hardened">Hardened</option>
+                                        <option value="current">Current</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Filesystem</label>
+                                    <select id="setting-fs">
+                                        <option value="ext4" selected>ext4</option>
+                                        <option value="xfs">XFS</option>
+                                        <option value="btrfs">Btrfs</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Bootloader</label>
+                                    <select id="setting-bootloader">
+                                        <option value="auto" selected>Auto</option>
+                                        <option value="grub">GRUB</option>
+                                        <option value="limine">Limine</option>
+                                    </select>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Save</button>
+                            </form>
+                        </div>
+                        <div class="card">
+                            <h3>CachyOS Repositories</h3>
+                            <div class="form-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="setting-cachyos" checked>
+                                    Enable CachyOS optimized repositories
+                                </label>
+                            </div>
+                            <div class="form-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="setting-ease" >
+                                    Ease of Use Mode
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </section>
+        </main>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>

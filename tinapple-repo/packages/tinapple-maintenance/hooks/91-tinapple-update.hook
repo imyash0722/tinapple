@@ -1,0 +1,9 @@
+[Trigger]
+Operation = Upgrade
+Type = Package
+Target = *
+
+[Action]
+Description = Post-update: regenerate configs, restart services, update bootloader
+When = PostTransaction
+Exec = /usr/bin/tinapple-update-hook post

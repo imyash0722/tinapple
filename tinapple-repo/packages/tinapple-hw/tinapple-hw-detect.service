@@ -1,0 +1,15 @@
+[Unit]
+Description=Tinapple Hardware Detection
+Documentation=https://github.com/tinapple/tinapple-arch
+After=systemd-modules-load.service
+Before=tinapple-battery-daemon.service tinapple-thermal-daemon.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/tinapple-hw-detect
+RemainAfterExit=yes
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

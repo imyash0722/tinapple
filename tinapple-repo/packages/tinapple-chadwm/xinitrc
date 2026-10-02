@@ -1,0 +1,32 @@
+#!/bin/sh
+# tinapple-chadwm xinitrc
+# Starts: chadwm → picom → polybar → dunst → sxhkd
+
+# Load Xresources
+[[ -f ~/.Xresources ]] && xrdb -merge ~/.Xresources
+
+# Set cursor
+xsetroot -cursor_name left_ptr
+
+# Disable screen saver and DPMS for server use
+xset s off
+xset -dpms
+xset s noblank
+
+# Keyboard repeat rate
+xset r rate 250 30
+
+# Start compositor
+picom --config /etc/tinapple/chadwm/picom.conf &
+
+# Start notification daemon
+dunst -config /etc/tinapple/chadwm/dunstrc &
+
+# Start hotkey daemon
+sxhkd -c /etc/tinapple/chadwm/sxhkdrc &
+
+# Start status bar
+polybar -c /etc/tinapple/chadwm/polybar/config.ini main &
+
+# Start window manager
+exec chadwm

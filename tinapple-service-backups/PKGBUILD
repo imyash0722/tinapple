@@ -1,0 +1,16 @@
+# Maintainer: tinapple Project <https://github.com/tinapple/tinapple-arch>
+pkgname=tinapple-service-backups
+pkgver=0.0.1
+pkgrel=1
+pkgdesc="Backup tools for tinapple (restic, borg, rclone, syncthing, snapraid)"
+arch=(any)
+url="https://github.com/tinapple/tinapple-arch"
+license=(MIT)
+depends=('restic' 'borg' 'rclone' 'syncthing' 'snapraid')
+install=tinapple-service-backups.install
+source=()
+sha256sums=()
+
+package() {
+  install -dm755 "$pkgdir/usr/share/tinapple-service-backups"
+}

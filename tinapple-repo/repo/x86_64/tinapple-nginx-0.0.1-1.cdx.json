@@ -1,0 +1,62 @@
+{
+  "$schema": "http://cyclonedx.org/schema/bom-1.5.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "serialNumber": "urn:uuid:60dd65eb-0529-41c8-9e16-5d5e287742a2",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-09-27T19:56:43.306630+00:00",
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "name": "tinapple-sbom-generator",
+          "version": "0.0.1"
+        }
+      ]
+    },
+    "component": {
+      "type": "operating-system",
+      "name": "tinapple-nginx",
+      "version": "0.0.1",
+      "description": "Tinapple homelab OS custom package repository"
+    }
+  },
+  "components": [
+    {
+      "type": "application",
+      "bom-ref": "pkg:alpm/tinapple/tinapple-nginx@0.0.1-1?arch=any",
+      "name": "tinapple-nginx",
+      "version": "0.0.1-1",
+      "description": "Caddy reverse proxy core module for tinapple",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:alpm/tinapple/tinapple-nginx@0.0.1-1?arch=any",
+      "properties": [
+        {
+          "name": "arch",
+          "value": "any"
+        },
+        {
+          "name": "distribution",
+          "value": "tinapple"
+        },
+        {
+          "name": "dependencies",
+          "value": "caddy, tinapple-config-generator"
+        }
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "pkg:alpm/tinapple/tinapple-nginx@0.0.1-1?arch=any",
+      "depends": []
+    }
+  ]
+}

@@ -1,0 +1,62 @@
+{
+  "$schema": "http://cyclonedx.org/schema/bom-1.5.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "serialNumber": "urn:uuid:dd487ec1-83d1-4c20-9606-18778c83d54e",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-09-27T19:56:43.317231+00:00",
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "name": "tinapple-sbom-generator",
+          "version": "0.0.1"
+        }
+      ]
+    },
+    "component": {
+      "type": "operating-system",
+      "name": "tinapple-service-databases",
+      "version": "0.0.1",
+      "description": "Tinapple homelab OS custom package repository"
+    }
+  },
+  "components": [
+    {
+      "type": "application",
+      "bom-ref": "pkg:alpm/tinapple/tinapple-service-databases@0.0.1-1?arch=any",
+      "name": "tinapple-service-databases",
+      "version": "0.0.1-1",
+      "description": "Database servers for tinapple (postgresql, mariadb, redis, mongodb, influxdb)",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:alpm/tinapple/tinapple-service-databases@0.0.1-1?arch=any",
+      "properties": [
+        {
+          "name": "arch",
+          "value": "any"
+        },
+        {
+          "name": "distribution",
+          "value": "tinapple"
+        },
+        {
+          "name": "dependencies",
+          "value": "postgresql, mariadb, redis, mongodb, influxdb"
+        }
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "pkg:alpm/tinapple/tinapple-service-databases@0.0.1-1?arch=any",
+      "depends": []
+    }
+  ]
+}

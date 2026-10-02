@@ -1,0 +1,24 @@
+[Unit]
+Description=Prowlarr - Indexer Manager/Proxy
+Documentation=https://prowlarr.com/
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=exec
+User=prowlarr
+Group=prowlarr
+ExecStart=/usr/bin/prowlarr -nobrowser -data=/var/lib/prowlarr
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+# Security hardening
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=read-only
+
+[Install]
+WantedBy=multi-user.target

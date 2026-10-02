@@ -1,0 +1,21 @@
+# Maintainer: tinapple Project <https://github.com/tinapple/tinapple-arch>
+pkgname=tinapple-keyring
+pkgver=20260928
+pkgrel=1
+pkgdesc="Tinapple release signing key for the [tinapple] pacman repository"
+arch=('any')
+url="https://github.com/tinapple/tinapple-arch"
+license=('MIT')
+install="$pkgname.install"
+source=(
+  'tinapple.gpg'
+  'tinapple-trusted'
+  'tinapple-revoked'
+)
+sha256sums=('SKIP' 'SKIP' 'SKIP')
+
+package() {
+  install -Dm644 "$srcdir/tinapple.gpg"     "$pkgdir/usr/share/pacman/keyrings/tinapple.gpg"
+  install -Dm644 "$srcdir/tinapple-trusted" "$pkgdir/usr/share/pacman/keyrings/tinapple-trusted"
+  install -Dm644 "$srcdir/tinapple-revoked" "$pkgdir/usr/share/pacman/keyrings/tinapple-revoked"
+}

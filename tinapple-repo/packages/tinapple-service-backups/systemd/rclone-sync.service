@@ -1,0 +1,13 @@
+[Unit]
+Description=Rclone Cloud Sync
+Documentation=https://rclone.org/
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+EnvironmentFile=/etc/rclone/rclone.env
+ExecStart=/usr/bin/rclone sync ${RCLONE_SOURCE} ${RCLONE_DEST} --config /etc/rclone/rclone.conf --progress
+StandardOutput=journal
+StandardError=journal

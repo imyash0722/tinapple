@@ -1,0 +1,24 @@
+[Unit]
+Description=Sonarr - PVR for Usenet and BitTorrent
+Documentation=https://sonarr.tv/
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=exec
+User=sonarr
+Group=sonarr
+ExecStart=/usr/bin/sonarr -nobrowser -data=/var/lib/sonarr
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+# Security hardening
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=read-only
+
+[Install]
+WantedBy=multi-user.target

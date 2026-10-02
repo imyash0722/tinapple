@@ -1,0 +1,10 @@
+[Unit]
+Description=Run Rclone sync every 6 hours
+
+[Timer]
+OnCalendar=*:0/6
+Persistent=true
+RandomizedDelaySec=30m
+
+[Install]
+WantedBy=timers.target

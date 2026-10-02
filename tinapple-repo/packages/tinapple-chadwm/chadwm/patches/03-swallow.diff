@@ -1,0 +1,33 @@
+Author: Rob Pilling <robpilling@gmail.com>
+Subject: [PATCH] swallow: terminal window swallow integration
+
+--- a/dwm.c
++++ b/dwm.c
+@@ -92,6 +92,8 @@ struct Client {
+ 	int isfixed, isfloating, isurgent, neverfocus, oldstate, isfullscreen;
++	int isterminal, noswallow;
++	pid_t pid;
++	Client *swallowing;
+ 	Client *next;
+ 	Client *snext;
+ 	Monitor *mon;
+ 	Window win;
+@@ -138,6 +140,8 @@ typedef struct {
+ 	unsigned int tags;
+ 	int iscentered;
+ 	int isfloating;
++	int isterminal;
++	int noswallow;
+ 	int monitor;
+ } Rule;
+ 
+@@ -204,6 +208,10 @@ static void setup(void);
+ static void seturgent(Client *c, int urg);
+ static void showhide(Client *c);
++static pid_t getparentprocess(pid_t p);
++static int isdescprocess(pid_t p, pid_t c);
++static Client *termforwin(const Client *c);
++static Client *swallowingclient(Window w);
+ static void sigchld(int unused);
+ static void spawn(const Arg *arg);
+ static void tag(const Arg *arg);

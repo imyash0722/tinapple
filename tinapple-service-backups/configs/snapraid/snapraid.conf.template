@@ -1,0 +1,5 @@
+parity /mnt/parity/snapraid.parity
+content /mnt/data1/snapraid.content
+content /mnt/data2/snapraid.content
+data /mnt/data1/
+data /mnt/data2/

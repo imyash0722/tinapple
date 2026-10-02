@@ -1,0 +1,8 @@
+enable systemd-networkd.service
+enable systemd-resolved.service
+enable NetworkManager.service
+enable pacman-init.service
+enable etc-pacman.d-gnupg.mount
+enable sshdgenkeys.service
+enable sshd.service
+disable systemd-firstboot.service

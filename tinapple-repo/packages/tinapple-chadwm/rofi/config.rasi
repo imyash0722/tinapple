@@ -1,0 +1,103 @@
+/**
+ * Tinapple Chadwm - Rofi Configuration
+ * Modes: Launcher + tinapple-dash actions + Power Menu
+ */
+
+configuration {
+    modi:                       "drun,run,window,tinapple-actions:/home/pineapple/.gemini/antigravity-cli/scratch/tinapple-chadwm/rofi/tinapple-actions.sh,powermenu:/home/pineapple/.gemini/antigravity-cli/scratch/tinapple-chadwm/rofi/powermenu.sh";
+    font:                       "JetBrainsMono Nerd Font 10";
+    show-icons:                 true;
+    icon-theme:                 "Papirus";
+    display-drun:               " Apps";
+    display-run:                " Run";
+    display-window:             " Windows";
+    display-tinapple-actions:   "󱗼 Tinapple Actions";
+    display-powermenu:          " Power Menu";
+    drun-display-format:        "{name}";
+    window-format:              "{w} · {c} · {t}";
+}
+
+* {
+    bg-col:         #1a1b26;
+    bg-col-light:   #24283b;
+    border-col:     #7aa2f7;
+    selected-col:   #24283b;
+    blue:           #7aa2f7;
+    fg-col:         #c0caf5;
+    fg-col2:        #f7768e;
+    grey:           #565f89;
+
+    width:          600;
+    background-color: @bg-col;
+    text-color:       @fg-col;
+    border-radius:    8px;
+}
+
+window {
+    height:           380px;
+    border:           2px;
+    border-color:     @border-col;
+    background-color: @bg-col;
+    padding:          15px;
+}
+
+mainbox {
+    background-color: @bg-col;
+    children:         [ inputbar, listview ];
+    spacing:          10px;
+}
+
+inputbar {
+    children:         [ prompt, entry ];
+    background-color: @bg-col-light;
+    border-radius:    6px;
+    padding:          8px 12px;
+}
+
+prompt {
+    background-color: transparent;
+    padding:          0px 8px 0px 0px;
+    text-color:       @blue;
+}
+
+entry {
+    background-color: transparent;
+    text-color:       @fg-col;
+    placeholder-color:@grey;
+    placeholder:      "Type to filter...";
+}
+
+listview {
+    border:           0px;
+    padding:          6px 0px;
+    margin:           10px 0px 0px 2px;
+    columns:          1;
+    lines:            7;
+    background-color: @bg-col;
+}
+
+element {
+    padding:          8px 12px;
+    background-color: @bg-col;
+    text-color:       @fg-col;
+    border-radius:    6px;
+}
+
+element-icon {
+    size:             24px;
+    background-color: transparent;
+    padding:          0 8px 0 0;
+}
+
+element-text {
+    background-color: transparent;
+    text-color:       inherit;
+    vertical-align:   0.5;
+}
+
+element selected {
+    background-color: @selected-col;
+    text-color:       @blue;
+    border:           1px;
+    border-color:     @blue;
+}

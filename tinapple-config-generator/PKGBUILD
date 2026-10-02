@@ -1,0 +1,23 @@
+# Maintainer: tinapple Project <https://github.com/tinapple/tinapple-arch>
+pkgname=tinapple-config-generator
+pkgver=0.0.1
+pkgrel=1
+pkgdesc="Configuration generator from manifest.yaml for tinapple"
+arch=('x86_64')
+url="https://github.com/tinapple/tinapple-arch"
+license=('MIT')
+depends=('glibc')
+makedepends=('go')
+source=()
+sha256sums=()
+
+build() {
+  cd "$startdir"
+  export CGO_ENABLED=0
+  go build -trimpath -ldflags="-s -w" -o tinapple-config-generator .
+}
+
+package() {
+  cd "$startdir"
+  install -Dm755 tinapple-config-generator "$pkgdir/usr/bin/tinapple-config-generator"
+}

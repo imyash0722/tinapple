@@ -1,0 +1,13 @@
+[Unit]
+Description=Restic Backup
+Documentation=https://restic.net/
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+EnvironmentFile=/etc/restic/restic.env
+ExecStart=/usr/bin/restic -r ${RESTIC_REPOSITORY} backup ${RESTIC_PATHS} --exclude-file=${RESTIC_EXCLUDE_FILE}
+StandardOutput=journal
+StandardError=journal

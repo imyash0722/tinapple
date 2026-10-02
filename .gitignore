@@ -1,0 +1,41 @@
+# Byte-compiled / binary files
+*.iso
+*.iso.sig
+*.iso.sha256
+*.qcow2
+*.img
+*.tar.gz
+*.tar.zst
+*.pkg.tar.zst
+
+# Compiled binaries and build output
+bin/
+**/bin/
+tinapple-dash/tinapple-dash
+tinapple-installer/tui/tinapple-installer
+tinapple-repo/packages/tinapple-dash/tinapple-dash
+
+# Build & ISO output directories
+out/
+tinapple-installer/iso/out/
+tinapple-installer/bin/
+tinapple-installer/iso/work/
+
+# Other repo sources (reference codebases)
+ryoku-src/
+tinarchy-src/
+
+# Agent / Scratch / Internal planning
+.serena/
+.gemini/
+gen_plan/
+tasks/
+GEMINI_*.md
+PROMPT.md
+*.log
+
+# OS and Editor artifacts
+.DS_Store
+*.swp
+*.swo
+*~

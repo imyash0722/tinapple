@@ -1,0 +1,17 @@
+post_install() {
+  systemctl enable prometheus.service >/dev/null 2>&1 || true
+  systemctl enable grafana.service >/dev/null 2>&1 || true
+  systemctl enable loki.service >/dev/null 2>&1 || true
+  systemctl enable tempo.service >/dev/null 2>&1 || true
+  systemctl enable alertmanager.service >/dev/null 2>&1 || true
+}
+
+post_upgrade() { post_install; }
+
+pre_remove() {
+  systemctl disable prometheus.service >/dev/null 2>&1 || true
+  systemctl disable grafana.service >/dev/null 2>&1 || true
+  systemctl disable loki.service >/dev/null 2>&1 || true
+  systemctl disable tempo.service >/dev/null 2>&1 || true
+  systemctl disable alertmanager.service >/dev/null 2>&1 || true
+}

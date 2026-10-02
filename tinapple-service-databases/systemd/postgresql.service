@@ -1,0 +1,24 @@
+[Unit]
+Description=PostgreSQL Database Server
+Documentation=https://www.postgresql.org/docs/
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=notify
+User=postgres
+Group=postgres
+ExecStart=/usr/bin/postgres -D /var/lib/postgres/data
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=read-only
+
+[Install]
+WantedBy=multi-user.target

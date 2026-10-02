@@ -1,0 +1,28 @@
+[Unit]
+Description=Grafana Visualization Server
+Documentation=https://grafana.com/docs/
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=notify
+User=grafana
+Group=grafana
+ExecStart=/usr/bin/grafana-server \
+  --config=/etc/grafana/grafana.ini \
+  --homepath=/usr/share/grafana \
+  cfg:default.paths.data=/var/lib/grafana \
+  cfg:default.paths.logs=/var/log/grafana \
+  cfg:default.paths.plugins=/var/lib/grafana/plugins
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=read-only
+
+[Install]
+WantedBy=multi-user.target

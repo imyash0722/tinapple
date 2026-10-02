@@ -1,0 +1,112 @@
+# Base system
+base
+linux-lts
+linux-lts-headers
+linux-firmware
+base-devel
+
+# Filesystems & Partitioning
+btrfs-progs
+dosfstools
+e2fsprogs
+xfsprogs
+f2fs-tools
+ntfs-3g
+gptfdisk
+parted
+arch-install-scripts
+
+# Encryption
+cryptsetup
+lvm2
+
+# Network
+networkmanager
+network-manager-applet
+wireguard-tools
+tailscale
+openssh
+sudo
+iptables
+
+# Bootloaders
+grub
+efibootmgr
+limine
+syslinux
+
+# Initramfs
+mkinitcpio
+mkinitcpio-archiso
+dracut
+
+# Snapshots
+snapper
+grub-btrfs
+
+# Hardware
+amd-ucode
+intel-ucode
+sof-firmware
+nvidia-dkms
+nvidia-utils
+broadcom-wl-dkms
+
+# Graphics
+mesa
+vulkan-radeon
+vulkan-intel
+xf86-video-amdgpu
+xf86-video-intel
+
+# Audio
+pipewire
+pipewire-pulse
+pipewire-alsa
+pipewire-jack
+wireplumber
+
+# Utils
+vim
+zsh
+git
+curl
+wget
+rsync
+reflector
+pacman-contrib
+man-db
+man-pages
+htop
+btop
+ncdu
+tree
+unzip
+zip
+7zip
+tar
+gzip
+bzip2
+xz
+zstd
+
+# Installer tools
+tinapple-config-generator
+tinapple-hw
+tinapple-firstboot
+tinapple-maintenance
+tinapple-keyring
+tinapple-mirrorlist
+
+# CachyOS keyring & mirrorlists
+cachyos-keyring
+cachyos-mirrorlist
+cachyos-v3-mirrorlist
+cachyos-v4-mirrorlist
+
+# CachyOS kernel
+linux-cachyos
+linux-cachyos-headers
+
+# Syslinux for BIOS boot
+memtest86+

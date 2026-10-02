@@ -1,0 +1,8 @@
+#
+# Tinapple repository mirrorlist
+# Generated for tinapple OS
+#
+
+Server = https://repo.tinapple.org/$arch
+Server = https://tinapple.github.io/tinapple-repo/$arch
+Server = https://packages.tinapple.org/$arch

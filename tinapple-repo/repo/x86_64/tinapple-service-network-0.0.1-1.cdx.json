@@ -1,0 +1,62 @@
+{
+  "$schema": "http://cyclonedx.org/schema/bom-1.5.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "serialNumber": "urn:uuid:a0608664-2724-4943-b619-c0190fea07db",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-09-27T19:56:43.332216+00:00",
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "name": "tinapple-sbom-generator",
+          "version": "0.0.1"
+        }
+      ]
+    },
+    "component": {
+      "type": "operating-system",
+      "name": "tinapple-service-network",
+      "version": "0.0.1",
+      "description": "Tinapple homelab OS custom package repository"
+    }
+  },
+  "components": [
+    {
+      "type": "application",
+      "bom-ref": "pkg:alpm/tinapple/tinapple-service-network@0.0.1-1?arch=any",
+      "name": "tinapple-service-network",
+      "version": "0.0.1-1",
+      "description": "Network services for tinapple (tailscale, wireguard, pihole, unbound)",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:alpm/tinapple/tinapple-service-network@0.0.1-1?arch=any",
+      "properties": [
+        {
+          "name": "arch",
+          "value": "any"
+        },
+        {
+          "name": "distribution",
+          "value": "tinapple"
+        },
+        {
+          "name": "dependencies",
+          "value": "tailscale, wireguard-tools, pihole, unbound"
+        }
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "pkg:alpm/tinapple/tinapple-service-network@0.0.1-1?arch=any",
+      "depends": []
+    }
+  ]
+}

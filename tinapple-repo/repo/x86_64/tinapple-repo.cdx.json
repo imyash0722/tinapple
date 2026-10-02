@@ -1,0 +1,549 @@
+{
+  "$schema": "http://cyclonedx.org/schema/bom-1.5.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "serialNumber": "urn:uuid:f450b29c-2a24-4dff-abc5-3b50e51d0027",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-09-27T19:56:43.332858+00:00",
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "name": "tinapple-sbom-generator",
+          "version": "0.0.1"
+        }
+      ]
+    },
+    "component": {
+      "type": "operating-system",
+      "name": "tinapple-repository",
+      "version": "0.0.1",
+      "description": "Tinapple homelab OS custom package repository"
+    }
+  },
+  "components": [
+    {
+      "type": "application",
+      "bom-ref": "pkg:alpm/tinapple/tinapple-base@0.0.1-1?arch=any",
+      "name": "tinapple-base",
+      "version": "0.0.1-1",
+      "description": "Core meta-package for tinapple homelab OS",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:alpm/tinapple/tinapple-base@0.0.1-1?arch=any",
+      "properties": [
+        {
+          "name": "arch",
+          "value": "any"
+        },
+        {
+          "name": "distribution",
+          "value": "tinapple"
+        },
+        {
+          "name": "dependencies",
+          "value": "base, linux-lts, linux-lts-headers, linux-firmware, systemd, systemd-sysvcompat, systemd-resolved, systemd-networkd, networkmanager, polkit, sudo, vim, zsh, git, curl, wget, tinapple-keyring, tinapple-mirrorlist, tinapple-hw, tinapple-firstboot, tinapple-nginx"
+        }
+      ]
+    },
+    {
+      "type": "application",
+      "bom-ref": "pkg:alpm/tinapple/tinapple-chadwm@0.0.1-1?arch=x86_64",
+      "name": "tinapple-chadwm",
+      "version": "0.0.1-1",
+      "description": "Chadwm window manager, rices, preflight check, and session toggle for tinapple",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:alpm/tinapple/tinapple-chadwm@0.0.1-1?arch=x86_64",
+      "properties": [
+        {
+          "name": "arch",
+          "value": "x86_64"
+        },
+        {
+          "name": "distribution",
+          "value": "tinapple"
+        },
+        {
+          "name": "dependencies",
+          "value": "xorg-server, xorg-xinit, picom, polybar, rofi, sxhkd, dunst"
+        }
+      ]
+    },
+    {
+      "type": "application",
+      "bom-ref": "pkg:alpm/tinapple/tinapple-config-generator@0.0.1-1?arch=x86_64",
+      "name": "tinapple-config-generator",
+      "version": "0.0.1-1",
+      "description": "Configuration generator from manifest.yaml for tinapple",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:alpm/tinapple/tinapple-config-generator@0.0.1-1?arch=x86_64",
+      "properties": [
+        {
+          "name": "arch",
+          "value": "x86_64"
+        },
+        {
+          "name": "distribution",
+          "value": "tinapple"
+        },
+        {
+          "name": "dependencies",
+          "value": "glibc"
+        }
+      ]
+    },
+    {
+      "type": "application",
+      "bom-ref": "pkg:alpm/tinapple/tinapple-dash@0.0.1-1?arch=x86_64",
+      "name": "tinapple-dash",
+      "version": "0.0.1-1",
+      "description": "Web dashboard and telemetry monitor for tinapple",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:alpm/tinapple/tinapple-dash@0.0.1-1?arch=x86_64",
+      "properties": [
+        {
+          "name": "arch",
+          "value": "x86_64"
+        },
+        {
+          "name": "distribution",
+          "value": "tinapple"
+        },
+        {
+          "name": "dependencies",
+          "value": "glibc"
+        }
+      ]
+    },
+    {
+      "type": "application",
+      "bom-ref": "pkg:alpm/tinapple/tinapple-firstboot@0.0.1-1?arch=any",
+      "name": "tinapple-firstboot",
+      "version": "0.0.1-1",
+      "description": "First-boot setup wizard for tinapple",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:alpm/tinapple/tinapple-firstboot@0.0.1-1?arch=any",
+      "properties": [
+        {
+          "name": "arch",
+          "value": "any"
+        },
+        {
+          "name": "distribution",
+          "value": "tinapple"
+        },
+        {
+          "name": "dependencies",
+          "value": "tinapple-config-generator, tinapple-hw, tailscale"
+        }
+      ]
+    },
+    {
+      "type": "application",
+      "bom-ref": "pkg:alpm/tinapple/tinapple-hw@0.0.1-1?arch=x86_64",
+      "name": "tinapple-hw",
+      "version": "0.0.1-1",
+      "description": "Hardware detection, power management, thermal and UPS daemons for tinapple",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:alpm/tinapple/tinapple-hw@0.0.1-1?arch=x86_64",
+      "properties": [
+        {
+          "name": "arch",
+          "value": "x86_64"
+        },
+        {
+          "name": "distribution",
+          "value": "tinapple"
+        },
+        {
+          "name": "dependencies",
+          "value": "bash, systemd, pciutils, usbutils"
+        }
+      ]
+    },
+    {
+      "type": "application",
+      "bom-ref": "pkg:alpm/tinapple/tinapple-keyring@20260928-1?arch=any",
+      "name": "tinapple-keyring",
+      "version": "20260928-1",
+      "description": "Tinapple release signing key for the [tinapple] pacman repository",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:alpm/tinapple/tinapple-keyring@20260928-1?arch=any",
+      "properties": [
+        {
+          "name": "arch",
+          "value": "any"
+        },
+        {
+          "name": "distribution",
+          "value": "tinapple"
+        }
+      ]
+    },
+    {
+      "type": "application",
+      "bom-ref": "pkg:alpm/tinapple/tinapple-maintenance@0.0.1-1?arch=any",
+      "name": "tinapple-maintenance",
+      "version": "0.0.1-1",
+      "description": "System health checks, update hooks, and rollback for tinapple",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:alpm/tinapple/tinapple-maintenance@0.0.1-1?arch=any",
+      "properties": [
+        {
+          "name": "arch",
+          "value": "any"
+        },
+        {
+          "name": "distribution",
+          "value": "tinapple"
+        },
+        {
+          "name": "dependencies",
+          "value": "snapper, pacman-contrib, smartmontools, openssl, limine"
+        }
+      ]
+    },
+    {
+      "type": "application",
+      "bom-ref": "pkg:alpm/tinapple/tinapple-mirrorlist@20260928-1?arch=any",
+      "name": "tinapple-mirrorlist",
+      "version": "20260928-1",
+      "description": "Tinapple repository mirror list for pacman",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:alpm/tinapple/tinapple-mirrorlist@20260928-1?arch=any",
+      "properties": [
+        {
+          "name": "arch",
+          "value": "any"
+        },
+        {
+          "name": "distribution",
+          "value": "tinapple"
+        }
+      ]
+    },
+    {
+      "type": "application",
+      "bom-ref": "pkg:alpm/tinapple/tinapple-nginx@0.0.1-1?arch=any",
+      "name": "tinapple-nginx",
+      "version": "0.0.1-1",
+      "description": "Caddy reverse proxy core module for tinapple",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:alpm/tinapple/tinapple-nginx@0.0.1-1?arch=any",
+      "properties": [
+        {
+          "name": "arch",
+          "value": "any"
+        },
+        {
+          "name": "distribution",
+          "value": "tinapple"
+        },
+        {
+          "name": "dependencies",
+          "value": "caddy, tinapple-config-generator"
+        }
+      ]
+    },
+    {
+      "type": "application",
+      "bom-ref": "pkg:alpm/tinapple/tinapple-service-backups@0.0.1-1?arch=any",
+      "name": "tinapple-service-backups",
+      "version": "0.0.1-1",
+      "description": "Backup tools for tinapple (restic, borg, rclone, syncthing, snapraid)",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:alpm/tinapple/tinapple-service-backups@0.0.1-1?arch=any",
+      "properties": [
+        {
+          "name": "arch",
+          "value": "any"
+        },
+        {
+          "name": "distribution",
+          "value": "tinapple"
+        },
+        {
+          "name": "dependencies",
+          "value": "restic, borg, rclone, syncthing, snapraid"
+        }
+      ]
+    },
+    {
+      "type": "application",
+      "bom-ref": "pkg:alpm/tinapple/tinapple-service-databases@0.0.1-1?arch=any",
+      "name": "tinapple-service-databases",
+      "version": "0.0.1-1",
+      "description": "Database servers for tinapple (postgresql, mariadb, redis, mongodb, influxdb)",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:alpm/tinapple/tinapple-service-databases@0.0.1-1?arch=any",
+      "properties": [
+        {
+          "name": "arch",
+          "value": "any"
+        },
+        {
+          "name": "distribution",
+          "value": "tinapple"
+        },
+        {
+          "name": "dependencies",
+          "value": "postgresql, mariadb, redis, mongodb, influxdb"
+        }
+      ]
+    },
+    {
+      "type": "application",
+      "bom-ref": "pkg:alpm/tinapple/tinapple-service-downloads@0.0.1-1?arch=any",
+      "name": "tinapple-service-downloads",
+      "version": "0.0.1-1",
+      "description": "Download clients for tinapple (qbittorrent, transmission, jdownloader2, flaresolverr)",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:alpm/tinapple/tinapple-service-downloads@0.0.1-1?arch=any",
+      "properties": [
+        {
+          "name": "arch",
+          "value": "any"
+        },
+        {
+          "name": "distribution",
+          "value": "tinapple"
+        },
+        {
+          "name": "dependencies",
+          "value": "qbittorrent-nox, transmission-cli, jdownloader2, flaresolverr"
+        }
+      ]
+    },
+    {
+      "type": "application",
+      "bom-ref": "pkg:alpm/tinapple/tinapple-service-infrastructure@0.0.1-1?arch=any",
+      "name": "tinapple-service-infrastructure",
+      "version": "0.0.1-1",
+      "description": "Observability stack for tinapple (prometheus, grafana, loki, tempo, alertmanager)",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:alpm/tinapple/tinapple-service-infrastructure@0.0.1-1?arch=any",
+      "properties": [
+        {
+          "name": "arch",
+          "value": "any"
+        },
+        {
+          "name": "distribution",
+          "value": "tinapple"
+        },
+        {
+          "name": "dependencies",
+          "value": "prometheus, grafana, loki, tempo, alertmanager"
+        }
+      ]
+    },
+    {
+      "type": "application",
+      "bom-ref": "pkg:alpm/tinapple/tinapple-service-media@0.0.1-1?arch=any",
+      "name": "tinapple-service-media",
+      "version": "0.0.1-1",
+      "description": "Media server stack for tinapple (jellyfin, *arr stack)",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:alpm/tinapple/tinapple-service-media@0.0.1-1?arch=any",
+      "properties": [
+        {
+          "name": "arch",
+          "value": "any"
+        },
+        {
+          "name": "distribution",
+          "value": "tinapple"
+        },
+        {
+          "name": "dependencies",
+          "value": "jellyfin, sonarr, radarr, prowlarr, bazarr"
+        }
+      ]
+    },
+    {
+      "type": "application",
+      "bom-ref": "pkg:alpm/tinapple/tinapple-service-network@0.0.1-1?arch=any",
+      "name": "tinapple-service-network",
+      "version": "0.0.1-1",
+      "description": "Network services for tinapple (tailscale, wireguard, pihole, unbound)",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:alpm/tinapple/tinapple-service-network@0.0.1-1?arch=any",
+      "properties": [
+        {
+          "name": "arch",
+          "value": "any"
+        },
+        {
+          "name": "distribution",
+          "value": "tinapple"
+        },
+        {
+          "name": "dependencies",
+          "value": "tailscale, wireguard-tools, pihole, unbound"
+        }
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "pkg:alpm/tinapple/tinapple-base@0.0.1-1?arch=any",
+      "depends": []
+    },
+    {
+      "ref": "pkg:alpm/tinapple/tinapple-chadwm@0.0.1-1?arch=x86_64",
+      "depends": []
+    },
+    {
+      "ref": "pkg:alpm/tinapple/tinapple-config-generator@0.0.1-1?arch=x86_64",
+      "depends": []
+    },
+    {
+      "ref": "pkg:alpm/tinapple/tinapple-dash@0.0.1-1?arch=x86_64",
+      "depends": []
+    },
+    {
+      "ref": "pkg:alpm/tinapple/tinapple-firstboot@0.0.1-1?arch=any",
+      "depends": []
+    },
+    {
+      "ref": "pkg:alpm/tinapple/tinapple-hw@0.0.1-1?arch=x86_64",
+      "depends": []
+    },
+    {
+      "ref": "pkg:alpm/tinapple/tinapple-keyring@20260928-1?arch=any",
+      "depends": []
+    },
+    {
+      "ref": "pkg:alpm/tinapple/tinapple-maintenance@0.0.1-1?arch=any",
+      "depends": []
+    },
+    {
+      "ref": "pkg:alpm/tinapple/tinapple-mirrorlist@20260928-1?arch=any",
+      "depends": []
+    },
+    {
+      "ref": "pkg:alpm/tinapple/tinapple-nginx@0.0.1-1?arch=any",
+      "depends": []
+    },
+    {
+      "ref": "pkg:alpm/tinapple/tinapple-service-backups@0.0.1-1?arch=any",
+      "depends": []
+    },
+    {
+      "ref": "pkg:alpm/tinapple/tinapple-service-databases@0.0.1-1?arch=any",
+      "depends": []
+    },
+    {
+      "ref": "pkg:alpm/tinapple/tinapple-service-downloads@0.0.1-1?arch=any",
+      "depends": []
+    },
+    {
+      "ref": "pkg:alpm/tinapple/tinapple-service-infrastructure@0.0.1-1?arch=any",
+      "depends": []
+    },
+    {
+      "ref": "pkg:alpm/tinapple/tinapple-service-media@0.0.1-1?arch=any",
+      "depends": []
+    },
+    {
+      "ref": "pkg:alpm/tinapple/tinapple-service-network@0.0.1-1?arch=any",
+      "depends": []
+    }
+  ]
+}

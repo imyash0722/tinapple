@@ -1,0 +1,62 @@
+{
+  "$schema": "http://cyclonedx.org/schema/bom-1.5.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "serialNumber": "urn:uuid:243aed9e-a308-49ea-b961-9916b8427898",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-09-27T19:56:43.276245+00:00",
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "name": "tinapple-sbom-generator",
+          "version": "0.0.1"
+        }
+      ]
+    },
+    "component": {
+      "type": "operating-system",
+      "name": "tinapple-config-generator",
+      "version": "0.0.1",
+      "description": "Tinapple homelab OS custom package repository"
+    }
+  },
+  "components": [
+    {
+      "type": "application",
+      "bom-ref": "pkg:alpm/tinapple/tinapple-config-generator@0.0.1-1?arch=x86_64",
+      "name": "tinapple-config-generator",
+      "version": "0.0.1-1",
+      "description": "Configuration generator from manifest.yaml for tinapple",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:alpm/tinapple/tinapple-config-generator@0.0.1-1?arch=x86_64",
+      "properties": [
+        {
+          "name": "arch",
+          "value": "x86_64"
+        },
+        {
+          "name": "distribution",
+          "value": "tinapple"
+        },
+        {
+          "name": "dependencies",
+          "value": "glibc"
+        }
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "pkg:alpm/tinapple/tinapple-config-generator@0.0.1-1?arch=x86_64",
+      "depends": []
+    }
+  ]
+}

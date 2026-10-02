@@ -1,0 +1,17 @@
+# Maintainer: tinapple Project <https://github.com/tinapple/tinapple-arch>
+pkgname=tinapple-nginx
+pkgver=0.0.1
+pkgrel=1
+pkgdesc="Caddy reverse proxy core module for tinapple"
+arch=(any)
+url="https://github.com/tinapple/tinapple-arch"
+license=(MIT)
+depends=('caddy' 'tinapple-config-generator')
+install=tinapple-nginx.install
+source=(tinapple-nginx.service Caddyfile.template)
+sha256sums=('SKIP' 'SKIP')
+
+package() {
+  install -Dm644 tinapple-nginx.service "$pkgdir/usr/lib/systemd/system/tinapple-nginx.service"
+  install -Dm644 Caddyfile.template "$pkgdir/etc/tinapple/Caddyfile.template"
+}

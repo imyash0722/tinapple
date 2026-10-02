@@ -1,0 +1,15 @@
+[Unit]
+Description=Tinapple Proprietary Driver Detection
+Documentation=https://github.com/tinapple/tinapple-arch
+After=tinapple-hw-detect.service
+Requires=tinapple-hw-detect.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/tinapple-driver-detect
+RemainAfterExit=yes
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

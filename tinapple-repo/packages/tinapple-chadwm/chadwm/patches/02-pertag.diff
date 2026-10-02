@@ -1,0 +1,45 @@
+Author: Jan Christoph Ebersbach <jceb@e-jc.de>
+Subject: [PATCH] pertag: per-tag configuration preservation
+
+--- a/dwm.c
++++ b/dwm.c
+@@ -111,6 +111,7 @@ typedef struct {
+ 	void (*arrange)(Monitor *);
+ } Layout;
+ 
++typedef struct Pertag Pertag;
+ struct Monitor {
+ 	char ltsymbol[16];
+ 	float mfact;
+@@ -130,6 +131,7 @@ struct Monitor {
+ 	Monitor *next;
+ 	Window barwin;
+ 	const Layout *lt[2];
++	Pertag *pertag;
+ };
+ 
++struct Pertag {
++	unsigned int curtag, prevtag;
++	int nmasters[LENGTH(tags) + 1];
++	float mfacts[LENGTH(tags) + 1];
++	unsigned int sellts[LENGTH(tags) + 1];
++	const Layout *ltidxs[LENGTH(tags) + 1][2];
++	int showbars[LENGTH(tags) + 1];
++};
++
+@@ -632,6 +645,15 @@ createmon(void)
+ 	m->lt[0] = &layouts[0];
+ 	m->lt[1] = &layouts[1 % LENGTH(layouts)];
+ 	strncpy(m->ltsymbol, layouts[0].symbol, sizeof m->ltsymbol);
++	m->pertag = ecalloc(1, sizeof(Pertag));
++	m->pertag->curtag = m->pertag->prevtag = 1;
++	for (i = 0; i <= LENGTH(tags); i++) {
++		m->pertag->nmasters[i] = m->nmaster;
++		m->pertag->mfacts[i] = m->mfact;
++		m->pertag->sellts[i] = m->sellt;
++		m->pertag->ltidxs[i][0] = m->lt[0];
++		m->pertag->ltidxs[i][1] = m->lt[1];
++		m->pertag->showbars[i] = m->showbar;
++	}
+ 	return m;
+ }

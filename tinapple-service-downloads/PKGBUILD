@@ -1,0 +1,16 @@
+# Maintainer: tinapple Project <https://github.com/tinapple/tinapple-arch>
+pkgname=tinapple-service-downloads
+pkgver=0.0.1
+pkgrel=1
+pkgdesc="Download clients for tinapple (qbittorrent, transmission, jdownloader2, flaresolverr)"
+arch=(any)
+url="https://github.com/tinapple/tinapple-arch"
+license=(MIT)
+depends=('qbittorrent-nox' 'transmission-cli' 'jdownloader2' 'flaresolverr')
+install=tinapple-service-downloads.install
+source=()
+sha256sums=()
+
+package() {
+  install -dm755 "$pkgdir/usr/share/tinapple-service-downloads"
+}

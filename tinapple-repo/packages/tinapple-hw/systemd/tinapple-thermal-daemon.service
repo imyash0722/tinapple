@@ -1,0 +1,16 @@
+[Unit]
+Description=Tinapple Thermal Management Daemon
+Documentation=https://github.com/tinapple/tinapple-arch
+After=tinapple-hw-detect.service
+Requires=tinapple-hw-detect.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/tinapple-thermal daemon
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,62 @@
+{
+  "$schema": "http://cyclonedx.org/schema/bom-1.5.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "serialNumber": "urn:uuid:9485fd45-ca0a-4fcf-a315-47439b7dd630",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-09-27T19:56:43.268836+00:00",
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "name": "tinapple-sbom-generator",
+          "version": "0.0.1"
+        }
+      ]
+    },
+    "component": {
+      "type": "operating-system",
+      "name": "tinapple-base",
+      "version": "0.0.1",
+      "description": "Tinapple homelab OS custom package repository"
+    }
+  },
+  "components": [
+    {
+      "type": "application",
+      "bom-ref": "pkg:alpm/tinapple/tinapple-base@0.0.1-1?arch=any",
+      "name": "tinapple-base",
+      "version": "0.0.1-1",
+      "description": "Core meta-package for tinapple homelab OS",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:alpm/tinapple/tinapple-base@0.0.1-1?arch=any",
+      "properties": [
+        {
+          "name": "arch",
+          "value": "any"
+        },
+        {
+          "name": "distribution",
+          "value": "tinapple"
+        },
+        {
+          "name": "dependencies",
+          "value": "base, linux-lts, linux-lts-headers, linux-firmware, systemd, systemd-sysvcompat, systemd-resolved, systemd-networkd, networkmanager, polkit, sudo, vim, zsh, git, curl, wget, tinapple-keyring, tinapple-mirrorlist, tinapple-hw, tinapple-firstboot, tinapple-nginx"
+        }
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "pkg:alpm/tinapple/tinapple-base@0.0.1-1?arch=any",
+      "depends": []
+    }
+  ]
+}

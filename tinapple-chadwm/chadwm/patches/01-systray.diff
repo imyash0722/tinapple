@@ -1,0 +1,41 @@
+Author: Jan Christoph Ebersbach <jceb@e-jc.de>
+Subject: [PATCH] systray integration for dwm
+
+--- a/dwm.c
++++ b/dwm.c
+@@ -58,6 +58,11 @@
+ #define TEXTW(X)                (drw_fontset_getwidth(drw, (X)) + lrpad)
++#define SYSTEM_TRAY_REQUEST_DOCK    0
++#define _NET_SYSTEM_TRAY_ORIENTATION_H 0
++#define XEMBED_EMBEDDED_NOTIFY      0
++
++typedef struct Systray   Systray;
++struct Systray {
++	Window win;
++	Client *icons;
++};
+@@ -194,6 +201,11 @@ static void run(void);
+ static void scan(void);
++static void updatesystray(void);
++static void updatesystrayicongeom(Client *i, int w, int h);
++static void updatesystrayiconstate(Client *i, XPropertyEvent *ev);
++static Client *wintosystrayicon(Window w);
+ static int sendevent(Client *c, Atom proto);
+ static void sendmon(Client *c, Monitor *m);
+@@ -242,6 +254,7 @@ static const char broken[] = "broken";
+ static char stext[256];
+ static int screen;
+ static int sw, sh;           /* X, Y reuse */
++static Systray *systray = NULL;
+@@ -698,6 +711,10 @@ destroynotify(XEvent *e)
+ 		unmanage(c, 1);
++	else if ((c = wintosystrayicon(ev->window))) {
++		removesystrayicon(c);
++		resizebarwin(selmon);
++		updatesystray();
++	}
+ }
+@@ -750,6 +767,11 @@ drawbar(Monitor *m)
++	if (showsystray && m == systraytomon(m)) {
++		updatesystray();
++	}

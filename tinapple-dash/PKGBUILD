@@ -1,0 +1,27 @@
+# Maintainer: tinapple Project <https://github.com/tinapple/tinapple-arch>
+pkgname=tinapple-dash
+pkgver=0.0.1
+pkgrel=1
+pkgdesc="Web dashboard and telemetry monitor for tinapple"
+arch=('x86_64')
+url="https://github.com/tinapple/tinapple-arch"
+license=('MIT')
+depends=('glibc')
+makedepends=('go')
+source=()
+sha256sums=()
+
+build() {
+  cd "$startdir"
+  export CGO_ENABLED=0
+  go build -trimpath -ldflags="-s -w" -o tinapple-dash ./cmd/tinapple-dash
+}
+
+package() {
+  cd "$startdir"
+  install -Dm755 tinapple-dash "$pkgdir/usr/bin/tinapple-dash"
+  install -Dm644 tinapple-dash.service "$pkgdir/usr/lib/systemd/system/tinapple-dash.service"
+
+  install -dm755 "$pkgdir/usr/share/tinapple-dash/web"
+  cp -r web/* "$pkgdir/usr/share/tinapple-dash/web/"
+}

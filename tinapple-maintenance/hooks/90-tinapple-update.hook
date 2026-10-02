@@ -1,0 +1,9 @@
+[Trigger]
+Operation = Upgrade
+Type = Package
+Target = *
+
+[Action]
+Description = Pre-update: create snapshot & backup manifest
+When = PreTransaction
+Exec = /usr/bin/tinapple-update-hook pre

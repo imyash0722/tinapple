@@ -1,0 +1,176 @@
+#!/usr/bin/env bash
+# tinapple-battery - Battery charge limit management with hysteresis and UPS-mode
+# Config: /etc/tinapple/battery.json
+
+set -euo pipefail
+
+CONFIG="/etc/tinapple/battery.json"
+STATE_DIR="/run/tinapple"
+CHARGE_LIMIT_FILE=""
+CHARGE_START_FILE=""
+
+# Default config
+CHARGE_LIMIT=80
+CHARGE_LIMIT_MIN=40
+CRITICAL_ACTION="hibernate"
+CRITICAL_THRESHOLD=5
+UPS_MODE=true
+NOTIFY_THRESHOLDS=(20 10 5)
+
+load_config() {
+    if [[ -f "$CONFIG" ]]; then
+        CHARGE_LIMIT=$(jq -r '.charge_limit // 80' "$CONFIG")
+        CHARGE_LIMIT_MIN=$(jq -r '.charge_limit_min // 40' "$CONFIG")
+        CRITICAL_ACTION=$(jq -r '.critical_action // "hibernate"' "$CONFIG")
+        CRITICAL_THRESHOLD=$(jq -r '.critical_threshold // 5' "$CONFIG")
+        UPS_MODE=$(jq -r '.ups_mode // true' "$CONFIG")
+        local thresholds
+        thresholds=$(jq -r '.notify_thresholds // [20, 10, 5]' "$CONFIG")
+        readarray -t NOTIFY_THRESHOLDS < <(echo "$thresholds" | jq -r '.[]')
+    fi
+}
+
+find_battery_files() {
+    for bat in /sys/class/power_supply/BAT*; do
+        if [[ -f "$bat/charge_control_end_threshold" ]]; then
+            CHARGE_LIMIT_FILE="$bat/charge_control_end_threshold"
+            CHARGE_START_FILE="$bat/charge_control_start_threshold"
+            echo "$bat"
+            return 0
+        fi
+    done
+    return 1
+}
+
+get_capacity() {
+    local bat=$1
+    cat "$bat/capacity" 2>/dev/null || echo 0
+}
+
+get_status() {
+    local bat=$1
+    cat "$bat/status" 2>/dev/null || echo "Unknown"
+}
+
+set_charge_limit() {
+    local limit=$1
+    [[ -n "$CHARGE_LIMIT_FILE" ]] || return 1
+    echo "$limit" > "$CHARGE_LIMIT_FILE" 2>/dev/null || return 1
+    if [[ -n "$CHARGE_START_FILE" ]] && [[ "$CHARGE_LIMIT_MIN" -gt 0 ]]; then
+        echo "$CHARGE_LIMIT_MIN" > "$CHARGE_START_FILE" 2>/dev/null || true
+    fi
+}
+
+get_charge_limit() {
+    [[ -n "$CHARGE_LIMIT_FILE" ]] || return 1
+    cat "$CHARGE_LIMIT_FILE" 2>/dev/null || echo "unset"
+}
+
+notify_user() {
+    local msg=$1
+    wall "tinapple-battery: $msg" 2>/dev/null || true
+    logger -t tinapple-battery "$msg"
+}
+
+cmd_charge_limit() {
+    local action="${1:-get}"
+    case "$action" in
+        get)
+            load_config
+            find_battery_files >/dev/null || { echo "No battery with charge control found"; exit 1; }
+            get_charge_limit
+            ;;
+        set)
+            local limit="${2:-}"
+            [[ -n "$limit" ]] || { echo "Usage: $0 charge-limit set <50-100>"; exit 1; }
+            [[ "$limit" =~ ^[0-9]+$ ]] && (( limit >= 50 && limit <= 100 )) || { echo "Limit must be 50-100"; exit 1; }
+            load_config
+            find_battery_files >/dev/null || { echo "No battery with charge control found"; exit 1; }
+            CHARGE_LIMIT=$limit
+            # Update config
+            jq --argjson v "$limit" '.charge_limit = $v' "$CONFIG" > "$CONFIG.tmp" && mv "$CONFIG.tmp" "$CONFIG"
+            set_charge_limit "$limit"
+            echo "Charge limit set to $limit%"
+            ;;
+        status)
+            load_config
+            local bat
+            bat=$(find_battery_files) || { echo "No battery found"; exit 1; }
+            echo "Battery: $(basename "$bat")"
+            echo "Capacity: $(get_capacity "$bat")%"
+            echo "Status: $(get_status "$bat")"
+            echo "Charge limit: $(get_charge_limit)%"
+            echo "Charge limit min: ${CHARGE_LIMIT_MIN}%"
+            echo "Critical action: $CRITICAL_ACTION at ${CRITICAL_THRESHOLD}%"
+            echo "UPS mode: $UPS_MODE"
+            ;;
+        daemon)
+            # Background daemon for UPS-mode monitoring
+            load_config
+            local bat
+            bat=$(find_battery_files) || { echo "No battery with charge control found"; exit 1; }
+            
+            local notified=()
+            while true; do
+                local capacity
+                capacity=$(get_capacity "$bat")
+                local status
+                status=$(get_status "$bat")
+                
+                # AC lost - notify
+                if [[ "$status" == "Discharging" ]] && [[ "$UPS_MODE" == "true" ]]; then
+                    for t in "${NOTIFY_THRESHOLDS[@]}"; do
+                        if (( capacity <= t )) && [[ ! " ${notified[@]} " =~ " ${t} " ]]; then
+                            notify_user "Battery at ${capacity}% (AC lost, running on battery)"
+                            notified+=("$t")
+                        fi
+                    done
+                    
+                    # Critical threshold
+                    if (( capacity <= CRITICAL_THRESHOLD )); then
+                        notify_user "CRITICAL: Battery at ${capacity}%, executing $CRITICAL_ACTION"
+                        case "$CRITICAL_ACTION" in
+                            hibernate) systemctl hibernate ;;
+                            poweroff) systemctl poweroff ;;
+                            suspend) systemctl suspend ;;
+                            hybrid-sleep) systemctl hybrid-sleep ;;
+                        esac
+                    fi
+                else
+                    # AC restored - reset notifications
+                    notified=()
+                fi
+                
+                # Maintain charge limits
+                local current_limit
+                current_limit=$(get_charge_limit)
+                if [[ "$current_limit" != "$CHARGE_LIMIT" ]]; then
+                    set_charge_limit "$CHARGE_LIMIT"
+                fi
+                
+                sleep 30
+            done
+            ;;
+        *)
+            echo "Usage: $0 charge-limit {get|set <50-100>|status|daemon}"
+            exit 1
+            ;;
+    esac
+}
+
+# Main
+mkdir -p "$STATE_DIR"
+load_config
+mkdir -p /etc/tinapple
+[[ -f "$CONFIG" ]] || cat > "$CONFIG" <<EOF
+{
+  "charge_limit": 80,
+  "charge_limit_min": 40,
+  "critical_action": "hibernate",
+  "critical_threshold": 5,
+  "ups_mode": true,
+  "notify_thresholds": [20, 10, 5]
+}
+EOF
+
+cmd_charge_limit "$@"

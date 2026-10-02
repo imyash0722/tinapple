@@ -1,0 +1,17 @@
+# Maintainer: tinapple Project <https://github.com/tinapple/tinapple-arch>
+pkgname=tinapple-service-infrastructure
+pkgver=0.0.1
+pkgrel=1
+pkgdesc="Observability stack for tinapple (prometheus, grafana, loki, tempo, alertmanager)"
+arch=(any)
+url="https://github.com/tinapple/tinapple-arch"
+license=(MIT)
+depends=('prometheus' 'grafana' 'loki' 'tempo' 'alertmanager')
+optdepends=('node_exporter' 'cadvisor')
+install=tinapple-service-infrastructure.install
+source=()
+sha256sums=()
+
+package() {
+  install -dm755 "$pkgdir/usr/share/tinapple-service-infrastructure"
+}

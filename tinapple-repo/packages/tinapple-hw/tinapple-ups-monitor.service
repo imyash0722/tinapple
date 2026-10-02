@@ -1,0 +1,17 @@
+[Unit]
+Description=Tinapple UPS Monitor
+Documentation=https://github.com/tinapple/tinapple-arch
+After=network-online.target
+Wants=network-online.target
+ConditionPathExists=/etc/tinapple/ups.json
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/tinapple-ups-monitor daemon
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,24 @@
+[Unit]
+Description=Bazarr - Subtitle Manager
+Documentation=https://www.bazarr.media/
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=exec
+User=bazarr
+Group=bazarr
+ExecStart=/usr/bin/bazarr -nobrowser -data=/var/lib/bazarr
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+# Security hardening
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=read-only
+
+[Install]
+WantedBy=multi-user.target

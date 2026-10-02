@@ -1,0 +1,9 @@
+[Interface]
+PrivateKey = {{ .WireGuardPrivateKey }}
+Address = {{ .WireGuardAddress }}
+ListenPort = {{ .WireGuardPort }}
+
+[Peer]
+PublicKey = {{ .WireGuardPeerPublicKey }}
+AllowedIPs = {{ .WireGuardPeerAllowedIPs }}
+Endpoint = {{ .WireGuardPeerEndpoint }}

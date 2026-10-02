@@ -1,0 +1,15 @@
+# Maintainer: tinapple Project <https://github.com/tinapple/tinapple-arch>
+pkgname=tinapple-mirrorlist
+pkgver=20260928
+pkgrel=1
+pkgdesc="Tinapple repository mirror list for pacman"
+arch=('any')
+url="https://github.com/tinapple/tinapple-arch"
+license=('MIT')
+backup=('etc/pacman.d/tinapple-mirrorlist')
+source=('tinapple-mirrorlist')
+sha256sums=('SKIP')
+
+package() {
+  install -Dm644 "$srcdir/tinapple-mirrorlist" "$pkgdir/etc/pacman.d/tinapple-mirrorlist"
+}

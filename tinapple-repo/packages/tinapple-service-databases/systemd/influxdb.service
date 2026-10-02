@@ -1,0 +1,23 @@
+[Unit]
+Description=InfluxDB Time Series Database
+Documentation=https://docs.influxdata.com/
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=exec
+User=influxdb
+Group=influxdb
+ExecStart=/usr/bin/influxd -config /etc/influxdb/influxdb.conf
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=read-only
+
+[Install]
+WantedBy=multi-user.target

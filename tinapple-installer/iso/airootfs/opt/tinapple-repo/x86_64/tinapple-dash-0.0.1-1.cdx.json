@@ -1,0 +1,62 @@
+{
+  "$schema": "http://cyclonedx.org/schema/bom-1.5.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "serialNumber": "urn:uuid:0d0977d7-b059-4e5e-82df-25b7cf60f293",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-09-27T19:56:43.282145+00:00",
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "name": "tinapple-sbom-generator",
+          "version": "0.0.1"
+        }
+      ]
+    },
+    "component": {
+      "type": "operating-system",
+      "name": "tinapple-dash",
+      "version": "0.0.1",
+      "description": "Tinapple homelab OS custom package repository"
+    }
+  },
+  "components": [
+    {
+      "type": "application",
+      "bom-ref": "pkg:alpm/tinapple/tinapple-dash@0.0.1-1?arch=x86_64",
+      "name": "tinapple-dash",
+      "version": "0.0.1-1",
+      "description": "Web dashboard and telemetry monitor for tinapple",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "purl": "pkg:alpm/tinapple/tinapple-dash@0.0.1-1?arch=x86_64",
+      "properties": [
+        {
+          "name": "arch",
+          "value": "x86_64"
+        },
+        {
+          "name": "distribution",
+          "value": "tinapple"
+        },
+        {
+          "name": "dependencies",
+          "value": "glibc"
+        }
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "pkg:alpm/tinapple/tinapple-dash@0.0.1-1?arch=x86_64",
+      "depends": []
+    }
+  ]
+}

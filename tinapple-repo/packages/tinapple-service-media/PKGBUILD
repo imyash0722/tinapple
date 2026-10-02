@@ -1,0 +1,18 @@
+# Maintainer: tinapple Project <https://github.com/tinapple/tinapple-arch>
+pkgname=tinapple-service-media
+pkgver=0.0.1
+pkgrel=1
+pkgdesc="Media server stack for tinapple (jellyfin, *arr stack)"
+arch=(any)
+url="https://github.com/tinapple/tinapple-arch"
+license=(MIT)
+depends=('jellyfin' 'sonarr' 'radarr' 'prowlarr' 'bazarr')
+optdepends=('plex' 'immich')
+install=tinapple-service-media.install
+source=()
+sha256sums=()
+
+package() {
+  # Systemd units and config templates deployed via tinapple-config-generator
+  install -dm755 "$pkgdir/usr/share/tinapple-service-media"
+}

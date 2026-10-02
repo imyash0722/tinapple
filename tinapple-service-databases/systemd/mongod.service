@@ -1,0 +1,23 @@
+[Unit]
+Description=MongoDB Database Server
+Documentation=https://docs.mongodb.com/
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=notify
+User=mongodb
+Group=mongodb
+ExecStart=/usr/bin/mongod --config /etc/mongodb.conf
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=read-only
+
+[Install]
+WantedBy=multi-user.target

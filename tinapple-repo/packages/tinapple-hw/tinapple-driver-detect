@@ -1,0 +1,128 @@
+#!/usr/bin/env go
+//go:build ignore
+// +build ignore
+
+package main
+
+import (
+	"encoding/json"
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+)
+
+type DeviceEntry struct {
+	Bus         string   `json:"bus"`
+	VendorID    string   `json:"vendor_id"`
+	DeviceID    string   `json:"device_id"`
+	Name        string   `json:"name"`
+	VendorName  string   `json:"vendor_name"`
+	Packages    []string `json:"packages"`
+	Dependencies []string `json:"dependencies"`
+	Repository  string   `json:"repository"`
+	License     string   `json:"license"`
+	Notes       string   `json:"notes"`
+}
+
+type HWDB struct {
+	Version  string        `json:"version"`
+	Devices  []DeviceEntry `json:"devices"`
+}
+
+func main() {
+	dbPath := "/usr/share/tinapple/tinapple-hw-db.json"
+	outputPath := "/etc/tinapple/detected-drivers.json"
+
+	if len(os.Args) > 1 && os.Args[1] == "--db" {
+		if len(os.Args) > 2 {
+			dbPath = os.Args[2]
+		}
+	}
+
+	// Load hardware database
+	dbData, err := os.ReadFile(dbPath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to read hardware database: %v\n", err)
+		os.Exit(1)
+	}
+
+	var db HWDB
+	if err := json.Unmarshal(dbData, &db); err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to parse hardware database: %v\n", err)
+		os.Exit(1)
+	}
+
+	// Build lookup map
+	pciMap := make(map[string]DeviceEntry)
+	usbMap := make(map[string]DeviceEntry)
+	for _, d := range db.Devices {
+		key := fmt.Sprintf("%s:%s", d.VendorID, d.DeviceID)
+		if d.Bus == "pci" {
+			pciMap[key] = d
+		} else if d.Bus == "usb" {
+			usbMap[key] = d
+		}
+	}
+
+	var detected []DeviceEntry
+
+	// Scan PCI devices
+	if entries, err := os.ReadDir("/sys/bus/pci/devices"); err == nil {
+		for _, e := range entries {
+			vendorPath := filepath.Join("/sys/bus/pci/devices", e.Name(), "vendor")
+			devicePath := filepath.Join("/sys/bus/pci/devices", e.Name(), "device")
+			vendorData, _ := os.ReadFile(vendorPath)
+			deviceData, _ := os.ReadFile(devicePath)
+			vendorID := strings.TrimSpace(string(vendorData))
+			deviceID := strings.TrimSpace(string(deviceData))
+			// Remove 0x prefix if present
+			vendorID = strings.TrimPrefix(vendorID, "0x")
+			deviceID = strings.TrimPrefix(deviceID, "0x")
+			key := fmt.Sprintf("%s:%s", vendorID, deviceID)
+			if dev, ok := pciMap[key]; ok {
+				detected = append(detected, dev)
+				fmt.Printf("PCI: %s %s - %s\n", vendorID, deviceID, dev.Name)
+			}
+		}
+	}
+
+	// Scan USB devices
+	if entries, err := os.ReadDir("/sys/bus/usb/devices"); err == nil {
+		for _, e := range entries {
+			if !strings.HasPrefix(e.Name(), "usb") {
+				continue
+			}
+			vendorPath := filepath.Join("/sys/bus/usb/devices", e.Name(), "idVendor")
+			productPath := filepath.Join("/sys/bus/usb/devices", e.Name(), "idProduct")
+			vendorData, _ := os.ReadFile(vendorPath)
+			productData, _ := os.ReadFile(productPath)
+			vendorID := strings.TrimSpace(string(vendorData))
+			productID := strings.TrimSpace(string(productData))
+			key := fmt.Sprintf("%s:%s", vendorID, productID)
+			if dev, ok := usbMap[key]; ok {
+				detected = append(detected, dev)
+				fmt.Printf("USB: %s %s - %s\n", vendorID, productID, dev.Name)
+			}
+		}
+	}
+
+	// Write detected drivers
+	os.MkdirAll(filepath.Dir(outputPath), 0755)
+	outData, _ := json.MarshalIndent(detected, "", "  ")
+	os.WriteFile(outputPath, outData, 0644)
+
+	fmt.Printf("\nDetected %d devices requiring proprietary drivers\n", len(detected))
+	if len(detected) > 0 {
+		fmt.Println("\nPackages to install:")
+		pkgSet := make(map[string]bool)
+		for _, d := range detected {
+			for _, p := range d.Packages {
+				pkgSet[p] = true
+			}
+		}
+		for p := range pkgSet {
+			fmt.Printf("  %s\n", p)
+		}
+	}
+}

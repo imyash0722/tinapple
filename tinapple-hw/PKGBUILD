@@ -1,0 +1,62 @@
+# Maintainer: tinapple Project <https://github.com/tinapple/tinapple-arch>
+pkgname=tinapple-hw
+pkgver=0.0.1
+pkgrel=1
+pkgdesc="Hardware detection, power management, thermal and UPS daemons for tinapple"
+arch=('x86_64')
+url="https://github.com/tinapple/tinapple-arch"
+license=('MIT')
+depends=('bash' 'systemd' 'pciutils' 'usbutils')
+makedepends=('go')
+source=(
+  'bin/tinapple-battery'
+  'bin/tinapple-driver-detect'
+  'bin/tinapple-hw-detect'
+  'bin/tinapple-power-profile'
+  'bin/tinapple-thermal'
+  'bin/tinapple-ups-monitor'
+  'data/tinapple-hw-db.json'
+  'data/pci.ids'
+  'systemd/tinapple-hw-detect.service'
+  'systemd/tinapple-battery-daemon.service'
+  'systemd/tinapple-thermal-daemon.service'
+  'systemd/tinapple-power-profile-apply.service'
+  'systemd/tinapple-ups-monitor.service'
+  'systemd/tinapple-driver-detect.service'
+)
+sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP')
+
+build() {
+  export CGO_ENABLED=0
+  for tool in driver-detect hw-detect power-profile thermal; do
+    rm -rf "$srcdir/gobuild-$tool"
+    rm -f "$srcdir/tinapple-$tool.bin"
+    mkdir -p "$srcdir/gobuild-$tool"
+    cd "$srcdir/gobuild-$tool"
+    go mod init "tinapple-$tool"
+    tail -n +5 "$srcdir/tinapple-$tool" > main.go
+    go build -ldflags="-s -w" -o "$srcdir/tinapple-$tool.bin" .
+  done
+}
+
+package() {
+  # Install Go binaries
+  for tool in driver-detect hw-detect power-profile thermal; do
+    install -Dm755 "$srcdir/tinapple-$tool.bin" "$pkgdir/usr/bin/tinapple-$tool"
+  done
+
+  # Install Shell scripts
+  install -Dm755 "$srcdir/tinapple-battery" "$pkgdir/usr/bin/tinapple-battery"
+  install -Dm755 "$srcdir/tinapple-ups-monitor" "$pkgdir/usr/bin/tinapple-ups-monitor"
+
+  # Install Hardware DB
+  install -Dm644 "$srcdir/tinapple-hw-db.json" "$pkgdir/usr/share/tinapple/tinapple-hw-db.json"
+
+  # Install PCI IDs database
+  install -Dm644 "$srcdir/pci.ids" "$pkgdir/usr/share/tinapple/hwdata/pci.ids"
+
+  # Install systemd services
+  for svc in hw-detect.service battery-daemon.service thermal-daemon.service power-profile-apply.service ups-monitor.service driver-detect.service; do
+    install -Dm644 "$srcdir/tinapple-$svc" "$pkgdir/usr/lib/systemd/system/tinapple-$svc"
+  done
+}

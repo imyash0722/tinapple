@@ -1,0 +1,28 @@
+# Tinapple Chadwm - Integrated Patches
+# ======================================
+# The following patches are integrated into the tinapple-chadwm core build:
+
+1. systray
+   - Description: Implements a system tray icon container in the dwm status bar.
+   - Patch: 01-systray.diff
+   - Details: Supports systray pinning, icon size customization (systrayiconsize), dynamic spacing (systrayspacing), and multiple monitor handling.
+
+2. pertag
+   - Description: Keeps layouts, master factor (mfact), number of master windows (nmaster), and bar visibility per-tag rather than globally across all workspaces.
+   - Patch: 02-pertag.diff
+   - Details: Adds Pertag structure tracking `curtag`, `prevtag`, `nmasters`, `mfacts`, `sellts`, and `showbars` arrays per tag bitmask.
+
+3. swallow
+   - Description: Enables terminal swallowing, where GUI applications launched from a terminal replace (swallow) the terminal window, restoring it upon termination.
+   - Patch: 03-swallow.diff
+   - Details: Adds `isterminal` and `noswallow` fields to window rules, monitors child PIDs, and manages window replacement dynamically.
+
+4. actualfullscreen
+   - Description: Provides true EWMH fullscreen toggle without forcing monocle layout, allowing windows to occupy the entire monitor screen seamlessly.
+   - Patch: 04-actualfullscreen.diff
+   - Details: Introduces `togglefullscr(const Arg *arg)` function which toggles the `c->isfullscreen` flag and invokes `setfullscreen`.
+
+5. vanitygaps
+   - Description: Introduces customizable inner and outer gaps between windows and monitor screen edges.
+   - Patch: 05-vanitygaps.diff
+   - Details: Provides inner horizontal (`gappih`), inner vertical (`gappiv`), outer horizontal (`gappoh`), outer vertical (`gappov`), `smartgaps`, and interactive keybinds (`incrgaps`, `togglegaps`, `defaultgaps`).

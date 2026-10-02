@@ -1,0 +1,23 @@
+[Unit]
+Description=Grafana Tempo Distributed Tracing
+Documentation=https://grafana.com/docs/tempo/
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=exec
+User=tempo
+Group=tempo
+ExecStart=/usr/bin/tempo -config.file=/etc/tempo/tempo.yaml
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=read-only
+
+[Install]
+WantedBy=multi-user.target

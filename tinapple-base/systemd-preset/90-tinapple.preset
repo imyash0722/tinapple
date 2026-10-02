@@ -1,0 +1,22 @@
+# Tinapple base services
+enable tinapple-hw-detect.service
+enable tinapple-power-profile-apply.service
+enable tinapple-battery-daemon.service
+enable tinapple-thermal-daemon.service
+enable tinapple-boot-apply.path
+enable tinapple-firstboot.service
+enable snapper-timeline.timer
+enable snapper-cleanup.timer
+enable limine-snapper-sync.service
+enable systemd-resolved.service
+enable systemd-networkd.service
+enable NetworkManager.service
+enable fstrim.timer
+enable tinapple-nginx.service
+
+# Conditional (enabled by profile packages)
+# enable tinapple-dash.service          # desktop profile
+# enable jellyfin.service              # media profile
+# enable qbittorrent-nox@.service      # downloads profile
+# enable syncthing@.service            # base profile
+# enable tailscaled.service            # base profile

@@ -1,0 +1,17 @@
+[Unit]
+Description=Tinapple Battery Management Daemon
+Documentation=https://github.com/tinapple/tinapple-arch
+After=tinapple-hw-detect.service
+Requires=tinapple-hw-detect.service
+ConditionPathExists=/sys/class/power_supply/BAT0
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/tinapple-battery charge-limit daemon
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

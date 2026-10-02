@@ -1,0 +1,44 @@
+version: 1
+hostname: tinapple-server
+kernel_profile: lts          # lts | hardened | current
+session_mode: headless       # headless | interactive | kiosk
+hardware_profile: auto       # auto | desktop | laptop
+cachyos_repos: true          # Enable CachyOS v3/v4 repos
+ease_of_use_mode: false      # Simplified UI, guided setup
+filesystem: ext4             # ext4 | xfs | btrfs
+bootloader: auto             # auto | grub | limine
+profiles:
+  - base
+  - media
+  - downloads
+services:
+  jellyfin:
+    enabled: true
+    overrides:
+      JELLYFIN_PublishedServerUrl: "https://jellyfin.mytailnet.ts.net"
+  qbittorrent:
+    enabled: true
+    user: media
+  syncthing:
+    enabled: true
+    device_id: "ABCDEF-123456"
+  tailscale:
+    enabled: true
+    auth_key: "tskey-auth-..."  # Or OAuth via firstboot
+hardware:
+  battery:
+    charge_limit: 80
+    charge_limit_min: 40
+    critical_action: hibernate
+    critical_threshold: 5
+  power_profile: balanced      # balanced | performance | power-saver | custom
+  thermal_profile: server      # balanced | performance | quiet | server
+  lid_policy: ignore           # ignore | clamshell (opt-in)
+  ups_monitor: true
+network:
+  interface: eth0
+  dhcp: true
+  static_fallback:
+    address: 192.168.1.100/24
+    gateway: 192.168.1.1
+    dns: [1.1.1.1, 9.9.9.9]

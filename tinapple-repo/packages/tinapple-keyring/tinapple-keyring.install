@@ -1,0 +1,9 @@
+post_upgrade() {
+  if usr/bin/pacman-key -l tinapple >/dev/null 2>&1; then
+    usr/bin/pacman-key --populate tinapple
+  fi
+}
+
+post_install() {
+  post_upgrade
+}

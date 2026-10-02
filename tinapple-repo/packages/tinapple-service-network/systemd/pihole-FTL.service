@@ -1,0 +1,23 @@
+[Unit]
+Description=Pi-hole FTL DNS Server
+Documentation=https://docs.pi-hole.net/
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=notify
+User=pihole
+Group=pihole
+ExecStart=/usr/bin/pihole-FTL
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=read-only
+
+[Install]
+WantedBy=multi-user.target

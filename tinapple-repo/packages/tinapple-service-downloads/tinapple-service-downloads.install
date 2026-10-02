@@ -1,0 +1,14 @@
+post_install() {
+  systemctl enable qbittorrent-nox@media.service >/dev/null 2>&1 || true
+  systemctl enable transmission.service >/dev/null 2>&1 || true
+  systemctl enable jdownloader2.service >/dev/null 2>&1 || true
+  systemctl enable flaresolverr.service >/dev/null 2>&1 || true
+}
+
+post_upgrade() { post_install; }
+pre_remove() {
+  systemctl disable qbittorrent-nox@media.service >/dev/null 2>&1 || true
+  systemctl disable transmission.service >/dev/null 2>&1 || true
+  systemctl disable jdownloader2.service >/dev/null 2>&1 || true
+  systemctl disable flaresolverr.service >/dev/null 2>&1 || true
+}

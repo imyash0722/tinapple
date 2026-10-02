@@ -1,0 +1,47 @@
+# Maintainer: tinapple Project <https://github.com/tinapple/tinapple-arch>
+pkgname=tinapple-chadwm
+pkgver=0.0.1
+pkgrel=1
+pkgdesc="Chadwm window manager, rices, preflight check, and session toggle for tinapple"
+arch=('x86_64')
+url="https://github.com/tinapple/tinapple-arch"
+license=('MIT')
+depends=('xorg-server' 'xorg-xinit' 'picom' 'polybar' 'rofi' 'sxhkd' 'dunst')
+makedepends=('go')
+source=()
+sha256sums=()
+
+build() {
+  cd "$startdir"
+  if [ -d "cmd/tinapple-session" ]; then
+    (cd cmd/tinapple-session && CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o ../../tinapple-session .)
+  fi
+}
+
+package() {
+  cd "$startdir"
+
+  # Binaries
+  if [ -f "tinapple-session" ]; then
+    install -Dm755 tinapple-session "$pkgdir/usr/bin/tinapple-session"
+  fi
+  if [ -f "bin/tinapple-chadwm-preflight" ]; then
+    install -Dm755 bin/tinapple-chadwm-preflight "$pkgdir/usr/bin/tinapple-chadwm-preflight"
+  fi
+
+  # Systemd user/system service
+  if [ -f "systemd/chadwm@.service" ]; then
+    install -Dm644 systemd/chadwm@.service "$pkgdir/usr/lib/systemd/system/chadwm@.service"
+  fi
+
+  # Skeleton configs for desktop users
+  install -dm755 "$pkgdir/etc/skel/.config/tinapple-chadwm"
+  cp -r picom polybar rofi sxhkd dunst rices "$pkgdir/etc/skel/.config/tinapple-chadwm/" 2>/dev/null || true
+  if [ -f "xinitrc" ]; then
+    install -Dm755 xinitrc "$pkgdir/etc/skel/.xinitrc"
+  fi
+
+  # Share directory with patches & configs
+  install -dm755 "$pkgdir/usr/share/tinapple-chadwm"
+  cp -r chadwm "$pkgdir/usr/share/tinapple-chadwm/" 2>/dev/null || true
+}

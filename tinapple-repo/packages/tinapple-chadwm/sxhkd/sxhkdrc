@@ -1,0 +1,51 @@
+# tinapple-chadwm sxhkdrc
+# Keybindings for volume, brightness, session toggle, wm controls
+
+# Volume
+XF86AudioRaiseVolume
+    wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+
+
+XF86AudioLowerVolume
+    wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-
+
+XF86AudioMute
+    wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle
+
+# Brightness
+XF86MonBrightnessUp
+    brightnessctl set 10%+
+
+XF86MonBrightnessDown
+    brightnessctl set 10%-
+
+# Session toggle (Super+Control+s)
+Super + Control + s
+    tinapple-session toggle
+
+# Terminal (Super+Return)
+Super + Return
+    alacritty
+
+# File manager (Super+Shift+Return)
+Super + Shift + Return
+    thunar
+
+# Browser (Super+w)
+Super + w
+    firefox
+
+# Dashboard (Super+e)
+Super + e
+    xdg-open http://localhost:8088
+
+# Rofi launcher (Super+r)
+Super + r
+    rofi -show drun
+
+# Power menu (Super+Shift+r)
+Super + Shift + r
+    rofi -show power-menu -modi power-menu:~/.config/rofi/power-menu.sh
+
+# Screenshot (Print)
+Print
+    flameshot gui

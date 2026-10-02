@@ -1,0 +1,181 @@
+#!/usr/bin/env go
+//go:build ignore
+// +build ignore
+
+package main
+
+import (
+	"encoding/json"
+	"fmt"
+	"os"
+)
+
+type ProfileConfig struct {
+	Profiles map[string]Profile `json:"profiles"`
+	Active   string             `json:"active"`
+}
+
+type Profile struct {
+	Governor    string `json:"governor"`     // schedutil, performance, powersave
+	EPP         string `json:"epp"`          // balance_performance, performance, power
+	MaxFreqPct  int    `json:"max_freq_pct"` // 0-100
+}
+
+func main() {
+	configPath := "/etc/tinapple/power-profile.json"
+
+	// Default profiles
+	defaultConfig := ProfileConfig{
+		Active: "balanced",
+		Profiles: map[string]Profile{
+			"balanced":      {Governor: "schedutil", EPP: "balance_performance", MaxFreqPct: 100},
+			"performance":   {Governor: "performance", EPP: "performance", MaxFreqPct: 100},
+			"power-saver":   {Governor: "powersave", EPP: "power", MaxFreqPct: 70},
+			"custom":        {Governor: "schedutil", EPP: "balance_performance", MaxFreqPct: 100},
+		},
+	}
+
+	// Load or create config
+	var cfg ProfileConfig
+	if data, err := os.ReadFile(configPath); err == nil {
+		json.Unmarshal(data, &cfg)
+	} else {
+		cfg = defaultConfig
+		saveConfig(configPath, cfg)
+	}
+
+	if len(os.Args) < 2 {
+		printUsage()
+		os.Exit(1)
+	}
+
+	cmd := os.Args[1]
+	switch cmd {
+	case "get":
+		if len(os.Args) > 2 {
+			printProfile(cfg, os.Args[2])
+		} else {
+			fmt.Printf("Active profile: %s\n", cfg.Active)
+			for name := range cfg.Profiles {
+				printProfile(cfg, name)
+			}
+		}
+	case "set":
+		if len(os.Args) < 3 {
+			fmt.Println("Usage: tinapple-power-profile set <profile> [governor|epp|maxfreq] <value>")
+			os.Exit(1)
+		}
+		profileName := os.Args[2]
+		if _, ok := cfg.Profiles[profileName]; !ok {
+			fmt.Printf("Unknown profile: %s\n", profileName)
+			os.Exit(1)
+		}
+		if len(os.Args) == 3 {
+			// Set active profile
+			cfg.Active = profileName
+			applyProfile(cfg, profileName)
+		} else if len(os.Args) == 5 {
+			// Set specific key
+			key := os.Args[3]
+			value := os.Args[4]
+			p := cfg.Profiles[profileName]
+			switch key {
+			case "governor":
+				p.Governor = value
+			case "epp":
+				p.EPP = value
+			case "maxfreq":
+				fmt.Sscanf(value, "%d", &p.MaxFreqPct)
+			default:
+				fmt.Println("Unknown key: governor, epp, maxfreq")
+				os.Exit(1)
+			}
+			cfg.Profiles[profileName] = p
+			if cfg.Active == profileName {
+				applyProfile(cfg, profileName)
+			}
+		}
+		saveConfig(configPath, cfg)
+	case "list":
+		for name := range cfg.Profiles {
+			fmt.Println(name)
+		}
+	case "apply":
+		applyProfile(cfg, cfg.Active)
+	default:
+		printUsage()
+		os.Exit(1)
+	}
+}
+
+func printUsage() {
+	fmt.Println(`Usage: tinapple-power-profile {get|set|list|apply}
+  get [profile]          - Show profile or active profile
+  set <profile>          - Set active profile
+  set <profile> <key> <value>  - Set profile key (governor|epp|maxfreq)
+  list                   - List available profiles
+  apply                  - Apply active profile to hardware`)
+}
+
+func printProfile(cfg ProfileConfig, name string) {
+	p := cfg.Profiles[name]
+	marker := ""
+	if name == cfg.Active {
+		marker = " (active)"
+	}
+	fmt.Printf("%s%s: governor=%s epp=%s max_freq=%d%%\n", name, marker, p.Governor, p.EPP, p.MaxFreqPct)
+}
+
+func saveConfig(path string, cfg ProfileConfig) {
+	data, _ := json.MarshalIndent(cfg, "", "  ")
+	os.WriteFile(path, data, 0644)
+}
+
+func applyProfile(cfg ProfileConfig, profileName string) {
+	p := cfg.Profiles[profileName]
+	
+	// Apply CPU governor
+	if p.Governor != "" {
+		governorPath := "/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+		if _, err := os.Stat(governorPath); err == nil {
+			// Apply to all CPUs
+			for i := 0; ; i++ {
+				path := fmt.Sprintf("/sys/devices/system/cpu/cpu%d/cpufreq/scaling_governor", i)
+				if _, err := os.Stat(path); err != nil {
+					break
+				}
+				os.WriteFile(path, []byte(p.Governor), 0644)
+			}
+		}
+	}
+	
+	// Apply EPP
+	if p.EPP != "" {
+		for i := 0; ; i++ {
+			path := fmt.Sprintf("/sys/devices/system/cpu/cpu%d/cpufreq/energy_performance_preference", i)
+			if _, err := os.Stat(path); err != nil {
+				break
+			}
+			os.WriteFile(path, []byte(p.EPP), 0644)
+		}
+	}
+	
+	// Apply max frequency
+	if p.MaxFreqPct > 0 && p.MaxFreqPct <= 100 {
+		for i := 0; ; i++ {
+			maxPath := fmt.Sprintf("/sys/devices/system/cpu/cpu%d/cpufreq/scaling_max_freq", i)
+			basePath := fmt.Sprintf("/sys/devices/system/cpu/cpu%d/cpufreq/cpuinfo_max_freq", i)
+			if _, err := os.Stat(basePath); err != nil {
+				break
+			}
+			if baseFreqData, err := os.ReadFile(basePath); err == nil {
+				var baseFreq int
+				fmt.Sscanf(string(baseFreqData), "%d", &baseFreq)
+				maxFreq := baseFreq * p.MaxFreqPct / 100
+				os.WriteFile(maxPath, []byte(fmt.Sprintf("%d", maxFreq)), 0644)
+			}
+		}
+	}
+	
+	fmt.Printf("Applied profile: %s\n", profileName)
+}

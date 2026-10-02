@@ -1,0 +1,17 @@
+post_install() {
+  systemctl enable syncthing@media.service >/dev/null 2>&1 || true
+  systemctl enable restic-backup.timer >/dev/null 2>&1 || true
+  systemctl enable borg-backup.timer >/dev/null 2>&1 || true
+  systemctl enable rclone-sync.timer >/dev/null 2>&1 || true
+  systemctl enable snapraid-sync.timer >/dev/null 2>&1 || true
+}
+
+post_upgrade() { post_install; }
+
+pre_remove() {
+  systemctl disable syncthing@media.service >/dev/null 2>&1 || true
+  systemctl disable restic-backup.timer >/dev/null 2>&1 || true
+  systemctl disable borg-backup.timer >/dev/null 2>&1 || true
+  systemctl disable rclone-sync.timer >/dev/null 2>&1 || true
+  systemctl disable snapraid-sync.timer >/dev/null 2>&1 || true
+}

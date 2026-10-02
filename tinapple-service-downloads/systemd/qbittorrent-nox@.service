@@ -1,0 +1,23 @@
+[Unit]
+Description=qBittorrent Daemon (%i)
+Documentation=https://github.com/qbittorrent/qBittorrent
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=exec
+User=%i
+Group=%i
+ExecStart=/usr/bin/qbittorrent-nox --webui-port=8080 --profile=/var/lib/qbittorrent/%i
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=read-only
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,25 @@
+[Unit]
+Description=MariaDB Database Server
+Documentation=https://mariadb.org/documentation/
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=notify
+User=mysql
+Group=mysql
+ExecStartPre=/usr/bin/mariadb-prepare-db-dir mariadb.service
+ExecStart=/usr/bin/mariadbd --basedir=/usr --datadir=/var/lib/mysql --user=mysql
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=read-only
+
+[Install]
+WantedBy=multi-user.target
