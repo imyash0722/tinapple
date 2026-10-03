@@ -55,6 +55,13 @@ tinapple_pacstrap() {
     dosfstools
     kbd
     which
+    tinapple-keyring
+    tinapple-mirrorlist
+    tinapple-base
+    tinapple-hw
+    tinapple-firstboot
+    tinapple-maintenance
+    tinapple-config-generator
   )
 
   # Kernel selection
@@ -123,12 +130,10 @@ tinapple_pacstrap() {
 
     case "$prof" in
       base)
-        pkgs+=(tinapple-chadwm foot picom polybar rofi dunst sxhkd xorg-xinit xorg-xrandr xorg-xsetroot xorg-xset xorg-xprop xorg-xwininfo xorg-xdpyinfo xorg-xev xorg-xlsfonts xorg-xlsclients xorg-xvinfo xorg-xrdb tigervnc)
-        aur_pkgs+=(xrdp)
+        pkgs+=(tinapple-chadwm foot picom polybar rofi dunst sxhkd xorg-xinit xorg-xrandr xorg-xsetroot xorg-xset xorg-xprop xorg-xwininfo xorg-xdpyinfo xorg-xev xorg-xlsfonts xorg-xlsclients xorg-xvinfo xorg-xrdb tigervnc xrdp)
         ;;
       chadwm)
-        pkgs+=(tinapple-chadwm foot picom polybar rofi dunst sxhkd xorg-xinit xorg-xrandr xorg-xsetroot xorg-xset xorg-xprop xorg-xwininfo xorg-xdpyinfo xorg-xev xorg-xlsfonts xorg-xlsclients xorg-xvinfo xorg-xrdb tigervnc)
-        aur_pkgs+=(xrdp)
+        pkgs+=(tinapple-chadwm foot picom polybar rofi dunst sxhkd xorg-xinit xorg-xrandr xorg-xsetroot xorg-xset xorg-xprop xorg-xwininfo xorg-xdpyinfo xorg-xev xorg-xlsfonts xorg-xlsclients xorg-xvinfo xorg-xrdb tigervnc xrdp)
         ;;
       media)
         pkgs+=(jellyfin-server jellyfin-web)
@@ -185,8 +190,22 @@ tinapple_pacstrap() {
   log "installing %d packages via pacstrap..." "${#unique_pkgs[@]}"
   if [[ -z ${TINAPPLE_DRYRUN:-} ]]; then
     mkdir -p "$target/var/cache/pacman/pkg"
+    # Ensure local tinapple repo sync database is present in pacman sync dir
+    if [[ -f /opt/tinapple-repo/x86_64/tinapple.db && ! -f /var/lib/pacman/sync/tinapple.db ]]; then
+      mkdir -p /var/lib/pacman/sync
+      cp -f /opt/tinapple-repo/x86_64/tinapple.db* /var/lib/pacman/sync/ 2>/dev/null || true
+    fi
+    # If official repo sync databases are missing, synchronize them
+    if [[ ! -f /var/lib/pacman/sync/core.db ]]; then
+      log_info "synchronizing repository databases..."
+      pacman -Sy --config /etc/pacman.conf --noconfirm || log_warn "pacman -Sy sync completed with warnings"
+    fi
   fi
-  run pacstrap "$target" "${unique_pkgs[@]}" || die "pacstrap failed to install core packages"
+  run pacstrap -C /etc/pacman.conf "$target" "${unique_pkgs[@]}" || {
+    log_warn "pacstrap exited with an error. Last 20 log entries:"
+    tail -n 20 /var/log/tinapple-install.log 2>/dev/null || true
+    die "pacstrap failed to install core packages"
+  }
 
   # Handle AUR packages via paru/yay if needed
   if (( ${#aur_pkgs[@]} > 0 )); then

@@ -198,6 +198,14 @@ func TestViewRendering(t *testing.T) {
 		t.Errorf("expected keyboard layout in view: %s", view)
 	}
 
+	m.step = stepProfile
+	m.choices = []string{"base", "chadwm", "media", "downloads", "backups", "network", "infrastructure", "databases"}
+	view = m.View()
+	t.Logf("\n--- PROFILE VIEW ---\n%s\n--------------------\n", view)
+	if !strings.Contains(view, "Service Profiles") {
+		t.Errorf("expected Service Profiles in view: %s", view)
+	}
+
 	m.step = stepInstall
 	m.installing = true
 	m.progress = 0.5

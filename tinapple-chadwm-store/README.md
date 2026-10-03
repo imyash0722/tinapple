@@ -1,6 +1,27 @@
 # tinapple-chadwm-store
 A beautiful, tile-based Settings & Store app for chadwm/hyprland desktop environments on tinapple OS.
 
+## Installation & Quick Start
+
+```bash
+# Install
+cd /mnt/shared/projects/tinapple/tinapple-chadwm-store
+sudo make install
+
+# Run TUI
+chadwm-store-tui
+
+# Run Web UI (access at http://localhost:8089)
+chadwm-store-web
+
+# CLI usage
+chadwm-store search firefox
+chadwm-store install neovim
+chadwm-store tile theme
+chadwm-store remote list
+chadwm-store remote enable wayvnc
+```
+
 ## Features
 
 ### 🏪 Store (App Marketplace)
@@ -72,27 +93,6 @@ tinapple-chadwm-store/
 │   └── pikvm.py              # PiKVM backend
 ├── configs/                  # Default configs for each tile
 └── assets/                   # Icons, themes, screenshots
-```
-
-## Quick Start
-
-```bash
-# Install
-cd /mnt/shared/projects/tinapple/tinapple-chadwm-store
-sudo make install
-
-# Run TUI
-chadwm-store-tui
-
-# Run Web UI (access at http://localhost:8089)
-chadwm-store-web
-
-# CLI usage
-chadwm-store search firefox
-chadwm-store install neovim
-chadwm-store tile theme
-chadwm-store remote list
-chadwm-store remote enable wayvnc
 ```
 
 ## Integration with tinarchy

@@ -46,20 +46,20 @@ var stepNames = []string{
 }
 
 var stepIcons = []string{
-	"󰌌", // Keyboard
-	"󰒋", // Network
-	"󰌽", // Bootloader
-	"󰋊", // Disk Layout
-	"󰒋", // Filesystem
-	"", // LUKS Encryption
-	"", // User Profile
-	"󰒃", // Hardware
-	"", // Kernel Profile
-	"󰀵", // Service Profiles
-	"󰚥", // Hardware Drivers
-	"󰘳", // Confirmation
-	"󰑓", // Installation
-	"", // Completed
+	"◈", // Keyboard
+	"◈", // Network
+	"◈", // Bootloader
+	"◈", // Disk Layout
+	"◈", // Filesystem
+	"◈", // LUKS Encryption
+	"◈", // User Profile
+	"◈", // Hardware
+	"◈", // Kernel Profile
+	"◈", // Service Profiles
+	"◈", // Hardware Drivers
+	"◈", // Confirmation
+	"◈", // Installation
+	"✓", // Completed
 }
 
 // Tinapple Design System - High-Contrast Terminal & TTY Theme
@@ -224,31 +224,27 @@ var (
 				Height(1)
 
 	badgeRunning = lipgloss.NewStyle().
-			Foreground(TinappleSuccess).
+			Foreground(TinappleBg).
+			Background(TinappleSuccess).
 			Bold(true).
-			Padding(0, 1).
-			Border(lipgloss.NormalBorder()).
-			BorderForeground(TinappleSuccess)
+			Padding(0, 1)
 
 	badgeStopped = lipgloss.NewStyle().
-			Foreground(TinappleRed).
+			Foreground(TinappleBg).
+			Background(TinappleRed).
 			Bold(true).
-			Padding(0, 1).
-			Border(lipgloss.NormalBorder()).
-			BorderForeground(TinappleRed)
+			Padding(0, 1)
 
 	badgePending = lipgloss.NewStyle().
-			Foreground(TinappleYellow).
+			Foreground(TinappleBg).
+			Background(TinappleYellow).
 			Bold(true).
-			Padding(0, 1).
-			Border(lipgloss.NormalBorder()).
-			BorderForeground(TinappleYellow)
+			Padding(0, 1)
 
 	badgeUnknown = lipgloss.NewStyle().
-			Foreground(TinappleFgMuted).
-			Padding(0, 1).
-			Border(lipgloss.NormalBorder()).
-			BorderForeground(TinappleBorder)
+			Foreground(TinappleBg).
+			Background(TinappleFgMuted).
+			Padding(0, 1)
 
 	sectionHeader = lipgloss.NewStyle().
 			Bold(true).
@@ -1070,18 +1066,24 @@ func renderProgressBar(progress float64, width int) string {
 func renderChoices(choices []string, cursor int) string {
 	var s strings.Builder
 	for i, c := range choices {
-		if i == cursor {
-			indicator := lipgloss.NewStyle().Foreground(TinappleYellow).Bold(true).Render("  ▶ ")
+		isCursor := i == cursor
+		var indicator string
+		if isCursor {
+			indicator = lipgloss.NewStyle().Foreground(TinappleYellow).Bold(true).Render(" ▶ ")
+		} else {
+			indicator = "   "
+		}
+
+		if isCursor {
 			radio := lipgloss.NewStyle().Foreground(TinappleYellow).Bold(true).Render("[●] ")
 			label := lipgloss.NewStyle().Foreground(TinappleFg).Bold(true).Render(c)
 			rowContent := fmt.Sprintf("%s%s", radio, label)
-			styledRow := selectedStyle.Copy().Width(64).Padding(0, 1).Render(rowContent)
+			styledRow := selectedStyle.Copy().Width(62).Padding(0, 1).Render(rowContent)
 			s.WriteString(fmt.Sprintf("%s%s\n", indicator, styledRow))
 		} else {
-			indicator := lipgloss.NewStyle().Foreground(TinappleFgDim).Render("     ")
 			radio := lipgloss.NewStyle().Foreground(TinappleFgDim).Render("[○] ")
 			label := lipgloss.NewStyle().Foreground(TinappleFgMuted).Render(c)
-			s.WriteString(fmt.Sprintf("%s%s%s\n", indicator, radio, label))
+			s.WriteString(fmt.Sprintf("%s %s%s\n", indicator, radio, label))
 		}
 	}
 	return s.String()
@@ -1099,9 +1101,9 @@ func renderMultiChoices(choices []string, selected map[string]bool, cursor ...in
 
 		var indicator string
 		if isCursor {
-			indicator = lipgloss.NewStyle().Foreground(TinappleYellow).Bold(true).Render("  ▶ ")
+			indicator = lipgloss.NewStyle().Foreground(TinappleYellow).Bold(true).Render(" ▶ ")
 		} else {
-			indicator = lipgloss.NewStyle().Foreground(TinappleFgDim).Render("     ")
+			indicator = "   "
 		}
 
 		var box string
@@ -1109,22 +1111,22 @@ func renderMultiChoices(choices []string, selected map[string]bool, cursor ...in
 		var labelStyle lipgloss.Style
 
 		if selected[c] {
-			box = lipgloss.NewStyle().Foreground(TinappleYellow).Bold(true).Render(" [✓]")
+			box = lipgloss.NewStyle().Foreground(TinappleYellow).Bold(true).Render("[✓]")
 			badge = badgeRunning.Render("ENABLED")
 			labelStyle = lipgloss.NewStyle().Foreground(TinappleFg).Bold(true)
 		} else {
-			box = lipgloss.NewStyle().Foreground(TinappleFgDim).Render(" [ ]")
+			box = lipgloss.NewStyle().Foreground(TinappleFgDim).Render("[ ]")
 			badge = badgeStopped.Render("DISABLED")
 			labelStyle = lipgloss.NewStyle().Foreground(TinappleFgMuted)
 		}
 
-		name := labelStyle.Render(fmt.Sprintf("%-18s", c))
+		name := labelStyle.Width(18).Render(c)
 		rowContent := fmt.Sprintf("%s  %s  %s", box, name, badge)
 		if isCursor {
-			styledRow := selectedStyle.Copy().Width(64).Padding(0, 1).Render(rowContent)
+			styledRow := selectedStyle.Copy().Width(62).Padding(0, 1).Render(rowContent)
 			s.WriteString(fmt.Sprintf("%s%s\n", indicator, styledRow))
 		} else {
-			s.WriteString(fmt.Sprintf("%s%s\n", indicator, rowContent))
+			s.WriteString(fmt.Sprintf("%s %s\n", indicator, rowContent))
 		}
 	}
 	return s.String()
@@ -1135,13 +1137,14 @@ func (m model) View() string {
 
 	if m.err != "" {
 		var content strings.Builder
-		content.WriteString(sectionHeader.Render("Installation Error"))
+		content.WriteString(sectionHeader.Render("◈  Installation Error"))
 		content.WriteString("\n\n")
 		content.WriteString(fmt.Sprintf("%s  %s\n\n",
 			badgeStopped.Render("ERROR"),
 			errorStyle.Render(m.err),
 		))
-		content.WriteString(helpStyle.Render("An unrecoverable error occurred during installation.") + "\n\n")
+		content.WriteString(helpStyle.Render("An unrecoverable error occurred during installation.") + "\n")
+		content.WriteString(helpStyle.Render("Detailed logs: /var/log/tinapple-install.log") + "\n\n")
 		content.WriteString(btnDanger.Render("Quit [q]"))
 		content.WriteString("\n")
 
@@ -1344,14 +1347,14 @@ func (m model) View() string {
 
 		for _, it := range summaryItems {
 			label := lipgloss.NewStyle().Foreground(TinappleFgMuted).Width(16).Render(it.label + ":")
-			val := lipgloss.NewStyle().Foreground(TinappleFg).Bold(true).Render(it.val)
-			content.WriteString(fmt.Sprintf("  %s %-32s %s\n", label, val, it.badge))
+			val := lipgloss.NewStyle().Foreground(TinappleFg).Bold(true).Width(32).Render(it.val)
+			content.WriteString(fmt.Sprintf("  %s %s %s\n", label, val, it.badge))
 		}
 
 		if m.answers["proprietary_drivers"] != "" {
 			label := lipgloss.NewStyle().Foreground(TinappleFgMuted).Width(16).Render("Drivers:")
-			val := lipgloss.NewStyle().Foreground(TinappleYellow).Bold(true).Render(m.answers["proprietary_drivers"])
-			content.WriteString(fmt.Sprintf("  %s %-32s %s\n", label, val, badgePending.Render("PROPRIETARY")))
+			val := lipgloss.NewStyle().Foreground(TinappleYellow).Bold(true).Width(32).Render(m.answers["proprietary_drivers"])
+			content.WriteString(fmt.Sprintf("  %s %s %s\n", label, val, badgePending.Render("PROPRIETARY")))
 		}
 
 		if m.dryRun {
