@@ -62,6 +62,13 @@ tinapple_pacstrap() {
     tinapple-firstboot
     tinapple-maintenance
     tinapple-config-generator
+    mkinitcpio
+    iptables
+    pipewire
+    pipewire-pulse
+    pipewire-alsa
+    pipewire-jack
+    wireplumber
   )
 
   # Kernel selection

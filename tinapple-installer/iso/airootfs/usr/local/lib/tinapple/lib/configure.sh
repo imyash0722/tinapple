@@ -197,6 +197,21 @@ network:
   dhcp: true
 EOM"
 
+  # 10. Configure pacman repository on target
+  log_info "configuring pacman repositories on target..."
+  if ! grep -q '\[tinapple\]' "$target/etc/pacman.conf" 2>/dev/null; then
+    run_sh "cat << 'EOPAC' >> $target/etc/pacman.conf
+
+[tinapple]
+SigLevel = Optional TrustAll
+Server = file:///opt/tinapple-repo/\$arch
+Include = /etc/pacman.d/tinapple-mirrorlist
+EOPAC"
+  fi
+  if [[ -d /opt/tinapple-repo ]]; then
+    run_sh "mkdir -p $target/opt && cp -a /opt/tinapple-repo $target/opt/ 2>/dev/null || true"
+  fi
+
   # Export output variables for next stage
   export TINAPPLE_CONFIGURED="true"
   export TINAPPLE_STAGE="configure"

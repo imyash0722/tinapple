@@ -12,6 +12,18 @@ if ! pgrep -x sshd >/dev/null 2>&1; then
   systemctl restart sshd 2>/dev/null || /usr/bin/sshd 2>/dev/null || true
 fi
 
+# Ensure network services and DNS resolution are initialized
+systemctl start systemd-networkd 2>/dev/null || true
+systemctl start systemd-resolved 2>/dev/null || true
+systemctl start NetworkManager 2>/dev/null || true
+if [[ ! -s /etc/resolv.conf ]]; then
+  if [[ -f /run/systemd/resolve/stub-resolv.conf ]]; then
+    ln -sf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf 2>/dev/null || true
+  else
+    printf "nameserver 1.1.1.1\nnameserver 8.8.8.8\n" > /etc/resolv.conf 2>/dev/null || true
+  fi
+fi
+
 # Check if we're on TTY1 and not already in installer or previously exited
 if [[ "$(tty)" == "/dev/tty1" ]] && [[ -z "${TINAPPLE_INSTALLER_RUNNING:-}" ]] && [[ ! -f /tmp/.tinapple_installer_exited ]]; then
   export TINAPPLE_INSTALLER_RUNNING=1

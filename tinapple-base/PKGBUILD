@@ -8,10 +8,10 @@ url="https://github.com/tinapple/tinapple-arch"
 license=(MIT)
 depends=(
   'base' 'linux-lts' 'linux-lts-headers' 'linux-firmware'
-  'systemd' 'systemd-sysvcompat' 'systemd-resolved' 'systemd-networkd'
+  'systemd' 'systemd-sysvcompat'
   'networkmanager' 'polkit' 'sudo' 'vim' 'zsh' 'git' 'curl' 'wget'
   'tinapple-keyring' 'tinapple-mirrorlist'
-  'tinapple-hw' 'tinapple-boot-apply' 'tinapple-firstboot'
+  'tinapple-hw' 'tinapple-firstboot'
   'tinapple-nginx'
 )
 optdepends=(
