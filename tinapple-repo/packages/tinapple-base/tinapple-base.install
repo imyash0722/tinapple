@@ -1,4 +1,15 @@
 post_install() {
+  # Configure tinapple repository in /etc/pacman.conf if needed
+  if [[ -f /etc/pacman.conf ]] && ! grep -q '\[tinapple\]' /etc/pacman.conf 2>/dev/null; then
+    cat << 'EOPAC' >> /etc/pacman.conf
+
+[tinapple]
+SigLevel = Optional TrustAll
+Server = file:///opt/tinapple-repo/$arch
+Include = /etc/pacman.d/tinapple-mirrorlist
+EOPAC
+  fi
+
   # Enable core systemd services
   systemctl enable systemd-resolved.service >/dev/null 2>&1 || true
   systemctl enable systemd-networkd.service >/dev/null 2>&1 || true

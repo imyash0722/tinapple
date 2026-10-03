@@ -31,7 +31,7 @@ source=(
 sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP')
 
 package() {
-  install -Dm644 "$srcdir/pacman.conf" "$pkgdir/etc/pacman.conf"
+  install -Dm644 "$srcdir/pacman.conf" "$pkgdir/etc/pacman.d/tinapple-pacman.conf"
   install -Dm644 "$srcdir/manifest.yaml" "$pkgdir/etc/tinapple/manifest.yaml"
   install -Dm644 "$srcdir/tinapple-lid.conf" "$pkgdir/etc/systemd/logind.conf.d/tinapple-lid.conf"
   install -Dm644 "$srcdir/90-tinapple.preset" "$pkgdir/usr/lib/systemd/system-preset/90-tinapple.preset"

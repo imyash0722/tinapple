@@ -31,9 +31,9 @@ tinapple_rank_mirrors() {
     log_info "mirror ranking tools not found; using existing mirrorlist"
   fi
 
-  # Prepend fast CDN mirrors at the very top of mirrorlist
-  sed -i '1i Server = https://archlinux.cachyos.org/repo/$repo/os/$arch\nServer = https://geo.mirror.pkgbuild.com/$repo/os/$arch' "$target/etc/pacman.d/mirrorlist" 2>/dev/null || true
-  sed -i '1i Server = https://archlinux.cachyos.org/repo/$repo/os/$arch\nServer = https://geo.mirror.pkgbuild.com/$repo/os/$arch' /etc/pacman.d/mirrorlist 2>/dev/null || true
+  # Prepend fast global CDN mirrors at the very top of mirrorlist
+  sed -i '1i Server = https://geo.mirror.pkgbuild.com/$repo/os/$arch\nServer = https://fastly.mirror.pkgbuild.com/$repo/os/$arch\nServer = https://mirrors.kernel.org/archlinux/$repo/os/$arch' "$target/etc/pacman.d/mirrorlist" 2>/dev/null || true
+  sed -i '1i Server = https://geo.mirror.pkgbuild.com/$repo/os/$arch\nServer = https://fastly.mirror.pkgbuild.com/$repo/os/$arch\nServer = https://mirrors.kernel.org/archlinux/$repo/os/$arch' /etc/pacman.d/mirrorlist 2>/dev/null || true
 
   # Ensure CachyOS repos use the fast and reliable Cloudflare CDN
   for mlist in /etc/pacman.d/cachyos-v3-mirrorlist /etc/pacman.d/cachyos-mirrorlist "$target/etc/pacman.d/cachyos-v3-mirrorlist" "$target/etc/pacman.d/cachyos-mirrorlist"; do

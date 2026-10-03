@@ -33,8 +33,8 @@ source=(
 sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP')
 
 package() {
-  # Install pacman configuration
-  install -Dm644 pacman.conf "$pkgdir/etc/pacman.conf"
+  # Install pacman configuration template (avoid conflicting with pacman's /etc/pacman.conf)
+  install -Dm644 pacman.conf "$pkgdir/etc/pacman.d/tinapple-pacman.conf"
 
   # Install default manifest
   install -Dm644 manifest.yaml "$pkgdir/etc/tinapple/manifest.yaml"
