@@ -1,0 +1,14 @@
+TIMEOUT=5
+DEFAULT_ENTRY=tinapple
+
+ENTRY_0=linux
+ENTRY_0_TITLE=tinapple OS (lts)
+ENTRY_0_KERNEL=vmlinuz-linux-lts
+ENTRY_0_INITRD=initramfs-linux-lts.img
+ENTRY_0_CMDLINE=root=UUID=@ROOT_UUID@ rw quiet splash loglevel=3
+
+ENTRY_1=linux
+ENTRY_1_TITLE=tinapple OS (lts fallback)
+ENTRY_1_KERNEL=vmlinuz-linux-lts
+ENTRY_1_INITRD=initramfs-linux-lts-fallback.img
+ENTRY_1_CMDLINE=root=UUID=@ROOT_UUID@ rw quiet splash loglevel=3

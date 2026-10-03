@@ -146,7 +146,7 @@ static const Key keys[] = {
     { 0,                                XF86XK_AudioLowerVolume,  spawn, {.v = downvol } },
     { 0,                                XF86XK_AudioMute,         spawn, {.v = mutevol } },
 
-    { MODKEY,                           XK_Return,  spawn,            SHCMD("st || alacritty") },
+    { MODKEY,                           XK_Return,  spawn,            SHCMD("foot || alacritty || xterm") },
     { MODKEY,                           XK_d,       spawn,            SHCMD("rofi -show drun") },
     { MODKEY,                           XK_space,   spawn,            SHCMD("rofi -show drun") },
     { MODKEY,                           XK_a,       spawn,            SHCMD("rofi -show tinapple-actions") },

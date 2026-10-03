@@ -1,0 +1,29 @@
+{
+  "name": "chadwm",
+  "description": "chadwm window manager configuration",
+  "category": "chadwm",
+  "priority": 10,
+  "files": {
+    "/home/{{.user}}/.config/chadwm/config.h": "#define MODKEY Mod4Mask\n#define GAPS {{.gaps}}\n#define BORDER_WIDTH {{.border_width}}\n#define BORDER_COLOR_FOCUSED \"{{.border_color_focused}}\"\n#define BORDER_COLOR_UNFOCUSED \"{{.border_color_unfocused}}\"\n#define GAPS_INNER {{.gaps_inner}}\n#define GAPS_OUTER {{.gaps_outer}}\n#define SMART_GAPS {{.smart_gaps}}\n#define SMART_BORDERS {{.smart_borders}}\n#define BAR_POSITION \"{{.bar_position}}\"\n#define BAR_HEIGHT {{.bar_height}}\n#define FONT \"{{.font}}\"\n",
+    "/home/{{.user}}/.config/picom/picom.conf": "backend = \"glx\";\nvsync = true;\nshadow = true;\nshadow-radius = 12;\nshadow-offset-x = -8;\nshadow-offset-y = -8;\nshadow-opacity = 0.3;\nfading = true;\nfade-in-step = 0.03;\nfade-out-step = 0.03;\n",
+    "/home/{{.user}}/.config/polybar/config.ini": "[bar/main]\nwidth = 100%\nheight = {{.bar_height}}\nbackground = #1a1a2e\nforeground = #c0caf5\nfont-0 = {{.font}}:size=10;2\nfont-1 = Noto Color Emoji:size=10;2\nmodules-left = tinapple-workspaces\nmodules-center = tinapple-date\nmodules-right = tinapple-pulseaudio tinapple-battery tinapple-network\n",
+    "/home/{{.user}}/.config/rofi/config.rasi": "* { font: \"{{.font}}\"; }",
+    "/home/{{.user}}/.config/dunst/dunstrc": "[global]\nfont = {{.font}}\nframe_width = 2\nframe_color = \"{{.border_color_focused}}\"\nformat = \"<b>{{summary}}</b>\\n{{body}}\""
+  },
+  "variables": {
+    "user": {"name": "user", "description": "Target username", "default": "admin", "required": true, "type": "string"},
+    "gaps": {"name": "gaps", "description": "Outer gaps", "default": "10", "type": "int"},
+    "border_width": {"name": "border_width", "description": "Border width in px", "default": "2", "type": "int"},
+    "border_color_focused": {"name": "border_color_focused", "description": "Focused border color", "default": "#2ecc71", "type": "color"},
+    "border_color_unfocused": {"name": "border_color_unfocused", "description": "Unfocused border color", "default": "#2c3e50", "type": "color"},
+    "gaps_inner": {"name": "gaps_inner", "description": "Inner gaps", "default": "10", "type": "int"},
+    "gaps_outer": {"name": "gaps_outer", "description": "Outer gaps", "default": "10", "type": "int"},
+    "smart_gaps": {"name": "smart_gaps", "description": "Smart gaps flag", "default": "1", "type": "int"},
+    "smart_borders": {"name": "smart_borders", "description": "Smart borders flag", "default": "1", "type": "int"},
+    "bar_position": {"name": "bar_position", "description": "Bar position", "default": "top", "type": "select", "options": ["top", "bottom"]},
+    "bar_height": {"name": "bar_height", "description": "Bar height in px", "default": "28", "type": "int"},
+    "font": {"name": "font", "description": "Default font", "default": "JetBrainsMono Nerd Font", "type": "string"}
+  },
+  "services": ["chadwm@{{.user}}"],
+  "commands": []
+}

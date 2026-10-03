@@ -24,7 +24,7 @@ Super + Control + s
 
 # Terminal (Super+Return)
 Super + Return
-    alacritty
+    foot
 
 # File manager (Super+Shift+Return)
 Super + Shift + Return

@@ -1,0 +1,21 @@
+{
+  "name": "network",
+  "description": "Network configuration for interfaces, Tailscale and Wireguard",
+  "category": "network",
+  "priority": 50,
+  "files": {
+    "/etc/systemd/network/20-wired.network": "[Match]\nName={{.interface}}\n\n[Network]\nDHCP={{.dhcp}}\nDNS={{.dns}}\n",
+    "/etc/tinapple/network.env": "INTERFACE={{.interface}}\nDHCP={{.dhcp}}\nSTATIC_IP={{.static_ip}}\nGATEWAY={{.gateway}}\nDNS={{.dns}}\nTAILSCALE={{.tailscale}}\nWIREGUARD={{.wireguard}}\n"
+  },
+  "variables": {
+    "interface": {"name": "interface", "description": "Primary network interface", "default": "eth0", "type": "string"},
+    "dhcp": {"name": "dhcp", "description": "Enable DHCP (yes/no)", "default": "yes", "type": "string", "options": ["yes", "no"]},
+    "static_ip": {"name": "static_ip", "description": "Static IP with CIDR", "default": "", "type": "string"},
+    "gateway": {"name": "gateway", "description": "Default gateway", "default": "", "type": "string"},
+    "dns": {"name": "dns", "description": "Primary DNS", "default": "1.1.1.1 9.9.9.9", "type": "string"},
+    "tailscale": {"name": "tailscale", "description": "Enable Tailscale", "default": "true", "type": "bool"},
+    "wireguard": {"name": "wireguard", "description": "Enable Wireguard", "default": "false", "type": "bool"}
+  },
+  "services": ["systemd-networkd", "systemd-resolved"],
+  "commands": []
+}

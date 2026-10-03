@@ -1,0 +1,19 @@
+{
+  "name": "services",
+  "description": "Baseline homelab and media services",
+  "category": "services",
+  "priority": 30,
+  "files": {
+    "/etc/tinapple/services.env": "SERVICES_MEDIA={{.media}}\nSERVICES_DOWNLOADS={{.downloads}}\nSERVICES_BACKUPS={{.backups}}\nSERVICES_INFRA={{.infra}}\nSERVICES_DATABASES={{.databases}}\n"
+  },
+  "variables": {
+    "nginx": {"name": "nginx", "description": "Enable Tinapple Nginx Proxy", "default": "true", "type": "bool"},
+    "media": {"name": "media", "description": "Enable Jellyfin / media stack", "default": "false", "type": "bool"},
+    "downloads": {"name": "downloads", "description": "Enable qBittorrent & downloads", "default": "false", "type": "bool"},
+    "backups": {"name": "backups", "description": "Enable Syncthing & backup timers", "default": "false", "type": "bool"},
+    "infra": {"name": "infra", "description": "Enable Prometheus & Grafana stack", "default": "false", "type": "bool"},
+    "databases": {"name": "databases", "description": "Enable PostgreSQL, MariaDB, Redis", "default": "false", "type": "bool"}
+  },
+  "services": ["tinapple-nginx"],
+  "commands": []
+}

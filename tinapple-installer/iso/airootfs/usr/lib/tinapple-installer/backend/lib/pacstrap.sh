@@ -43,6 +43,11 @@ tinapple_pacstrap() {
     curl
     wget
     openssh
+    tmux
+    tpm
+    chaddy-store
+    xclip
+    xsel
     htop
     pciutils
     usbutils
@@ -118,6 +123,12 @@ tinapple_pacstrap() {
 
     case "$prof" in
       base)
+        pkgs+=(tinapple-chadwm foot picom polybar rofi dunst sxhkd xorg-xinit xorg-xrandr xorg-xsetroot xorg-xset xorg-xprop xorg-xwininfo xorg-xdpyinfo xorg-xev xorg-xlsfonts xorg-xlsclients xorg-xvinfo xorg-xrdb tigervnc)
+        aur_pkgs+=(xrdp)
+        ;;
+      chadwm)
+        pkgs+=(tinapple-chadwm foot picom polybar rofi dunst sxhkd xorg-xinit xorg-xrandr xorg-xsetroot xorg-xset xorg-xprop xorg-xwininfo xorg-xdpyinfo xorg-xev xorg-xlsfonts xorg-xlsclients xorg-xvinfo xorg-xrdb tigervnc)
+        aur_pkgs+=(xrdp)
         ;;
       media)
         pkgs+=(jellyfin-server jellyfin-web)

@@ -1,0 +1,21 @@
+[Unit]
+Description=Tinapple First-Boot Setup Wizard
+Documentation=https://github.com/tinapple/tinapple-arch
+After=network-online.target tinapple-hw-detect.service
+Wants=network-online.target
+ConditionPathExists=!/var/lib/tinapple/firstboot-done
+ConditionPathExists=!/run/archiso
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/tinapple-setup
+StandardInput=tty
+StandardOutput=journal+console
+StandardError=journal+console
+TTYPath=/dev/tty1
+TTYReset=yes
+TTYVHangup=yes
+TTYVTDisallocate=yes
+
+[Install]
+WantedBy=multi-user.target

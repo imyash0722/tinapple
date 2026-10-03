@@ -86,7 +86,7 @@ static const Layout layouts[] = {
 #define STATUSBAR "polybar"
 
 /* Commands */
-static const char *termcmd[]  = { "alacritty", NULL };
+static const char *termcmd[]  = { "foot", NULL };
 static const char *browsercmd[]  = { "firefox", NULL };
 static const char *filecmd[]  = { "thunar", NULL };
 static const char *dashcmd[]  = { "xdg-open", "http://localhost:8088", NULL };

@@ -1,0 +1,21 @@
+{
+  "name": "remote-desktop",
+  "description": "Remote desktop access via xrdp (RDP) and TigerVNC for chadwm",
+  "category": "remote",
+  "priority": 40,
+  "files": {
+    "/etc/xrdp/xrdp.ini": "[Globals]\nini_version=1.0\nfork=true\nport={{.rdp_port}}\nssl_protocols=TLSv1.2, TLSv1.3\ntls_ciphers=HIGH\n[Channels]\nrdpdr=true\nrdpsnd=true\ndrdynvc=true\ncliprdr=true\nrail=true\n[Logging]\nLogLevel=INFO\n",
+    "/etc/xrdp/sesman.ini": "[Globals]\nListenAddress=127.0.0.1\nListenPort=3350\nEnableUserWindowManager=true\nUserWindowManager=chadwm\nDefaultWindowManager=chadwm\n[Security]\nAllowRootLogin=false\n[Sessions]\nX11DisplayOffset=10\nMaxSessions=10\n",
+    "/etc/tigervnc/vncserver-config-defaults": "SESSION=chadwm\nGEOMETRY={{.vnc_geometry}}\nDEPTH=24\nDPI=96\n"
+  },
+  "variables": {
+    "rdp_enabled": {"name": "rdp_enabled", "description": "Enable xrdp RDP server", "default": "true", "type": "bool"},
+    "rdp_port": {"name": "rdp_port", "description": "RDP listening port", "default": "3389", "type": "int"},
+    "vnc_enabled": {"name": "vnc_enabled", "description": "Enable TigerVNC server", "default": "true", "type": "bool"},
+    "vnc_port": {"name": "vnc_port", "description": "VNC base port", "default": "5900", "type": "int"},
+    "vnc_geometry": {"name": "vnc_geometry", "description": "Default VNC display resolution", "default": "1920x1080", "type": "string", "options": ["1920x1080", "2560x1440", "1280x720"]},
+    "ssh_tunnel_only": {"name": "ssh_tunnel_only", "description": "Bind only to localhost / SSH tunnel / Tailscale", "default": "true", "type": "bool"}
+  },
+  "services": ["xrdp", "xrdp-sesman"],
+  "commands": []
+}

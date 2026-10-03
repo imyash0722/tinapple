@@ -1,0 +1,16 @@
+[Unit]
+Description=xrdp Session Manager
+After=network.target
+Requires=network.target
+
+[Service]
+Type=forking
+PIDFile=/run/xrdp/xrdp-sesman.pid
+ExecStart=/usr/bin/xrdp-sesman
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

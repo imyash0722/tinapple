@@ -38,7 +38,13 @@ build-config:
 		(cd tinapple-config-generator && go build -v -o bin/tinapple-config-generator .); \
 	fi
 
-build: build-tui build-dash build-config
+build-store:
+	@echo "==> Building chaddy-store and chaddy-settings..."
+	@if [ -d chaddy-store ]; then \
+		(cd chaddy-store && go build -v -o bin/chaddy-store ./cmd/chaddy-store && go build -v -o bin/chaddy-settings ./cmd/chaddy-settings && mkdir -p ../bin && cp -f bin/chaddy-store ../bin/ && cp -f bin/chaddy-settings ../bin/); \
+	fi
+
+build: build-tui build-dash build-config build-store
 
 test-bash:
 	@echo "==> Checking bash syntax across all scripts..."
@@ -59,6 +65,9 @@ test-go:
 	fi
 	@if [ -d tinapple-dash ]; then \
 		(cd tinapple-dash && go test -v ./... 2>/dev/null || true); \
+	fi
+	@if [ -d chaddy-store ]; then \
+		(cd chaddy-store && go test -v ./...); \
 	fi
 
 test: test-bash test-go

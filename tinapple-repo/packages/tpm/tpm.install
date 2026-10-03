@@ -1,0 +1,24 @@
+post_install() {
+  mkdir -p /etc/skel/.tmux/plugins
+  ln -sfn /usr/share/tmux-plugin-manager /etc/skel/.tmux/plugins/tpm
+  if [ -d /usr/share/tmux/plugins ]; then
+    for p in /usr/share/tmux/plugins/*; do
+      [ -d "$p" ] || continue
+      pname=$(basename "$p")
+      ln -sfn "$p" "/etc/skel/.tmux/plugins/$pname"
+    done
+  fi
+  mkdir -p /root/.tmux/plugins
+  ln -sfn /usr/share/tmux-plugin-manager /root/.tmux/plugins/tpm
+  if [ -d /usr/share/tmux/plugins ]; then
+    for p in /usr/share/tmux/plugins/*; do
+      [ -d "$p" ] || continue
+      pname=$(basename "$p")
+      ln -sfn "$p" "/root/.tmux/plugins/$pname"
+    done
+  fi
+}
+
+post_upgrade() {
+  post_install
+}

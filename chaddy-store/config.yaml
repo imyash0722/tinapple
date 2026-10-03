@@ -1,0 +1,13 @@
+store:
+  repositories:
+    - name: "tinapple-official"
+      url: "https://repo.tinapple.org/apps"
+      enabled: true
+    - name: "aur"
+      url: "https://aur.archlinux.org"
+      enabled: true
+  cache_dir: "/var/cache/chaddy-store"
+  install_root: "/"
+  concurrent_downloads: 3
+  auto_update_check: true
+  update_interval_hours: 6

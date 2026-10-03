@@ -239,6 +239,9 @@ post_install() {
         tinapple-config-generator generate /etc/tinapple/manifest.yaml /etc/tinapple/generated || true
     fi
 
+    say "Installing Chaddy Store & Settings..."
+    pacman -S --noconfirm chaddy-store chaddy-settings 2>/dev/null || warn "Failed to install chaddy-store/settings"
+
     say "Enabling core services..."
     systemctl enable tinapple-nginx tinapple-hw-detect tinapple-battery-daemon \
         tinapple-thermal-daemon tinapple-power-profile-apply tinapple-firstboot >/dev/null 2>&1 || true

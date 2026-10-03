@@ -372,11 +372,18 @@ func initialModel() model {
 		}
 	}
 
+	selected := map[string]bool{
+		"base":      true,
+		"chadwm":    true,
+		"media":     true,
+		"downloads": true,
+	}
+
 	return model{
 		step:     stepKeyboard,
 		choices:  []string{"us", "uk", "de", "fr", "es", "it", "jp", "other"},
 		cursor:   0,
-		selected: make(map[string]bool),
+		selected: selected,
 		answers: map[string]string{
 			"hostname": "tinapple",
 			"username": "tinapple",
@@ -580,6 +587,14 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.step == stepDisk || m.step == stepProfile || m.step == stepDrivers {
 				m.toggleChoice()
 			}
+		case "a", "A":
+			if m.step == stepProfile {
+				return m, m.launchStore()
+			}
+		case "s", "S", "c", "C":
+			if m.step == stepProfile {
+				return m, m.launchSettings()
+			}
 		}
 	}
 	return m, nil
@@ -678,9 +693,11 @@ func (m model) handleEnter() (tea.Model, tea.Cmd) {
 		}
 		m.step = stepProfile
 		m.cursor = 0
-		m.choices = []string{"base", "media", "downloads", "backups", "network", "infrastructure", "databases"}
-		m.selected = make(map[string]bool)
-		for _, p := range []string{"base", "media", "downloads"} {
+		m.choices = []string{"base", "chadwm", "media", "downloads", "backups", "network", "infrastructure", "databases"}
+		if m.selected == nil {
+			m.selected = make(map[string]bool)
+		}
+		for _, p := range []string{"base", "chadwm", "media", "downloads"} {
 			m.selected[p] = true
 		}
 
@@ -719,12 +736,51 @@ func (m *model) toggleChoice() {
 			delete(m.selected, choice)
 		} else {
 			m.selected[choice] = true
+			if choice == "base" {
+				m.selected["chadwm"] = true
+			}
 		}
 	}
 }
 
 func (m *model) toggleProfile() {
 	m.toggleChoice()
+}
+
+func (m *model) launchStore() tea.Cmd {
+	bin := "/usr/local/bin/chaddy-store"
+	if _, err := exec.LookPath(bin); err != nil {
+		if p, err2 := exec.LookPath("chaddy-store"); err2 == nil {
+			bin = p
+		}
+	}
+	return tea.ExecProcess(
+		exec.Command(bin),
+		func(err error) tea.Msg {
+			if err != nil {
+				return installStageErrorMsg{stage: "store", err: err}
+			}
+			return installStageDoneMsg{stage: "store"}
+		},
+	)
+}
+
+func (m *model) launchSettings() tea.Cmd {
+	bin := "/usr/local/bin/chaddy-settings"
+	if _, err := exec.LookPath(bin); err != nil {
+		if p, err2 := exec.LookPath("chaddy-settings"); err2 == nil {
+			bin = p
+		}
+	}
+	return tea.ExecProcess(
+		exec.Command(bin),
+		func(err error) tea.Msg {
+			if err != nil {
+				return installStageErrorMsg{stage: "settings", err: err}
+			}
+			return installStageDoneMsg{stage: "settings"}
+		},
+	)
 }
 
 func (m *model) startInstall() tea.Cmd {
@@ -741,9 +797,13 @@ func (m *model) startInstall() tea.Cmd {
 
 func (m model) selectedProfilesList() []string {
 	var list []string
-	allProfiles := []string{"base", "media", "downloads", "backups", "network", "infrastructure", "databases"}
+	allProfiles := []string{"base", "chadwm", "media", "downloads", "backups", "network", "infrastructure", "databases"}
 	for _, p := range allProfiles {
-		if m.selected[p] {
+		if p == "chadwm" {
+			if m.selected["chadwm"] || m.selected["base"] || len(m.selected) == 0 {
+				list = append(list, p)
+			}
+		} else if m.selected[p] {
 			list = append(list, p)
 		}
 	}
@@ -752,7 +812,11 @@ func (m model) selectedProfilesList() []string {
 
 func (m model) generateManifest() string {
 	var profiles strings.Builder
-	for _, p := range m.selectedProfilesList() {
+	profs := m.selectedProfilesList()
+	if len(profs) == 0 {
+		profs = []string{"base", "chadwm", "media", "downloads"}
+	}
+	for _, p := range profs {
 		profiles.WriteString(fmt.Sprintf("  - %s\n", p))
 	}
 
@@ -1236,9 +1300,15 @@ func (m model) View() string {
 		content.WriteString("\n")
 
 	case stepProfile:
+		if m.selected == nil {
+			m.selected = make(map[string]bool)
+		}
+		if m.selected["base"] {
+			m.selected["chadwm"] = true
+		}
 		content.WriteString(sectionHeader.Render(stepIcons[stepProfile] + "  Service Profiles"))
 		content.WriteString("\n")
-		content.WriteString(helpStyle.Render("Press Space to toggle, Enter to continue"))
+		content.WriteString(helpStyle.Render("Space toggle │ Enter next │ [A] App Store (chaddy-store) │ [S] Settings (chaddy-settings)"))
 		content.WriteString("\n\n")
 		content.WriteString(renderMultiChoices(m.choices, m.selected, m.cursor))
 		content.WriteString("\n")

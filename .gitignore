@@ -11,8 +11,11 @@
 # Compiled binaries and build output
 bin/
 **/bin/
+**/pkg/
+**/src/
 tinapple-dash/tinapple-dash
 tinapple-installer/tui/tinapple-installer
+tinapple-chadwm/tinapple-session
 tinapple-repo/packages/tinapple-dash/tinapple-dash
 
 # Build & ISO output directories
@@ -29,10 +32,11 @@ tinarchy-src/
 .serena/
 .gemini/
 gen_plan/
-tasks/
 GEMINI_*.md
 PROMPT.md
 *.log
+*.old
+*.old.*
 
 # OS and Editor artifacts
 .DS_Store

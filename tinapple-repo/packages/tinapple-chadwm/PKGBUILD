@@ -7,6 +7,7 @@ arch=('x86_64')
 url="https://github.com/tinapple/tinapple-arch"
 license=('MIT')
 depends=('xorg-server' 'xorg-xinit' 'picom' 'polybar' 'rofi' 'sxhkd' 'dunst')
+provides=('chadwm')
 makedepends=('go')
 source=()
 sha256sums=()
@@ -27,6 +28,9 @@ package() {
   fi
   if [ -f "bin/tinapple-chadwm-preflight" ]; then
     install -Dm755 bin/tinapple-chadwm-preflight "$pkgdir/usr/bin/tinapple-chadwm-preflight"
+  fi
+  if [ -f "bin/chadwm" ]; then
+    install -Dm755 bin/chadwm "$pkgdir/usr/bin/chadwm"
   fi
 
   # Systemd user/system service

@@ -1,0 +1,34 @@
+# Maintainer: tinapple Project <https://github.com/tinapple/tinapple-arch>
+pkgname=chaddy-store
+pkgver=0.0.1
+pkgrel=1
+pkgdesc="App Store and Visual Configuration Hub for tinapple"
+arch=('x86_64')
+url="https://github.com/tinapple/tinapple-arch"
+license=('MIT')
+depends=('glibc' 'pacman')
+provides=('chaddy-store' 'chaddy-settings')
+makedepends=('go')
+source=()
+sha256sums=()
+
+build() {
+  cd "$startdir/../../../chaddy-store"
+  export CGO_ENABLED=0
+  go build -trimpath -ldflags="-s -w" -o bin/chaddy-store ./cmd/chaddy-store
+  go build -trimpath -ldflags="-s -w" -o bin/chaddy-settings ./cmd/chaddy-settings
+}
+
+package() {
+  cd "$startdir/../../../chaddy-store"
+  install -Dm755 bin/chaddy-store "$pkgdir/usr/bin/chaddy-store"
+  install -Dm755 bin/chaddy-settings "$pkgdir/usr/bin/chaddy-settings"
+
+  install -Dm755 bin/chaddy-store "$pkgdir/usr/local/bin/chaddy-store"
+  install -Dm755 bin/chaddy-settings "$pkgdir/usr/local/bin/chaddy-settings"
+
+  install -dm755 "$pkgdir/usr/share/tinapple/templates"
+  cp -r templates/* "$pkgdir/usr/share/tinapple/templates/" 2>/dev/null || true
+
+  install -Dm644 config.yaml "$pkgdir/etc/tinapple/chaddy-store.yaml"
+}

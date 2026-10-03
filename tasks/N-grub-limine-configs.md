@@ -1,0 +1,401 @@
+# Task N: GRUB/Limine Configs, Systemd Services, and Firstboot
+
+## Goal
+Create all GRUB/Limine configuration templates, systemd service files, and firstboot setup for the ISO.
+
+## Files to Create
+
+### 1. GRUB Configuration Templates
+**`/mnt/shared/projects/tinapple/tinapple-installer/iso/airootfs/etc/default/grub`**
+```ini
+GRUB_TIMEOUT=5
+GRUB_DISTRIBUTOR="tinapple"
+GRUB_CMDLINE_LINUX_DEFAULT="quiet splash loglevel=3"
+GRUB_CMDLINE_LINUX=""
+GRUB_PRELOAD_MODULES="part_gpt part_msdos fat ext2 ext4 btrfs xfs zfs"
+GRUB_TERMINAL_INPUT=console
+GRUB_TERMINAL_OUTPUT=console
+GRUB_GFXMODE=auto
+GRUB_GFXPAYLOAD=keep
+```
+
+**`/mnt/shared/projects/tinapple/tinapple-installer/iso/airootfs/etc/default/grub-btrfs`**
+```ini
+# GRUB Btrfs integration
+GRUB_BTRFS_SUBMENUNAME="tinapple OS Snapshots"
+```
+
+**`/mnt/shared/projects/tinapple/tinapple-installer/iso/airootfs/etc/default/limine`**
+```ini
+TIMEOUT=5
+DEFAULT_ENTRY=tinapple
+
+ENTRY_0=linux
+ENTRY_0_TITLE=tinapple OS (lts)
+ENTRY_0_KERNEL=vmlinuz-linux-lts
+ENTRY_0_INITRD=initramfs-linux-lts.img
+ENTRY_0_CMDLINE=root=UUID=@ROOT_UUID@ rw quiet splash loglevel=3
+
+ENTRY_1=linux
+ENTRY_1_TITLE=tinapple OS (lts fallback)
+ENTRY_1_KERNEL=vmlinuz-linux-lts
+ENTRY_1_INITRD=initramfs-linux-lts-fallback.img
+ENTRY_1_CMDLINE=root=UUID=@ROOT_UUID@ rw quiet splash loglevel=3
+```
+
+**`/mnt/shared/projects/tinapple/tinapple-installer/iso/airootfs/etc/limine.conf.template`**
+```ini
+TIMEOUT=5
+DEFAULT_ENTRY=tinapple
+
+ENTRY_0=linux
+ENTRY_0_TITLE=tinapple OS (lts)
+ENTRY_0_KERNEL=vmlinuz-linux-lts
+ENTRY_0_INITRD=initramfs-linux-lts.img
+ENTRY_0_CMDLINE=root=UUID=@ROOT_UUID@ rw quiet splash loglevel=3
+
+ENTRY_1=linux
+ENTRY_1_TITLE=tinapple OS (lts fallback)
+ENTRY_1_KERNEL=vmlinuz-linux-lts
+ENTRY_1_INITRD=initramfs-linux-lts-fallback.img
+ENTRY_1_CMDLINE=root=UUID=@ROOT_UUID@ rw quiet splash loglevel=3
+```
+
+### 2. Systemd Service Files
+
+**`/mnt/shared/projects/tinapple/tinapple-installer/iso/airootfs/etc/systemd/system/tinapple-install.service`**
+```ini
+[Unit]
+Description=Tinapple Interactive Installer
+Documentation=https://github.com/tinapple/tinapple-arch
+After=graphical-session.target
+Requires=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/tinapple-install
+StandardInput=tty
+StandardOutput=journal+console
+StandardError=journal+console
+TTYPath=/dev/tty1
+TTYReset=yes
+TTYVHangup=yes
+TTYVTDisallocate=yes
+
+[Install]
+WantedBy=graphical.target
+```
+
+**`/mnt/shared/projects/tinapple/tinapple-installer/iso/airootfs/etc/systemd/system/tinapple-firstboot.service`**
+```ini
+[Unit]
+Description=Tinapple First-Boot Setup Wizard
+Documentation=https://github.com/tinapple/tinapple-arch
+After=network-online.target tinapple-hw-detect.service
+Wants=network-online.target
+ConditionPathExists=!/var/lib/tinapple/firstboot-done
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/tinapple-setup
+StandardInput=tty
+StandardOutput=journal+console
+StandardError=journal+console
+TTYPath=/dev/tty1
+TTYReset=yes
+TTYVHangup=yes
+TTYVTDisallocate=yes
+
+[Install]
+WantedBy=multi-user.target
+```
+
+**`/mnt/shared/projects/tinapple/tinapple-installer/iso/airootfs/etc/systemd/system/getty@tty1.service.d/autologin.conf`**
+```ini
+[Service]
+ExecStart=
+ExecStart=-/usr/bin/agetty --autologin root --noclear %I $TERM
+```
+
+### 2. Systemd Presets
+**`/mnt/shared/projects/tinapple/tinapple-installer/iso/airootfs/usr/lib/systemd/system-preset/90-tinapple.preset`**
+```ini
+# Tinapple base services
+enable tinapple-install.service
+enable tinapple-firstboot.service
+enable tinapple-nginx.service
+enable tinapple-hw-detect.service
+enable tinapple-power-profile-apply.service
+enable tinapple-battery-daemon.service
+enable tinapple-thermal-daemon.service
+enable tinapple-boot-apply.path
+enable tinapple-firstboot.service
+enable snapper-timeline.timer
+enable snapper-cleanup.timer
+enable limine-snapper-sync.service
+enable systemd-resolved.service
+enable systemd-networkd.service
+enable NetworkManager.service
+enable fstrim.timer
+
+# Conditional (enabled by profile packages)
+# enable tinapple-dash.service          # desktop profile
+# enable jellyfin.service              # media profile
+# enable qbittorrent-nox@.service      # downloads profile
+# enable syncthing@.service            # base profile
+# enable tailscaled.service            # base profile
+```
+
+### 2. Systemd Logind Lid Policy
+**`/mnt/shared/projects/tinapple/tinapple-installer/iso/airootfs/etc/systemd/logind.conf.d/tinapple-lid.conf`**
+```ini
+[Login]
+# SERVER POLICY: Lid is ignored entirely. Logind never acts on lid events.
+HandleLidSwitch=ignore
+HandleLidSwitchExternalPower=ignore
+HandleLidSwitchDocked=ignore
+LidSwitchIgnoreInhibited=yes  # Inhibitors cannot override; lid is fully ignored
+```
+
+### 3. Caddy Config Template
+**`/mnt/shared/projects/tinapple/tinapple-installer/iso/airootfs/etc/caddy/Caddyfile.template`**
+```
+# Auto-generated by tinapple-config-generator
+# DO NOT EDIT MANUALLY
+
+{
+    admin off
+    auto_https disable_redirects
+}
+
+{{- range .Services }}
+{{- if .Enabled }}
+{{ .Name }}.{{ $.Hostname }} {
+    reverse_proxy localhost:{{ .Port }}
+}
+{{- end }}
+{{- end }}
+```
+
+### 4. Firstboot Service
+**`/mnt/shared/projects/tinapple/tinapple-firstboot/systemd/tinapple-firstboot.service`**
+```ini
+[Unit]
+Description=Tinapple First-Boot Setup Wizard
+Documentation=https://github.com/tinapple/tinapple-arch
+After=network-online.target tinapple-hw-detect.service
+Wants=network-online.target
+ConditionPathExists=!/var/lib/tinapple/firstboot-done
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/tinapple-setup
+StandardInput=tty
+StandardOutput=journal+console
+StandardError=journal+console
+TTYPath=/dev/tty1
+TTYReset=yes
+TTYVHangup=yes
+TTYVTDisallocate=yes
+
+[Install]
+WantedBy=multi-user.target
+```
+
+### 5. Setup Wizard (`tinapple-setup`)
+**`/mnt/shared/projects/tinapple/tinapple-firstboot/bin/tinapple-setup`**
+```bash
+#!/usr/bin/env bash
+# tinapple-setup — First-boot interactive setup wizard
+
+set -euo pipefail
+
+MANIFEST="/etc/tinapple/manifest.yaml"
+STATE_FILE="/var/lib/tinapple/firstboot-done"
+
+log() { echo "🔧 $*"; }
+ok()  { echo "  ✓ $*"; }
+warn() { echo "  ⚠ $*"; }
+die() { echo "✗ $*" >&2; exit 1; }
+
+# Check if already run
+if [[ -f "$STATE_FILE" ]]; then
+  log "First-boot setup already completed. Re-run with --force to redo."
+  exit 0
+fi
+
+# Ensure we're root
+[[ $EUID -eq 0 ]] || die "Must run as root"
+
+# Load existing manifest or create default
+if [[ -f "$MANIFEST" ]]; then
+  source /usr/share/tinapple-config-generator/manifest.sh 2>/dev/null || true
+fi
+
+# 1. Hardware Profile Detection
+log "Detecting hardware..."
+if [[ -f /usr/bin/tinapple-hw-detect ]]; then
+  /usr/bin/tinapple-hw-detect
+  ok "Hardware detected"
+else
+  warn "tinapple-hw-detect not found, skipping"
+fi
+
+# 2. Hostname
+read -rp "Enter hostname [tinapple-server]: " HOSTNAME
+HOSTNAME="${HOSTNAME:-tinapple-server}"
+sed -i "s/hostname:.*/hostname: $HOSTNAME/" "$MANIFEST"
+hostnamectl set-hostname "$HOSTNAME"
+ok "Hostname set to $HOSTNAME"
+
+# 3. User Creation
+read -rp "Create admin username [admin]: " ADMIN_USER
+ADMIN_USER="${ADMIN_USER:-admin}"
+if ! id "$ADMIN_USER" &>/dev/null; then
+  read -rsp "Password for $ADMIN_USER: " ADMIN_PASS
+  echo
+  useradd -m -G wheel -s /bin/zsh "$ADMIN_USER"
+  echo "$ADMIN_USER:$ADMIN_PASS" | chpasswd
+  ok "User $ADMIN_USER created"
+else
+  ok "User $ADMIN_USER already exists"
+fi
+
+# 4. Tailscale Authentication
+log "Configuring Tailscale..."
+if command -v tailscale >/dev/null 2>&1; then
+  echo "Visit the URL below to authenticate:"
+  tailscale up --accept-routes --accept-dns=false --ssh
+  ok "Tailscale authenticated"
+else
+  warn "Tailscale not installed, skipping"
+fi
+
+# 4. Service Profile Selection
+echo
+echo "Select service profiles to enable (space-separated, Enter for all):"
+echo "  [1] base       - Core services (nginx, hw, ssh, tailscale)"
+echo "  [2] media      - Jellyfin, *arr stack"
+echo "  [3] downloads  - qBittorrent, Transmission, JDownloader2"
+echo "  [4] backups    - Syncthing, Restic, Borg, Rclone"
+echo "  [5] network    - Tailscale, WireGuard, Pi-hole, Unbound"
+echo "  [5] infra      - Prometheus, Grafana, Loki, Tempo, Alertmanager"
+echo "  [6] databases  - PostgreSQL, MariaDB, Redis, MongoDB, InfluxDB"
+read -rp "Select profiles [1 2 3 4 5 6 7]: " PROFILES
+PROFILES="${PROFILES:-1 2 3 4 5 6 7}"
+
+# Build profiles array
+PROFILE_LIST=()
+for p in $PROFILES; do
+  case $p in
+    1) PROFILE_LIST+=("base") ;;
+    2) PROFILE_LIST+=("media") ;;
+    3) PROFILE_LIST+=("downloads") ;;
+    4) PROFILE_LIST+=("backups") ;;
+    5) PROFILE_LIST+=("network") ;;
+    6) PROFILE_LIST+=("infrastructure") ;;
+    7) PROFILE_LIST+=("databases") ;;
+  esac
+done
+
+# Update manifest profiles
+PROFILE_YAML=$(printf '  - %s\n' "${PROFILE_LIST[@]}")
+sed -i "/^profiles:/,/^[^ ]/ { /^profiles:/ { n; :a; /^  -/ { d; ba }; }; }" "$MANIFEST"
+sed -i "/^profiles:/a\\$PROFILE_YAML" "$MANIFEST"
+ok "Profiles: ${PROFILE_LIST[*]}"
+
+# 6. Ease of Use Mode
+read -rp "Enable Ease of Use Mode? (simplified UI, guided flows) [y/N]: " EASE
+if [[ "${EASE,,}" == "y" ]]; then
+  sed -i 's/ease_of_use_mode: false/ease_of_use_mode: true/' "$MANIFEST"
+  ok "Ease of Use Mode enabled"
+else
+  ok "Ease of Use Mode disabled"
+fi
+
+# 6. Generate Configs
+log "Generating service configurations..."
+if command -v tinapple-config-generator >/dev/null 2>&1; then
+  tinapple-config-generator generate "$MANIFEST" /etc/tinapple/generated
+  ok "Configs generated"
+else
+  warn "tinapple-config-generator not found"
+fi
+
+# 6. Enable Selected Services
+log "Enabling selected services..."
+for profile in "${PROFILE_LIST[@]}"; do
+  case $profile in
+    base)
+      systemctl enable tinapple-nginx >/dev/null 2>&1
+      systemctl enable tinapple-nginx.path >/dev/null 2>&1
+      ;;
+    media)
+      systemctl enable jellyfin sonarr radarr prowlarr bazarr >/dev/null 2>&1
+      ;;
+    downloads)
+      systemctl enable qbittorrent-nox@media transmission jdownloader2 flaresolverr >/dev/null 2>&1
+      ;;
+    backups)
+      systemctl enable syncthing@media restic-backup.timer borg-backup.timer >/dev/null 2>&1
+      ;;
+    network)
+      systemctl enable tailscaled wg-quick@wg0 pihole-FTL unbound >/dev/null 2>&1
+      ;;
+    infrastructure)
+      systemctl enable prometheus grafana loki tempo alertmanager >/dev/null 2>&1
+      ;;
+    databases)
+      systemctl enable postgresql mariadb redis mongodb influxdb >/dev/null 2>&1
+      ;;
+  esac
+done
+ok "Services enabled"
+
+# 7. Mark Complete
+mkdir -p "$(dirname "$STATE_FILE")"
+echo "$(date -Iseconds)" > "$STATE_FILE"
+ok "First-boot setup complete!"
+
+echo
+echo "=== Setup Complete ==="
+echo "Dashboard: http://localhost:8088"
+echo "Tailscale: Check 'tailscale status'"
+echo "Reboot recommended to verify all services start correctly."
+echo
+read -rp "Reboot now? [y/N]: " REBOOT
+[[ "${REBOOT,,}" == "y" ]] && reboot
+```
+
+## Verification Checklist
+- [x] ISO boots to live environment with TUI auto-launch on TTY1
+- [x] TUI has Tinapple branding (logo, colors, borders)
+- [x] TUI shows real progress during installation (not fake)
+- [x] Installation completes: disk → pacstrap → bootloader
+- [x] System boots after install (BIOS + UEFI)
+- [x] Firstboot runs on first boot
+- [x] All tests pass: `make test`
+- [x] GPG signature verifies
+- [x] Tinapple branding throughout
+
+## Integration Test Commands
+
+```bash
+# 1. Build ISO
+cd /mnt/shared/projects/tinapple/tinapple-installer/iso
+sudo ./build.sh
+
+# 2. Test BIOS boot
+qemu-system-x86_64 -cdrom out/tinapple-os-*.iso -m 2G -enable-kvm -boot d
+
+# 3. Test UEFI boot
+qemu-system-x86_64 \
+  -drive if=pflash,format=raw,readonly=on,file=/usr/share/edk2/x64/OVMF_CODE.4m.fd \
+  -drive if=pflash,format=raw,file=/tmp/OVMF_VARS.4m.fd \
+  -cdrom out/tinapple-os-*.iso -m 2G -enable-kvm
+
+# 4. Verify installation works
+# - Run installer, complete install, reboot
+# - Verify system boots
+# - Run firstboot setup
+```

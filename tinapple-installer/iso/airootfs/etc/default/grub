@@ -1,0 +1,9 @@
+GRUB_TIMEOUT=5
+GRUB_DISTRIBUTOR="tinapple"
+GRUB_CMDLINE_LINUX_DEFAULT="quiet splash loglevel=3"
+GRUB_CMDLINE_LINUX=""
+GRUB_PRELOAD_MODULES="part_gpt part_msdos fat ext2 ext4 btrfs xfs zfs"
+GRUB_TERMINAL_INPUT=console
+GRUB_TERMINAL_OUTPUT=console
+GRUB_GFXMODE=auto
+GRUB_GFXPAYLOAD=keep

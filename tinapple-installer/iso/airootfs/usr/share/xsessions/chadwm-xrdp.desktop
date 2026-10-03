@@ -1,0 +1,6 @@
+[Desktop Entry]
+Name=chadwm (xrdp)
+Comment=chadwm window manager (xrdp session)
+Exec=/usr/bin/chadwm
+Type=Application
+DesktopNames=chadwm

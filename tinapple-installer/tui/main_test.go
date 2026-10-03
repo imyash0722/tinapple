@@ -370,11 +370,34 @@ func TestBuildStageEnv(t *testing.T) {
 	if !strings.Contains(joined, "TINAPPLE_KERNEL_PROFILE=hardened") {
 		t.Errorf("env missing TINAPPLE_KERNEL_PROFILE=hardened: %s", joined)
 	}
-	if !strings.Contains(joined, "TINAPPLE_PROFILES=base,media") {
-		t.Errorf("env missing TINAPPLE_PROFILES=base,media: %s", joined)
+	if !strings.Contains(joined, "TINAPPLE_PROFILES=") || !strings.Contains(joined, "base") || !strings.Contains(joined, "chadwm") || !strings.Contains(joined, "media") {
+		t.Errorf("env missing TINAPPLE_PROFILES with base, chadwm, media: %s", joined)
 	}
 	if !strings.Contains(joined, "TINAPPLE_DISK=") {
 		t.Errorf("env missing TINAPPLE_DISK: %s", joined)
+	}
+}
+
+func TestChadwmDefaultProfile(t *testing.T) {
+	m := initialModel()
+	if !m.selected["chadwm"] {
+		t.Errorf("expected chadwm to be pre-selected in initialModel")
+	}
+	profs := m.selectedProfilesList()
+	found := false
+	for _, p := range profs {
+		if p == "chadwm" {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Errorf("expected chadwm to be present in selectedProfilesList")
+	}
+
+	manifest := m.generateManifest()
+	if !strings.Contains(manifest, "- chadwm") {
+		t.Errorf("expected manifest to include '- chadwm' by default, got:\n%s", manifest)
 	}
 }
 
@@ -578,5 +601,27 @@ func TestUniversalDriversStage(t *testing.T) {
 	}
 }
 
+func TestStoreAndSettingsIntegration(t *testing.T) {
+	m := initialModel()
+	m.step = stepProfile
+	m.cursor = 0
 
+	// Test pressing 'a' triggers launchStore
+	mModel, cmdStore := m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
+	if cmdStore == nil {
+		t.Errorf("expected non-nil tea.Cmd when pressing 'a' on stepProfile")
+	}
+	m = mModel.(model)
 
+	// Test pressing 's' triggers launchSettings
+	mModel, cmdSettings := m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'s'}})
+	if cmdSettings == nil {
+		t.Errorf("expected non-nil tea.Cmd when pressing 's' on stepProfile")
+	}
+
+	// Verify view rendering includes hints
+	viewStr := m.View()
+	if !strings.Contains(viewStr, "App Store") || !strings.Contains(viewStr, "Settings") {
+		t.Errorf("expected stepProfile view to contain App Store and Settings hints")
+	}
+}

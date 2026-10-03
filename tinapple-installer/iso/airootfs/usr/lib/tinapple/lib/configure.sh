@@ -58,6 +58,16 @@ EOH"
   run_sh "echo '$username:$password' | arch-chroot $target chpasswd"
   run_sh "echo 'root:$root_password' | arch-chroot $target chpasswd"
 
+  # Deploy default dotfiles (.tmux.conf, .zshrc, foot.ini, TPM plugins)
+  log_info "deploying default tmux, foot, and zsh configurations..."
+  if [[ -f "/etc/skel/.tmux.conf" ]]; then
+    run_sh "mkdir -p $target/etc/skel $target/home/$username $target/root"
+    run_sh "cp -rf /etc/skel/. $target/etc/skel/ 2>/dev/null || true"
+    run_sh "cp -rf /etc/skel/. $target/home/$username/ 2>/dev/null || true"
+    run_sh "cp -rf /etc/skel/. $target/root/ 2>/dev/null || true"
+    run_sh "arch-chroot $target chown -R $username:users /home/$username 2>/dev/null || true"
+  fi
+
   # 6. Enable Systemd Services
   local -a services=(
     systemd-resolved
@@ -68,6 +78,7 @@ EOH"
     tinapple-battery-daemon
     tinapple-thermal-daemon
     tinapple-power-profile-apply
+    chadwm@"$username"
   )
 
   # Configure SSH on target
@@ -82,6 +93,9 @@ EOH"
     local prof
     prof=$(echo "$raw_prof" | tr -d '[:space:]')
     case "$prof" in
+      base|chadwm)
+        services+=(chadwm@"$username")
+        ;;
       media)
         services+=(jellyfin)
         ;;
@@ -158,6 +172,9 @@ bootloader: $bootloader
 profiles:
 $(for p in "${prof_array[@]}"; do echo "  - $(echo "$p" | tr -d '[:space:]')"; done)
 services:
+  chadwm:
+    enabled: true
+    user: $username
   jellyfin:
     enabled: true
   qbittorrent:

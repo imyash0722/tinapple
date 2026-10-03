@@ -59,6 +59,28 @@ vulkan-intel
 xf86-video-amdgpu
 xf86-video-intel
 
+# Window Manager (DEFAULT)
+chadwm
+tinapple-chadwm
+foot
+picom
+polybar
+rofi
+dunst
+sxhkd
+xorg-xinit
+xorg-xrandr
+xorg-xsetroot
+xorg-xset
+xorg-xprop
+xorg-xwininfo
+xorg-xdpyinfo
+xorg-xev
+xorg-xlsfonts
+xorg-xlsclients
+xorg-xvinfo
+xorg-xrdb
+
 # Audio
 pipewire
 pipewire-pulse
@@ -67,6 +89,13 @@ pipewire-jack
 wireplumber
 
 # Utils
+chaddy-store
+tigervnc
+xrdp
+tmux
+tpm
+xclip
+xsel
 vim
 zsh
 git

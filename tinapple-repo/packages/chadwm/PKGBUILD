@@ -1,0 +1,14 @@
+# Maintainer: tinapple Project <https://github.com/tinapple/tinapple-arch>
+pkgname=chadwm
+pkgver=0.0.1
+pkgrel=1
+pkgdesc="Chadwm window manager meta-package for tinapple"
+arch=('any')
+url="https://github.com/tinapple/tinapple-arch"
+license=('MIT')
+depends=('tinapple-chadwm')
+
+package() {
+  install -dm755 "$pkgdir/usr/share/doc/chadwm"
+  echo "chadwm metapackage provided by tinapple-chadwm" > "$pkgdir/usr/share/doc/chadwm/README"
+}

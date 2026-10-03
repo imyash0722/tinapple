@@ -1,0 +1,19 @@
+[Unit]
+Description=xrdp Remote Desktop Server
+After=network.target
+Requires=network.target
+
+[Service]
+Type=forking
+PIDFile=/run/xrdp/xrdp.pid
+EnvironmentFile=-/etc/sysconfig/xrdp
+ExecStart=/usr/bin/xrdp $XRDP_OPTIONS
+ExecReload=/usr/bin/xrdp --reload
+ExecStop=/usr/bin/xrdp --kill
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

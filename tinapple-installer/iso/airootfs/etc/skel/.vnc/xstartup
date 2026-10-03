@@ -1,0 +1,28 @@
+#!/bin/bash
+# xstartup for TigerVNC with chadwm
+
+export XDG_CURRENT_DESKTOP=chadwm
+export XDG_SESSION_TYPE=x11
+export XDG_SESSION_DESKTOP=chadwm
+export XDG_SESSION_CLASS=user
+
+unset SESSION_MANAGER
+unset DBUS_SESSION_BUS_ADDRESS
+
+# Start compositor if available
+if command -v picom >/dev/null 2>&1; then
+  picom &
+fi
+
+# Start notification daemon
+if command -v dunst >/dev/null 2>&1; then
+  dunst &
+fi
+
+# Start polybar status bar if config exists
+if [[ -f "$HOME/.config/tinapple-chadwm/polybar/config.ini" ]] && command -v polybar >/dev/null 2>&1; then
+  polybar -c "$HOME/.config/tinapple-chadwm/polybar/config.ini" main &
+fi
+
+# Start window manager
+exec chadwm

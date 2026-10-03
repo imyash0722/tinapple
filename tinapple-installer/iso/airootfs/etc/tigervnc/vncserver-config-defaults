@@ -1,0 +1,5 @@
+# TigerVNC server defaults
+SESSION=chadwm
+GEOMETRY=1920x1080
+DEPTH=24
+DPI=96

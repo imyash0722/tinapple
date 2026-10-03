@@ -1,0 +1,23 @@
+{
+  "name": "system-base",
+  "description": "Base system configuration",
+  "category": "system",
+  "priority": 100,
+  "files": {
+    "/etc/hostname": "{{.hostname}}\n",
+    "/etc/hosts": "127.0.0.1\tlocalhost\n::1\tlocalhost\n127.0.1.1\t{{.hostname}}.localdomain\t{{.hostname}}\n",
+    "/etc/locale.gen": "en_US.UTF-8 UTF-8\n{{.locale}} UTF-8\n",
+    "/etc/locale.conf": "LANG={{.locale}}\nLC_TIME={{.locale}}\n",
+    "/etc/vconsole.conf": "KEYMAP={{.keymap}}\nFONT={{.console_font}}\n",
+    "/etc/timezone": "{{.timezone}}\n"
+  },
+  "variables": {
+    "hostname": {"name": "hostname", "description": "System hostname", "default": "tinapple", "required": true, "type": "string"},
+    "timezone": {"name": "timezone", "description": "System timezone", "default": "UTC", "type": "string", "options": ["UTC", "America/New_York", "Europe/London", "Asia/Tokyo"]},
+    "locale": {"name": "locale", "description": "System locale", "default": "en_US.UTF-8", "type": "string"},
+    "keymap": {"name": "keymap", "description": "Keyboard layout", "default": "us", "type": "string"},
+    "console_font": {"name": "console_font", "description": "Console font", "default": "lat9w-16", "type": "string"}
+  },
+  "services": ["systemd-resolved", "systemd-networkd", "NetworkManager", "tinapple-hw-detect", "tinapple-power-profile-apply"],
+  "commands": []
+}

@@ -1,0 +1,30 @@
+# Maintainer: tinapple Project <https://github.com/tinapple/tinapple-arch>
+pkgname=tpm
+pkgver=3.1.0
+pkgrel=1
+pkgdesc="Tmux Plugin Manager for tinapple"
+arch=('any')
+url="https://github.com/tmux-plugins/tpm"
+license=('MIT')
+depends=('tmux' 'git')
+install=tpm.install
+source=()
+sha256sums=()
+
+package() {
+  cd "$startdir"
+  install -dm755 "$pkgdir/usr/share/tmux-plugin-manager"
+  if [ -d "tpm-src/tpm" ]; then
+    cp -r tpm-src/tpm/* "$pkgdir/usr/share/tmux-plugin-manager/"
+  fi
+
+  install -dm755 "$pkgdir/usr/share/tmux/plugins"
+  if [ -d "tpm-src" ]; then
+    for d in tpm-src/*; do
+      [ -d "$d" ] || continue
+      pname=$(basename "$d")
+      [ "$pname" = "tpm" ] && continue
+      cp -r "$d" "$pkgdir/usr/share/tmux/plugins/$pname"
+    done
+  fi
+}

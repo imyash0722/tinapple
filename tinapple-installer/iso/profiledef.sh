@@ -25,6 +25,7 @@ file_permissions=(
   ["/etc/ssh/ssh_host_ecdsa_key"]="0:0:600"
   ["/usr/local/bin/tinapple-install"]="0:0:755"
   ["/usr/local/bin/tinapple-bootstrap"]="0:0:755"
+  ["/etc/skel/.vnc/xstartup"]="0:0:755"
   ["/usr/lib/tinapple-installer/backend/run-stage.sh"]="0:0:755"
 )
 
