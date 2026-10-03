@@ -208,11 +208,26 @@ tinapple_pacstrap() {
       pacman -Sy --config /etc/pacman.conf --noconfirm || log_warn "pacman -Sy sync completed with warnings"
     fi
   fi
-  run pacstrap -C /etc/pacman.conf "$target" "${unique_pkgs[@]}" || {
-    log_warn "pacstrap exited with an error. Last 20 log entries:"
+  local retries=3
+  local attempt=1
+  local pacstrap_success=false
+
+  while (( attempt <= retries )); do
+    log_info "running pacstrap (attempt %d/%d)..." "$attempt" "$retries"
+    if run pacstrap -C /etc/pacman.conf "$target" "${unique_pkgs[@]}"; then
+      pacstrap_success=true
+      break
+    fi
+    log_warn "pacstrap attempt %d failed (possibly transient network error); retrying in 3 seconds..." "$attempt"
+    sleep 3
+    attempt=$((attempt + 1))
+  done
+
+  if [[ "$pacstrap_success" != "true" ]]; then
+    log_warn "pacstrap exited with an error after %d attempts. Last 20 log entries:" "$retries"
     tail -n 20 /var/log/tinapple-install.log 2>/dev/null || true
     die "pacstrap failed to install core packages"
-  }
+  fi
 
   # Handle AUR packages via paru/yay if needed
   if (( ${#aur_pkgs[@]} > 0 )); then
