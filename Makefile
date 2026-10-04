@@ -70,7 +70,11 @@ test-go:
 		(cd chaddy-store && go test -v ./...); \
 	fi
 
-test: test-bash test-go
+test-matrix:
+	@echo "==> Running parallel installer test matrix (all cases)..."
+	@python3 scripts/qemu_installer_matrix.py --all --parallel 4
+
+test: test-bash test-go test-matrix
 
 clean:
 	@echo "==> Cleaning build artifacts..."
