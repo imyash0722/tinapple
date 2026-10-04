@@ -27,6 +27,25 @@ tinapple_pacstrap() {
   step "pacstrap"
   log "running pacstrap with kernel profile '%s', fs '%s', bootloader '%s'..." "$kernel_profile" "$fs" "$bootloader"
 
+  if [[ -n "${TINAPPLE_SKIP_PACSTRAP:-}" && "${TINAPPLE_SKIP_PACSTRAP}" != "0" ]]; then
+    log_warn "TINAPPLE_SKIP_PACSTRAP is active: skipping package bootstrap (~1.7GB download)."
+    if [[ -z ${TINAPPLE_DRYRUN:-} ]]; then
+      mkdir -p "$target"/{etc,usr/bin,usr/lib,var/lib,boot,home,root,run,sys,proc,dev} 2>/dev/null || true
+      if [[ -d /etc/skel ]]; then
+        mkdir -p "$target/etc/skel" 2>/dev/null || true
+        cp -a /etc/skel/. "$target/etc/skel/" 2>/dev/null || true
+      fi
+    fi
+    export TINAPPLE_PACKAGES="base linux-firmware systemd networkmanager sudo vim"
+    export TINAPPLE_AUR_PACKAGES=""
+    export TINAPPLE_KERNEL_PKG="linux-lts"
+    export TINAPPLE_STAGE="pacstrap"
+
+    done_step "pacstrap"
+    log_ok "pacstrap skipped successfully (mock mode)"
+    return 0
+  fi
+
   # Base package set
   local -a pkgs=(
     base

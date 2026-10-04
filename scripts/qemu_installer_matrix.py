@@ -251,7 +251,7 @@ def ensure_boot_cache(iso_path: str) -> None:
 
 # ── Worker Implementation ──────────────────────────────────────────────────────
 
-def run_worker_dryrun(case: Dict[str, Any], work_dir: str) -> Dict[str, Any]:
+def run_worker_dryrun(case: Dict[str, Any], work_dir: str, skip_pacstrap: bool = False) -> Dict[str, Any]:
     """Execute the installer pipeline under TINAPPLE_DRYRUN=1."""
     start_time = time.time()
     log_file = os.path.join(work_dir, "test.log")
@@ -278,6 +278,8 @@ def run_worker_dryrun(case: Dict[str, Any], work_dir: str) -> Dict[str, Any]:
         "TINAPPLE_NET_DHCP": "true" if case.get("network") == "dhcp" else "false",
         "TINAPPLE_BACKEND_DIR": os.path.join(PROJECT_DIR, "tinapple-installer/backend"),
     })
+    if skip_pacstrap:
+        env["TINAPPLE_SKIP_PACSTRAP"] = "1"
 
     if case.get("static_ip"):
         env["TINAPPLE_NET_STATIC_IP"] = case["static_ip"]
@@ -322,7 +324,7 @@ def run_worker_dryrun(case: Dict[str, Any], work_dir: str) -> Dict[str, Any]:
     }
 
 
-def run_worker_qemu(case: Dict[str, Any], work_dir: str, iso_path: str, timeout_sec: int = 180) -> Dict[str, Any]:
+def run_worker_qemu(case: Dict[str, Any], work_dir: str, iso_path: str, timeout_sec: int = 180, skip_pacstrap: bool = False) -> Dict[str, Any]:
     """Execute live VM test in an isolated QEMU sandbox."""
     start_time = time.time()
     os.makedirs(work_dir, exist_ok=True)
@@ -423,10 +425,12 @@ def run_worker_qemu(case: Dict[str, Any], work_dir: str, iso_path: str, timeout_
                 raise RuntimeError("Failed to obtain root prompt on serial console")
 
             # Formulate automated guest script
+            skip_flag = "--skip-pacstrap" if skip_pacstrap else ""
+            skip_env = "export TINAPPLE_SKIP_PACSTRAP=1\n" if skip_pacstrap else ""
             guest_commands = f"""
 export TINAPPLE_AUTO=1
 export TINAPPLE_DRYRUN=1
-export TINAPPLE_DISK=/dev/vda
+{skip_env}export TINAPPLE_DISK=/dev/vda
 export TINAPPLE_FS={case['fs']}
 export TINAPPLE_BOOTLOADER={case['bootloader']}
 export TINAPPLE_FIRMWARE={case['firmware']}
@@ -436,7 +440,7 @@ export TINAPPLE_PROFILES={case['profiles']}
 export TINAPPLE_HOSTNAME=tinapple-{case['id'][:10]}
 export TINAPPLE_USERNAME=tinapple
 export TINAPPLE_PASSWORD=password123
-/usr/local/bin/tinapple-install --auto
+/usr/local/bin/tinapple-install --auto {skip_flag}
 echo "===INSTALL_EXIT_CODE:$?==="
 """
             b64_cmd = base64.b64encode(guest_commands.encode("utf-8")).decode("ascii")
@@ -498,7 +502,7 @@ echo "===INSTALL_EXIT_CODE:$?==="
     }
 
 
-def execute_single_case(case_id: str, mode: str, timeout_sec: int) -> int:
+def execute_single_case(case_id: str, mode: str, timeout_sec: int, skip_pacstrap: bool = False) -> int:
     """Executes a single test case and outputs JSON result line."""
     case = next((c for c in TEST_MATRIX if c["id"] == case_id), None)
     if not case:
@@ -514,9 +518,9 @@ def execute_single_case(case_id: str, mode: str, timeout_sec: int) -> int:
             res = {"case_id": case_id, "status": "FAIL", "error": "No ISO found in out/"}
             print(json.dumps(res))
             return 1
-        result = run_worker_qemu(case, work_dir, iso_path, timeout_sec)
+        result = run_worker_qemu(case, work_dir, iso_path, timeout_sec, skip_pacstrap)
     else:
-        result = run_worker_dryrun(case, work_dir)
+        result = run_worker_dryrun(case, work_dir, skip_pacstrap)
 
     # Output compact single-line JSON
     print(json.dumps(result))
@@ -525,7 +529,7 @@ def execute_single_case(case_id: str, mode: str, timeout_sec: int) -> int:
 
 # ── Orchestrator Implementation ────────────────────────────────────────────────
 
-def run_worker_process(case_id: str, mode: str, timeout_sec: int) -> Dict[str, Any]:
+def run_worker_process(case_id: str, mode: str, timeout_sec: int, skip_pacstrap: bool = False) -> Dict[str, Any]:
     """Runs an independent instance of this same script as a child process."""
     cmd = [
         sys.executable,
@@ -534,6 +538,9 @@ def run_worker_process(case_id: str, mode: str, timeout_sec: int) -> Dict[str, A
         "--mode", mode,
         "--timeout", str(timeout_sec),
     ]
+    if skip_pacstrap:
+        cmd.append("--skip-pacstrap")
+
     try:
         proc = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout_sec + 30)
         out_line = proc.stdout.strip().splitlines()[-1] if proc.stdout.strip() else ""
@@ -554,6 +561,7 @@ def orchestrate_matrix(
     mode: str,
     filter_pat: Optional[str] = None,
     timeout_sec: int = 180,
+    skip_pacstrap: bool = False,
 ) -> int:
     """Orchestrates parallel execution of all test cases across multiple instances."""
     cases = TEST_MATRIX
@@ -565,7 +573,8 @@ def orchestrate_matrix(
         print("No test cases matched the given filter.")
         return 1
 
-    print(f"\033[1;36m==> Launching Tinapple Installer Test Matrix ({total} cases, parallel={parallel}, mode={mode})\033[0m")
+    skip_str = " (skip-pacstrap)" if skip_pacstrap else ""
+    print(f"\033[1;36m==> Launching Tinapple Installer Test Matrix ({total} cases, parallel={parallel}, mode={mode}{skip_str})\033[0m")
     start_total = time.time()
 
     results: List[Dict[str, Any]] = []
@@ -575,7 +584,7 @@ def orchestrate_matrix(
 
     with ProcessPoolExecutor(max_workers=parallel) as executor:
         future_map = {
-            executor.submit(run_worker_process, case["id"], mode, timeout_sec): case
+            executor.submit(run_worker_process, case["id"], mode, timeout_sec, skip_pacstrap): case
             for case in cases
         }
 
@@ -604,6 +613,7 @@ def orchestrate_matrix(
     with open(summary_path, "w", encoding="utf-8") as f:
         json.dump({
             "mode": mode,
+            "skip_pacstrap": skip_pacstrap,
             "total": total,
             "passed": passed,
             "failed": failed,
@@ -629,6 +639,7 @@ def main():
     parser.add_argument("--all", action="store_true", help="Run all matrix test cases (orchestrator mode)")
     parser.add_argument("--parallel", "-p", type=int, default=4, help="Number of concurrent instances (default: 4)")
     parser.add_argument("--mode", choices=["dryrun", "qemu"], default="dryrun", help="Execution mode (dryrun or qemu)")
+    parser.add_argument("--skip-pacstrap", action="store_true", help="Skip ~1.7GB package bootstrap during test")
     parser.add_argument("--filter", type=str, help="Filter cases by substring")
     parser.add_argument("--timeout", type=int, default=180, help="Per-case timeout in seconds")
     parser.add_argument("--list", action="store_true", help="List all defined test cases")
@@ -642,10 +653,10 @@ def main():
         sys.exit(0)
 
     if args.case:
-        code = execute_single_case(args.case, args.mode, args.timeout)
+        code = execute_single_case(args.case, args.mode, args.timeout, args.skip_pacstrap)
         sys.exit(code)
     else:
-        code = orchestrate_matrix(args.parallel, args.mode, args.filter, args.timeout)
+        code = orchestrate_matrix(args.parallel, args.mode, args.filter, args.timeout, args.skip_pacstrap)
         sys.exit(code)
 
 

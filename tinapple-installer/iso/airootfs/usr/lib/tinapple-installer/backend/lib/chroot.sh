@@ -6,8 +6,8 @@ tinapple_chroot() {
   shift
   local cmd=("$@")
 
-  if [[ -n ${TINAPPLE_DRYRUN:-} ]]; then
-    log_info "DRYRUN: arch-chroot %s %s" "$target" "${cmd[*]}"
+  if [[ -n ${TINAPPLE_DRYRUN:-} || ( -n ${TINAPPLE_SKIP_PACSTRAP:-} && "${TINAPPLE_SKIP_PACSTRAP}" != "0" ) ]]; then
+    log_info "DRYRUN/SKIP: arch-chroot %s %s" "$target" "${cmd[*]}"
     return 0
   fi
 
@@ -18,8 +18,8 @@ tinapple_chroot_sh() {
   local target=${1:-/mnt}
   local script=$2
 
-  if [[ -n ${TINAPPLE_DRYRUN:-} ]]; then
-    log_info "DRYRUN: arch-chroot %s bash -c '%s'" "$target" "$script"
+  if [[ -n ${TINAPPLE_DRYRUN:-} || ( -n ${TINAPPLE_SKIP_PACSTRAP:-} && "${TINAPPLE_SKIP_PACSTRAP}" != "0" ) ]]; then
+    log_info "DRYRUN/SKIP: arch-chroot %s bash -c '%s'" "$target" "$script"
     return 0
   fi
 

@@ -72,7 +72,7 @@ test-go:
 
 test-matrix:
 	@echo "==> Running parallel installer test matrix (all cases)..."
-	@python3 scripts/qemu_installer_matrix.py --all --parallel 4
+	@python3 scripts/qemu_installer_matrix.py --all --parallel 4 --skip-pacstrap
 
 test: test-bash test-go test-matrix
 

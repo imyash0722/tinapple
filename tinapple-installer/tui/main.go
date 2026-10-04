@@ -339,6 +339,7 @@ type model struct {
 	answers       map[string]string
 	err           string
 	dryRun        bool
+	skipPacstrap  bool
 	installing    bool
 	installOutput string
 	progress      float64
@@ -362,9 +363,13 @@ type installStageErrorMsg struct {
 
 func initialModel() model {
 	dryRun := os.Getenv("TINAPPLE_DRYRUN") == "1"
+	skipPacstrap := os.Getenv("TINAPPLE_SKIP_PACSTRAP") == "1"
 	for _, arg := range os.Args[1:] {
 		if arg == "--dry-run" || arg == "-d" {
 			dryRun = true
+		}
+		if arg == "--skip-pacstrap" {
+			skipPacstrap = true
 		}
 	}
 
@@ -386,6 +391,7 @@ func initialModel() model {
 			"firmware": "uefi",
 		},
 		dryRun:        dryRun,
+		skipPacstrap:  skipPacstrap,
 		installStages: installStages,
 	}
 }
@@ -425,6 +431,9 @@ func (m *model) buildStageEnv() []string {
 	}
 	if m.dryRun {
 		env = append(env, "TINAPPLE_DRYRUN=1")
+	}
+	if m.skipPacstrap || os.Getenv("TINAPPLE_SKIP_PACSTRAP") == "1" {
+		env = append(env, "TINAPPLE_SKIP_PACSTRAP=1")
 	}
 
 	if fs, ok := m.answers["filesystem"]; ok {
@@ -1404,6 +1413,9 @@ func runAutoInstall() error {
 	if user := os.Getenv("TINAPPLE_USERNAME"); user != "" {
 		m.answers["username"] = user
 	}
+	if os.Getenv("TINAPPLE_SKIP_PACSTRAP") == "1" {
+		m.skipPacstrap = true
+	}
 	if profiles := os.Getenv("TINAPPLE_PROFILES"); profiles != "" {
 		for _, p := range strings.Split(profiles, ",") {
 			p = strings.TrimSpace(p)
@@ -1437,6 +1449,9 @@ func main() {
 	for _, arg := range os.Args[1:] {
 		if arg == "--auto" || arg == "-y" || arg == "--non-interactive" {
 			isAuto = true
+		}
+		if arg == "--skip-pacstrap" {
+			os.Setenv("TINAPPLE_SKIP_PACSTRAP", "1")
 		}
 	}
 	if isAuto {

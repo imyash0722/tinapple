@@ -66,6 +66,12 @@ run() {
     printf 'DRYRUN: %s\n' "$*"
     return 0
   fi
+  if [[ -n ${TINAPPLE_SKIP_PACSTRAP:-} && "${TINAPPLE_SKIP_PACSTRAP}" != "0" ]]; then
+    if [[ "$1" == "arch-chroot" || "$1" == "pacstrap" ]]; then
+      printf 'SKIP_PACSTRAP: %s\n' "$*"
+      return 0
+    fi
+  fi
   "$@" </dev/null
 }
 
@@ -74,6 +80,12 @@ run_sh() {
   if [[ -n ${TINAPPLE_DRYRUN:-} ]]; then
     printf 'DRYRUN: %s\n' "$1"
     return 0
+  fi
+  if [[ -n ${TINAPPLE_SKIP_PACSTRAP:-} && "${TINAPPLE_SKIP_PACSTRAP}" != "0" ]]; then
+    if [[ "$1" =~ (arch-chroot|pacstrap) ]]; then
+      printf 'SKIP_PACSTRAP: %s\n' "$1"
+      return 0
+    fi
   fi
   bash -c "$1" </dev/null
 }
@@ -145,8 +157,8 @@ tinapple_chroot() {
   local target=${1:-/mnt}
   shift
   local cmd=("$@")
-  if [[ -n ${TINAPPLE_DRYRUN:-} ]]; then
-    log_info "DRYRUN: arch-chroot %s %s" "$target" "${cmd[*]}"
+  if [[ -n ${TINAPPLE_DRYRUN:-} || ( -n ${TINAPPLE_SKIP_PACSTRAP:-} && "${TINAPPLE_SKIP_PACSTRAP}" != "0" ) ]]; then
+    log_info "DRYRUN/SKIP: arch-chroot %s %s" "$target" "${cmd[*]}"
     return 0
   fi
   arch-chroot "$target" "${cmd[@]}"

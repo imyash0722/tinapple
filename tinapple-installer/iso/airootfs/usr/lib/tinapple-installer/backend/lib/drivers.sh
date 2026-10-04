@@ -41,8 +41,8 @@ fi
 if ! declare -f tinapple_chroot >/dev/null; then
   tinapple_chroot() {
     local t=$1; shift
-    if [[ -n ${TINAPPLE_DRYRUN:-} ]]; then
-      log_info "DRYRUN: arch-chroot %s %s" "$t" "$*"
+    if [[ -n ${TINAPPLE_DRYRUN:-} || ( -n ${TINAPPLE_SKIP_PACSTRAP:-} && "${TINAPPLE_SKIP_PACSTRAP}" != "0" ) ]]; then
+      log_info "DRYRUN/SKIP: arch-chroot %s %s" "$t" "$*"
       return 0
     fi
     arch-chroot "$t" "$@"
