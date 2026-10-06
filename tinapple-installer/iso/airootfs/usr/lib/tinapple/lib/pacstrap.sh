@@ -216,6 +216,13 @@ tinapple_pacstrap() {
   log "installing %d packages via pacstrap..." "${#unique_pkgs[@]}"
   if [[ -z ${TINAPPLE_DRYRUN:-} ]]; then
     mkdir -p "$target/var/cache/pacman/pkg"
+    # Pre-seed target package cache from local repo or live ISO cache to enable offline install
+    for pdir in /opt/tinapple-repo/x86_64 /var/cache/pacman/pkg /run/archiso/bootmnt/packages; do
+      if [[ -d "$pdir" ]]; then
+        log_info "pre-seeding package cache from %s..." "$pdir"
+        cp -un "$pdir"/*.pkg.tar.* "$target/var/cache/pacman/pkg/" 2>/dev/null || true
+      fi
+    done
     # Ensure local tinapple repo sync database is present in pacman sync dir
     if [[ -f /opt/tinapple-repo/x86_64/tinapple.db && ! -f /var/lib/pacman/sync/tinapple.db ]]; then
       mkdir -p /var/lib/pacman/sync
