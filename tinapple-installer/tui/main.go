@@ -361,15 +361,65 @@ type installStageErrorMsg struct {
 	err   error
 }
 
+func detectDisksOrChoices() []string {
+	out, err := exec.Command("lsblk", "-dno", "NAME,SIZE,MODEL,TYPE").Output()
+	if err != nil {
+		return []string{"Use entire disk (auto)", "Custom layout"}
+	}
+	var choices []string
+	lines := strings.Split(string(out), "\n")
+	for _, line := range lines {
+		fields := strings.Fields(line)
+		if len(fields) >= 3 && fields[len(fields)-1] == "disk" {
+			name := fields[0]
+			if strings.HasPrefix(name, "zram") || strings.HasPrefix(name, "loop") || strings.HasPrefix(name, "sr") {
+				continue
+			}
+			size := fields[1]
+			model := ""
+			if len(fields) > 3 {
+				model = strings.Join(fields[2:len(fields)-1], " ")
+			}
+			if model != "" {
+				choices = append(choices, fmt.Sprintf("/dev/%s (%s, %s)", name, size, model))
+			} else {
+				choices = append(choices, fmt.Sprintf("/dev/%s (%s)", name, size))
+			}
+		}
+	}
+	if len(choices) == 0 {
+		return []string{"Use entire disk (auto)", "Custom layout"}
+	}
+	choices = append(choices, "Custom layout (manual partitioning)")
+	return choices
+}
+
 func initialModel() model {
 	dryRun := os.Getenv("TINAPPLE_DRYRUN") == "1"
 	skipPacstrap := os.Getenv("TINAPPLE_SKIP_PACSTRAP") == "1"
-	for _, arg := range os.Args[1:] {
-		if arg == "--dry-run" || arg == "-d" {
+	answers := map[string]string{
+		"hostname": "tinapple",
+		"username": "tinapple",
+		"firmware": "uefi",
+	}
+
+	for i := 0; i < len(os.Args[1:]); i++ {
+		arg := os.Args[1+i]
+		switch {
+		case arg == "--dry-run" || arg == "-d":
 			dryRun = true
-		}
-		if arg == "--skip-pacstrap" {
+			os.Setenv("TINAPPLE_DRYRUN", "1")
+		case arg == "--skip-pacstrap":
 			skipPacstrap = true
+			os.Setenv("TINAPPLE_SKIP_PACSTRAP", "1")
+		case arg == "--disk" && i+1 < len(os.Args[1:]):
+			i++
+			answers["disk"] = os.Args[1+i]
+			os.Setenv("TINAPPLE_DISK", os.Args[1+i])
+		case arg == "--target" && i+1 < len(os.Args[1:]):
+			i++
+			answers["target"] = os.Args[1+i]
+			os.Setenv("TINAPPLE_TARGET", os.Args[1+i])
 		}
 	}
 
@@ -381,15 +431,11 @@ func initialModel() model {
 	}
 
 	return model{
-		step:     stepKeyboard,
-		choices:  []string{"us", "uk", "de", "fr", "es", "it", "jp", "other"},
-		cursor:   0,
-		selected: selected,
-		answers: map[string]string{
-			"hostname": "tinapple",
-			"username": "tinapple",
-			"firmware": "uefi",
-		},
+		step:          stepKeyboard,
+		choices:       []string{"us", "uk", "de", "fr", "es", "it", "jp", "other"},
+		cursor:        0,
+		selected:      selected,
+		answers:       answers,
 		dryRun:        dryRun,
 		skipPacstrap:  skipPacstrap,
 		installStages: installStages,
@@ -635,13 +681,19 @@ func (m model) handleEnter() (tea.Model, tea.Cmd) {
 		}
 		m.step = stepDisk
 		m.cursor = 0
-		m.choices = []string{"Use entire disk (auto)", "Custom layout"}
+		m.choices = detectDisksOrChoices()
 
 	case stepDisk:
-		if m.cursor >= 0 && m.cursor < len(m.choices) && m.choices[m.cursor] == "Use entire disk (auto)" {
-			m.answers["disk_strategy"] = "auto"
-		} else {
-			m.answers["disk_strategy"] = "custom"
+		if m.cursor >= 0 && m.cursor < len(m.choices) {
+			choice := m.choices[m.cursor]
+			if strings.HasPrefix(choice, "/dev/") {
+				m.answers["disk"] = strings.Fields(choice)[0]
+				m.answers["disk_strategy"] = "auto"
+			} else if choice == "Use entire disk (auto)" {
+				m.answers["disk_strategy"] = "auto"
+			} else {
+				m.answers["disk_strategy"] = "custom"
+			}
 		}
 		m.step = stepFilesystem
 		m.cursor = 0
@@ -1444,9 +1496,36 @@ func runAutoInstall() error {
 	return nil
 }
 
+func printHelp() {
+	fmt.Print(` Tinapple OS Installer (TUI)
+Usage: tinapple-installer [options]
+
+Options:
+  -d, --dry-run          Run installer in simulation mode (safe, no disk modifications)
+      --skip-pacstrap    Skip package bootstrap stage (for rapid testing & development)
+      --disk <device>    Specify target disk (e.g., /dev/nvme0n1, /dev/sda, /dev/vda)
+      --target <path>    Installation target directory (default: /mnt)
+  -y, --auto             Run non-interactive automated installation using environment
+  -h, --help             Show this help message
+
+Navigation:
+  ↑ / k, ↓ / j           Navigate options
+  Space                  Toggle selected profile or setting
+  Enter                  Confirm choice and proceed to next step
+  Tab                    Switch active control
+  Esc, q                 Quit installer / go back
+  A                      Open Chaddy App Store (chaddy-store)
+  S                      Open System Settings (chaddy-settings)
+`)
+}
+
 func main() {
 	isAuto := os.Getenv("TINAPPLE_AUTO") == "1"
 	for _, arg := range os.Args[1:] {
+		if arg == "--help" || arg == "-h" {
+			printHelp()
+			return
+		}
 		if arg == "--auto" || arg == "-y" || arg == "--non-interactive" {
 			isAuto = true
 		}
