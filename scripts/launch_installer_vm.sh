@@ -45,6 +45,7 @@ exec qemu-system-x86_64 \
     -boot menu=on,order=d \
     -vga virtio \
     -display gtk \
+    -serial file:"${PROJECT_DIR}/out/qemu-serial.log" \
     -netdev user,id=net0,ipv6=off,hostfwd=tcp::2222-:22,hostfwd=tcp::8088-:8088,hostfwd=tcp::3389-:3389 \
     -device virtio-net-pci,netdev=net0 \
     "$@"

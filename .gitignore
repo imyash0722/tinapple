@@ -11,8 +11,8 @@
 # Compiled binaries and build output
 bin/
 **/bin/
-**/pkg/
-**/src/
+tinapple-repo/**/pkg/
+tinapple-repo/**/src/
 tinapple-dash/tinapple-dash
 tinapple-installer/tui/tinapple-installer
 tinapple-chadwm/tinapple-session
@@ -43,3 +43,7 @@ PROMPT.md
 *.swp
 *.swo
 *~
+host_key.pub
+**/target/
+*.pyc
+**/__pycache__/

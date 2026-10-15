@@ -1,0 +1,167 @@
+// Tinapple OS - Ironbar Drop-Down Capsule Configuration
+// Floating obsidian pill bar with warm glowing amber/orange accents
+
+let {
+	$app_menu = {
+		type = "custom"
+		name = "app_menu"
+		bar = [ {
+			type = "button"
+			label = ""
+			on_click = "popup:toggle"
+		} ]
+		popup = [ {
+			type = "box"
+			name = "app_popup"
+			orientation = "vertical"
+			widgets = [
+				{ type = "label" name = "header" label = "APPLICATIONS" }
+				{
+					type = "button"
+					class = "app_item"
+					label = "󰞷  Terminal"
+					on_click = "!/usr/bin/foot"
+				}
+				{
+					type = "button"
+					class = "app_item"
+					label = "󰄛  Resource Monitor (btop)"
+					on_click = "!/usr/bin/foot -e /usr/bin/btop"
+				}
+				{
+					type = "button"
+					class = "app_item"
+					label = "󰉉  Disk Usage (QDirStat)"
+					on_click = "!/usr/local/bin/qdirstat"
+				}
+				{
+					type = "button"
+					class = "app_item"
+					label = "󰈹  Firefox"
+					on_click = "!/usr/bin/firefox"
+				}
+				{
+					type = "button"
+					class = "app_item"
+					label = "󰒓  Control Center"
+					on_click = "!/usr/local/bin/tinapple-settings"
+				}
+			]
+		} ]
+	}
+	
+	$clock = {
+		type = "clock"
+		format = "%a %b %d  %H:%M"
+		format_popup = "%A, %B %d, %Y"
+	}
+	
+	$power_menu = {
+        type = "custom"
+        name = "power_menu"
+        bar = [ {
+            type = "button"
+            label = "⏻"
+            on_click = "popup:toggle"
+        } ]
+        popup = [ {
+            type = "box"
+            name = "power_popup"
+            orientation = "vertical"
+            widgets = [
+                { type = "label" name = "header" label = "SYSTEM CONTROLS" }
+                {
+                    type = "button"
+                    class = "power_item"
+                    label = "󰤄  Lock Screen"
+                    on_click = "!dwl-msg close"
+                }
+                {
+                    type = "button"
+                    class = "power_item"
+                    label = "󰜉  Reboot System"
+                    on_click = "!systemctl reboot"
+                }
+                {
+                    type = "button"
+                    class = "power_item_danger"
+                    label = "󰐥  Power Off"
+                    on_click = "!systemctl poweroff"
+                }
+            ]
+        } ]
+    }
+	
+    $volume = {
+      type = "volume"
+      format = "{icon} {percentage}%"
+      max_volume = 150
+      icons.volume_high = "󰕾"
+      icons.volume_medium = "󰕾"
+      icons.volume_low = "󰕾"
+      icons.muted = "󰖁"
+      on_click_left = "pamixer --toggle-mute"
+      on_click_right = "foot -e alsamixer"
+      on_scroll_up = "pamixer --allow-boost --set-limit 150 -i 5"
+      on_scroll_down = "pamixer --allow-boost --set-limit 150 -d 5"
+    }	
+	
+	$left = [ $app_menu ]
+	$middle = [ $clock ]
+	$right = [ $volume $power_menu ]
+
+	$hint_label = {
+		type = "label"
+		name = "hint_label"
+		label = " "
+	}
+
+	$bars = [
+		{
+			name = "hint_bar"
+			position = "top"
+			anchor_to_edges = false
+			exclusive_zone = false
+			height = 2
+			margin.top = 2
+			
+			start = []
+			center = [ $hint_label ]
+			end = []
+		}
+		{
+			name = "main_bar"
+			position = "top"
+			anchor_to_edges = false
+			exclusive_zone = false
+			height = 42
+			autohide = 300
+			popup_gap = 6
+			margin.top = 8
+			
+			start = $left
+			center = $middle
+			end = $right
+		}
+	]
+}
+
+in {
+	icon_theme = "Adwaita"
+	
+	monitors = {
+		Virtual-1 = $bars
+		Virtual-0 = $bars
+		Virtual-2 = $bars
+		WL-1 = $bars
+		eDP-1 = $bars
+		DP-1 = $bars
+		DP-2 = $bars
+		DP-3 = $bars
+		HDMI-A-1 = $bars
+		HDMI-A-2 = $bars
+		HDMI-1 = $bars
+		HDMI-2 = $bars
+		VGA-1 = $bars
+	}
+}

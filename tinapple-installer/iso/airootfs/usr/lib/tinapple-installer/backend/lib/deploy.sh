@@ -122,6 +122,7 @@ EOP"
   # 7. Deploy to target system (/mnt/etc/, /mnt/usr/share/tinapple/)
   log_info "deploying configurations to /etc/ and /usr/share/tinapple/..."
   run_sh "mkdir -p $target/usr/share/tinapple && cp -r $target/etc/tinapple/* $target/usr/share/tinapple/ 2>/dev/null || true"
+  run_sh "mkdir -p $target/var/lib/tinapple && touch $target/var/lib/tinapple/firstboot-done"
 
   # Export output variables for next stage
   export TINAPPLE_DEPLOYED="true"

@@ -1,0 +1,344 @@
+/* Tinapple OS - Ironbar Drop-Down Styling
+ * Matugen Obsidian & Glowing Orange / Pewter Aesthetic
+ */
+
+@define-color bg_darkest #08090B;
+@define-color bg_surface #121419;
+@define-color bg_surface_elevated #1A1D24;
+@define-color bg_surface_hover #262A34;
+
+@define-color tin_base #2C303B;
+@define-color tin_border #3E4452;
+@define-color tin_specular #D0D5DF;
+@define-color tin_muted #8C93A0;
+
+@define-color orange_accent #FF9E3B;
+@define-color orange_bright #FFB566;
+@define-color orange_dark #E67A00;
+@define-color orange_glow rgba(255, 158, 59, 0.35);
+
+@define-color danger_red #E06C75;
+@define-color danger_hover #Be5046;
+
+* {
+    font-family: "JetBrainsMono Nerd Font", "FiraCode Nerd Font", monospace;
+    font-size: 13px;
+    font-weight: 500;
+    color: @tin_specular;
+    background: transparent;
+    border: none;
+    outline: none;
+    box-shadow: none;
+}
+
+window {
+    background: transparent;
+}
+
+tooltip {
+    background: @bg_surface_elevated;
+    border: 1px solid @orange_accent;
+    border-radius: 8px;
+    padding: 4px 10px;
+    color: @tin_specular;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.7);
+}
+
+button {
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 7px;
+    padding: 3px 10px;
+    transition: all 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+button:hover {
+    background: rgba(255, 158, 59, 0.16);
+    border: 1px solid rgba(255, 158, 59, 0.45);
+    box-shadow: inset 0 1px 0 rgba(255, 180, 80, 0.25), 0 2px 8px rgba(0, 0, 0, 0.6);
+}
+
+/* ==========================================================================
+   Hint Bar (The Minimalist Top Capsule Notch with Orange Accent)
+   ========================================================================== */
+
+#hint_bar {
+    min-width: 440px;
+    border-radius: 8px;
+    background: linear-gradient(180deg, #252832 0%, #14161C 65%, #0B0C0F 100%);
+    border: 1px solid @orange_accent;
+    box-shadow: inset 0 1px 0 rgba(255, 180, 80, 0.35), 0 3px 12px rgba(255, 158, 59, 0.25);
+}
+
+#hint_label {
+    min-width: 440px;
+    font-size: 3px;
+    padding: 0;
+    margin: 0;
+}
+
+/* ==========================================================================
+   Main Drop-Down Bar (Brushed Tin with Orange Accent Border - Floating Pill)
+   ========================================================================== */
+
+#main_bar {
+    min-width: 500px;
+    border-radius: 12px;
+    background: linear-gradient(180deg, #22252F 0%, #15171D 35%, #0C0D10 100%);
+    border: 2px solid @orange_accent;
+    box-shadow: inset 0 1px 1px rgba(255, 180, 80, 0.35), inset 0 -1px 0 rgba(0, 0, 0, 0.6), 0 8px 24px rgba(0, 0, 0, 0.85);
+    padding: 3px 12px;
+    transition: all 240ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+#main_bar .start,
+#main_bar .end {
+    min-width: 130px;
+}
+
+/* ==========================================================================
+   App Launcher Menu Button & Popover
+   ========================================================================== */
+
+#app_menu {
+    margin-left: 2px;
+    margin-right: 6px;
+}
+
+#app_menu > button {
+    padding: 3px 10px;
+    border-radius: 7px;
+    min-height: 28px;
+    transition: all 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+#app_menu label {
+    font-size: 16px;
+    color: @orange_accent;
+}
+
+#app_menu button:hover label {
+    color: @orange_bright;
+}
+
+/* Popover Cards (Smooth Tin Card with Orange Border) */
+popover contents {
+    background: linear-gradient(180deg, #1C1F27 0%, #111317 100%);
+    border: 2px solid @orange_accent;
+    border-radius: 12px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.85), 0 0 16px @orange_glow;
+    padding: 4px;
+    transition: all 250ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+popover arrow {
+    background: transparent;
+    border: none;
+}
+
+/* App Menu Popup Card */
+#app_popup {
+    padding: 10px;
+    min-width: 250px;
+}
+
+#app_popup #header {
+    color: @orange_accent;
+    font-size: 11px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid rgba(255, 158, 59, 0.25);
+}
+
+.app_item {
+    padding: 8px 12px;
+    margin: 3px 0px;
+    border-radius: 7px;
+    background: linear-gradient(180deg, #242732 0%, #16181F 100%);
+    border: 1px solid @tin_border;
+    transition: all 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.app_item label {
+    font-size: 13px;
+    font-weight: 500;
+    color: @tin_specular;
+}
+
+.app_item:hover {
+    background: linear-gradient(180deg, #FFB054 0%, #E67A00 100%);
+    border: 1px solid #FFD08A;
+    box-shadow: 0 2px 8px rgba(230, 122, 0, 0.4);
+}
+
+.app_item:hover label {
+    color: #08090B;
+    font-weight: bold;
+}
+
+/* ==========================================================================
+   Clock & Interactive Calendar
+   ========================================================================== */
+
+.clock {
+    margin-left: 12px;
+    margin-right: 12px;
+    padding: 3px 12px;
+    min-height: 28px;
+    border-radius: 7px;
+    transition: all 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.clock label {
+    font-size: 13px;
+    font-weight: 600;
+    color: @tin_specular;
+    letter-spacing: 0.5px;
+}
+
+.clock:hover {
+    background: rgba(255, 158, 59, 0.16);
+    border: 1px solid rgba(255, 158, 59, 0.45);
+    box-shadow: inset 0 1px 0 rgba(255, 180, 80, 0.25);
+}
+
+calendar {
+    background: @bg_surface_elevated;
+    color: @tin_specular;
+    border-radius: 8px;
+    padding: 8px;
+}
+
+calendar:selected {
+    background: @orange_accent;
+    color: #08090B;
+    font-weight: bold;
+    border-radius: 4px;
+}
+
+calendar.header {
+    color: @orange_bright;
+    font-weight: bold;
+}
+
+calendar.button {
+    color: @orange_accent;
+}
+
+/* ==========================================================================
+   Volume Slider / Module
+   ========================================================================== */
+
+.volume {
+    margin-right: 8px;
+    padding: 3px 10px;
+    border-radius: 7px;
+    min-height: 28px;
+    transition: all 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.volume label {
+    color: @tin_specular;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.volume:hover {
+    background: rgba(255, 158, 59, 0.16);
+    border: 1px solid rgba(255, 158, 59, 0.45);
+    box-shadow: inset 0 1px 0 rgba(255, 180, 80, 0.25);
+}
+
+/* ==========================================================================
+   Power Controls
+   ========================================================================== */
+
+#power_menu {
+    margin-right: 2px;
+}
+
+#power_menu button {
+    padding: 3px 10px;
+    min-height: 28px;
+    border-radius: 7px;
+    transition: all 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+#power_menu label {
+    font-size: 15px;
+    color: @orange_accent;
+}
+
+#power_menu button:hover label {
+    color: @orange_bright;
+}
+
+/* Power Menu Popover Card */
+#power_popup {
+    padding: 10px;
+    min-width: 230px;
+}
+
+#power_popup #header {
+    color: @orange_accent;
+    font-size: 11px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid rgba(255, 158, 59, 0.25);
+}
+
+.power_item {
+    padding: 8px 12px;
+    margin: 3px 0px;
+    border-radius: 7px;
+    background: linear-gradient(180deg, #242732 0%, #16181F 100%);
+    border: 1px solid @tin_border;
+    transition: all 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.power_item label {
+    font-size: 13px;
+    font-weight: 500;
+    color: @tin_specular;
+}
+
+.power_item:hover {
+    background: linear-gradient(180deg, #FFB054 0%, #E67A00 100%);
+    border: 1px solid #FFD08A;
+    box-shadow: 0 2px 8px rgba(230, 122, 0, 0.4);
+}
+
+.power_item:hover label {
+    color: #08090B;
+    font-weight: bold;
+}
+
+.power_item_danger {
+    padding: 8px 12px;
+    margin: 3px 0px;
+    border-radius: 7px;
+    background: linear-gradient(180deg, #2B1D20 0%, #1B1214 100%);
+    border: 1px solid rgba(224, 108, 117, 0.4);
+    transition: all 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.power_item_danger label {
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFA3A8;
+}
+
+.power_item_danger:hover {
+    background: linear-gradient(180deg, #E06C75 0%, #BE5046 100%);
+    border: 1px solid #FF8E97;
+    box-shadow: 0 2px 8px rgba(224, 108, 117, 0.4);
+}
+
+.power_item_danger:hover label {
+    color: #FFFFFF;
+    font-weight: bold;
+}

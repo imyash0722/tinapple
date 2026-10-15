@@ -8,6 +8,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 )
 
 type ThermalConfig struct {
@@ -155,8 +158,23 @@ func runDaemon(cfg ThermalConfig) {
 	// Apply profile at startup
 	applyProfile(cfg)
 	fmt.Println("Thermal daemon started, profile applied")
-	// In production, would monitor thermal zones and adjust dynamically
-	select {} // block forever
+
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
+
+	ticker := time.NewTicker(30 * time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			// Periodically enforce thermal profile
+			applyProfile(cfg)
+		case sig := <-sigChan:
+			fmt.Printf("Thermal daemon received signal: %v, exiting cleanly\n", sig)
+			return
+		}
+	}
 }
 
 func saveConfig(path string, cfg ThermalConfig) {

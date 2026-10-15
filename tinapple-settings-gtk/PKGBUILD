@@ -1,0 +1,38 @@
+# Maintainer: Tinapple Team
+pkgname=tinapple-settings
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="Tinapple OS Step-by-Step GTK4 Control Center & Appliance Manager"
+arch=('any')
+url="https://github.com/tinapple/tinapple-settings"
+license=('MIT')
+depends=(
+    'gtk4'
+    'libadwaita'
+    'python'
+    'python-gobject'
+    'ufw'
+    'iptables'
+    'ipset'
+    'tailscale'
+    'hostapd'
+    'dnsmasq'
+    'iw'
+    'ethtool'
+)
+makedepends=(
+    'python-build'
+    'python-installer'
+    'python-setuptools'
+    'python-wheel'
+)
+source=()
+
+package() {
+    cd "${srcdir}/.." || exit 1
+    python -m build --wheel --no-isolation
+    python -m installer --destdir="${pkgdir}" dist/*.whl
+
+    install -Dm644 tinapple-settings.desktop "${pkgdir}/usr/share/applications/tinapple-settings.desktop"
+    ln -sf tinapple-settings "${pkgdir}/usr/bin/chaddy-settings"
+}

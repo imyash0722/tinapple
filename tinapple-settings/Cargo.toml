@@ -1,0 +1,13 @@
+[package]
+name = "tinapple-settings"
+version = "0.0.1"
+edition = "2021"
+authors = ["Tinapple Project <https://github.com/tinapple/tinapple-arch>"]
+description = "Modern and sleek graphical settings control center for Tinapple OS & DWL"
+
+[dependencies]
+eframe = { version = "0.36.2", default-features = true }
+egui = { version = "0.36.2", default-features = true }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+serde_yaml = "0.9"

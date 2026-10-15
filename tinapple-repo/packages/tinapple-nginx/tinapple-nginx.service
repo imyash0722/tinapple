@@ -1,9 +1,9 @@
 [Unit]
 Description=Tinapple Caddy Reverse Proxy
 Documentation=https://github.com/tinapple/tinapple-arch
-After=network-online.target tinapple-config-generator.service
+After=network-online.target
 Wants=network-online.target
-Requires=tinapple-config-generator.service
+ConditionPathExists=/etc/tinapple/Caddyfile
 
 [Service]
 Type=simple

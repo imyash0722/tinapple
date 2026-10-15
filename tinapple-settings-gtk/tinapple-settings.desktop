@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=Tinapple Settings
+GenericName=Appliance Control Center
+Comment=Step-by-Step GTK4 Appliance Settings, Thermal, Network, and Tuning Center
+Exec=tinapple-settings
+Icon=preferences-system
+Terminal=false
+Type=Application
+Categories=Settings;System;HardwareSettings;
+Keywords=tinapple;tuning;thermal;firewall;ufw;tailscale;hotspot;wifi;
+StartupNotify=true

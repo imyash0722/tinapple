@@ -68,6 +68,32 @@ EOH"
     run_sh "arch-chroot $target chown -R $username:users /home/$username 2>/dev/null || true"
   fi
 
+  # Auto-login to DWL on tty1 for appliance server experience
+  log_info "configuring tty1 autologin and dwl auto-launch for %s..." "$username"
+  run_sh "mkdir -p $target/etc/systemd/system/getty@tty1.service.d"
+  run_sh "cat << 'EOA' > $target/etc/systemd/system/getty@tty1.service.d/autologin.conf
+[Service]
+ExecStart=
+ExecStart=-/usr/bin/agetty --noreset --noclear --autologin '$username' - \\${TERM}
+EOA"
+  run_sh "cat << 'EOZ' >> $target/home/$username/.zlogin
+if [[ \"\$(tty)\" == \"/dev/tty1\" ]]; then
+    if [[ -z \"\${WAYLAND_DISPLAY:-}\" ]] && ! pgrep -x dwl >/dev/null; then
+        export XDG_RUNTIME_DIR=\"/run/user/\$(id -u)\"
+        exec dwl -s /usr/local/bin/tinapple-dwl-autostart
+    fi
+fi
+EOZ"
+  run_sh "cat << 'EOB' >> $target/home/$username/.bash_profile
+if [[ \"\$(tty)\" == \"/dev/tty1\" ]]; then
+    if [[ -z \"\${WAYLAND_DISPLAY:-}\" ]] && ! pgrep -x dwl >/dev/null; then
+        export XDG_RUNTIME_DIR=\"/run/user/\$(id -u)\"
+        exec dwl -s /usr/local/bin/tinapple-dwl-autostart
+    fi
+fi
+EOB"
+  run_sh "arch-chroot $target chown -R $username:users /home/$username 2>/dev/null || true"
+
   # 6. Enable Systemd Services
   local -a services=(
     systemd-resolved
@@ -78,7 +104,6 @@ EOH"
     tinapple-battery-daemon
     tinapple-thermal-daemon
     tinapple-power-profile-apply
-    chadwm@"$username"
   )
 
   # Configure SSH on target
@@ -93,8 +118,8 @@ EOH"
     local prof
     prof=$(echo "$raw_prof" | tr -d '[:space:]')
     case "$prof" in
-      base|chadwm)
-        services+=(chadwm@"$username")
+      base|chadwm|dwl)
+        # DWL is started on tty1 autologin
         ;;
       media)
         services+=(jellyfin)

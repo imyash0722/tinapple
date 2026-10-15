@@ -123,6 +123,24 @@ EOP"
   log_info "deploying configurations to /etc/ and /usr/share/tinapple/..."
   run_sh "mkdir -p $target/usr/share/tinapple && cp -r $target/etc/tinapple/* $target/usr/share/tinapple/ 2>/dev/null || true"
 
+  # 8. Deploy Tinapple appliance approved applications, wrappers, and configs
+  log_info "deploying Tinapple appliance approved applications and scripts to %s..." "$target"
+  run_sh "mkdir -p $target/usr/bin $target/usr/local/bin $target/etc/skel $target/etc/systemd/system $target/usr/share/backgrounds"
+  for f in /usr/bin/dwl /usr/local/bin/dwl /usr/bin/ironbar /usr/local/bin/ironbar /usr/bin/foot /usr/bin/btop /usr/local/bin/qdirstat /usr/local/bin/tinapple-* /usr/bin/tinapple-*; do
+    if [[ -f "$f" ]]; then
+      run_sh "cp -f '$f' '$target/usr/bin/' 2>/dev/null || true; cp -f '$f' '$target/usr/local/bin/' 2>/dev/null || true; chmod 755 '$target/usr/bin/$(basename \"$f\")' '$target/usr/local/bin/$(basename \"$f\")' 2>/dev/null || true"
+    fi
+  done
+  if [[ -f /usr/share/backgrounds/wallpaper.png ]]; then
+    run_sh "cp -f /usr/share/backgrounds/wallpaper.png $target/usr/share/backgrounds/ 2>/dev/null || true"
+  fi
+  for unit in tinapple-truenas-backup.service tinapple-truenas-backup.timer; do
+    if [[ -f "/etc/systemd/system/$unit" ]]; then
+      run_sh "cp -f '/etc/systemd/system/$unit' '$target/etc/systemd/system/$unit' 2>/dev/null || true; arch-chroot '$target' systemctl enable '$unit' 2>/dev/null || true"
+    fi
+  done
+  run_sh "mkdir -p $target/var/lib/tinapple && touch $target/var/lib/tinapple/firstboot-done"
+
   # Export output variables for next stage
   export TINAPPLE_DEPLOYED="true"
   export TINAPPLE_STAGE="deploy"
