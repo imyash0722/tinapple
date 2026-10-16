@@ -1,0 +1,39 @@
+[Unit]
+Description=Tinapple OS Graphical Session
+After=systemd-user-sessions.service plymouth-quit-wait.service systemd-udevd.service seatd.service
+Wants=seatd.service
+Conflicts=getty@tty1.service
+Before=getty.target
+
+[Service]
+Type=simple
+PAMName=login
+User=root
+WorkingDirectory=/root
+Environment=HOME=/root
+Environment=XDG_RUNTIME_DIR=/run/user/0
+Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/0/bus
+Environment=LIBSEAT_BACKEND=seatd
+Environment=XDG_CURRENT_DESKTOP=wlroots
+Environment=XDG_SESSION_TYPE=wayland
+Environment=WLR_NO_HARDWARE_CURSORS=1
+Environment=MOZ_ENABLE_WAYLAND=1
+Environment=QT_QPA_PLATFORM=wayland
+Environment=GDK_BACKEND=wayland,x11
+Environment=LANG=en_US.UTF-8
+Environment=LC_ALL=en_US.UTF-8
+ExecStartPre=/usr/bin/mkdir -p /run/user/0
+ExecStartPre=/usr/bin/chmod 700 /run/user/0
+ExecStart=/usr/local/bin/dwl -s /usr/local/bin/tinapple-dwl-autostart
+Restart=always
+RestartSec=1
+StandardInput=tty
+StandardOutput=journal
+StandardError=journal
+TTYPath=/dev/tty1
+TTYReset=yes
+TTYVHangup=yes
+TTYVTDisallocate=yes
+
+[Install]
+WantedBy=multi-user.target graphical.target

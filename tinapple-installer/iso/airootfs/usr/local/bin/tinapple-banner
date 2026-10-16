@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# Tinapple OS - Vibrant Orange Pineapple ASCII Banner
+
+ORANGE_NEON="\033[38;2;255;145;0m"
+ORANGE_BRIGHT="\033[38;2;255;185;60m"
+ORANGE_DARK="\033[38;2;215;95;0m"
+GREEN_LEAF="\033[38;2;120;210;70m"
+WHITE_BOLD="\033[1;38;2;255;255;255m"
+PEWTER="\033[38;2;145;155;175m"
+CYAN="\033[38;2;80;210;240m"
+RESET="\033[0m"
+
+# Fetch compact system specs
+UPTIME="$(uptime -p 2>/dev/null | sed -e 's/up //g' -e 's/ minutes*/m/' -e 's/ hours*/h/' -e 's/ days*/d/' || echo "ready")"
+RAM="$(free -h 2>/dev/null | awk '/^Mem:/ {print $3 "/" $2}' | sed 's/i//g' || echo "512M/4G")"
+
+echo ""
+echo -e "   ${GREEN_LEAF}\\ | /      ${WHITE_BOLD}T I N A P P L E   O S${RESET}"
+echo -e "  ${GREEN_LEAF}\\\\|///     ${PEWTER}Autonomous Server${RESET}"
+echo -e "    ${GREEN_LEAF}\\|/       ${PEWTER}────────────────────────────${RESET}"
+echo -e "  ${ORANGE_BRIGHT}▟█████▙     ${WHITE_BOLD}OS    ${PEWTER}: ${WHITE_BOLD}Tinapple Linux${RESET}"
+echo -e " ${ORANGE_NEON}███▛▀▜███    ${WHITE_BOLD}WM    ${PEWTER}: ${WHITE_BOLD}DWL Wayland${RESET}"
+echo -e " ${ORANGE_NEON}██▌ █ ▐██    ${WHITE_BOLD}Bar   ${PEWTER}: ${WHITE_BOLD}Ironbar Capsule${RESET}"
+echo -e " ${ORANGE_DARK}███▙▄▟███    ${WHITE_BOLD}Theme ${PEWTER}: ${ORANGE_NEON}Obsidian Orange${RESET}"
+echo -e "  ${ORANGE_DARK}▜█████▛     ${WHITE_BOLD}Net   ${PEWTER}: ${CYAN}Tailscale + UFW${RESET}"
+echo -e "   ${ORANGE_DARK}▀▀▀▀▀      ${WHITE_BOLD}Specs ${PEWTER}: ${WHITE_BOLD}${RAM}${PEWTER} · ${UPTIME}${RESET}"
+echo ""

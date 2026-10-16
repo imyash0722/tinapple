@@ -1,0 +1,26 @@
+#!/bin/bash
+# Tinapple OS - DWL Wayland Autostart Session
+
+# Wayland & DBus environment variables
+export XDG_CURRENT_DESKTOP=wlroots
+export XDG_SESSION_TYPE=wayland
+export DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/0/bus"
+export MOZ_ENABLE_WAYLAND=1
+export GDK_BACKEND=wayland,x11
+export QT_QPA_PLATFORM=wayland
+
+# Set metallic wallpaper
+if [ -f /usr/share/backgrounds/wallpaper.png ]; then
+    swaybg -i /usr/share/backgrounds/wallpaper.png -m fill &
+fi
+
+# Launch Ironbar (Discussion #1226 drop-down bar)
+ironbar &
+
+# If running on Live ISO media, launch GUI installer automatically
+if [ -d /run/archiso ]; then
+    tinapple-gui-installer &
+fi
+
+# Consume stdin from dwl to ensure stdout pipe remains open
+cat > /dev/null

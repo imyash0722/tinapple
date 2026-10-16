@@ -47,3 +47,7 @@ host_key.pub
 **/target/
 *.pyc
 **/__pycache__/
+!tinapple-installer/iso/airootfs/usr/local/bin/tinapple-dwl-autostart
+!tinapple-installer/iso/airootfs/usr/local/bin/tinapple-banner
+!tinapple-installer/iso/airootfs/usr/local/bin/
+tinapple-installer/iso/airootfs/usr/local/bin/tinapple-install
