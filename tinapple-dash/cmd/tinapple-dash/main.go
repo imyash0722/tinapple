@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 	"time"
 
@@ -54,21 +55,35 @@ func main() {
 	// API routes
 	api.SetupRoutes(r, cfg, svcMgr, telemetryCollector)
 
-	// Static files for web UI
-	staticDir := "/usr/share/tinapple-dash/web/static"
-	templateGlob := "/usr/share/tinapple-dash/web/templates/*"
-	if _, err := os.Stat("web/static"); err == nil {
-		staticDir = "web/static"
-		templateGlob = "web/templates/*"
+	// Web UI static files (check for modern React Hub build in web/dist)
+	distDir := "/usr/share/tinapple-dash/web/dist"
+	if _, err := os.Stat("web/dist"); err == nil {
+		distDir = "web/dist"
 	}
-	r.Static("/static", staticDir)
-	r.LoadHTMLGlob(templateGlob)
-	r.GET("/", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "index.html", gin.H{
-			"title":   "tinapple Dashboard",
-			"version": "0.0.1",
+
+	if _, err := os.Stat(filepath.Join(distDir, "index.html")); err == nil {
+		r.Static("/assets", filepath.Join(distDir, "assets"))
+		r.StaticFile("/favicon.ico", filepath.Join(distDir, "favicon.ico"))
+		r.GET("/", func(c *gin.Context) {
+			c.File(filepath.Join(distDir, "index.html"))
 		})
-	})
+	} else {
+		// Fallback to legacy templates if dist not present
+		staticDir := "/usr/share/tinapple-dash/web/static"
+		templateGlob := "/usr/share/tinapple-dash/web/templates/*"
+		if _, err := os.Stat("web/static"); err == nil {
+			staticDir = "web/static"
+			templateGlob = "web/templates/*"
+		}
+		r.Static("/static", staticDir)
+		r.LoadHTMLGlob(templateGlob)
+		r.GET("/", func(c *gin.Context) {
+			c.HTML(http.StatusOK, "index.html", gin.H{
+				"title":   "tinapple Dashboard",
+				"version": "0.0.1",
+			})
+		})
+	}
 
 	// Health check
 	r.GET("/health", func(c *gin.Context) {
