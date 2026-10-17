@@ -9,14 +9,16 @@ import {
   Server,
   Monitor,
   Terminal,
+  Sparkles,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-import { FullWindowBackground } from './components/reactbits/FullWindowBackground';
+import { FullWindowBackground, BackgroundMode } from './components/reactbits/FullWindowBackground';
 import { ShinyText } from './components/reactbits/ShinyText';
 import { DecryptedText } from './components/reactbits/DecryptedText';
 import { Dock, DockItem } from './components/reactbits/Dock';
 import { BrandLogo } from './components/common/BrandLogo';
+import HoldButton from './components/reactbits/HoldButton';
 
 import { TelemetryCards } from './components/widgets/TelemetryCards';
 import { ThermalsPowerWidget } from './components/widgets/ThermalsPowerWidget';
@@ -31,6 +33,7 @@ import { SystemInfo, TelemetrySnapshot, ServiceInfo, HardwareInfo, SessionMode }
 
 export const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>('dashboard');
+  const [bgMode, setBgMode] = useState<BackgroundMode>('microslats');
   const [systemInfo, setSystemInfo] = useState<SystemInfo>(MOCK_SYSTEM_INFO);
   const [telemetry, setTelemetry] = useState<TelemetrySnapshot>(MOCK_TELEMETRY);
   const [services, setServices] = useState<ServiceInfo[]>(MOCK_SERVICES);
@@ -153,15 +156,15 @@ export const App: React.FC = () => {
 
   return (
     <div className="relative min-h-screen text-tinapple-text pb-28 selection:bg-tinapple-gold/20 selection:text-tinapple-gold">
-      {/* Full-Window Interactive WebGL Waves + Connective Particles Background */}
-      <FullWindowBackground />
+      {/* Full-Window Interactive MicroSlats / WebGL Waves Ambient Background */}
+      <FullWindowBackground mode={bgMode} />
 
       {/* TOP COMMAND HEADER */}
       <header className="sticky top-0 z-40 border-b border-tinapple-border bg-tinapple-dark/80 backdrop-blur-3xl shadow-2xl">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           {/* Brand Logo & Appliance Name */}
           <div className="flex items-center gap-3.5">
-            <BrandLogo size={38} />
+            <BrandLogo size={40} electric={true} />
             <div>
               <div className="flex items-center gap-2">
                 <ShinyText
@@ -200,10 +203,62 @@ export const App: React.FC = () => {
                 {systemInfo.sessionMode} Mode
               </span>
             </div>
+
+            {/* Background Canvas Mode Selector */}
+            <button
+              onClick={() => setBgMode(bgMode === 'microslats' ? 'waves' : 'microslats')}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-tinapple-card/90 border border-tinapple-border hover:border-tinapple-gold/50 text-xs transition-colors"
+              title="Toggle interactive background mode"
+            >
+              <span className="w-2 h-2 rounded-full bg-tinapple-gold" />
+              <span className="text-tinapple-subtext hover:text-white capitalize font-mono text-[11px]">
+                {bgMode === 'microslats' ? 'Micro Slats' : 'WebGL Waves'}
+              </span>
+            </button>
           </div>
 
-          {/* Right Action Cluster */}
+          {/* Right Action Cluster with HoldButton Safety Controls */}
           <div className="flex items-center gap-3">
+            {/* Quick Safety HoldButtons */}
+            <div className="hidden xl:flex items-center gap-2">
+              <HoldButton
+                size="sm"
+                holdTime={1200}
+                backgroundColor="#15181f"
+                fillColor="#e5b567"
+                textColor="#e5b567"
+                fillTextColor="#060709"
+                wave={true}
+                glow={true}
+                doneLabel="NTP Synced!"
+                onHold={async () => {
+                  await api.syncTime();
+                  handleRefresh();
+                }}
+                className="font-mono text-[11px] font-bold"
+              >
+                Hold to Sync Time
+              </HoldButton>
+
+              <HoldButton
+                size="sm"
+                holdTime={2000}
+                backgroundColor="#15181f"
+                fillColor="#ef4444"
+                textColor="#f87171"
+                fillTextColor="#ffffff"
+                wave={true}
+                glow={true}
+                doneLabel="Reboot Signal Sent"
+                onHold={async () => {
+                  await api.rebootNode();
+                }}
+                className="font-mono text-[11px] font-bold"
+              >
+                Hold to Reboot
+              </HoldButton>
+            </div>
+
             <div className="hidden sm:block text-right font-mono">
               <span className="text-[10px] text-tinapple-muted block tracking-wider">UPTIME</span>
               <span className="text-xs font-bold text-tinapple-text">

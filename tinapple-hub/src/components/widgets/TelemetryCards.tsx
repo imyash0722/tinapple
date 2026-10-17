@@ -1,8 +1,10 @@
 import React, { useRef, useEffect } from 'react';
-import { Cpu, HardDrive, MemoryStick, Activity, ArrowDownRight, ArrowUpRight, Gauge, Layers } from 'lucide-react';
+import { Cpu, HardDrive, MemoryStick, Activity, ArrowDownRight, ArrowUpRight, Gauge, Layers, Sparkles } from 'lucide-react';
 import { SpotlightCard } from '../reactbits/SpotlightCard';
 import { CountUp } from '../reactbits/CountUp';
 import { ShinyText } from '../reactbits/ShinyText';
+import TechText from '../reactbits/TechText';
+import MicroSlats from '../reactbits/MicroSlats';
 import { TelemetrySnapshot } from '../../types/api';
 
 interface TelemetryCardsProps {
@@ -38,303 +40,398 @@ export const TelemetryCards: React.FC<TelemetryCardsProps> = ({ telemetry, histo
   });
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-      {/* HERO PROCESSOR & CORE MATRIX (7 cols) */}
-      <SpotlightCard
-        className="lg:col-span-7 p-6 flex flex-col justify-between"
-        spotlightColor="rgba(229, 181, 103, 0.15)"
-        borderColor="rgba(229, 181, 103, 0.45)"
-      >
-        <div>
-          {/* Header Row */}
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-2xl bg-tinapple-gold/15 text-tinapple-gold border border-tinapple-gold/25 shadow-sm shadow-tinapple-gold/10">
-                <Cpu className="w-5 h-5" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="text-sm font-bold text-white tracking-wide uppercase font-mono">
-                    Processor Matrix
-                  </h3>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-tinapple-green/10 text-tinapple-green border border-tinapple-green/20 font-mono">
-                    x86-64-v4 BORE
-                  </span>
-                </div>
-                <p className="text-xs text-tinapple-subtext font-mono truncate max-w-sm mt-0.5">
-                  {telemetry.cpu.modelName || 'AMD Ryzen 7 7840HS w/ Radeon 780M'}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <span className="text-xs px-2.5 py-1 rounded-xl bg-tinapple-dark/80 text-tinapple-gold border border-tinapple-border font-mono font-semibold">
-                {numCores} Cores
-              </span>
+    <div className="space-y-5">
+      {/* TACTILE HARDWARE COUPLING SLAT MATRIX (MicroSlats) */}
+      <div className="relative rounded-2xl bg-gradient-to-r from-tinapple-card/90 via-tinapple-surface/90 to-tinapple-card/90 border border-tinapple-border overflow-hidden p-3.5 backdrop-blur-2xl">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-2.5 px-2">
+          <div className="flex items-center gap-2.5">
+            <span className="w-2 h-2 rounded-full bg-tinapple-gold animate-pulse" />
+            <div className="h-6 w-72">
+              <TechText
+                text="PHYSICAL NODE COUPLING"
+                fontSize={12}
+                fontWeight={800}
+                color="#ffffff"
+                accentColor="#e5b567"
+                labels={true}
+                guides={true}
+                intro="metrics"
+                clickKick={true}
+              />
             </div>
           </div>
+          <div className="flex items-center gap-2 text-[10px] font-mono text-tinapple-subtext">
+            <span className="px-2 py-0.5 rounded-md bg-tinapple-dark border border-tinapple-border text-tinapple-gold">
+              64-CELL TACTILE SLAT MATRIX
+            </span>
+            <span className="hidden md:inline text-tinapple-muted">Glide cursor to tilt slats</span>
+          </div>
+        </div>
 
-          {/* Metric Stats & Waveform Row */}
-          <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 items-end mb-4">
-            <div className="sm:col-span-5">
-              <div className="text-4xl sm:text-5xl font-black text-white tracking-tight font-mono">
-                <CountUp to={telemetry.cpu.usagePercent || 0} decimals={1} suffix="%" />
+        {/* MicroSlats Embedded Sensor Field */}
+        <div className="h-14 w-full rounded-xl overflow-hidden border border-tinapple-border/70 relative">
+          <MicroSlats
+            preset="signal"
+            color="#0d1017"
+            glintColor="#e5b567"
+            backgroundColor="#07080b"
+            slatWidth={14}
+            slatHeight={48}
+            gap={4}
+            roundness={0.25}
+            interactive={true}
+            cursorStrength={2.5}
+            cursorSize={110}
+            lean={0.8}
+            contrast={1.6}
+            glint={2.0}
+            speed={0.6}
+          />
+          <div className="absolute inset-0 pointer-events-none bg-gradient-to-r from-tinapple-dark/40 via-transparent to-tinapple-dark/40" />
+        </div>
+      </div>
+
+      {/* 4 BENTO TELEMETRY CARDS */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+        {/* HERO PROCESSOR & CORE MATRIX (7 cols) */}
+        <SpotlightCard
+          className="lg:col-span-7 p-6 flex flex-col justify-between"
+          spotlightColor="rgba(229, 181, 103, 0.15)"
+          borderColor="rgba(229, 181, 103, 0.45)"
+        >
+          <div>
+            {/* Header Row */}
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-2xl bg-tinapple-gold/15 text-tinapple-gold border border-tinapple-gold/25 shadow-sm shadow-tinapple-gold/10">
+                  <Cpu className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <div className="h-6 w-44">
+                      <TechText
+                        text="PROCESSOR MATRIX"
+                        fontSize={13}
+                        fontWeight={800}
+                        color="#ffffff"
+                        accentColor="#e5b567"
+                        labels={true}
+                        guides={true}
+                        intro="metrics"
+                        clickKick={true}
+                      />
+                    </div>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-tinapple-green/10 text-tinapple-green border border-tinapple-green/20 font-mono">
+                      x86-64-v4 BORE
+                    </span>
+                  </div>
+                  <p className="text-xs text-tinapple-subtext font-mono truncate max-w-sm mt-0.5">
+                    {telemetry.cpu.modelName || 'AMD Ryzen 7 7840HS w/ Radeon 780M'}
+                  </p>
+                </div>
               </div>
-              <div className="flex items-center gap-2 mt-1.5 text-xs font-mono text-tinapple-subtext">
-                <span>Load Avg:</span>
-                <span className="text-tinapple-gold font-semibold">
-                  {telemetry.cpu.loadAvg ? telemetry.cpu.loadAvg.map((l) => l.toFixed(2)).join(' ') : '0.42 0.58 0.51'}
+
+              <div className="flex items-center gap-2">
+                <span className="text-xs px-2.5 py-1 rounded-xl bg-tinapple-dark/80 text-tinapple-gold border border-tinapple-border font-mono font-semibold">
+                  {numCores} Cores
                 </span>
               </div>
             </div>
 
-            {/* Sparkline Canvas */}
-            <div className="sm:col-span-7 h-16 flex items-end">
-              <Sparkline
-                data={history.cpu}
-                strokeColor="#e5b567"
-                fillColor="rgba(229, 181, 103, 0.12)"
-                height={54}
-              />
-            </div>
-          </div>
-
-          {/* 16-Core Activity Matrix Bars */}
-          <div className="pt-4 border-t border-tinapple-border/70">
-            <div className="flex justify-between items-center mb-2 text-[11px] font-mono text-tinapple-muted uppercase tracking-wider">
-              <span>Logical Core Utilization Matrix (C0 - C{numCores - 1})</span>
-              <span className="text-tinapple-green">amd_pstate: active</span>
-            </div>
-            <div className="grid grid-cols-8 sm:grid-cols-16 gap-1.5">
-              {coreLoads.map((load, idx) => (
-                <div key={idx} className="flex flex-col items-center gap-1">
-                  <div className="w-full h-10 rounded-md bg-tinapple-dark/80 border border-tinapple-border/80 p-0.5 flex flex-col justify-end overflow-hidden">
-                    <div
-                      className="w-full rounded-sm transition-all duration-300"
-                      style={{
-                        height: `${load}%`,
-                        backgroundColor:
-                          load > 80
-                            ? '#f87171'
-                            : load > 50
-                            ? '#e5b567'
-                            : '#7ec789',
-                      }}
-                    />
-                  </div>
-                  <span className="text-[9px] font-mono text-tinapple-muted">
-                    {idx}
+            {/* Metric Stats & Waveform Row */}
+            <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 items-end mb-4">
+              <div className="sm:col-span-5">
+                <div className="text-4xl sm:text-5xl font-black text-white tracking-tight font-mono">
+                  <CountUp to={telemetry.cpu.usagePercent || 0} decimals={1} suffix="%" />
+                </div>
+                <div className="flex items-center gap-2 mt-1.5 text-xs font-mono text-tinapple-subtext">
+                  <span>Load Avg:</span>
+                  <span className="text-tinapple-gold font-semibold">
+                    {telemetry.cpu.loadAvg ? telemetry.cpu.loadAvg.map((l) => l.toFixed(2)).join(' ') : '0.42 0.58 0.51'}
                   </span>
                 </div>
-              ))}
+              </div>
+
+              {/* Sparkline Canvas */}
+              <div className="sm:col-span-7 h-16 flex items-end">
+                <Sparkline
+                  data={history.cpu}
+                  strokeColor="#e5b567"
+                  fillColor="rgba(229, 181, 103, 0.12)"
+                  height={54}
+                />
+              </div>
+            </div>
+
+            {/* 16-Core Activity Matrix Bars */}
+            <div className="pt-4 border-t border-tinapple-border/70">
+              <div className="flex justify-between items-center mb-2 text-[11px] font-mono text-tinapple-muted uppercase tracking-wider">
+                <span>Logical Core Utilization Matrix (C0 - C{numCores - 1})</span>
+                <span className="text-tinapple-green">amd_pstate: active</span>
+              </div>
+              <div className="grid grid-cols-8 sm:grid-cols-16 gap-1.5">
+                {coreLoads.map((load, idx) => (
+                  <div key={idx} className="flex flex-col items-center gap-1">
+                    <div className="w-full h-10 rounded-md bg-tinapple-dark/80 border border-tinapple-border/80 p-0.5 flex flex-col justify-end overflow-hidden">
+                      <div
+                        className="w-full rounded-sm transition-all duration-300"
+                        style={{
+                          height: `${load}%`,
+                          backgroundColor:
+                            load > 80
+                              ? '#f87171'
+                              : load > 50
+                              ? '#e5b567'
+                              : '#7ec789',
+                        }}
+                      />
+                    </div>
+                    <span className="text-[9px] font-mono text-tinapple-muted">
+                      {idx}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
-      </SpotlightCard>
+        </SpotlightCard>
 
-      {/* MEMORY & RESOURCE POOL (5 cols) */}
-      <SpotlightCard
-        className="lg:col-span-5 p-6 flex flex-col justify-between"
-        spotlightColor="rgba(126, 199, 137, 0.15)"
-        borderColor="rgba(126, 199, 137, 0.45)"
-      >
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-2xl bg-tinapple-green/15 text-tinapple-green border border-tinapple-green/25 shadow-sm shadow-tinapple-green/10">
-                <MemoryStick className="w-5 h-5" />
+        {/* MEMORY & RESOURCE POOL (5 cols) */}
+        <SpotlightCard
+          className="lg:col-span-5 p-6 flex flex-col justify-between"
+          spotlightColor="rgba(126, 199, 137, 0.15)"
+          borderColor="rgba(126, 199, 137, 0.45)"
+        >
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-2xl bg-tinapple-green/15 text-tinapple-green border border-tinapple-green/25 shadow-sm shadow-tinapple-green/10">
+                  <MemoryStick className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="h-6 w-40">
+                    <TechText
+                      text="MEMORY MATRIX"
+                      fontSize={13}
+                      fontWeight={800}
+                      color="#ffffff"
+                      accentColor="#7ec789"
+                      labels={true}
+                      guides={true}
+                      intro="metrics"
+                      clickKick={true}
+                    />
+                  </div>
+                  <p className="text-xs text-tinapple-subtext font-mono">
+                    DDR5-5600 Dual Channel
+                  </p>
+                </div>
               </div>
+              <span className="text-xs px-2.5 py-1 rounded-xl bg-tinapple-dark/80 text-tinapple-green border border-tinapple-border font-mono font-semibold">
+                {formatBytes(telemetry.memory.totalBytes)} Total
+              </span>
+            </div>
+
+            <div className="flex items-baseline justify-between mb-4">
               <div>
-                <h3 className="text-sm font-bold text-white tracking-wide uppercase font-mono">
-                  Memory Allocation
-                </h3>
-                <p className="text-xs text-tinapple-subtext font-mono">
-                  DDR5-5600 Dual Channel
+                <div className="text-4xl sm:text-5xl font-black text-white tracking-tight font-mono">
+                  <CountUp to={telemetry.memory.usagePercent} decimals={1} suffix="%" />
+                </div>
+                <p className="text-xs text-tinapple-subtext font-mono mt-1.5">
+                  {formatBytes(telemetry.memory.usedBytes)} Active / {formatBytes(telemetry.memory.freeBytes)} Available
                 </p>
               </div>
             </div>
-            <span className="text-xs px-2.5 py-1 rounded-xl bg-tinapple-dark/80 text-tinapple-green border border-tinapple-border font-mono font-semibold">
-              {formatBytes(telemetry.memory.totalBytes)} Total
+
+            {/* Multi-layered Memory Pool Track */}
+            <div className="space-y-3 mb-4">
+              <div className="h-3 w-full rounded-full bg-tinapple-dark/80 border border-tinapple-border overflow-hidden flex">
+                <div
+                  className="h-full bg-gradient-to-r from-tinapple-green to-tinapple-emerald transition-all duration-500"
+                  style={{ width: `${Math.min(100, telemetry.memory.usagePercent * 0.75)}%` }}
+                  title="Active Heap & Buffers"
+                />
+                <div
+                  className="h-full bg-tinapple-gold/70 transition-all duration-500"
+                  style={{ width: `${Math.min(100, telemetry.memory.usagePercent * 0.25)}%` }}
+                  title="Page Cache"
+                />
+              </div>
+
+              <div className="grid grid-cols-3 gap-2 text-center font-mono">
+                <div className="p-2 rounded-xl bg-tinapple-dark/60 border border-tinapple-border">
+                  <span className="text-[10px] text-tinapple-muted block">BUFFERS</span>
+                  <span className="text-xs font-semibold text-tinapple-green">
+                    {formatBytes(telemetry.memory.usedBytes * 0.4)}
+                  </span>
+                </div>
+                <div className="p-2 rounded-xl bg-tinapple-dark/60 border border-tinapple-border">
+                  <span className="text-[10px] text-tinapple-muted block">CACHED</span>
+                  <span className="text-xs font-semibold text-tinapple-gold">
+                    {formatBytes(telemetry.memory.usedBytes * 0.6)}
+                  </span>
+                </div>
+                <div className="p-2 rounded-xl bg-tinapple-dark/60 border border-tinapple-border">
+                  <span className="text-[10px] text-tinapple-muted block">ZRAM SWAP</span>
+                  <span className="text-xs font-semibold text-tinapple-text">0 B / 8 GB</span>
+                </div>
+              </div>
+            </div>
+
+            <Sparkline
+              data={history.memory}
+              strokeColor="#7ec789"
+              fillColor="rgba(126, 199, 137, 0.12)"
+              height={44}
+            />
+          </div>
+        </SpotlightCard>
+
+        {/* STORAGE POOLS & BTRFS (6 cols) */}
+        <SpotlightCard
+          className="lg:col-span-6 p-6"
+          spotlightColor="rgba(229, 181, 103, 0.12)"
+          borderColor="rgba(229, 181, 103, 0.35)"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-2xl bg-tinapple-gold/15 text-tinapple-gold border border-tinapple-gold/25">
+                <HardDrive className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="h-6 w-44">
+                  <TechText
+                    text="BTRFS STORAGE"
+                    fontSize={13}
+                    fontWeight={800}
+                    color="#ffffff"
+                    accentColor="#e5b567"
+                    labels={true}
+                    guides={true}
+                    intro="metrics"
+                    clickKick={true}
+                  />
+                </div>
+                <p className="text-xs text-tinapple-subtext font-mono">
+                  {telemetry.disk.mountPoint} • btrfs zstd compression
+                </p>
+              </div>
+            </div>
+            <span className="text-xs px-2.5 py-1 rounded-xl bg-tinapple-dark/80 text-tinapple-gold border border-tinapple-border font-mono font-semibold">
+              {formatBytes(telemetry.disk.totalBytes)} NVMe Pool
             </span>
           </div>
 
-          <div className="flex items-baseline justify-between mb-4">
+          <div className="flex items-baseline justify-between mb-3">
             <div>
-              <div className="text-4xl sm:text-5xl font-black text-white tracking-tight font-mono">
-                <CountUp to={telemetry.memory.usagePercent} decimals={1} suffix="%" />
+              <div className="text-3xl font-black text-white tracking-tight font-mono">
+                <CountUp to={telemetry.disk.usagePercent} decimals={1} suffix="%" />
               </div>
-              <p className="text-xs text-tinapple-subtext font-mono mt-1.5">
-                {formatBytes(telemetry.memory.usedBytes)} Active / {formatBytes(telemetry.memory.freeBytes)} Available
+              <p className="text-xs text-tinapple-subtext font-mono mt-1">
+                {formatBytes(telemetry.disk.usedBytes)} Used / {formatBytes(telemetry.disk.freeBytes)} Available
               </p>
             </div>
           </div>
 
-          {/* Multi-layered Memory Pool Track */}
-          <div className="space-y-3 mb-4">
-            <div className="h-3 w-full rounded-full bg-tinapple-dark/80 border border-tinapple-border overflow-hidden flex">
-              <div
-                className="h-full bg-gradient-to-r from-tinapple-green to-tinapple-emerald transition-all duration-500"
-                style={{ width: `${Math.min(100, telemetry.memory.usagePercent * 0.75)}%` }}
-                title="Active Heap & Buffers"
-              />
-              <div
-                className="h-full bg-tinapple-gold/70 transition-all duration-500"
-                style={{ width: `${Math.min(100, telemetry.memory.usagePercent * 0.25)}%` }}
-                title="Page Cache"
-              />
+          <div className="h-2.5 w-full rounded-full bg-tinapple-dark/80 border border-tinapple-border overflow-hidden mb-4">
+            <div
+              className="h-full bg-gradient-to-r from-tinapple-gold to-amber-500 rounded-full transition-all duration-500"
+              style={{ width: `${telemetry.disk.usagePercent}%` }}
+            />
+          </div>
+
+          <div className="grid grid-cols-4 gap-2 text-center font-mono text-xs">
+            <div className="p-2 rounded-xl bg-tinapple-dark/60 border border-tinapple-border">
+              <span className="text-[10px] text-tinapple-muted block">@root</span>
+              <span className="text-tinapple-text font-semibold">12.4 GB</span>
+            </div>
+            <div className="p-2 rounded-xl bg-tinapple-dark/60 border border-tinapple-border">
+              <span className="text-[10px] text-tinapple-muted block">@home</span>
+              <span className="text-tinapple-text font-semibold">48.2 GB</span>
+            </div>
+            <div className="p-2 rounded-xl bg-tinapple-dark/60 border border-tinapple-border">
+              <span className="text-[10px] text-tinapple-muted block">@snapshots</span>
+              <span className="text-tinapple-gold font-semibold">8.6 GB</span>
+            </div>
+            <div className="p-2 rounded-xl bg-tinapple-dark/60 border border-tinapple-border">
+              <span className="text-[10px] text-tinapple-muted block">@var_log</span>
+              <span className="text-tinapple-green font-semibold">1.4 GB</span>
+            </div>
+          </div>
+        </SpotlightCard>
+
+        {/* NETWORK & TAILNET RADAR (6 cols) */}
+        <SpotlightCard
+          className="lg:col-span-6 p-6"
+          spotlightColor="rgba(126, 199, 137, 0.12)"
+          borderColor="rgba(126, 199, 137, 0.35)"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-2xl bg-tinapple-green/15 text-tinapple-green border border-tinapple-green/25">
+                <Activity className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="h-6 w-44">
+                  <TechText
+                    text="NETWORK MESH"
+                    fontSize={13}
+                    fontWeight={800}
+                    color="#ffffff"
+                    accentColor="#7ec789"
+                    labels={true}
+                    guides={true}
+                    intro="metrics"
+                    clickKick={true}
+                  />
+                </div>
+                <p className="text-xs text-tinapple-subtext font-mono">
+                  {telemetry.network.interfaces?.join(' • ') || 'tailscale0 • wlan0'}
+                </p>
+              </div>
+            </div>
+            <span className="text-xs px-2.5 py-1 rounded-xl bg-tinapple-dark/80 text-tinapple-green border border-tinapple-border font-mono font-semibold flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-tinapple-green animate-pulse" />
+              <span>Direct Mesh</span>
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 mb-3">
+            <div className="p-3 rounded-2xl bg-tinapple-dark/70 border border-tinapple-border flex items-center justify-between">
+              <div>
+                <div className="flex items-center gap-1.5 text-xs text-tinapple-green font-mono">
+                  <ArrowDownRight className="w-4 h-4" />
+                  <span>INBOUND</span>
+                </div>
+                <div className="text-xl font-extrabold text-white font-mono mt-1">
+                  {formatRate(telemetry.network.rateIn)}
+                </div>
+              </div>
+              <span className="text-[10px] font-mono text-tinapple-muted">RX Total: {formatBytes(telemetry.network.bytesReceived)}</span>
             </div>
 
-            <div className="grid grid-cols-3 gap-2 text-center font-mono">
-              <div className="p-2 rounded-xl bg-tinapple-dark/60 border border-tinapple-border">
-                <span className="text-[10px] text-tinapple-muted block">BUFFERS</span>
-                <span className="text-xs font-semibold text-tinapple-green">
-                  {formatBytes(telemetry.memory.usedBytes * 0.4)}
-                </span>
+            <div className="p-3 rounded-2xl bg-tinapple-dark/70 border border-tinapple-border flex items-center justify-between">
+              <div>
+                <div className="flex items-center gap-1.5 text-xs text-tinapple-gold font-mono">
+                  <ArrowUpRight className="w-4 h-4" />
+                  <span>OUTBOUND</span>
+                </div>
+                <div className="text-xl font-extrabold text-white font-mono mt-1">
+                  {formatRate(telemetry.network.rateOut)}
+                </div>
               </div>
-              <div className="p-2 rounded-xl bg-tinapple-dark/60 border border-tinapple-border">
-                <span className="text-[10px] text-tinapple-muted block">CACHED</span>
-                <span className="text-xs font-semibold text-tinapple-gold">
-                  {formatBytes(telemetry.memory.usedBytes * 0.6)}
-                </span>
-              </div>
-              <div className="p-2 rounded-xl bg-tinapple-dark/60 border border-tinapple-border">
-                <span className="text-[10px] text-tinapple-muted block">ZRAM SWAP</span>
-                <span className="text-xs font-semibold text-tinapple-text">0 B / 8 GB</span>
-              </div>
+              <span className="text-[10px] font-mono text-tinapple-muted">TX Total: {formatBytes(telemetry.network.bytesSent)}</span>
             </div>
           </div>
 
           <Sparkline
-            data={history.memory}
+            data={history.netIn}
             strokeColor="#7ec789"
             fillColor="rgba(126, 199, 137, 0.12)"
             height={44}
           />
-        </div>
-      </SpotlightCard>
-
-      {/* STORAGE POOLS & BTRFS (6 cols) */}
-      <SpotlightCard
-        className="lg:col-span-6 p-6"
-        spotlightColor="rgba(229, 181, 103, 0.12)"
-        borderColor="rgba(229, 181, 103, 0.35)"
-      >
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-2xl bg-tinapple-gold/15 text-tinapple-gold border border-tinapple-gold/25">
-              <HardDrive className="w-5 h-5" />
-            </div>
-            <div>
-              <h3 className="text-sm font-bold text-white tracking-wide uppercase font-mono">
-                Storage & Btrfs Subvolumes
-              </h3>
-              <p className="text-xs text-tinapple-subtext font-mono">
-                Root Partition (ZSTD-3 compressed)
-              </p>
-            </div>
-          </div>
-          <span className="text-xs px-2.5 py-1 rounded-xl bg-tinapple-dark/80 text-tinapple-gold border border-tinapple-border font-mono font-semibold">
-            {formatBytes(telemetry.disk.freeBytes)} Free
-          </span>
-        </div>
-
-        <div className="flex items-baseline justify-between mb-3">
-          <div className="text-3xl font-extrabold text-white font-mono">
-            <CountUp to={telemetry.disk.usagePercent} decimals={1} suffix="%" />
-          </div>
-          <span className="text-xs font-mono text-tinapple-subtext">
-            {formatBytes(telemetry.disk.usedBytes)} Used of {formatBytes(telemetry.disk.totalBytes)}
-          </span>
-        </div>
-
-        <div className="h-3 w-full rounded-full bg-tinapple-dark/80 border border-tinapple-border overflow-hidden mb-4">
-          <div
-            className="h-full bg-gradient-to-r from-tinapple-gold via-tinapple-amber to-tinapple-green transition-all duration-500"
-            style={{ width: `${Math.min(100, telemetry.disk.usagePercent)}%` }}
-          />
-        </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-mono">
-          <div className="p-2 rounded-xl bg-tinapple-dark/60 border border-tinapple-border">
-            <span className="text-[10px] text-tinapple-muted block">@rootfs</span>
-            <span className="text-tinapple-text font-semibold">18.4 GB</span>
-          </div>
-          <div className="p-2 rounded-xl bg-tinapple-dark/60 border border-tinapple-border">
-            <span className="text-[10px] text-tinapple-muted block">@home</span>
-            <span className="text-tinapple-text font-semibold">42.1 GB</span>
-          </div>
-          <div className="p-2 rounded-xl bg-tinapple-dark/60 border border-tinapple-border">
-            <span className="text-[10px] text-tinapple-muted block">@snapshots</span>
-            <span className="text-tinapple-gold font-semibold">8.2 GB</span>
-          </div>
-          <div className="p-2 rounded-xl bg-tinapple-dark/60 border border-tinapple-border">
-            <span className="text-[10px] text-tinapple-muted block">@var_log</span>
-            <span className="text-tinapple-green font-semibold">1.4 GB</span>
-          </div>
-        </div>
-      </SpotlightCard>
-
-      {/* NETWORK & TAILNET RADAR (6 cols) */}
-      <SpotlightCard
-        className="lg:col-span-6 p-6"
-        spotlightColor="rgba(126, 199, 137, 0.12)"
-        borderColor="rgba(126, 199, 137, 0.35)"
-      >
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-2xl bg-tinapple-green/15 text-tinapple-green border border-tinapple-green/25">
-              <Activity className="w-5 h-5" />
-            </div>
-            <div>
-              <h3 className="text-sm font-bold text-white tracking-wide uppercase font-mono">
-                Network & WireGuard Mesh
-              </h3>
-              <p className="text-xs text-tinapple-subtext font-mono">
-                {telemetry.network.interfaces?.join(' • ') || 'tailscale0 • wlan0'}
-              </p>
-            </div>
-          </div>
-          <span className="text-xs px-2.5 py-1 rounded-xl bg-tinapple-dark/80 text-tinapple-green border border-tinapple-border font-mono font-semibold flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-tinapple-green animate-pulse" />
-            <span>Direct Mesh</span>
-          </span>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4 mb-3">
-          <div className="p-3 rounded-2xl bg-tinapple-dark/70 border border-tinapple-border flex items-center justify-between">
-            <div>
-              <div className="flex items-center gap-1.5 text-xs text-tinapple-green font-mono">
-                <ArrowDownRight className="w-4 h-4" />
-                <span>INBOUND</span>
-              </div>
-              <div className="text-xl font-extrabold text-white font-mono mt-1">
-                {formatRate(telemetry.network.rateIn)}
-              </div>
-            </div>
-            <span className="text-[10px] font-mono text-tinapple-muted">RX Total: {formatBytes(telemetry.network.bytesReceived)}</span>
-          </div>
-
-          <div className="p-3 rounded-2xl bg-tinapple-dark/70 border border-tinapple-border flex items-center justify-between">
-            <div>
-              <div className="flex items-center gap-1.5 text-xs text-tinapple-gold font-mono">
-                <ArrowUpRight className="w-4 h-4" />
-                <span>OUTBOUND</span>
-              </div>
-              <div className="text-xl font-extrabold text-white font-mono mt-1">
-                {formatRate(telemetry.network.rateOut)}
-              </div>
-            </div>
-            <span className="text-[10px] font-mono text-tinapple-muted">TX Total: {formatBytes(telemetry.network.bytesSent)}</span>
-          </div>
-        </div>
-
-        <Sparkline
-          data={history.netIn}
-          strokeColor="#7ec789"
-          fillColor="rgba(126, 199, 137, 0.12)"
-          height={44}
-        />
-      </SpotlightCard>
+        </SpotlightCard>
+      </div>
     </div>
   );
 };

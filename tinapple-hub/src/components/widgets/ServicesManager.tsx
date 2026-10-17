@@ -9,6 +9,7 @@ import {
   List,
 } from 'lucide-react';
 import { SpotlightCard } from '../reactbits/SpotlightCard';
+import HoldButton from '../reactbits/HoldButton';
 import { ServiceInfo } from '../../types/api';
 
 interface ServicesManagerProps {
@@ -88,28 +89,53 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({
             />
           </div>
 
-          {/* View Toggle */}
-          <div className="flex items-center p-1 rounded-xl bg-tinapple-dark/90 border border-tinapple-border">
-            <button
-              onClick={() => setViewMode('grid')}
-              className={`p-1.5 rounded-lg transition-colors ${
-                viewMode === 'grid'
-                  ? 'bg-tinapple-surface text-tinapple-gold'
-                  : 'text-tinapple-muted hover:text-white'
-              }`}
+          {/* Quick Action HoldButton & View Toggle */}
+          <div className="flex items-center gap-2">
+            <HoldButton
+              size="sm"
+              holdTime={1400}
+              backgroundColor="#15181f"
+              fillColor="#e5b567"
+              textColor="#e5b567"
+              fillTextColor="#060709"
+              wave={true}
+              glow={true}
+              doneLabel="Core Restarted"
+              onHold={async () => {
+                const coreServices = services.filter((s) => s.category === 'core');
+                for (const s of coreServices) {
+                  await handleAction(s.name, 'restart');
+                }
+              }}
+              className="font-mono text-xs font-bold whitespace-nowrap"
             >
-              <LayoutGrid className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => setViewMode('table')}
-              className={`p-1.5 rounded-lg transition-colors ${
-                viewMode === 'table'
-                  ? 'bg-tinapple-surface text-tinapple-gold'
-                  : 'text-tinapple-muted hover:text-white'
-              }`}
-            >
-              <List className="w-4 h-4" />
-            </button>
+              Hold to Restart Core
+            </HoldButton>
+
+            <div className="flex items-center p-1 rounded-xl bg-tinapple-dark/90 border border-tinapple-border">
+              <button
+                onClick={() => setViewMode('grid')}
+                className={`p-1.5 rounded-lg transition-colors ${
+                  viewMode === 'grid'
+                    ? 'bg-tinapple-surface text-tinapple-gold'
+                    : 'text-tinapple-muted hover:text-white'
+                }`}
+                title="Grid view"
+              >
+                <LayoutGrid className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setViewMode('table')}
+                className={`p-1.5 rounded-lg transition-colors ${
+                  viewMode === 'table'
+                    ? 'bg-tinapple-surface text-tinapple-gold'
+                    : 'text-tinapple-muted hover:text-white'
+                }`}
+                title="Table view"
+              >
+                <List className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
       </div>

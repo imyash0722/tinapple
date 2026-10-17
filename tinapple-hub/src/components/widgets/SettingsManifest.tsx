@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { Settings, Save, Check } from 'lucide-react';
 import { SpotlightCard } from '../reactbits/SpotlightCard';
 import { SquishSwitch } from '../reactbits/SquishSwitch';
-import { StarBorder } from '../reactbits/StarBorder';
+import HoldButton from '../reactbits/HoldButton';
+import TechText from '../reactbits/TechText';
 import { SystemInfo, SessionMode } from '../../types/api';
 
 interface SettingsManifestProps {
@@ -22,23 +23,34 @@ export const SettingsManifest: React.FC<SettingsManifestProps> = ({
   const [sessionMode, setSessionMode] = useState<SessionMode>(systemInfo.sessionMode);
   const [saved, setSaved] = useState<boolean>(false);
 
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSave = async () => {
     await onUpdateSession(sessionMode);
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
   };
 
   return (
-    <form onSubmit={handleSave} className="space-y-5">
+    <div className="space-y-5">
       <SpotlightCard className="p-6" spotlightColor="rgba(229, 181, 103, 0.15)" borderColor="rgba(229, 181, 103, 0.45)">
         <div className="flex items-center gap-3 mb-6">
           <div className="p-2.5 rounded-2xl bg-tinapple-gold/15 text-tinapple-gold border border-tinapple-gold/25">
             <Settings className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="text-base font-bold text-white uppercase tracking-wide font-mono">Appliance Manifest Configuration</h3>
-            <p className="text-xs text-tinapple-subtext font-mono">
+            <div className="h-6 w-72">
+              <TechText
+                text="SYSTEM MANIFEST ENGINE"
+                fontSize={13}
+                fontWeight={800}
+                color="#ffffff"
+                accentColor="#e5b567"
+                labels={true}
+                guides={true}
+                intro="metrics"
+                clickKick={true}
+              />
+            </div>
+            <p className="text-xs text-tinapple-subtext font-mono mt-0.5">
               Live updates `/etc/tinapple/manifest.yaml` and triggers system re-generation.
             </p>
           </div>
@@ -133,26 +145,30 @@ export const SettingsManifest: React.FC<SettingsManifestProps> = ({
           </div>
         </div>
 
-        {/* Save Button */}
-        <div className="mt-6 flex justify-end">
-          <StarBorder as="button" color="#e5b567" className="w-full md:w-auto">
-            <span className="flex items-center gap-2 font-mono font-bold text-white px-4 py-1">
-              {saved ? (
-                <>
-                  <Check className="w-4 h-4 text-tinapple-green" />
-                  <span>Manifest Saved & Applied!</span>
-                </>
-              ) : (
-                <>
-                  <Save className="w-4 h-4 text-tinapple-gold" />
-                  <span>Save & Apply Manifest</span>
-                </>
-              )}
-            </span>
-          </StarBorder>
+        {/* HoldButton Save & Apply */}
+        <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-tinapple-border/70">
+          <span className="text-[11px] font-mono text-tinapple-muted">
+            Safety Lock: Press and hold for 1.4s to re-generate configuration
+          </span>
+
+          <HoldButton
+            backgroundColor="#15181f"
+            fillColor="#7ec789"
+            textColor="#ffffff"
+            fillTextColor="#060709"
+            size="md"
+            holdTime={1400}
+            wave={true}
+            glow={true}
+            doneLabel="Manifest Deployed & Applied!"
+            onHold={handleSave}
+            className="w-full sm:w-auto font-mono text-xs font-bold"
+          >
+            Hold to Deploy & Apply Manifest
+          </HoldButton>
         </div>
       </SpotlightCard>
-    </form>
+    </div>
   );
 };
 export default SettingsManifest;

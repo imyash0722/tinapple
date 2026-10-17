@@ -345,7 +345,16 @@ class ApiService {
     try {
       const res = await fetch(`${API_BASE}/hardware/info`);
       if (!res.ok) throw new Error('API offline');
-      return await res.json();
+      const data = await res.json();
+      return {
+        ...MOCK_HARDWARE,
+        profile: data.hardware_profile && data.hardware_profile !== 'auto' ? data.hardware_profile : MOCK_HARDWARE.profile,
+        ...data,
+        cpu: data.cpu || MOCK_HARDWARE.cpu,
+        gpu: data.gpu || MOCK_HARDWARE.gpu,
+        storageDrives: data.storageDrives || MOCK_HARDWARE.storageDrives,
+        memoryGb: data.memoryGb || MOCK_HARDWARE.memoryGb,
+      };
     } catch {
       return MOCK_HARDWARE;
     }
@@ -397,6 +406,24 @@ class ApiService {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ mode }),
       });
+      return res.ok;
+    } catch {
+      return true;
+    }
+  }
+
+  async rebootNode(): Promise<boolean> {
+    try {
+      const res = await fetch(`${API_BASE}/system/reboot`, { method: 'POST' });
+      return res.ok;
+    } catch {
+      return true;
+    }
+  }
+
+  async syncTime(): Promise<boolean> {
+    try {
+      const res = await fetch(`${API_BASE}/system/timesync`, { method: 'POST' });
       return res.ok;
     } catch {
       return true;
