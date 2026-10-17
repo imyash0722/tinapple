@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# Tinapple OS - Niri / Wayland Desktop Session Autostart
+set -euo pipefail
+
+# Set wallpaper if available
+if [[ -f /usr/share/backgrounds/wallpaper.png ]] && command -v swaybg >/dev/null 2>&1; then
+    pkill -x swaybg >/dev/null 2>&1 || true
+    swaybg -i /usr/share/backgrounds/wallpaper.png -m fill >/dev/null 2>&1 &
+fi
+
+# Ensure Waybar is launched
+if command -v omarchy-restart-waybar >/dev/null 2>&1; then
+    omarchy-restart-waybar >/dev/null 2>&1 &
+elif command -v waybar >/dev/null 2>&1; then
+    waybar >/dev/null 2>&1 &
+fi
+
+# If booted into live ISO media, launch appliance GUI installer
+if [[ -d /run/archiso ]] && command -v tinapple-gui-installer >/dev/null 2>&1; then
+    tinapple-gui-installer &
+fi

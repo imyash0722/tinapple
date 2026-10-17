@@ -1,0 +1,11 @@
+// Generated dynamically by Matugen for Niri (Tinapple OS)
+layout {
+    focus-ring {
+        active-color "{{colors.primary.default.hex}}"
+        inactive-color "{{colors.outline.default.hex}}"
+    }
+    border {
+        active-color "{{colors.primary.default.hex}}"
+        inactive-color "{{colors.surface_container_high.default.hex}}"
+    }
+}

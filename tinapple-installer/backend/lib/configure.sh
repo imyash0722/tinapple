@@ -68,8 +68,8 @@ EOH"
     run_sh "arch-chroot $target chown -R $username:users /home/$username 2>/dev/null || true"
   fi
 
-  # Auto-login to DWL on tty1 for appliance server experience
-  log_info "configuring tty1 autologin and dwl auto-launch for %s..." "$username"
+  # Auto-login to Niri on tty1 for appliance server experience
+  log_info "configuring tty1 autologin and niri auto-launch for %s..." "$username"
   run_sh "mkdir -p $target/etc/systemd/system/getty@tty1.service.d"
   run_sh "cat << 'EOA' > $target/etc/systemd/system/getty@tty1.service.d/autologin.conf
 [Service]
@@ -78,17 +78,23 @@ ExecStart=-/usr/bin/agetty --noreset --noclear --autologin '$username' - \\${TER
 EOA"
   run_sh "cat << 'EOZ' >> $target/home/$username/.zlogin
 if [[ \"\$(tty)\" == \"/dev/tty1\" ]]; then
-    if [[ -z \"\${WAYLAND_DISPLAY:-}\" ]] && ! pgrep -x dwl >/dev/null; then
+    if [[ -z \"\${WAYLAND_DISPLAY:-}\" ]] && ! pgrep -x niri >/dev/null; then
         export XDG_RUNTIME_DIR=\"/run/user/\$(id -u)\"
-        exec dwl -s /usr/local/bin/tinapple-dwl-autostart
+        export XDG_CURRENT_DESKTOP=\"niri\"
+        export XDG_SESSION_DESKTOP=\"niri\"
+        export XDG_SESSION_TYPE=\"wayland\"
+        exec niri --session
     fi
 fi
 EOZ"
   run_sh "cat << 'EOB' >> $target/home/$username/.bash_profile
 if [[ \"\$(tty)\" == \"/dev/tty1\" ]]; then
-    if [[ -z \"\${WAYLAND_DISPLAY:-}\" ]] && ! pgrep -x dwl >/dev/null; then
+    if [[ -z \"\${WAYLAND_DISPLAY:-}\" ]] && ! pgrep -x niri >/dev/null; then
         export XDG_RUNTIME_DIR=\"/run/user/\$(id -u)\"
-        exec dwl -s /usr/local/bin/tinapple-dwl-autostart
+        export XDG_CURRENT_DESKTOP=\"niri\"
+        export XDG_SESSION_DESKTOP=\"niri\"
+        export XDG_SESSION_TYPE=\"wayland\"
+        exec niri --session
     fi
 fi
 EOB"

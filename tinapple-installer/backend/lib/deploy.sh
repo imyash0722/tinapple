@@ -126,11 +126,21 @@ EOP"
   # 8. Deploy Tinapple appliance approved applications, wrappers, and configs
   log_info "deploying Tinapple appliance approved applications and scripts to %s..." "$target"
   run_sh "mkdir -p $target/usr/bin $target/usr/local/bin $target/etc/skel $target/etc/systemd/system $target/usr/share/backgrounds"
-  for f in /usr/bin/dwl /usr/local/bin/dwl /usr/bin/ironbar /usr/local/bin/ironbar /usr/bin/foot /usr/bin/btop /usr/local/bin/qdirstat /usr/local/bin/tinapple-* /usr/bin/tinapple-*; do
+  for f in /usr/bin/niri /usr/bin/waybar /usr/bin/fuzzel /usr/bin/foot /usr/bin/btop /usr/local/bin/omarchy-* /usr/local/bin/wttrbar /usr/bin/dwl /usr/local/bin/dwl /usr/bin/ironbar /usr/local/bin/ironbar /usr/local/bin/qdirstat /usr/local/bin/tinapple-* /usr/bin/tinapple-*; do
     if [[ -f "$f" ]]; then
       run_sh "cp -f '$f' '$target/usr/bin/' 2>/dev/null || true; cp -f '$f' '$target/usr/local/bin/' 2>/dev/null || true; chmod 755 '$target/usr/bin/$(basename \"$f\")' '$target/usr/local/bin/$(basename \"$f\")' 2>/dev/null || true"
     fi
   done
+  run_sh "mkdir -p $target/etc/skel/.config/niri $target/etc/skel/.config/waybar $target/etc/skel/.config/matugen"
+  if [[ -d /home/pineapple/.config/niri ]]; then
+    run_sh "cp -rf /home/pineapple/.config/niri/. $target/etc/skel/.config/niri/ 2>/dev/null || true"
+  fi
+  if [[ -d /home/pineapple/.config/waybar ]]; then
+    run_sh "cp -rf /home/pineapple/.config/waybar/. $target/etc/skel/.config/waybar/ 2>/dev/null || true"
+  fi
+  if [[ -d /home/pineapple/.config/matugen ]]; then
+    run_sh "cp -rf /home/pineapple/.config/matugen/. $target/etc/skel/.config/matugen/ 2>/dev/null || true"
+  fi
   if [[ -f /usr/share/backgrounds/wallpaper.png ]]; then
     run_sh "cp -f /usr/share/backgrounds/wallpaper.png $target/usr/share/backgrounds/ 2>/dev/null || true"
   fi

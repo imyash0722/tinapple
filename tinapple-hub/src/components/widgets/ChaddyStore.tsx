@@ -37,12 +37,12 @@ const GLYPHS: Record<string, string> = {
 const DEFAULT_PROFILES: ApplianceProfile[] = [
   {
     id: 'desktop',
-    name: 'ChadWM Desktop Station',
+    name: 'Niri Wayland Station',
     category: 'Workstation',
     icon: 'Monitor',
-    tagline: 'Minimal Wayland tiling compositor & Ironbar desktop',
+    tagline: 'Scrollable-tiling Wayland compositor & Waybar desktop',
     description:
-      'Ultra-responsive wlroots environment with ChadWM, Alacritty, Foot, PipeWire sound, and custom gold/sage theme.',
+      'Ultra-fluid scrollable-tiling Wayland session powered by Niri, Waybar (V3.1a theme), Matugen dynamic coloring, Foot, and PipeWire sound.',
     installed: true,
     status: 'active',
     services: ['tinapple-session.service', 'seatd.service', 'pipewire.service'],

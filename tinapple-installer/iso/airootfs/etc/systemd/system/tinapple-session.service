@@ -14,7 +14,8 @@ Environment=HOME=/root
 Environment=XDG_RUNTIME_DIR=/run/user/0
 Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/0/bus
 Environment=LIBSEAT_BACKEND=seatd
-Environment=XDG_CURRENT_DESKTOP=wlroots
+Environment=XDG_CURRENT_DESKTOP=niri
+Environment=XDG_SESSION_DESKTOP=niri
 Environment=XDG_SESSION_TYPE=wayland
 Environment=WLR_NO_HARDWARE_CURSORS=1
 Environment=MOZ_ENABLE_WAYLAND=1
@@ -24,7 +25,7 @@ Environment=LANG=en_US.UTF-8
 Environment=LC_ALL=en_US.UTF-8
 ExecStartPre=/usr/bin/mkdir -p /run/user/0
 ExecStartPre=/usr/bin/chmod 700 /run/user/0
-ExecStart=/usr/local/bin/dwl -s /usr/local/bin/tinapple-dwl-autostart
+ExecStart=/usr/bin/niri --session
 Restart=always
 RestartSec=1
 StandardInput=tty

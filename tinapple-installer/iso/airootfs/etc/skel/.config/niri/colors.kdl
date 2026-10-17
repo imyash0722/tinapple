@@ -1,0 +1,11 @@
+// Generated dynamically by Matugen for Niri (Tinapple OS)
+layout {
+    focus-ring {
+        active-color "#a4d483"
+        inactive-color "#8d9384"
+    }
+    border {
+        active-color "#a4d483"
+        inactive-color "#282b25"
+    }
+}

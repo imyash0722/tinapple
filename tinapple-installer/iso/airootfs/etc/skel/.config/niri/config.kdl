@@ -1,0 +1,203 @@
+// Tinapple Appliance OS - Niri Configuration
+// Scrollable-tiling Wayland compositor with Waybar integration and Matugen theming
+
+input {
+    keyboard {
+        xkb {
+            // Layout configured via localectl
+        }
+        numlock
+    }
+
+    touchpad {
+        tap
+        natural-scroll
+        dwt
+    }
+
+    mouse {
+        // Default mouse settings
+    }
+
+    warp-mouse-to-focus
+    focus-follows-mouse max-scroll-amount="0%"
+}
+
+// Outputs can be configured automatically by KMS/DRM
+output "eDP-1" {
+    // Mode will be picked automatically if not specified
+    scale 1.0
+}
+
+layout {
+    gaps 12
+    center-focused-column "never"
+
+    default-column-width { proportion 0.5; }
+
+    preset-column-widths {
+        proportion 0.33333
+        proportion 0.5
+        proportion 0.66667
+        proportion 1.0
+    }
+
+    focus-ring {
+        width 2
+        active-color "#e5b567"
+        inactive-color "#43493c"
+    }
+
+    border {
+        off
+        width 1
+        active-color "#e5b567"
+        inactive-color "#1e201b"
+    }
+
+    struts {
+        left 0
+        right 0
+        top 0
+        bottom 0
+    }
+}
+
+// Dynamic Matugen theme palette injection
+include "colors.kdl"
+
+// Autostart Services
+spawn-at-startup "waybar"
+spawn-sh-at-startup "command -v swaybg >/dev/null && [ -f /usr/share/backgrounds/wallpaper.png ] && swaybg -i /usr/share/backgrounds/wallpaper.png -m fill || true"
+spawn-sh-at-startup "systemctl --user import-environment WAYLAND_DISPLAY XDG_CURRENT_DESKTOP || true"
+
+// Window Rules
+window-rule {
+    geometry-corner-radius 8
+    clip-to-geometry true
+}
+
+// Floating dialogs
+window-rule {
+    match app-id=r#"^pavucontrol$"#
+    match app-id=r#"^nm-connection-editor$"#
+    match app-id=r#"^blueman-manager$"#
+    open-floating true
+}
+
+window-rule {
+    match app-id=r#"firefox$"# title="^Picture-in-Picture$"
+    open-floating true
+}
+
+binds {
+    // Hotkey overlay
+    Mod+Shift+Slash { show-hotkey-overlay; }
+
+    // Core Applications
+    Mod+Return hotkey-overlay-title="Open Terminal" { spawn "foot"; }
+    Mod+T hotkey-overlay-title="Open Terminal" { spawn "foot"; }
+    Mod+D hotkey-overlay-title="Application Launcher" { spawn "fuzzel"; }
+    Mod+Space hotkey-overlay-title="Application Launcher" { spawn "fuzzel"; }
+    Mod+Super+Space hotkey-overlay-title="Omarchy System Menu" { spawn "omarchy-menu"; }
+    Mod+Q repeat=false hotkey-overlay-title="Close Focused Window" { close-window; }
+    Mod+O repeat=false hotkey-overlay-title="Toggle Overview" { toggle-overview; }
+
+    // Navigation (Vim & Arrow keys)
+    Mod+Left  { focus-column-left; }
+    Mod+Right { focus-column-right; }
+    Mod+Down  { focus-window-down; }
+    Mod+Up    { focus-window-up; }
+    Mod+H     { focus-column-left; }
+    Mod+L     { focus-column-right; }
+    Mod+J     { focus-window-down; }
+    Mod+K     { focus-window-up; }
+
+    // Window Movement
+    Mod+Ctrl+Left  { move-column-left; }
+    Mod+Ctrl+Right { move-column-right; }
+    Mod+Ctrl+Down  { move-window-down; }
+    Mod+Ctrl+Up    { move-window-up; }
+    Mod+Ctrl+H     { move-column-left; }
+    Mod+Ctrl+L     { move-column-right; }
+    Mod+Ctrl+J     { move-window-down; }
+    Mod+Ctrl+K     { move-window-up; }
+
+    // Column Boundaries
+    Mod+Home { focus-column-first; }
+    Mod+End  { focus-column-last; }
+    Mod+Ctrl+Home { move-column-to-first; }
+    Mod+Ctrl+End  { move-column-to-last; }
+
+    // Monitor Switching
+    Mod+Shift+Left  { focus-monitor-left; }
+    Mod+Shift+Right { focus-monitor-right; }
+    Mod+Shift+H     { focus-monitor-left; }
+    Mod+Shift+L     { focus-monitor-right; }
+    Mod+Shift+Ctrl+Left  { move-column-to-monitor-left; }
+    Mod+Shift+Ctrl+Right { move-column-to-monitor-right; }
+    Mod+Shift+Ctrl+H     { move-column-to-monitor-left; }
+    Mod+Shift+Ctrl+L     { move-column-to-monitor-right; }
+
+    // Workspaces
+    Mod+1 { focus-workspace 1; }
+    Mod+2 { focus-workspace 2; }
+    Mod+3 { focus-workspace 3; }
+    Mod+4 { focus-workspace 4; }
+    Mod+5 { focus-workspace 5; }
+    Mod+6 { focus-workspace 6; }
+    Mod+7 { focus-workspace 7; }
+    Mod+8 { focus-workspace 8; }
+    Mod+9 { focus-workspace 9; }
+
+    Mod+Ctrl+1 { move-column-to-workspace 1; }
+    Mod+Ctrl+2 { move-column-to-workspace 2; }
+    Mod+Ctrl+3 { move-column-to-workspace 3; }
+    Mod+Ctrl+4 { move-column-to-workspace 4; }
+    Mod+Ctrl+5 { move-column-to-workspace 5; }
+    Mod+Ctrl+6 { move-column-to-workspace 6; }
+    Mod+Ctrl+7 { move-column-to-workspace 7; }
+    Mod+Ctrl+8 { move-column-to-workspace 8; }
+    Mod+Ctrl+9 { move-column-to-workspace 9; }
+
+    Mod+Shift+1 { move-column-to-workspace 1; }
+    Mod+Shift+2 { move-column-to-workspace 2; }
+    Mod+Shift+3 { move-column-to-workspace 3; }
+    Mod+Shift+4 { move-column-to-workspace 4; }
+    Mod+Shift+5 { move-column-to-workspace 5; }
+    Mod+Shift+6 { move-column-to-workspace 6; }
+    Mod+Shift+7 { move-column-to-workspace 7; }
+    Mod+Shift+8 { move-column-to-workspace 8; }
+    Mod+Shift+9 { move-column-to-workspace 9; }
+
+    // Column Sizing & Fullscreen
+    Mod+R { switch-preset-column-width; }
+    Mod+F { maximize-column; }
+    Mod+Shift+F { fullscreen-window; }
+    Mod+Minus { set-column-width "-10%"; }
+    Mod+Equal { set-column-width "+10%"; }
+
+    // Consume & Expel from columns
+    Mod+BracketLeft  { consume-or-expel-window-left; }
+    Mod+BracketRight { consume-or-expel-window-right; }
+
+    // Hardware Audio Controls
+    XF86AudioRaiseVolume allow-when-locked=true { spawn-sh "wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.05+ -l 1.0"; }
+    XF86AudioLowerVolume allow-when-locked=true { spawn-sh "wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.05-"; }
+    XF86AudioMute        allow-when-locked=true { spawn-sh "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"; }
+    XF86AudioMicMute     allow-when-locked=true { spawn-sh "wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"; }
+
+    // Media Controls
+    XF86AudioPlay allow-when-locked=true { spawn-sh "playerctl play-pause || true"; }
+    XF86AudioStop allow-when-locked=true { spawn-sh "playerctl stop || true"; }
+    XF86AudioPrev allow-when-locked=true { spawn-sh "playerctl previous || true"; }
+    XF86AudioNext allow-when-locked=true { spawn-sh "playerctl next || true"; }
+
+    // Brightness Controls
+    XF86MonBrightnessUp   allow-when-locked=true { spawn "brightnessctl" "set" "+5%"; }
+    XF86MonBrightnessDown allow-when-locked=true { spawn "brightnessctl" "set" "5%-"; }
+
+    // Exit / Logout
+    Mod+Shift+E { quit; }
+    Ctrl+Alt+Delete { quit; }
+}

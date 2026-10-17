@@ -1,26 +1,21 @@
-#!/bin/bash
-# Tinapple OS - DWL Wayland Autostart Session
+#!/usr/bin/env bash
+# Tinapple OS - Niri / Wayland Desktop Session Autostart
+set -euo pipefail
 
-# Wayland & DBus environment variables
-export XDG_CURRENT_DESKTOP=wlroots
-export XDG_SESSION_TYPE=wayland
-export DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/0/bus"
-export MOZ_ENABLE_WAYLAND=1
-export GDK_BACKEND=wayland,x11
-export QT_QPA_PLATFORM=wayland
-
-# Set metallic wallpaper
-if [ -f /usr/share/backgrounds/wallpaper.png ]; then
-    swaybg -i /usr/share/backgrounds/wallpaper.png -m fill &
+# Set wallpaper if available
+if [[ -f /usr/share/backgrounds/wallpaper.png ]] && command -v swaybg >/dev/null 2>&1; then
+    pkill -x swaybg >/dev/null 2>&1 || true
+    swaybg -i /usr/share/backgrounds/wallpaper.png -m fill >/dev/null 2>&1 &
 fi
 
-# Launch Ironbar (Discussion #1226 drop-down bar)
-ironbar &
+# Ensure Waybar is launched
+if command -v omarchy-restart-waybar >/dev/null 2>&1; then
+    omarchy-restart-waybar >/dev/null 2>&1 &
+elif command -v waybar >/dev/null 2>&1; then
+    waybar >/dev/null 2>&1 &
+fi
 
-# If running on Live ISO media, launch GUI installer automatically
-if [ -d /run/archiso ]; then
+# If booted into live ISO media, launch appliance GUI installer
+if [[ -d /run/archiso ]] && command -v tinapple-gui-installer >/dev/null 2>&1; then
     tinapple-gui-installer &
 fi
-
-# Consume stdin from dwl to ensure stdout pipe remains open
-cat > /dev/null

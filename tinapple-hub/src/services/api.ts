@@ -59,7 +59,7 @@ export const MOCK_TELEMETRY: TelemetrySnapshot = {
 export const MOCK_SERVICES: ServiceInfo[] = [
   {
     name: 'tinapple-session',
-    description: 'Tinapple Wayland Desktop Session (dwl + ironbar)',
+    description: 'Tinapple Wayland Desktop Session (Niri + Waybar)',
     activeState: 'active',
     subState: 'running',
     unitFileState: 'enabled',
