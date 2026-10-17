@@ -6,19 +6,17 @@ import {
   Cpu,
   Settings,
   RefreshCw,
-  Power,
-  RotateCcw,
-  Sparkles,
   Server,
-  Wifi,
   Monitor,
+  Terminal,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-import { Aurora } from './components/reactbits/Aurora';
+import { FullWindowBackground } from './components/reactbits/FullWindowBackground';
 import { ShinyText } from './components/reactbits/ShinyText';
 import { DecryptedText } from './components/reactbits/DecryptedText';
 import { Dock, DockItem } from './components/reactbits/Dock';
+import { BrandLogo } from './components/common/BrandLogo';
 
 import { TelemetryCards } from './components/widgets/TelemetryCards';
 import { ThermalsPowerWidget } from './components/widgets/ThermalsPowerWidget';
@@ -42,17 +40,17 @@ export const App: React.FC = () => {
   const [serviceLogs, setServiceLogs] = useState<string[]>([]);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
 
-  // Sparkline history buffers (last 20 points)
+  // Sparkline history buffers (last 25 points)
   const [history, setHistory] = useState<{
     cpu: number[];
     memory: number[];
     netIn: number[];
     netOut: number[];
   }>({
-    cpu: [12, 15, 18, 14, 22, 19, 16, 24, 18, 15, 20, 18, 22, 17, 19, 18],
-    memory: [29, 29, 30, 30, 30, 31, 30, 30, 30, 30, 30, 30],
-    netIn: [100, 250, 400, 800, 1200, 950, 1100, 1400, 900, 1050],
-    netOut: [50, 80, 120, 200, 240, 180, 210, 260, 230, 245],
+    cpu: [12, 14, 16, 15, 22, 18, 14, 25, 19, 14, 20, 18, 24, 16, 18, 17, 19, 21, 15, 18],
+    memory: [47, 47, 47, 48, 48, 47, 47, 48, 48, 47, 47, 48, 47, 48],
+    netIn: [120, 350, 500, 950, 1400, 1100, 1250, 1600, 1050, 1200, 980, 1150],
+    netOut: [60, 95, 140, 220, 280, 210, 240, 310, 270, 290, 230, 260],
   });
 
   // Initial load
@@ -119,12 +117,12 @@ export const App: React.FC = () => {
   const dockItems: DockItem[] = [
     {
       id: 'dashboard',
-      label: 'Telemetry & Overview',
+      label: 'Telemetry Matrix',
       icon: <Activity className="w-5 h-5" />,
     },
     {
       id: 'services',
-      label: 'Appliance Services',
+      label: 'Appliance Daemons',
       icon: <Layers className="w-5 h-5" />,
       badge: services.filter((s) => s.activeState === 'active').length,
     },
@@ -135,7 +133,7 @@ export const App: React.FC = () => {
     },
     {
       id: 'hardware',
-      label: 'Hardware & Sensors',
+      label: 'Hardware & TPM',
       icon: <Cpu className="w-5 h-5" />,
     },
     {
@@ -154,84 +152,92 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="relative min-h-screen text-tinapple-text pb-28">
-      {/* Silky WebGL/Canvas Aurora Background */}
-      <Aurora speed={0.4} opacity={0.35} />
+    <div className="relative min-h-screen text-tinapple-text pb-28 selection:bg-tinapple-gold/20 selection:text-tinapple-gold">
+      {/* Full-Window Interactive WebGL Waves + Connective Particles Background */}
+      <FullWindowBackground />
 
-      {/* TOP HEADER */}
-      <header className="sticky top-0 z-40 border-b border-tinapple-border/70 bg-tinapple-dark/75 backdrop-blur-2xl">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          {/* Logo & Branding */}
-          <div className="flex items-center gap-3">
-            <div className="relative flex items-center justify-center w-10 h-10 rounded-2xl bg-gradient-to-tr from-tinapple-blue/30 via-tinapple-cyan/20 to-tinapple-purple/30 border border-tinapple-border shadow-lg shadow-tinapple-blue/10">
-              <span className="text-xl select-none">🍍</span>
-            </div>
+      {/* TOP COMMAND HEADER */}
+      <header className="sticky top-0 z-40 border-b border-tinapple-border bg-tinapple-dark/80 backdrop-blur-3xl shadow-2xl">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+          {/* Brand Logo & Appliance Name */}
+          <div className="flex items-center gap-3.5">
+            <BrandLogo size={38} />
             <div>
               <div className="flex items-center gap-2">
-                <ShinyText text="tinapple" className="text-base tracking-tight" />
-                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-md bg-tinapple-surface border border-tinapple-border text-tinapple-cyan font-bold">
+                <ShinyText
+                  text="tinapple"
+                  shimmerColor="#e5b567"
+                  className="text-base font-extrabold tracking-tight font-mono text-white"
+                />
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-tinapple-surface border border-tinapple-border text-tinapple-gold font-bold">
                   v0.0.1
                 </span>
               </div>
               <div className="text-[10px] font-mono text-tinapple-subtext flex items-center gap-2">
-                <DecryptedText text="APPLIANCE OS HUB" speed={30} maxIterations={8} />
-                <span>•</span>
-                <span>{systemInfo.hostname}</span>
+                <DecryptedText
+                  text="APPLIANCE OS HUB"
+                  speed={30}
+                  maxIterations={8}
+                  className="text-tinapple-green font-bold"
+                  encryptedClassName="text-tinapple-gold/70"
+                />
+                <span className="text-tinapple-muted">•</span>
+                <span className="text-tinapple-muted">{systemInfo.hostname}</span>
               </div>
             </div>
           </div>
 
-          {/* Center Status Indicators */}
-          <div className="hidden md:flex items-center gap-3">
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-tinapple-surface/60 border border-tinapple-border text-xs font-mono">
+          {/* Center Telemetry & Session Mode Badges */}
+          <div className="hidden md:flex items-center gap-3 font-mono">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-tinapple-card/90 border border-tinapple-border text-xs">
               <span className="w-2 h-2 rounded-full bg-tinapple-green animate-pulse" />
               <span className="text-tinapple-text">SSE Live Telemetry</span>
             </div>
 
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-tinapple-surface/60 border border-tinapple-border text-xs font-mono">
-              <Monitor className="w-3.5 h-3.5 text-tinapple-purple" />
-              <span className="capitalize text-tinapple-purple font-medium">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-tinapple-card/90 border border-tinapple-border text-xs">
+              <Monitor className="w-3.5 h-3.5 text-tinapple-gold" />
+              <span className="capitalize text-tinapple-gold font-semibold">
                 {systemInfo.sessionMode} Mode
               </span>
             </div>
           </div>
 
-          {/* Right Controls */}
-          <div className="flex items-center gap-2.5">
+          {/* Right Action Cluster */}
+          <div className="flex items-center gap-3">
             <div className="hidden sm:block text-right font-mono">
-              <span className="text-[10px] text-tinapple-muted block">UPTIME</span>
-              <span className="text-xs font-semibold text-tinapple-text">
+              <span className="text-[10px] text-tinapple-muted block tracking-wider">UPTIME</span>
+              <span className="text-xs font-bold text-tinapple-text">
                 {formatUptime(systemInfo.uptime)}
               </span>
             </div>
 
             <button
               onClick={handleRefresh}
-              className="p-2 rounded-xl bg-tinapple-surface hover:bg-tinapple-card border border-tinapple-border text-tinapple-subtext hover:text-white transition-colors"
+              className="p-2 rounded-xl bg-tinapple-card/80 hover:bg-tinapple-surface border border-tinapple-border text-tinapple-subtext hover:text-white transition-all active:scale-95"
               title="Refresh telemetry"
             >
-              <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin text-tinapple-cyan' : ''}`} />
+              <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin text-tinapple-gold' : ''}`} />
             </button>
           </div>
         </div>
       </header>
 
-      {/* MAIN CONTENT AREA */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 pt-6">
+      {/* MAIN SCREEN-FILLING BENTO DECK */}
+      <main className="max-w-[1400px] mx-auto px-4 sm:px-6 pt-6">
         <AnimatePresence mode="wait">
           {activeTab === 'dashboard' && (
             <motion.div
               key="dashboard"
-              initial={{ opacity: 0, y: 12 }}
+              initial={{ opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
+              exit={{ opacity: 0, y: -14 }}
               transition={{ duration: 0.25, ease: 'easeOut' }}
               className="space-y-6"
             >
-              {/* Telemetry Hero Cards */}
+              {/* Bento Row 1: Processor & Memory & Storage & Network */}
               <TelemetryCards telemetry={telemetry} history={history} />
 
-              {/* Thermals, Governor & Battery */}
+              {/* Bento Row 2: Thermals & Acoustic Fan Curves & Battery Limiter */}
               <ThermalsPowerWidget
                 telemetry={telemetry}
                 onSetThermalProfile={api.setThermalProfile}
@@ -239,17 +245,21 @@ export const App: React.FC = () => {
                 onSetChargeLimit={api.setBatteryChargeLimit}
               />
 
-              {/* Quick Services Preview */}
+              {/* Bento Row 3: Essential Daemon Matrix Preview */}
               <div>
                 <div className="flex justify-between items-center mb-3">
-                  <h3 className="text-sm font-bold text-white uppercase tracking-wider font-mono">
-                    Essential Appliance Daemons
-                  </h3>
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-tinapple-gold animate-pulse" />
+                    <h3 className="text-sm font-bold text-white uppercase tracking-wider font-mono">
+                      Essential Appliance Daemons
+                    </h3>
+                  </div>
                   <button
                     onClick={() => setActiveTab('services')}
-                    className="text-xs font-mono text-tinapple-cyan hover:underline"
+                    className="text-xs font-mono font-semibold text-tinapple-gold hover:underline flex items-center gap-1"
                   >
-                    View all {services.length} services →
+                    <span>View all {services.length} services</span>
+                    <span>→</span>
                   </button>
                 </div>
                 <ServicesManager
@@ -264,17 +274,19 @@ export const App: React.FC = () => {
           {activeTab === 'services' && (
             <motion.div
               key="services"
-              initial={{ opacity: 0, y: 12 }}
+              initial={{ opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
+              exit={{ opacity: 0, y: -14 }}
               transition={{ duration: 0.25, ease: 'easeOut' }}
               className="space-y-4"
             >
               <div className="flex justify-between items-center mb-2">
                 <div>
-                  <h2 className="text-xl font-bold text-white tracking-tight">Systemd Service Daemons</h2>
-                  <p className="text-xs text-tinapple-subtext">
-                    Control, restart, and inspect logs for all appliance background workers.
+                  <h2 className="text-xl font-bold text-white tracking-tight font-mono">
+                    Systemd Service Daemons
+                  </h2>
+                  <p className="text-xs text-tinapple-subtext font-mono mt-0.5">
+                    Start, stop, restart, and tail live stdout/stderr for all background services.
                   </p>
                 </div>
               </div>
@@ -289,9 +301,9 @@ export const App: React.FC = () => {
           {activeTab === 'store' && (
             <motion.div
               key="store"
-              initial={{ opacity: 0, y: 12 }}
+              initial={{ opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
+              exit={{ opacity: 0, y: -14 }}
               transition={{ duration: 0.25, ease: 'easeOut' }}
             >
               <ChaddyStore />
@@ -301,9 +313,9 @@ export const App: React.FC = () => {
           {activeTab === 'hardware' && (
             <motion.div
               key="hardware"
-              initial={{ opacity: 0, y: 12 }}
+              initial={{ opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
+              exit={{ opacity: 0, y: -14 }}
               transition={{ duration: 0.25, ease: 'easeOut' }}
             >
               <HardwareSensors hardware={hardware} />
@@ -313,9 +325,9 @@ export const App: React.FC = () => {
           {activeTab === 'settings' && (
             <motion.div
               key="settings"
-              initial={{ opacity: 0, y: 12 }}
+              initial={{ opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
+              exit={{ opacity: 0, y: -14 }}
               transition={{ duration: 0.25, ease: 'easeOut' }}
             >
               <SettingsManifest systemInfo={systemInfo} onUpdateSession={handleUpdateSession} />
@@ -331,7 +343,7 @@ export const App: React.FC = () => {
         </div>
       </div>
 
-      {/* MODALS */}
+      {/* FLOATING LOGS TERMINAL MODAL */}
       <LogsModal
         serviceName={activeLogService}
         logs={serviceLogs}

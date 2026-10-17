@@ -9,22 +9,24 @@ export default {
     extend: {
       colors: {
         tinapple: {
-          dark: '#0a0b10',
-          base: '#0f111a',
-          surface: '#161824',
-          card: '#1a1c2b',
-          border: 'rgba(255, 255, 255, 0.08)',
-          'border-hover': 'rgba(122, 162, 247, 0.3)',
-          orange: '#ff9e64',
-          cyan: '#7dcfff',
-          blue: '#7aa2f7',
-          purple: '#bb9af7',
-          green: '#73daca',
-          yellow: '#e0af68',
-          red: '#f7768e',
-          text: '#c0caf5',
-          subtext: '#7982a9',
-          muted: '#414868',
+          dark: '#060709',       // Deepest OLED obsidian black
+          base: '#0a0c0f',       // Foundation void
+          surface: '#111419',    // Raised panel
+          card: '#15181f',       // Glass card surface
+          cardhover: '#1a1f28',  // Card active hover
+          border: 'rgba(255, 255, 255, 0.06)',
+          'border-hover': 'rgba(229, 181, 103, 0.32)',
+          'border-green': 'rgba(126, 199, 137, 0.32)',
+          gold: '#e5b567',       // Pineapple core amber / gold
+          amber: '#f59e0b',
+          green: '#7ec789',      // Fresh palm / crown green
+          sage: '#98c379',
+          emerald: '#10b981',
+          teal: '#2dd4bf',
+          red: '#f87171',
+          text: '#f3f4f6',       // High-contrast clean white
+          subtext: '#9ca3af',    // Clean legible slate
+          muted: '#4b5563',      // Subdued metadata
         }
       },
       fontFamily: {
@@ -40,22 +42,24 @@ export default {
             'background-position': 'calc(100% + var(--shiny-width, 100px)) 0',
           },
         },
-        'pulse-subtle': {
-          '0%, 100%': { opacity: '1', transform: 'scale(1)' },
-          '50%': { opacity: '0.8', transform: 'scale(0.98)' },
+        'pulse-glow': {
+          '0%, 100%': { opacity: '1', filter: 'drop-shadow(0 0 8px rgba(126, 199, 137, 0.6))' },
+          '50%': { opacity: '0.6', filter: 'drop-shadow(0 0 2px rgba(126, 199, 137, 0.2))' },
         },
-        shimmer: {
-          '0%': { transform: 'translateX(-100%)' },
-          '100%': { transform: 'translateX(100%)' },
+        'gold-glow': {
+          '0%, 100%': { filter: 'drop-shadow(0 0 10px rgba(229, 181, 103, 0.5))' },
+          '50%': { filter: 'drop-shadow(0 0 3px rgba(229, 181, 103, 0.15))' },
         },
       },
       animation: {
         'shiny-text': 'shiny-text 8s infinite',
-        'pulse-subtle': 'pulse-subtle 3s ease-in-out infinite',
-        shimmer: 'shimmer 2.5s infinite',
+        'pulse-glow': 'pulse-glow 3s ease-in-out infinite',
+        'gold-glow': 'gold-glow 4s ease-in-out infinite',
       },
       backdropBlur: {
         xs: '2px',
+        '2xl': '24px',
+        '3xl': '32px',
       }
     },
   },

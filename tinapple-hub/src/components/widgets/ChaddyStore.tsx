@@ -24,11 +24,11 @@ const DEFAULT_PROFILES: ApplianceProfile[] = [
     icon: 'Monitor',
     tagline: 'Minimal Wayland tiling compositor & Ironbar desktop',
     description:
-      'Ultra-responsive wlroots environment with ChadWM, Alacritty, Foot, PipeWire sound, and custom Ryoku Tokyo-Night theme.',
+      'Ultra-responsive wlroots environment with ChadWM, Alacritty, Foot, PipeWire sound, and custom gold/sage theme.',
     installed: true,
     status: 'active',
     services: ['tinapple-session.service', 'seatd.service', 'pipewire.service'],
-    accentColor: '#7aa2f7',
+    accentColor: '#e5b567',
   },
   {
     id: 'media',
@@ -41,7 +41,7 @@ const DEFAULT_PROFILES: ApplianceProfile[] = [
     installed: true,
     status: 'active',
     services: ['jellyfin.service'],
-    accentColor: '#bb9af7',
+    accentColor: '#7ec789',
   },
   {
     id: 'downloads',
@@ -54,7 +54,7 @@ const DEFAULT_PROFILES: ApplianceProfile[] = [
     installed: false,
     status: 'uninstalled',
     services: ['qbittorrent-nox@root.service'],
-    accentColor: '#7dcfff',
+    accentColor: '#e5b567',
   },
   {
     id: 'databases',
@@ -67,7 +67,7 @@ const DEFAULT_PROFILES: ApplianceProfile[] = [
     installed: true,
     status: 'active',
     services: ['postgresql.service', 'redis.service'],
-    accentColor: '#ff9e64',
+    accentColor: '#7ec789',
   },
   {
     id: 'network',
@@ -80,7 +80,7 @@ const DEFAULT_PROFILES: ApplianceProfile[] = [
     installed: true,
     status: 'active',
     services: ['tailscaled.service'],
-    accentColor: '#73daca',
+    accentColor: '#e5b567',
   },
   {
     id: 'backups',
@@ -93,7 +93,7 @@ const DEFAULT_PROFILES: ApplianceProfile[] = [
     installed: true,
     status: 'active',
     services: ['snapper-timeline.timer', 'snapper-cleanup.timer'],
-    accentColor: '#e0af68',
+    accentColor: '#7ec789',
   },
 ];
 
@@ -110,10 +110,10 @@ export const ChaddyStore: React.FC = () => {
             const nextInstalled = !p.installed;
             if (nextInstalled) {
               confetti({
-                particleCount: 80,
-                spread: 70,
+                particleCount: 90,
+                spread: 75,
                 origin: { y: 0.6 },
-                colors: ['#7aa2f7', '#7dcfff', '#bb9af7', '#73daca'],
+                colors: ['#e5b567', '#f59e0b', '#7ec789', '#10b981', '#f3f4f6'],
               });
             }
             return {
@@ -132,36 +132,36 @@ export const ChaddyStore: React.FC = () => {
   const getIcon = (name: string) => {
     switch (name) {
       case 'Monitor':
-        return <Monitor className="w-6 h-6" />;
+        return <Monitor className="w-5 h-5" />;
       case 'Film':
-        return <Film className="w-6 h-6" />;
+        return <Film className="w-5 h-5" />;
       case 'DownloadCloud':
-        return <DownloadCloud className="w-6 h-6" />;
+        return <DownloadCloud className="w-5 h-5" />;
       case 'Database':
-        return <Database className="w-6 h-6" />;
+        return <Database className="w-5 h-5" />;
       case 'ShieldCheck':
-        return <ShieldCheck className="w-6 h-6" />;
+        return <ShieldCheck className="w-5 h-5" />;
       case 'Archive':
-        return <Archive className="w-6 h-6" />;
+        return <Archive className="w-5 h-5" />;
       default:
-        return <Sparkles className="w-6 h-6" />;
+        return <Sparkles className="w-5 h-5" />;
     }
   };
 
   return (
     <div className="space-y-6">
       {/* Header Banner */}
-      <div className="p-6 rounded-2xl bg-gradient-to-r from-tinapple-card/90 via-tinapple-surface/80 to-tinapple-card/90 border border-tinapple-border backdrop-blur-xl relative overflow-hidden">
-        <div className="relative z-10 max-w-2xl">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-tinapple-blue/15 text-tinapple-cyan border border-tinapple-blue/20 text-xs font-mono mb-3">
+      <div className="p-6 rounded-2xl bg-gradient-to-r from-tinapple-card/90 via-tinapple-surface/90 to-tinapple-card/90 border border-tinapple-border backdrop-blur-2xl relative overflow-hidden">
+        <div className="relative z-10 max-w-2xl font-mono">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-tinapple-gold/15 text-tinapple-gold border border-tinapple-gold/25 text-xs mb-3">
             <Sparkles className="w-3.5 h-3.5" />
             <span>Chaddy Store Appliance Profiles</span>
           </div>
-          <h2 className="text-2xl font-bold text-white tracking-tight">
-            Turn your appliance into any workstation or server in 1-click
+          <h2 className="text-2xl font-black text-white tracking-tight font-sans">
+            Curated Appliance Stacks in 1-Click
           </h2>
-          <p className="text-xs text-tinapple-subtext mt-1.5 leading-relaxed">
-            Install curated, pre-configured software stacks tailored for Tinapple Appliance OS. Each profile configures systemd daemons, firewall rules, and performance tuners automatically.
+          <p className="text-xs text-tinapple-subtext mt-1.5 leading-relaxed font-sans">
+            Install optimized software appliances pre-tuned for the Tinapple OS kernel scheduler and storage subvolumes.
           </p>
         </div>
       </div>
@@ -173,9 +173,9 @@ export const ChaddyStore: React.FC = () => {
           return (
             <SpotlightCard
               key={profile.id}
-              className="p-5 flex flex-col justify-between"
-              spotlightColor={`${profile.accentColor}25`}
-              borderColor={`${profile.accentColor}60`}
+              className="p-6 flex flex-col justify-between"
+              spotlightColor={`${profile.accentColor}20`}
+              borderColor={`${profile.accentColor}50`}
             >
               <div>
                 <div className="flex items-start justify-between mb-4">
@@ -193,7 +193,7 @@ export const ChaddyStore: React.FC = () => {
                   <span
                     className={`text-[10px] font-mono px-2.5 py-1 rounded-full border uppercase ${
                       profile.installed
-                        ? 'bg-tinapple-green/10 text-tinapple-green border-tinapple-green/20'
+                        ? 'bg-tinapple-green/10 text-tinapple-green border-tinapple-green/20 font-bold'
                         : 'bg-tinapple-muted/10 text-tinapple-muted border-tinapple-border'
                     }`}
                   >
@@ -202,21 +202,21 @@ export const ChaddyStore: React.FC = () => {
                 </div>
 
                 <h3 className="text-base font-bold text-white tracking-tight">{profile.name}</h3>
-                <p className="text-xs font-medium text-tinapple-cyan mt-0.5">{profile.tagline}</p>
+                <p className="text-xs font-semibold text-tinapple-gold mt-0.5 font-mono">{profile.tagline}</p>
                 <p className="text-xs text-tinapple-subtext mt-2.5 leading-relaxed">
                   {profile.description}
                 </p>
 
                 {/* Sub-services list */}
-                <div className="mt-4 pt-3 border-t border-tinapple-border/50">
+                <div className="mt-4 pt-3 border-t border-tinapple-border/70">
                   <span className="text-[10px] uppercase font-mono text-tinapple-muted tracking-wider block mb-1.5">
                     Managed Units:
                   </span>
-                  <div className="flex flex-wrap gap-1">
+                  <div className="flex flex-wrap gap-1.5">
                     {profile.services.map((svc) => (
                       <span
                         key={svc}
-                        className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-tinapple-dark/60 text-tinapple-text border border-tinapple-border"
+                        className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-tinapple-dark/80 text-tinapple-text border border-tinapple-border"
                       >
                         {svc}
                       </span>
@@ -231,14 +231,14 @@ export const ChaddyStore: React.FC = () => {
                   <button
                     disabled={isBusy}
                     onClick={() => handleToggleInstall(profile.id)}
-                    className="w-full flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-semibold bg-tinapple-dark/80 hover:bg-tinapple-red/15 text-tinapple-text hover:text-tinapple-red border border-tinapple-border hover:border-tinapple-red/30 transition-all disabled:opacity-50"
+                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-mono font-bold bg-tinapple-dark/80 hover:bg-tinapple-red/15 text-tinapple-text hover:text-tinapple-red border border-tinapple-border hover:border-tinapple-red/30 transition-all disabled:opacity-50 active:scale-95"
                   >
                     {isBusy ? (
-                      <Loader2 className="w-4 h-4 animate-spin text-tinapple-cyan" />
+                      <Loader2 className="w-4 h-4 animate-spin text-tinapple-gold" />
                     ) : (
                       <>
                         <Check className="w-4 h-4 text-tinapple-green" />
-                        <span>Active (Click to Remove)</span>
+                        <span>Active Profile (Uninstall)</span>
                       </>
                     )}
                   </button>
@@ -251,12 +251,12 @@ export const ChaddyStore: React.FC = () => {
                     className="w-full"
                   >
                     {isBusy ? (
-                      <span className="flex items-center gap-2">
-                        <Loader2 className="w-4 h-4 animate-spin" />
+                      <span className="flex items-center gap-2 font-mono">
+                        <Loader2 className="w-4 h-4 animate-spin text-tinapple-gold" />
                         <span>Configuring profile...</span>
                       </span>
                     ) : (
-                      <span className="flex items-center gap-1.5 font-semibold text-tinapple-cyan">
+                      <span className="flex items-center gap-1.5 font-bold text-tinapple-gold font-mono">
                         <Plus className="w-4 h-4" />
                         <span>Install Profile</span>
                       </span>

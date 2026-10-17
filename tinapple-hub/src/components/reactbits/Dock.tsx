@@ -22,7 +22,7 @@ export const Dock: React.FC<DockProps> = ({ items, activeId, onSelect, className
     <div
       onMouseMove={(e) => mouseX.set(e.pageX)}
       onMouseLeave={() => mouseX.set(Infinity)}
-      className={`flex items-end h-16 gap-3 px-4 pb-2.5 rounded-2xl border border-tinapple-border bg-tinapple-surface/80 backdrop-blur-2xl shadow-2xl shadow-black/40 ${className}`}
+      className={`flex items-end h-16 gap-3 px-4 pb-2.5 rounded-2xl border border-tinapple-border bg-tinapple-card/90 backdrop-blur-3xl shadow-2xl shadow-black/80 ${className}`}
     >
       {items.map((item) => (
         <DockIcon
@@ -53,21 +53,21 @@ const DockIcon: React.FC<DockIconProps> = ({ item, mouseX, isActive, onClick }) 
   });
 
   const widthSync = useTransform(distance, [-120, 0, 120], [44, 58, 44]);
-  const width = useSpring(widthSync, { mass: 0.1, stiffness: 180, damping: 14 });
+  const width = useSpring(widthSync, { mass: 0.1, stiffness: 200, damping: 14 });
 
   return (
     <motion.button
       ref={ref}
       style={{ width, height: width }}
       onClick={onClick}
-      className={`relative flex items-center justify-center rounded-xl transition-colors duration-200 group ${
+      className={`relative flex items-center justify-center rounded-xl transition-colors duration-200 group active:scale-90 ${
         isActive
-          ? 'bg-tinapple-blue text-tinapple-dark shadow-lg shadow-tinapple-blue/30'
-          : 'bg-tinapple-card/90 text-tinapple-text hover:bg-tinapple-card hover:text-white'
+          ? 'bg-tinapple-gold text-tinapple-dark shadow-lg shadow-tinapple-gold/25'
+          : 'bg-tinapple-surface/90 text-tinapple-subtext hover:bg-tinapple-surface hover:text-white'
       }`}
     >
       {/* Tooltip */}
-      <span className="absolute -top-9 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none px-2.5 py-1 text-xs font-medium rounded-lg bg-tinapple-dark/90 border border-tinapple-border text-tinapple-text shadow-lg whitespace-nowrap">
+      <span className="absolute -top-9 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none px-2.5 py-1 text-xs font-mono font-bold rounded-lg bg-tinapple-dark/95 border border-tinapple-border text-tinapple-gold shadow-xl whitespace-nowrap">
         {item.label}
       </span>
 
@@ -78,14 +78,14 @@ const DockIcon: React.FC<DockIconProps> = ({ item, mouseX, isActive, onClick }) 
 
       {/* Badge if present */}
       {item.badge !== undefined && (
-        <span className="absolute -top-1 -right-1 px-1.5 py-0.2 min-w-4 h-4 flex items-center justify-center text-[10px] font-bold rounded-full bg-tinapple-orange text-tinapple-dark shadow-sm">
+        <span className="absolute -top-1 -right-1 px-1.5 py-0.2 min-w-4 h-4 flex items-center justify-center text-[10px] font-mono font-bold rounded-full bg-tinapple-green text-tinapple-dark shadow-sm">
           {item.badge}
         </span>
       )}
 
       {/* Active Indicator dot */}
       {isActive && (
-        <span className="absolute -bottom-1.5 w-1.5 h-1.5 rounded-full bg-tinapple-cyan shadow-sm shadow-tinapple-cyan" />
+        <span className="absolute -bottom-1.5 w-1.5 h-1.5 rounded-full bg-tinapple-gold shadow-sm shadow-tinapple-gold" />
       )}
     </motion.button>
   );
