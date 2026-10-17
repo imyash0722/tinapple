@@ -6,3 +6,4 @@ enable etc-pacman.d-gnupg.mount
 enable sshdgenkeys.service
 enable sshd.service
 disable systemd-firstboot.service
+disable systemd-time-wait-sync.service
