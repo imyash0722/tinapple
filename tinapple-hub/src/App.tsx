@@ -27,12 +27,16 @@ import { ChaddyStore } from './components/widgets/ChaddyStore';
 import { HardwareSensors } from './components/widgets/HardwareSensors';
 import { SettingsManifest } from './components/widgets/SettingsManifest';
 import { LogsModal } from './components/widgets/LogsModal';
+import { WelcomeInstaller } from './components/installer/WelcomeInstaller';
 
 import { api, MOCK_SYSTEM_INFO, MOCK_TELEMETRY, MOCK_SERVICES, MOCK_HARDWARE } from './services/api';
 import { SystemInfo, TelemetrySnapshot, ServiceInfo, HardwareInfo, SessionMode } from './types/api';
 
 export const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<string>('dashboard');
+  const [activeTab, setActiveTab] = useState<string>(() => {
+    const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
+    return params.get('tab') || 'welcome';
+  });
   const [bgMode, setBgMode] = useState<BackgroundMode>('microslats');
   const [systemInfo, setSystemInfo] = useState<SystemInfo>(MOCK_SYSTEM_INFO);
   const [telemetry, setTelemetry] = useState<TelemetrySnapshot>(MOCK_TELEMETRY);
@@ -118,6 +122,11 @@ export const App: React.FC = () => {
   };
 
   const dockItems: DockItem[] = [
+    {
+      id: 'welcome',
+      label: 'Installer & Welcome',
+      icon: <Sparkles className="w-5 h-5 text-tinapple-gold" />,
+    },
     {
       id: 'dashboard',
       label: 'Telemetry Matrix',
@@ -215,6 +224,19 @@ export const App: React.FC = () => {
                 {bgMode === 'microslats' ? 'Micro Slats' : 'WebGL Waves'}
               </span>
             </button>
+
+            {/* Installer Quick Switch */}
+            <button
+              onClick={() => setActiveTab(activeTab === 'welcome' ? 'dashboard' : 'welcome')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-mono transition-all ${
+                activeTab === 'welcome'
+                  ? 'bg-tinapple-gold text-tinapple-dark font-bold border-tinapple-gold shadow-md shadow-tinapple-gold/20'
+                  : 'bg-tinapple-card/90 border-tinapple-border text-tinapple-gold hover:border-tinapple-gold/50'
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>{activeTab === 'welcome' ? 'Live Matrix' : 'Installer'}</span>
+            </button>
           </div>
 
           {/* Right Action Cluster with HoldButton Safety Controls */}
@@ -280,6 +302,20 @@ export const App: React.FC = () => {
       {/* MAIN SCREEN-FILLING BENTO DECK */}
       <main className="max-w-[1400px] mx-auto px-4 sm:px-6 pt-6">
         <AnimatePresence mode="wait">
+          {activeTab === 'welcome' && (
+            <motion.div
+              key="welcome"
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -14 }}
+              transition={{ duration: 0.25, ease: 'easeOut' }}
+            >
+              <WelcomeInstaller
+                onOpenDashboard={() => setActiveTab('dashboard')}
+              />
+            </motion.div>
+          )}
+
           {activeTab === 'dashboard' && (
             <motion.div
               key="dashboard"

@@ -1,6 +1,6 @@
 # Tinapple base services
-enable tinapple-install.service
-enable tinapple-firstboot.service
+disable tinapple-install.service
+disable tinapple-firstboot.service
 enable tinapple-nginx.service
 enable tinapple-hw-detect.service
 enable tinapple-power-profile-apply.service

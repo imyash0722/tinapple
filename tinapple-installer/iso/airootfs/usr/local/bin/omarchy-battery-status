@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+for bat in /sys/class/power_supply/BAT*; do
+    if [[ -d "$bat" ]]; then
+        cap=$(cat "$bat/capacity" 2>/dev/null || echo "100")
+        stat=$(cat "$bat/status" 2>/dev/null || echo "Discharging")
+        echo "Battery: ${cap}% (${stat})"
+        exit 0
+    fi
+done
+echo "AC Powered"

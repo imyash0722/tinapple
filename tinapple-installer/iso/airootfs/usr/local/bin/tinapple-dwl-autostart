@@ -15,7 +15,7 @@ elif command -v waybar >/dev/null 2>&1; then
     waybar >/dev/null 2>&1 &
 fi
 
-# If booted into live ISO media, launch appliance GUI installer
-if [[ -d /run/archiso ]] && command -v tinapple-gui-installer >/dev/null 2>&1; then
+# If booted into live ISO media and not yet installed, launch appliance GUI installer
+if [[ -d /run/archiso ]] && [[ ! -f /var/lib/tinapple/firstboot-done ]] && [[ ! -f /var/lib/tinapple/installed ]] && command -v tinapple-gui-installer >/dev/null 2>&1; then
     tinapple-gui-installer &
 fi

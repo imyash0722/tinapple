@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# Network connection manager launcher
+if command -v nm-connection-editor >/dev/null 2>&1; then
+    exec nm-connection-editor
+elif command -v foot >/dev/null 2>&1 && command -v nmtui >/dev/null 2>&1; then
+    exec foot -e nmtui
+fi

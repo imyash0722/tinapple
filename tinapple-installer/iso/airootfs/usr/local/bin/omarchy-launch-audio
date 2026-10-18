@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# Audio mixer launcher
+if command -v pavucontrol >/dev/null 2>&1; then
+    exec pavucontrol
+elif command -v foot >/dev/null 2>&1 && command -v pulsemixer >/dev/null 2>&1; then
+    exec foot -e pulsemixer
+fi

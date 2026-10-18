@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# Tinapple OS - CachyOS-Style Welcome & Installer App
+set -euo pipefail
+
+PORT=3000
+HUB_DIR="/usr/share/tinapple-hub"
+
+if [[ -d "$HUB_DIR/dist" ]]; then
+    if ! pgrep -f "python.*http.server.*$PORT" >/dev/null 2>&1; then
+        (cd "$HUB_DIR/dist" && python3 -m http.server "$PORT" >/dev/null 2>&1 &)
+        sleep 0.4
+    fi
+fi
+
+URL="http://localhost:$PORT/?tab=welcome"
+
+if command -v firefox >/dev/null 2>&1; then
+    exec firefox --new-window "$URL"
+elif command -v chromium >/dev/null 2>&1; then
+    exec chromium --app="$URL" --window-size=1280,820
+elif command -v tinapple-gui-installer >/dev/null 2>&1; then
+    exec tinapple-gui-installer
+fi

@@ -68,6 +68,7 @@ include "colors.kdl"
 
 // Autostart Services
 spawn-at-startup "waybar"
+spawn-sh-at-startup "/usr/local/bin/tinapple-session-autostart || true"
 spawn-sh-at-startup "command -v swaybg >/dev/null && [ -f /usr/share/backgrounds/wallpaper.png ] && swaybg -i /usr/share/backgrounds/wallpaper.png -m fill || true"
 spawn-sh-at-startup "systemctl --user import-environment WAYLAND_DISPLAY XDG_CURRENT_DESKTOP || true"
 

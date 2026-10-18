@@ -169,7 +169,7 @@ impl InstallerApp {
 
         let mut selected_profiles = HashSet::new();
         selected_profiles.insert("base".to_string());
-        selected_profiles.insert("chadwm".to_string());
+        selected_profiles.insert("desktop".to_string());
         selected_profiles.insert("media".to_string());
         selected_profiles.insert("downloads".to_string());
 
@@ -339,7 +339,7 @@ impl eframe::App for InstallerApp {
                 ui.horizontal(|ui| {
                     ui.label(RichText::new("󰣇 TINAPPLE APPLIANCE OS").size(17.0).color(COLOR_ACCENT).strong());
                     ui.label(RichText::new("·").color(COLOR_TEXT_MUTED));
-                    ui.label(RichText::new("Minimal ChadWM Live Installer v0.0.1").size(13.0).color(COLOR_TEXT_MUTED));
+                    ui.label(RichText::new("Niri & Waybar Live Installer v0.1.0").size(13.0).color(COLOR_TEXT_MUTED));
 
                     ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
                         if self.dry_run {
@@ -427,28 +427,12 @@ impl eframe::App for InstallerApp {
                     let is_active = *step == self.step;
                     let is_done = (*step as usize) < (self.step as usize);
 
-                    let text_color = if is_active {
-                        Color32::from_rgb(0x10, 0x14, 0x1e)
+                    let (text_color, bg_color, stroke) = if is_active {
+                        (COLOR_TEXT_DARK, COLOR_ACCENT, Stroke::new(1.0, COLOR_ACCENT))
                     } else if is_done {
-                        COLOR_SUCCESS
+                        (COLOR_TEXT_MAIN, COLOR_BG_FLOAT, Stroke::new(1.0, COLOR_SUCCESS))
                     } else {
-                        COLOR_TEXT_MAIN
-                    };
-
-                    let bg_color = if is_active {
-                        COLOR_ACCENT
-                    } else if is_done {
-                        COLOR_SUCCESS_MUTED
-                    } else {
-                        Color32::TRANSPARENT
-                    };
-
-                    let stroke = if is_active {
-                        Stroke::NONE
-                    } else if is_done {
-                        Stroke::new(1.0, COLOR_BORDER)
-                    } else {
-                        Stroke::NONE
+                        (COLOR_TEXT_MUTED, Color32::TRANSPARENT, Stroke::NONE)
                     };
 
                     let icon = if is_done { "" } else { step.icon() };
@@ -612,7 +596,7 @@ impl InstallerApp {
             .show(ui, |ui| {
                 ui.label(RichText::new("󰖩  Wi-Fi & Manual Configuration").size(15.0).strong().color(COLOR_TEXT_MAIN));
                 ui.add_space(6.0);
-                ui.label(RichText::new("If you need to connect to Wi-Fi, open a terminal in ChadWM with Super + Return, then run:").color(COLOR_TEXT_MUTED));
+                ui.label(RichText::new("If you need to connect to Wi-Fi, open a terminal with Super + Return, then run:").color(COLOR_TEXT_MUTED));
                 ui.add_space(6.0);
                 ui.label(RichText::new("    iwctl station wlan0 scan && iwctl station wlan0 get-networks && iwctl station wlan0 connect <SSID>").monospace().color(COLOR_ACCENT));
             });
@@ -638,7 +622,7 @@ impl InstallerApp {
             .corner_radius(CornerRadius::same(8))
             .inner_margin(egui::Margin::same(16))
             .show(ui, |ui| {
-                ui.radio_value(&mut self.bootloader, "limine".to_string(), RichText::new("Limine Bootloader (Recommended)").size(15.0).strong());
+                ui.radio_value(&mut self.bootloader, "limine".to_string(), RichText::new("Limine Bootloader (Recommended)").size(15.0).strong().color(COLOR_TEXT_MAIN));
                 ui.add_space(4.0);
                 ui.label(RichText::new("Fastest boot times, modern protocol, automatically updates boot configs on kernel installation, supports modern high-resolution splash screens.").color(COLOR_TEXT_MUTED));
             });
@@ -653,7 +637,7 @@ impl InstallerApp {
             .corner_radius(CornerRadius::same(8))
             .inner_margin(egui::Margin::same(16))
             .show(ui, |ui| {
-                ui.radio_value(&mut self.bootloader, "grub".to_string(), RichText::new("GRUB (GNU Grand Unified Bootloader)").size(15.0).strong());
+                ui.radio_value(&mut self.bootloader, "grub".to_string(), RichText::new("GRUB (GNU Grand Unified Bootloader)").size(15.0).strong().color(COLOR_TEXT_MAIN));
                 ui.add_space(4.0);
                 ui.label(RichText::new("Traditional Linux standard bootloader with extensive filesystem support and rescue prompt.").color(COLOR_TEXT_MUTED));
             });
@@ -703,10 +687,10 @@ impl InstallerApp {
             .show(ui, |ui| {
                 ui.label(RichText::new("  Partitioning Strategy").size(15.0).strong().color(COLOR_TEXT_MAIN));
                 ui.add_space(8.0);
-                ui.radio_value(&mut self.disk_strategy, "auto".to_string(), RichText::new("Automatic Whole-Disk Partitioning (Recommended)").strong());
+                ui.radio_value(&mut self.disk_strategy, "auto".to_string(), RichText::new("Automatic Whole-Disk Partitioning (Recommended)").strong().color(COLOR_TEXT_MAIN));
                 ui.label(RichText::new("    Creates 1 GB EFI System Partition, 4 GB Swap, and formats the remainder for Root.").size(12.0).color(COLOR_TEXT_MUTED));
                 ui.add_space(6.0);
-                ui.radio_value(&mut self.disk_strategy, "custom".to_string(), RichText::new("Manual Partitioning / Preserve Existing Partitions").strong());
+                ui.radio_value(&mut self.disk_strategy, "custom".to_string(), RichText::new("Manual Partitioning / Preserve Existing Partitions").strong().color(COLOR_TEXT_MAIN));
                 ui.label(RichText::new("    Keep existing partitions and format designated root.").size(12.0).color(COLOR_TEXT_MUTED));
             });
     }
@@ -729,7 +713,7 @@ impl InstallerApp {
                 .corner_radius(CornerRadius::same(8))
                 .inner_margin(egui::Margin::same(14))
                 .show(ui, |ui| {
-                    ui.radio_value(&mut self.filesystem, fs_id.to_string(), RichText::new(title).size(15.0).strong());
+                    ui.radio_value(&mut self.filesystem, fs_id.to_string(), RichText::new(title).size(15.0).strong().color(COLOR_TEXT_MAIN));
                     ui.add_space(4.0);
                     ui.label(RichText::new(desc).size(12.0).color(COLOR_TEXT_MUTED));
                 });
@@ -747,7 +731,7 @@ impl InstallerApp {
             .corner_radius(CornerRadius::same(8))
             .inner_margin(egui::Margin::same(16))
             .show(ui, |ui| {
-                ui.checkbox(&mut self.enable_luks, RichText::new("  Enable LUKS2 Full Disk Encryption").size(16.0).strong());
+                ui.checkbox(&mut self.enable_luks, RichText::new("  Enable LUKS2 Full Disk Encryption").size(16.0).strong().color(COLOR_TEXT_MAIN));
                 ui.add_space(6.0);
                 ui.label(RichText::new("Protects all local data, configuration, and logs at rest using AES-XTS-PLAIN64 encryption.").size(12.0).color(COLOR_TEXT_MUTED));
 
@@ -756,15 +740,15 @@ impl InstallerApp {
                     ui.separator();
                     ui.add_space(14.0);
 
-                    ui.label(RichText::new("Encryption Passphrase:").strong());
+                    ui.label(RichText::new("Encryption Passphrase:").strong().color(COLOR_TEXT_MAIN));
                     ui.add(TextEdit::singleline(&mut self.luks_passphrase).password(!self.show_passphrase).desired_width(ui.available_width() - 40.0));
                     ui.add_space(10.0);
 
-                    ui.label(RichText::new("Confirm Passphrase:").strong());
+                    ui.label(RichText::new("Confirm Passphrase:").strong().color(COLOR_TEXT_MAIN));
                     ui.add(TextEdit::singleline(&mut self.luks_confirm).password(!self.show_passphrase).desired_width(ui.available_width() - 40.0));
                     ui.add_space(10.0);
 
-                    ui.checkbox(&mut self.show_passphrase, "Show passphrase in plaintext");
+                    ui.checkbox(&mut self.show_passphrase, RichText::new("Show passphrase in plaintext").color(COLOR_TEXT_MUTED));
 
                     if !self.luks_passphrase.is_empty() && self.luks_passphrase != self.luks_confirm {
                         ui.add_space(6.0);
@@ -786,18 +770,18 @@ impl InstallerApp {
             .show(ui, |ui| {
                 let col_w = (ui.available_width() - 30.0) / 2.0;
                 ui.columns(2, |columns| {
-                    columns[0].label(RichText::new("System Hostname:").strong());
+                    columns[0].label(RichText::new("System Hostname:").strong().color(COLOR_TEXT_MAIN));
                     columns[0].add(TextEdit::singleline(&mut self.hostname).desired_width(col_w));
                     columns[0].add_space(12.0);
 
-                    columns[0].label(RichText::new("Admin Username:").strong());
+                    columns[0].label(RichText::new("Admin Username:").strong().color(COLOR_TEXT_MAIN));
                     columns[0].add(TextEdit::singleline(&mut self.username).desired_width(col_w));
 
-                    columns[1].label(RichText::new("User Password:").strong());
+                    columns[1].label(RichText::new("User Password:").strong().color(COLOR_TEXT_MAIN));
                     columns[1].add(TextEdit::singleline(&mut self.user_pass).password(true).desired_width(col_w));
                     columns[1].add_space(12.0);
 
-                    columns[1].label(RichText::new("Confirm Password:").strong());
+                    columns[1].label(RichText::new("Confirm Password:").strong().color(COLOR_TEXT_MAIN));
                     columns[1].add(TextEdit::singleline(&mut self.user_pass_confirm).password(true).desired_width(col_w));
                 });
 
@@ -805,12 +789,12 @@ impl InstallerApp {
                 ui.separator();
                 ui.add_space(12.0);
 
-                ui.checkbox(&mut self.enable_sudo, RichText::new("Grant administrative (sudo) privileges to this user").strong());
-                ui.checkbox(&mut self.same_root_pass, RichText::new("Use the same password for the system root account").strong());
+                ui.checkbox(&mut self.enable_sudo, RichText::new("Grant administrative (sudo) privileges to this user").strong().color(COLOR_TEXT_MAIN));
+                ui.checkbox(&mut self.same_root_pass, RichText::new("Use the same password for the system root account").strong().color(COLOR_TEXT_MAIN));
 
                 if !self.same_root_pass {
                     ui.add_space(8.0);
-                    ui.label(RichText::new("Root Account Password:").strong());
+                    ui.label(RichText::new("Root Account Password:").strong().color(COLOR_TEXT_MAIN));
                     ui.add(TextEdit::singleline(&mut self.root_pass).password(true).desired_width(300.0));
                 }
             });
@@ -837,7 +821,7 @@ impl InstallerApp {
                 ui.label(RichText::new("Chassis Profile").size(15.0).strong().color(COLOR_TEXT_MAIN));
                 ui.add_space(8.0);
                 for (val, label, desc) in chassis_opts {
-                    ui.radio_value(&mut self.chassis, val.to_string(), RichText::new(label).strong());
+                    ui.radio_value(&mut self.chassis, val.to_string(), RichText::new(label).strong().color(COLOR_TEXT_MAIN));
                     ui.label(RichText::new(format!("      {}", desc)).size(12.0).color(COLOR_TEXT_MUTED));
                     ui.add_space(4.0);
                 }
@@ -863,7 +847,7 @@ impl InstallerApp {
                 .corner_radius(CornerRadius::same(8))
                 .inner_margin(egui::Margin::same(14))
                 .show(ui, |ui| {
-                    ui.radio_value(&mut self.kernel, k_id.to_string(), RichText::new(label).size(15.0).strong());
+                    ui.radio_value(&mut self.kernel, k_id.to_string(), RichText::new(label).size(15.0).strong().color(COLOR_TEXT_MAIN));
                     ui.add_space(4.0);
                     ui.label(RichText::new(desc).size(12.0).color(COLOR_TEXT_MUTED));
                 });
@@ -877,7 +861,7 @@ impl InstallerApp {
 
         let profiles = [
             ("base", "󰣇 Base Core", "Essential CLI, zsh, vim, openssh, NetworkManager, sudo, pacman tools (Default)."),
-            ("chadwm", " ChadWM Desktop", "Ultra-fast dwm window manager, picom, polybar, rofi, alacritty, sxhkd."),
+            ("desktop", " Niri Wayland Station", "Modern scrolling Wayland compositor, Waybar V3.1a, Matugen dynamic colors, fuzzel, foot."),
             ("media", "󰕼 Media Server", "Jellyfin media server, hardware transcoding, DLNA media hub."),
             ("downloads", " Download Automation", "qBittorrent-nox daemon, Transmission CLI, automated torrent webui."),
             ("backups", "󰆓 Automated Backups", "Restic, BorgBackup, Syncthing synchronization, rclone cloud storage."),
@@ -896,7 +880,7 @@ impl InstallerApp {
                     for (i, (id, title, desc)) in profiles.iter().enumerate() {
                         let col = i % 2;
                         let mut is_checked = self.selected_profiles.contains(*id);
-                        if columns[col].checkbox(&mut is_checked, RichText::new(*title).size(14.0).strong()).changed() {
+                        if columns[col].checkbox(&mut is_checked, RichText::new(*title).size(14.0).strong().color(COLOR_TEXT_MAIN)).changed() {
                             if is_checked {
                                 self.selected_profiles.insert(id.to_string());
                             } else {
@@ -930,7 +914,7 @@ impl InstallerApp {
                 ui.separator();
                 ui.add_space(14.0);
 
-                ui.checkbox(&mut self.enable_proprietary, RichText::new("Install proprietary vendor drivers (e.g. Nvidia proprietary DKMS, Realtek Wi-Fi)").strong());
+                ui.checkbox(&mut self.enable_proprietary, RichText::new("Install proprietary vendor drivers (e.g. Nvidia proprietary DKMS, Realtek Wi-Fi)").strong().color(COLOR_TEXT_MAIN));
             });
     }
 

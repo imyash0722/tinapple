@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# Launch or focus TUI utility in terminal
+cmd="${1:-btop}"
+if command -v foot >/dev/null 2>&1; then
+    exec foot -e "$cmd"
+elif command -v alacritty >/dev/null 2>&1; then
+    exec alacritty -e "$cmd"
+else
+    exec xterm -e "$cmd"
+fi

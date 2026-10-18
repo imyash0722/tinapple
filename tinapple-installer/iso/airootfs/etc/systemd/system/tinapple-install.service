@@ -2,6 +2,9 @@
 Description=Tinapple Interactive Installer
 Documentation=https://github.com/tinapple/tinapple-arch
 After=systemd-user-sessions.service
+ConditionPathExists=/run/archiso
+ConditionPathExists=!/var/lib/tinapple/firstboot-done
+ConditionPathExists=!/var/lib/tinapple/installed
 ConditionPathExists=/dev/tty1
 
 [Service]

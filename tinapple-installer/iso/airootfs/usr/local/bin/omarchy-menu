@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# Omarchy Application Menu Launcher
+if command -v fuzzel >/dev/null 2>&1; then
+    exec fuzzel
+elif command -v rofi >/dev/null 2>&1; then
+    exec rofi -show drun
+fi

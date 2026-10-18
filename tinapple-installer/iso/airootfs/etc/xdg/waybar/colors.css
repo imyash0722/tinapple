@@ -1,0 +1,27 @@
+/* Matugen Material You Palette for Waybar (Tinapple OS) */
+@define-color background #0c0f0a;
+@define-color foreground #e2e3da;
+@define-color primary #a4d483;
+@define-color on_primary #153800;
+@define-color primary_container #47712c;
+@define-color on_primary_container #ffffff;
+@define-color secondary #b8cda6;
+@define-color on_secondary #243519;
+@define-color tertiary #ffaedb;
+@define-color on_tertiary #571642;
+@define-color surface #11140f;
+@define-color surface_container #1e201b;
+@define-color surface_container_high #282b25;
+@define-color surface_container_highest #33362f;
+@define-color surface_container_low #1a1c17;
+@define-color surface_container_lowest #0c0f0a;
+@define-color outline #8d9384;
+@define-color outline_variant #43493c;
+@define-color error #ffb4ab;
+
+/* Semantic theme bindings for HANCORE V3.1a waybar theme */
+@define-color bg #0c0f0a;
+@define-color fg #e2e3da;
+@define-color red #a4d483;
+@define-color grey #8d9384;
+@define-color accent #a4d483;
