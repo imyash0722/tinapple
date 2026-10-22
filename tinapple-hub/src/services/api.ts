@@ -3,7 +3,7 @@ import { SystemInfo, TelemetrySnapshot, ServiceInfo, HardwareInfo, SessionMode, 
 const API_BASE = '/api/v1';
 
 export const MOCK_SYSTEM_INFO: SystemInfo = {
-  installed: false,
+  installed: true,
   hostname: 'tinapple-appliance',
   kernel: '6.12.8-cachyos-tinapple',
   uptime: 7260,

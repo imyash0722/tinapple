@@ -122,7 +122,13 @@ func SetupRoutes(r *gin.Engine, cfg *config.Manifest, svcMgr *services.SystemdMa
 
 // SystemInfo returns basic system information
 func (h *Handler) SystemInfo(c *gin.Context) {
-	installed := false
+	// In Arch Linux live boot environment, /run/archiso is present.
+	// The system is in live installer mode ONLY when /run/archiso exists
+	// and no installation marker is found. In all other environments (installed system or local host), installed is true.
+	installed := true
+	if _, err := os.Stat("/run/archiso"); err == nil {
+		installed = false
+	}
 	if _, err := os.Stat("/etc/tinapple-installed"); err == nil {
 		installed = true
 	} else if _, err := os.Stat("/var/lib/tinapple/installed"); err == nil {
