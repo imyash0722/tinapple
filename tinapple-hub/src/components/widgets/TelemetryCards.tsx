@@ -3,7 +3,6 @@ import { Cpu, HardDrive, MemoryStick, Activity, ArrowDownRight, ArrowUpRight, Ga
 import { SpotlightCard } from '../reactbits/SpotlightCard';
 import { CountUp } from '../reactbits/CountUp';
 import { ShinyText } from '../reactbits/ShinyText';
-import MicroSlats from '../reactbits/MicroSlats';
 import { TelemetrySnapshot } from '../../types/api';
 
 interface TelemetryCardsProps {
@@ -42,48 +41,6 @@ export const TelemetryCards: React.FC<TelemetryCardsProps> = ({ telemetry, histo
 
   return (
     <div className="space-y-5">
-      {/* TACTILE HARDWARE COUPLING SLAT MATRIX (MicroSlats) */}
-      <div className="tinapple-glass-card relative rounded-2xl bg-gradient-to-r from-tinapple-card/90 via-tinapple-surface/90 to-tinapple-card/90 border border-tinapple-border overflow-hidden p-3.5 backdrop-blur-2xl">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-2.5 px-2">
-          <div className="flex items-center gap-2.5">
-            <span className="w-2 h-2 rounded-full bg-tinapple-gold animate-pulse" />
-            <div>
-              <span className="text-xs font-mono font-bold tracking-wider text-tinapple-text uppercase">
-                PHYSICAL NODE COUPLING
-              </span>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 text-[10px] font-mono text-tinapple-subtext">
-            <span className="px-2 py-0.5 rounded-md bg-tinapple-dark border border-tinapple-border text-tinapple-gold">
-              64-CELL TACTILE SLAT MATRIX
-            </span>
-            <span className="hidden md:inline text-tinapple-muted">Glide cursor to tilt slats</span>
-          </div>
-        </div>
-
-        {/* MicroSlats Embedded Sensor Field */}
-        <div className="h-14 w-full rounded-xl overflow-hidden border border-tinapple-border/70 relative">
-          <MicroSlats
-            preset="signal"
-            color="#0d1017"
-            glintColor={accentColor}
-            backgroundColor="#07080b"
-            slatWidth={14}
-            slatHeight={48}
-            gap={4}
-            roundness={0.25}
-            interactive={true}
-            cursorStrength={2.5}
-            cursorSize={110}
-            lean={0.8}
-            contrast={1.6}
-            glint={2.0}
-            speed={0.6}
-          />
-          <div className="absolute inset-0 pointer-events-none bg-gradient-to-r from-tinapple-dark/40 via-transparent to-tinapple-dark/40" />
-        </div>
-      </div>
-
       {/* 4 BENTO TELEMETRY CARDS */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
         {/* HERO PROCESSOR & CORE MATRIX (7 cols) */}
