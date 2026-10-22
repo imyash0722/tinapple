@@ -3,12 +3,13 @@ import { Cpu, HardDrive, MemoryStick, Activity, ArrowDownRight, ArrowUpRight, Ga
 import { SpotlightCard } from '../reactbits/SpotlightCard';
 import { CountUp } from '../reactbits/CountUp';
 import { ShinyText } from '../reactbits/ShinyText';
-import TechText from '../reactbits/TechText';
 import MicroSlats from '../reactbits/MicroSlats';
 import { TelemetrySnapshot } from '../../types/api';
 
 interface TelemetryCardsProps {
   telemetry: TelemetrySnapshot;
+  accentColor: string;
+  secondaryColor: string;
   history: {
     cpu: number[];
     memory: number[];
@@ -17,7 +18,7 @@ interface TelemetryCardsProps {
   };
 }
 
-export const TelemetryCards: React.FC<TelemetryCardsProps> = ({ telemetry, history }) => {
+export const TelemetryCards: React.FC<TelemetryCardsProps> = ({ telemetry, history, accentColor, secondaryColor }) => {
   const formatBytes = (bytes: number) => {
     if (bytes >= 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
     if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
@@ -42,22 +43,14 @@ export const TelemetryCards: React.FC<TelemetryCardsProps> = ({ telemetry, histo
   return (
     <div className="space-y-5">
       {/* TACTILE HARDWARE COUPLING SLAT MATRIX (MicroSlats) */}
-      <div className="relative rounded-2xl bg-gradient-to-r from-tinapple-card/90 via-tinapple-surface/90 to-tinapple-card/90 border border-tinapple-border overflow-hidden p-3.5 backdrop-blur-2xl">
+      <div className="tinapple-glass-card relative rounded-2xl bg-gradient-to-r from-tinapple-card/90 via-tinapple-surface/90 to-tinapple-card/90 border border-tinapple-border overflow-hidden p-3.5 backdrop-blur-2xl">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-2.5 px-2">
           <div className="flex items-center gap-2.5">
             <span className="w-2 h-2 rounded-full bg-tinapple-gold animate-pulse" />
-            <div className="h-6 w-72">
-              <TechText
-                text="PHYSICAL NODE COUPLING"
-                fontSize={12}
-                fontWeight={800}
-                color="#ffffff"
-                accentColor="#e5b567"
-                labels={true}
-                guides={true}
-                intro="metrics"
-                clickKick={true}
-              />
+            <div>
+              <span className="text-xs font-mono font-bold tracking-wider text-tinapple-text uppercase">
+                PHYSICAL NODE COUPLING
+              </span>
             </div>
           </div>
           <div className="flex items-center gap-2 text-[10px] font-mono text-tinapple-subtext">
@@ -73,7 +66,7 @@ export const TelemetryCards: React.FC<TelemetryCardsProps> = ({ telemetry, histo
           <MicroSlats
             preset="signal"
             color="#0d1017"
-            glintColor="#e5b567"
+            glintColor={accentColor}
             backgroundColor="#07080b"
             slatWidth={14}
             slatHeight={48}
@@ -96,8 +89,8 @@ export const TelemetryCards: React.FC<TelemetryCardsProps> = ({ telemetry, histo
         {/* HERO PROCESSOR & CORE MATRIX (7 cols) */}
         <SpotlightCard
           className="lg:col-span-7 p-6 flex flex-col justify-between"
-          spotlightColor="rgba(229, 181, 103, 0.15)"
-          borderColor="rgba(229, 181, 103, 0.45)"
+          spotlightColor="rgb(var(--tinapple-accent-rgb) / 0.15)"
+          borderColor="rgb(var(--tinapple-accent-rgb) / 0.45)"
         >
           <div>
             {/* Header Row */}
@@ -108,18 +101,10 @@ export const TelemetryCards: React.FC<TelemetryCardsProps> = ({ telemetry, histo
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <div className="h-6 w-44">
-                      <TechText
-                        text="PROCESSOR MATRIX"
-                        fontSize={13}
-                        fontWeight={800}
-                        color="#ffffff"
-                        accentColor="#e5b567"
-                        labels={true}
-                        guides={true}
-                        intro="metrics"
-                        clickKick={true}
-                      />
+                    <div>
+                      <span className="text-xs font-mono font-bold tracking-wider text-tinapple-text uppercase">
+                        PROCESSOR MATRIX
+                      </span>
                     </div>
                     <span className="text-[10px] px-2 py-0.5 rounded-full bg-tinapple-green/10 text-tinapple-green border border-tinapple-green/20 font-mono">
                       x86-64-v4 BORE
@@ -156,8 +141,8 @@ export const TelemetryCards: React.FC<TelemetryCardsProps> = ({ telemetry, histo
               <div className="sm:col-span-7 h-16 flex items-end">
                 <Sparkline
                   data={history.cpu}
-                  strokeColor="#e5b567"
-                  fillColor="rgba(229, 181, 103, 0.12)"
+                  strokeColor={accentColor}
+                  fillColor={`${accentColor}1f`}
                   height={54}
                 />
               </div>
@@ -181,8 +166,8 @@ export const TelemetryCards: React.FC<TelemetryCardsProps> = ({ telemetry, histo
                             load > 80
                               ? '#f87171'
                               : load > 50
-                              ? '#e5b567'
-                              : '#7ec789',
+                              ? accentColor
+                              : secondaryColor,
                         }}
                       />
                     </div>
@@ -199,8 +184,8 @@ export const TelemetryCards: React.FC<TelemetryCardsProps> = ({ telemetry, histo
         {/* MEMORY & RESOURCE POOL (5 cols) */}
         <SpotlightCard
           className="lg:col-span-5 p-6 flex flex-col justify-between"
-          spotlightColor="rgba(126, 199, 137, 0.15)"
-          borderColor="rgba(126, 199, 137, 0.45)"
+          spotlightColor="rgb(var(--tinapple-secondary-rgb) / 0.15)"
+          borderColor="rgb(var(--tinapple-secondary-rgb) / 0.45)"
         >
           <div>
             <div className="flex items-center justify-between mb-4">
@@ -209,18 +194,10 @@ export const TelemetryCards: React.FC<TelemetryCardsProps> = ({ telemetry, histo
                   <MemoryStick className="w-5 h-5" />
                 </div>
                 <div>
-                  <div className="h-6 w-40">
-                    <TechText
-                      text="MEMORY MATRIX"
-                      fontSize={13}
-                      fontWeight={800}
-                      color="#ffffff"
-                      accentColor="#7ec789"
-                      labels={true}
-                      guides={true}
-                      intro="metrics"
-                      clickKick={true}
-                    />
+                  <div>
+                    <span className="text-xs font-mono font-bold tracking-wider text-tinapple-text uppercase">
+                      MEMORY MATRIX
+                    </span>
                   </div>
                   <p className="text-xs text-tinapple-subtext font-mono">
                     DDR5-5600 Dual Channel
@@ -280,8 +257,8 @@ export const TelemetryCards: React.FC<TelemetryCardsProps> = ({ telemetry, histo
 
             <Sparkline
               data={history.memory}
-              strokeColor="#7ec789"
-              fillColor="rgba(126, 199, 137, 0.12)"
+              strokeColor={secondaryColor}
+              fillColor={`${secondaryColor}1f`}
               height={44}
             />
           </div>
@@ -290,8 +267,8 @@ export const TelemetryCards: React.FC<TelemetryCardsProps> = ({ telemetry, histo
         {/* STORAGE POOLS & BTRFS (6 cols) */}
         <SpotlightCard
           className="lg:col-span-6 p-6"
-          spotlightColor="rgba(229, 181, 103, 0.12)"
-          borderColor="rgba(229, 181, 103, 0.35)"
+          spotlightColor="rgb(var(--tinapple-accent-rgb) / 0.12)"
+          borderColor="rgb(var(--tinapple-accent-rgb) / 0.35)"
         >
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
@@ -299,18 +276,10 @@ export const TelemetryCards: React.FC<TelemetryCardsProps> = ({ telemetry, histo
                 <HardDrive className="w-5 h-5" />
               </div>
               <div>
-                <div className="h-6 w-44">
-                  <TechText
-                    text="BTRFS STORAGE"
-                    fontSize={13}
-                    fontWeight={800}
-                    color="#ffffff"
-                    accentColor="#e5b567"
-                    labels={true}
-                    guides={true}
-                    intro="metrics"
-                    clickKick={true}
-                  />
+                <div>
+                  <span className="text-xs font-mono font-bold tracking-wider text-tinapple-text uppercase">
+                    BTRFS STORAGE
+                  </span>
                 </div>
                 <p className="text-xs text-tinapple-subtext font-mono">
                   {telemetry.disk.mountPoint} • btrfs zstd compression
@@ -363,8 +332,8 @@ export const TelemetryCards: React.FC<TelemetryCardsProps> = ({ telemetry, histo
         {/* NETWORK & TAILNET RADAR (6 cols) */}
         <SpotlightCard
           className="lg:col-span-6 p-6"
-          spotlightColor="rgba(126, 199, 137, 0.12)"
-          borderColor="rgba(126, 199, 137, 0.35)"
+          spotlightColor="rgb(var(--tinapple-secondary-rgb) / 0.12)"
+          borderColor="rgb(var(--tinapple-secondary-rgb) / 0.35)"
         >
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
@@ -372,18 +341,10 @@ export const TelemetryCards: React.FC<TelemetryCardsProps> = ({ telemetry, histo
                 <Activity className="w-5 h-5" />
               </div>
               <div>
-                <div className="h-6 w-44">
-                  <TechText
-                    text="NETWORK MESH"
-                    fontSize={13}
-                    fontWeight={800}
-                    color="#ffffff"
-                    accentColor="#7ec789"
-                    labels={true}
-                    guides={true}
-                    intro="metrics"
-                    clickKick={true}
-                  />
+                <div>
+                  <span className="text-xs font-mono font-bold tracking-wider text-tinapple-text uppercase">
+                    NETWORK MESH
+                  </span>
                 </div>
                 <p className="text-xs text-tinapple-subtext font-mono">
                   {telemetry.network.interfaces?.join(' • ') || 'tailscale0 • wlan0'}
@@ -426,8 +387,8 @@ export const TelemetryCards: React.FC<TelemetryCardsProps> = ({ telemetry, histo
 
           <Sparkline
             data={history.netIn}
-            strokeColor="#7ec789"
-            fillColor="rgba(126, 199, 137, 0.12)"
+            strokeColor={secondaryColor}
+            fillColor={`${secondaryColor}1f`}
             height={44}
           />
         </SpotlightCard>

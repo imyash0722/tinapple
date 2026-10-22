@@ -118,6 +118,13 @@ func main() {
 		if _, err := os.Stat(filepath.Join(distDir, "images")); err == nil {
 			r.Static("/images", filepath.Join(distDir, "images"))
 		}
+		if _, err := os.Stat(filepath.Join(distDir, "wallpapers")); err == nil {
+			r.Static("/wallpapers", filepath.Join(distDir, "wallpapers"))
+		} else if _, err := os.Stat("wallpapers"); err == nil {
+			r.Static("/wallpapers", "wallpapers")
+		} else if _, err := os.Stat("../wallpapers"); err == nil {
+			r.Static("/wallpapers", "../wallpapers")
+		}
 		r.StaticFile("/favicon.ico", filepath.Join(distDir, "favicon.ico"))
 		r.GET("/", func(c *gin.Context) {
 			c.File(filepath.Join(distDir, "index.html"))

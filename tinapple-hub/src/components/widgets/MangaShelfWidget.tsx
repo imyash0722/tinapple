@@ -128,7 +128,7 @@ export const MangaShelfWidget: React.FC = () => {
     activeTab === 'reading' ? readingList : activeTab === 'history' ? historyList : updatesList;
 
   return (
-    <div className="rounded-2xl bg-slate-900/60 border border-slate-800/80 p-5 backdrop-blur-xl shadow-xl space-y-4">
+    <div className="tinapple-glass-card rounded-2xl bg-slate-900/60 border border-slate-800/80 p-5 backdrop-blur-xl shadow-xl space-y-4">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-slate-800/60">
         <div className="flex items-center gap-3">

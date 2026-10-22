@@ -17,9 +17,9 @@ export default {
           border: 'rgba(255, 255, 255, 0.06)',
           'border-hover': 'rgba(229, 181, 103, 0.32)',
           'border-green': 'rgba(126, 199, 137, 0.32)',
-          gold: '#e5b567',       // Pineapple core amber / gold
+          gold: 'rgb(var(--tinapple-accent-rgb, 229 181 103) / <alpha-value>)',       // Pineapple core amber / gold
           amber: '#f59e0b',
-          green: '#7ec789',      // Fresh palm / crown green
+          green: 'rgb(var(--tinapple-secondary-rgb, 126 199 137) / <alpha-value>)',      // Fresh palm / crown green
           sage: '#98c379',
           emerald: '#10b981',
           teal: '#2dd4bf',

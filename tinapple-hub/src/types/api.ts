@@ -1,6 +1,7 @@
 export type SessionMode = 'headless' | 'interactive' | 'kiosk';
 
 export interface SystemInfo {
+  installed: boolean;
   hostname: string;
   kernel: string;
   uptime: number; // in seconds

@@ -15,12 +15,14 @@ import { AppBrandIcon } from '../common/AppBrandIcons';
 
 interface ServicesManagerProps {
   services: ServiceInfo[];
+  accentColor: string;
   onControlService: (name: string, action: 'start' | 'stop' | 'restart' | 'enable' | 'disable') => Promise<void>;
   onOpenLogs: (name: string) => void;
 }
 
 export const ServicesManager: React.FC<ServicesManagerProps> = ({
   services,
+  accentColor,
   onControlService,
   onOpenLogs,
 }) => {
@@ -96,8 +98,8 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({
               size="sm"
               holdTime={1400}
               backgroundColor="#15181f"
-              fillColor="#e5b567"
-              textColor="#e5b567"
+              fillColor={accentColor}
+              textColor={accentColor}
               fillTextColor="#060709"
               wave={true}
               glow={true}
@@ -154,8 +156,8 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({
               <SpotlightCard
                 key={service.name}
                 className="p-5 flex flex-col justify-between"
-                spotlightColor={isActive ? 'rgba(126, 199, 137, 0.12)' : 'rgba(229, 181, 103, 0.08)'}
-                borderColor={isActive ? 'rgba(126, 199, 137, 0.4)' : 'rgba(255, 255, 255, 0.08)'}
+                spotlightColor={isActive ? 'rgb(var(--tinapple-secondary-rgb) / 0.12)' : 'rgb(var(--tinapple-accent-rgb) / 0.08)'}
+                borderColor={isActive ? 'rgb(var(--tinapple-secondary-rgb) / 0.4)' : 'rgba(255, 255, 255, 0.08)'}
               >
                 <div>
                   <div className="flex items-start justify-between gap-3 mb-2.5">

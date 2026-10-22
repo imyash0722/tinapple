@@ -121,7 +121,7 @@ export const TransfersWidget: React.FC = () => {
   };
 
   return (
-    <div className="rounded-2xl bg-slate-900/60 border border-slate-800/80 p-5 backdrop-blur-xl shadow-xl flex flex-col justify-between">
+    <div className="tinapple-glass-card rounded-2xl bg-slate-900/60 border border-slate-800/80 p-5 backdrop-blur-xl shadow-xl flex flex-col justify-between">
       {/* Header with pill tabs */}
       <div className="flex items-center justify-between pb-4 border-b border-slate-800/60">
         <div className="flex items-center gap-2">

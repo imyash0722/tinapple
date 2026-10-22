@@ -60,14 +60,15 @@ const DockIcon: React.FC<DockIconProps> = ({ item, mouseX, isActive, onClick }) 
       ref={ref}
       style={{ width, height: width }}
       onClick={onClick}
-      className={`relative flex items-center justify-center rounded-xl transition-colors duration-200 group active:scale-90 ${
+      aria-label={item.label}
+      className={`relative flex items-center justify-center rounded-xl transition-all duration-200 group hover:z-50 focus-within:z-50 active:scale-90 ${
         isActive
-          ? 'bg-tinapple-gold text-tinapple-dark shadow-lg shadow-tinapple-gold/25'
-          : 'bg-tinapple-surface/90 text-tinapple-subtext hover:bg-tinapple-surface hover:text-white'
+          ? 'bg-tinapple-surface border border-tinapple-gold/70 text-tinapple-gold shadow-lg shadow-tinapple-gold/20'
+          : 'bg-tinapple-surface/80 border border-transparent text-tinapple-subtext hover:bg-tinapple-surface hover:text-white'
       }`}
     >
       {/* Tooltip */}
-      <span className="absolute -top-9 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none px-2.5 py-1 text-xs font-mono font-bold rounded-lg bg-tinapple-dark/95 border border-tinapple-border text-tinapple-gold shadow-xl whitespace-nowrap">
+      <span className="absolute -top-10 left-1/2 -translate-x-1/2 invisible group-hover:visible group-focus-visible:visible opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-all duration-200 pointer-events-none px-2.5 py-1 text-[11px] font-mono font-semibold rounded-lg bg-zinc-900/95 border border-white/10 text-tinapple-gold shadow-2xl whitespace-nowrap z-50">
         {item.label}
       </span>
 

@@ -44,7 +44,6 @@ import { DecryptedText } from '../reactbits/DecryptedText';
 import { SquishSwitch } from '../reactbits/SquishSwitch';
 import { CountUp } from '../reactbits/CountUp';
 import { StarBorder } from '../reactbits/StarBorder';
-import { BrandLogo } from '../common/BrandLogo';
 import { AppBrandIcon } from '../common/AppBrandIcons';
 
 interface WelcomeInstallerProps {
@@ -316,7 +315,7 @@ export const WelcomeInstaller: React.FC<WelcomeInstallerProps> = ({
       desc: 'Scrollable-tiling Wayland compositor paired with isthatelitho/niri-btw rice, Waybar, Kitty, and Uzura font.',
       ports: 'Wayland vt1',
       defaultOn: true,
-      accent: '#e5b567',
+      accent: 'var(--tinapple-accent)',
     },
     {
       id: 'suwayomi',
@@ -424,21 +423,18 @@ export const WelcomeInstaller: React.FC<WelcomeInstallerProps> = ({
       {/* Top Banner Navigation */}
       <SpotlightCard
         className="p-5 bg-[#0e1116] border-[#353c4a]"
-        spotlightColor="rgba(229, 181, 103, 0.12)"
-        borderColor="rgba(229, 181, 103, 0.4)"
       >
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="flex items-center gap-3.5">
-            <BrandLogo size={42} electric={true} />
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-base font-black text-white tracking-tight font-mono">
                   TINAPPLE OS
                 </span>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#e5b567]/15 text-[#e5b567] border border-[#e5b567]/30">
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-tinapple-gold/15 text-tinapple-gold border border-tinapple-gold/30">
                   INSTALLER & HUB
                 </span>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#7ec789]/15 text-[#7ec789] border border-[#7ec789]/30">
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-tinapple-green/15 text-tinapple-green border border-tinapple-green/30">
                   Niri + Waybar
                 </span>
               </div>
@@ -464,7 +460,7 @@ export const WelcomeInstaller: React.FC<WelcomeInstallerProps> = ({
                   onClick={() => setActiveTab(tab.id as InstallerTab)}
                   className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-mono font-bold transition-all shrink-0 ${
                     isActive
-                      ? 'bg-[#e5b567] text-[#0e1116] shadow-md shadow-[#e5b567]/20'
+                      ? 'bg-tinapple-gold text-tinapple-dark shadow-md shadow-tinapple-gold/25'
                       : 'bg-[#161a22] text-[#a4adbe] hover:text-white border border-[#353c4a]'
                   }`}
                 >
@@ -488,12 +484,10 @@ export const WelcomeInstaller: React.FC<WelcomeInstallerProps> = ({
         >
           {/* Hero Welcome Card */}
           <SpotlightCard
-            className="p-8 bg-gradient-to-br from-[#12161f] via-[#0e1116] to-[#12161f] border-[#353c4a]"
-            spotlightColor="rgba(229, 181, 103, 0.15)"
-            borderColor="rgba(229, 181, 103, 0.45)"
+            className="p-8"
           >
             <div className="max-w-3xl space-y-4">
-              <div className="flex items-center gap-2 text-xs font-mono font-bold text-[#e5b567] tracking-wider uppercase">
+              <div className="flex items-center gap-2 text-xs font-mono font-bold text-tinapple-gold tracking-wider uppercase">
                 <Sparkles className="w-4 h-4" />
                 <span>Next-Generation Arch Linux Appliance Platform</span>
               </div>
@@ -501,13 +495,13 @@ export const WelcomeInstaller: React.FC<WelcomeInstallerProps> = ({
                 Deploy Your Custom Tinapple Station
               </h1>
               <p className="text-sm text-[#a4adbe] leading-relaxed font-mono">
-                Tinapple OS combines an ultra-fast scrollable tiling Wayland environment (<span className="text-[#e5b567] font-bold">isthatelitho/niri-btw</span>) with a pre-configured, self-hosted homelab suite. Effortlessly stream 4K media via Jellyfin, manage manga with Suwayomi, automate torrents, host Minecraft with zero-port tunnels, and control everything through this unified Web Hub.
+                Tinapple OS combines an ultra-fast scrollable tiling Wayland environment (<span className="text-tinapple-gold font-bold">isthatelitho/niri-btw</span>) with a pre-configured, self-hosted homelab suite. Effortlessly stream 4K media via Jellyfin, manage manga with Suwayomi, automate torrents, host Minecraft with zero-port tunnels, and control everything through this unified Web Hub.
               </p>
 
               <div className="pt-2 flex flex-wrap items-center gap-3">
                 <button
                   onClick={() => setActiveTab('wizard')}
-                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#e5b567] to-[#f59e0b] text-[#0e1116] text-xs font-mono font-extrabold shadow-lg shadow-[#e5b567]/25 hover:brightness-110 active:scale-95 transition-all flex items-center gap-2"
+                  className="px-5 py-2.5 rounded-xl bg-tinapple-gold text-tinapple-dark text-xs font-mono font-extrabold shadow-lg shadow-tinapple-gold/25 hover:brightness-110 active:scale-95 transition-all flex items-center gap-2"
                 >
                   <Play className="w-4 h-4" />
                   <span>Launch OS Installation Wizard</span>
@@ -515,16 +509,16 @@ export const WelcomeInstaller: React.FC<WelcomeInstallerProps> = ({
 
                 <button
                   onClick={() => setActiveTab('shortcuts')}
-                  className="px-4 py-2.5 rounded-xl bg-[#161a22] text-[#f5f6fa] border border-[#353c4a] hover:border-[#e5b567] text-xs font-mono font-bold transition-all flex items-center gap-2"
+                  className="px-4 py-2.5 rounded-xl bg-[#161a22] text-[#f5f6fa] border border-[#353c4a] hover:border-tinapple-gold text-xs font-mono font-bold transition-all flex items-center gap-2"
                 >
-                  <FileCode className="w-4 h-4 text-[#e5b567]" />
+                  <FileCode className="w-4 h-4 text-tinapple-gold" />
                   <span>View Niri & Desktop Shortcuts</span>
                 </button>
 
                 {onOpenDashboard && (
                   <button
                     onClick={onOpenDashboard}
-                    className="px-4 py-2.5 rounded-xl bg-[#161a22] text-[#7ec789] border border-[#7ec789]/40 hover:bg-[#7ec789]/10 text-xs font-mono font-bold transition-all flex items-center gap-2"
+                    className="px-4 py-2.5 rounded-xl bg-[#161a22] text-tinapple-green border border-tinapple-green/40 hover:bg-tinapple-green/10 text-xs font-mono font-bold transition-all flex items-center gap-2"
                   >
                     <ExternalLink className="w-4 h-4" />
                     <span>Open Live Appliance Hub</span>
@@ -538,7 +532,7 @@ export const WelcomeInstaller: React.FC<WelcomeInstallerProps> = ({
           <div>
             <div className="flex items-center justify-between mb-3 font-mono">
               <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-[#e5b567] animate-pulse" />
+                <span className="w-2 h-2 rounded-full bg-tinapple-gold animate-pulse" />
                 <h2 className="text-xs font-bold text-white uppercase tracking-wider">
                   Bundled Ecosystem Applications
                 </h2>
@@ -552,8 +546,7 @@ export const WelcomeInstaller: React.FC<WelcomeInstallerProps> = ({
               {APP_CATALOG.slice(0, 6).map((app) => (
                 <SpotlightCard
                   key={app.id}
-                  className="p-4 bg-[#0e1116] border-[#353c4a] hover:border-[#e5b567]/60 transition-all"
-                  spotlightColor="rgba(229, 181, 103, 0.08)"
+                  className="p-4 bg-[#0e1116] border-[#353c4a] hover:border-tinapple-gold/60 transition-all"
                 >
                   <div className="flex items-start gap-3">
                     <div className="p-2 rounded-xl bg-[#161a22] border border-[#353c4a] shrink-0">
@@ -564,11 +557,11 @@ export const WelcomeInstaller: React.FC<WelcomeInstallerProps> = ({
                         <span className="text-xs font-bold text-white truncate font-mono">
                           {app.name}
                         </span>
-                        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#161a22] text-[#e5b567] border border-[#353c4a] shrink-0">
+                        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#161a22] text-tinapple-gold border border-[#353c4a] shrink-0">
                           {app.ports}
                         </span>
                       </div>
-                      <span className="text-[10px] text-[#7ec789] font-mono block">
+                      <span className="text-[10px] text-tinapple-green font-mono block">
                         {app.category}
                       </span>
                       <p className="text-[11px] text-[#a4adbe] font-mono mt-1 line-clamp-2">
@@ -597,7 +590,6 @@ export const WelcomeInstaller: React.FC<WelcomeInstallerProps> = ({
             {/* Installer Top Bar with Calamares-style Brand Bar */}
             <div className="bg-[#12161f] px-6 py-4 border-b border-[#353c4a] flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <BrandLogo size={30} electric={false} />
                 <div>
                   <span className="text-sm font-bold text-white font-mono block">
                     Tinapple OS Calamares Installer
@@ -610,8 +602,8 @@ export const WelcomeInstaller: React.FC<WelcomeInstallerProps> = ({
 
               <div className="flex items-center gap-2 font-mono text-xs">
                 <span className="text-[#a4adbe]">Step {wizardStep} of 8</span>
-                <span className="w-1.5 h-1.5 rounded-full bg-[#e5b567]" />
-                <span className="text-[#e5b567] font-bold">
+                <span className="w-1.5 h-1.5 rounded-full bg-tinapple-gold" />
+                <span className="text-tinapple-gold font-bold">
                   {wizardStep === 1 && 'Welcome & Region'}
                   {wizardStep === 2 && 'Storage Drive & Partition Map'}
                   {wizardStep === 3 && 'Filesystem & LUKS2'}
@@ -627,7 +619,7 @@ export const WelcomeInstaller: React.FC<WelcomeInstallerProps> = ({
             {/* Stepper Wizard Progress Bar */}
             <div className="w-full bg-[#161a22] h-1.5">
               <div
-                className="bg-gradient-to-r from-[#e5b567] via-[#f59e0b] to-[#7ec789] h-full transition-all duration-300"
+                className="bg-gradient-to-r from-tinapple-gold via-tinapple-gold to-tinapple-green h-full transition-all duration-300"
                 style={{ width: `${(wizardStep / 8) * 100}%` }}
               />
             </div>
@@ -656,18 +648,18 @@ export const WelcomeInstaller: React.FC<WelcomeInstallerProps> = ({
                       onClick={() => setWizardStep(s.step)}
                       className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left text-xs transition-all ${
                         isCurrent
-                          ? 'bg-[#161a22] text-[#e5b567] font-bold border border-[#e5b567]/40 shadow-sm'
+                          ? 'bg-[#161a22] text-tinapple-gold font-bold border border-tinapple-gold/40 shadow-sm'
                           : isDone
-                          ? 'text-[#7ec789] hover:bg-[#161a22]/50'
+                          ? 'text-tinapple-green hover:bg-[#161a22]/50'
                           : 'text-[#6d788d] hover:text-[#a4adbe]'
                       }`}
                     >
                       <div
                         className={`w-6 h-6 rounded-lg flex items-center justify-center text-[11px] font-bold ${
                           isCurrent
-                            ? 'bg-[#e5b567] text-[#0e1116]'
+                            ? 'bg-tinapple-gold text-tinapple-dark'
                             : isDone
-                            ? 'bg-[#7ec789]/20 text-[#7ec789]'
+                            ? 'bg-tinapple-green/20 text-tinapple-green'
                             : 'bg-[#161a22] text-[#6d788d]'
                         }`}
                       >
@@ -687,7 +679,7 @@ export const WelcomeInstaller: React.FC<WelcomeInstallerProps> = ({
                     <div className="space-y-5 font-mono">
                       <div>
                         <h3 className="text-base font-bold text-white flex items-center gap-2">
-                          <Globe className="w-5 h-5 text-[#e5b567]" />
+                          <Globe className="w-5 h-5 text-tinapple-gold" />
                           Step 1: Localization & Keyboard Layout
                         </h3>
                         <p className="text-xs text-[#a4adbe] mt-1">
@@ -703,7 +695,7 @@ export const WelcomeInstaller: React.FC<WelcomeInstallerProps> = ({
                           <select
                             value={keyboardLayout}
                             onChange={(e) => setKeyboardLayout(e.target.value)}
-                            className="w-full px-3.5 py-2.5 rounded-xl bg-[#161a22] border border-[#353c4a] text-xs text-white focus:outline-none focus:border-[#e5b567]"
+                            className="w-full px-3.5 py-2.5 rounded-xl bg-[#161a22] border border-[#353c4a] text-xs text-white focus:outline-none focus:border-tinapple-gold"
                           >
                             <option value="us">English (US, ANSI Standard)</option>
                             <option value="uk">English (UK, ISO)</option>
@@ -721,7 +713,7 @@ export const WelcomeInstaller: React.FC<WelcomeInstallerProps> = ({
                           <select
                             value={timezone}
                             onChange={(e) => setTimezone(e.target.value)}
-                            className="w-full px-3.5 py-2.5 rounded-xl bg-[#161a22] border border-[#353c4a] text-xs text-white focus:outline-none focus:border-[#e5b567]"
+                            className="w-full px-3.5 py-2.5 rounded-xl bg-[#161a22] border border-[#353c4a] text-xs text-white focus:outline-none focus:border-tinapple-gold"
                           >
                             <option value="UTC">Universal Time Coordinated (UTC)</option>
                             <option value="America/New_York">America / New York (EST)</option>
@@ -748,7 +740,7 @@ export const WelcomeInstaller: React.FC<WelcomeInstallerProps> = ({
                     <div className="space-y-5 font-mono">
                       <div>
                         <h3 className="text-base font-bold text-white flex items-center gap-2">
-                          <HardDrive className="w-5 h-5 text-[#e5b567]" />
+                          <HardDrive className="w-5 h-5 text-tinapple-gold" />
                           Step 2: Target Storage Disk & Partitioning Scheme
                         </h3>
                         <p className="text-xs text-[#a4adbe] mt-1">
@@ -770,7 +762,7 @@ export const WelcomeInstaller: React.FC<WelcomeInstallerProps> = ({
                               d.isBootMedia
                                 ? 'bg-[#161a22]/30 border-[#262c38] text-slate-500 cursor-not-allowed opacity-75'
                                 : selectedDisk === d.id
-                                ? 'bg-[#161a22] border-[#e5b567] text-[#e5b567] cursor-pointer'
+                                ? 'bg-[#161a22] border-tinapple-gold text-tinapple-gold cursor-pointer'
                                 : 'bg-[#161a22]/50 border-[#353c4a] text-white hover:border-[#a4adbe] cursor-pointer'
                             }`}
                           >
@@ -792,7 +784,7 @@ export const WelcomeInstaller: React.FC<WelcomeInstallerProps> = ({
                               <span className="text-[11px] text-[#a4adbe] mt-0.5 block">{d.model}</span>
                             </div>
                             {selectedDisk === d.id && !d.isBootMedia && (
-                              <CheckCircle2 className="w-4 h-4 text-[#e5b567]" />
+                              <CheckCircle2 className="w-4 h-4 text-tinapple-gold" />
                             )}
                           </div>
                         ))}
@@ -802,7 +794,7 @@ export const WelcomeInstaller: React.FC<WelcomeInstallerProps> = ({
                       <div className="p-4 rounded-xl bg-[#12161f] border border-[#353c4a] space-y-3">
                         <div className="flex items-center justify-between text-xs">
                           <span className="font-bold text-white">Visual Partition Map ({selectedDisk})</span>
-                          <span className="text-[11px] text-[#7ec789] font-bold">GPT Partition Table</span>
+                          <span className="text-[11px] text-tinapple-green font-bold">GPT Partition Table</span>
                         </div>
 
                         {/* Partition visual bar */}
@@ -817,7 +809,7 @@ export const WelcomeInstaller: React.FC<WelcomeInstallerProps> = ({
                           </div>
                           {/* SWAP */}
                           <div
-                            className="bg-[#f59e0b] hover:brightness-110 flex items-center justify-center text-[10px] font-bold text-black border-r border-[#0e1116] transition-all"
+                            className="bg-tinapple-gold hover:brightness-110 flex items-center justify-center text-[10px] font-bold text-black border-r border-[#0e1116] transition-all"
                             style={{ width: '20%' }}
                             title="Swap Space: 4096 MB"
                           >
@@ -839,7 +831,7 @@ export const WelcomeInstaller: React.FC<WelcomeInstallerProps> = ({
                             <span>/boot/efi (1024MB FAT32)</span>
                           </div>
                           <div className="flex items-center gap-1.5">
-                            <span className="w-2.5 h-2.5 rounded-sm bg-[#f59e0b]" />
+                            <span className="w-2.5 h-2.5 rounded-sm bg-tinapple-gold" />
                             <span>Swapspace (4096MB)</span>
                           </div>
                           <div className="flex items-center gap-1.5">
@@ -856,7 +848,7 @@ export const WelcomeInstaller: React.FC<WelcomeInstallerProps> = ({
                     <div className="space-y-5 font-mono">
                       <div>
                         <h3 className="text-base font-bold text-white flex items-center gap-2">
-                          <Lock className="w-5 h-5 text-[#e5b567]" />
+                          <Lock className="w-5 h-5 text-tinapple-gold" />
                           Step 3: Root Filesystem & LUKS2 Disk Encryption
                         </h3>
                         <p className="text-xs text-[#a4adbe] mt-1">
@@ -887,13 +879,13 @@ export const WelcomeInstaller: React.FC<WelcomeInstallerProps> = ({
                             onClick={() => setFilesystem(fs.id as any)}
                             className={`p-3.5 rounded-xl border cursor-pointer transition-all ${
                               filesystem === fs.id
-                                ? 'bg-[#161a22] border-[#e5b567] text-[#e5b567]'
+                                ? 'bg-[#161a22] border-tinapple-gold text-tinapple-gold'
                                 : 'bg-[#161a22]/50 border-[#353c4a] text-white hover:border-[#a4adbe]'
                             }`}
                           >
                             <div className="flex items-center justify-between">
                               <span className="text-xs font-bold">{fs.name}</span>
-                              {filesystem === fs.id && <Check className="w-4 h-4 text-[#e5b567]" />}
+                              {filesystem === fs.id && <Check className="w-4 h-4 text-tinapple-gold" />}
                             </div>
                             <p className="text-[11px] text-[#a4adbe] mt-1">{fs.desc}</p>
                           </div>
@@ -951,7 +943,7 @@ export const WelcomeInstaller: React.FC<WelcomeInstallerProps> = ({
                     <div className="space-y-5 font-mono">
                       <div>
                         <h3 className="text-base font-bold text-white flex items-center gap-2">
-                          <Cpu className="w-5 h-5 text-[#e5b567]" />
+                          <Cpu className="w-5 h-5 text-tinapple-gold" />
                           Step 4: Linux Kernel Architecture
                         </h3>
                         <p className="text-xs text-[#a4adbe] mt-1">
@@ -987,13 +979,13 @@ export const WelcomeInstaller: React.FC<WelcomeInstallerProps> = ({
                             onClick={() => setKernel(k.id as any)}
                             className={`p-3.5 rounded-xl border cursor-pointer transition-all ${
                               kernel === k.id
-                                ? 'bg-[#161a22] border-[#e5b567] text-[#e5b567]'
+                                ? 'bg-[#161a22] border-tinapple-gold text-tinapple-gold'
                                 : 'bg-[#161a22]/50 border-[#353c4a] text-white hover:border-[#a4adbe]'
                             }`}
                           >
                             <div className="flex items-center justify-between">
                               <span className="text-xs font-bold">{k.name}</span>
-                              {kernel === k.id && <Check className="w-4 h-4 text-[#e5b567]" />}
+                              {kernel === k.id && <Check className="w-4 h-4 text-tinapple-gold" />}
                             </div>
                             <p className="text-[11px] text-[#a4adbe] mt-1">{k.desc}</p>
                           </div>
@@ -1020,7 +1012,7 @@ export const WelcomeInstaller: React.FC<WelcomeInstallerProps> = ({
                               firmwareMode === 'bios'
                                 ? 'opacity-40 cursor-not-allowed bg-[#161a22]/30 border-[#353c4a]'
                                 : bootloader === 'limine'
-                                ? 'bg-[#161a22] border-[#e5b567] text-[#e5b567]'
+                                ? 'bg-[#161a22] border-tinapple-gold text-tinapple-gold'
                                 : 'bg-[#161a22]/50 border-[#353c4a] text-white'
                             }`}
                           >
@@ -1034,7 +1026,7 @@ export const WelcomeInstaller: React.FC<WelcomeInstallerProps> = ({
                             onClick={() => setBootloader('grub')}
                             className={`p-3 rounded-xl border text-left ${
                               bootloader === 'grub'
-                                ? 'bg-[#161a22] border-[#e5b567] text-[#e5b567]'
+                                ? 'bg-[#161a22] border-tinapple-gold text-tinapple-gold'
                                 : 'bg-[#161a22]/50 border-[#353c4a] text-white'
                             }`}
                           >
@@ -1056,7 +1048,7 @@ export const WelcomeInstaller: React.FC<WelcomeInstallerProps> = ({
                       <div className="flex items-center justify-between">
                         <div>
                           <h3 className="text-base font-bold text-white flex items-center gap-2">
-                            <Layers className="w-5 h-5 text-[#e5b567]" />
+                            <Layers className="w-5 h-5 text-tinapple-gold" />
                             Step 5: Appliance Stacks & Applications
                           </h3>
                           <p className="text-xs text-[#a4adbe] mt-0.5">
@@ -1067,7 +1059,7 @@ export const WelcomeInstaller: React.FC<WelcomeInstallerProps> = ({
                           <button
                             type="button"
                             onClick={() => setSelectedApps(APP_CATALOG.map((a) => a.id))}
-                            className="text-[11px] font-bold text-[#e5b567] hover:underline"
+                            className="text-[11px] font-bold text-tinapple-gold hover:underline"
                           >
                             Select All
                           </button>
@@ -1091,7 +1083,7 @@ export const WelcomeInstaller: React.FC<WelcomeInstallerProps> = ({
                               onClick={() => handleToggleApp(app.id)}
                               className={`p-3 rounded-xl border cursor-pointer transition-all flex items-start gap-3 ${
                                 isSelected
-                                  ? 'bg-[#161a22] border-[#e5b567] text-white'
+                                  ? 'bg-[#161a22] border-tinapple-gold text-white'
                                   : 'bg-[#161a22]/40 border-[#353c4a] text-[#a4adbe] hover:border-[#a4adbe]'
                               }`}
                             >
@@ -1105,12 +1097,12 @@ export const WelcomeInstaller: React.FC<WelcomeInstallerProps> = ({
                                     {app.name}
                                   </span>
                                   {isSelected ? (
-                                    <CheckSquare className="w-4 h-4 text-[#e5b567] shrink-0" />
+                                    <CheckSquare className="w-4 h-4 text-tinapple-gold shrink-0" />
                                   ) : (
                                     <Square className="w-4 h-4 text-[#6d788d] shrink-0" />
                                   )}
                                 </div>
-                                <span className="text-[10px] text-[#7ec789] block">
+                                <span className="text-[10px] text-tinapple-green block">
                                   {app.category} • {app.ports}
                                 </span>
                                 <p className="text-[11px] text-[#a4adbe] mt-1 line-clamp-2">
@@ -1129,7 +1121,7 @@ export const WelcomeInstaller: React.FC<WelcomeInstallerProps> = ({
                     <div className="space-y-5 font-mono">
                       <div>
                         <h3 className="text-base font-bold text-white flex items-center gap-2">
-                          <User className="w-5 h-5 text-[#e5b567]" />
+                          <User className="w-5 h-5 text-tinapple-gold" />
                           Step 6: User Accounts & System Security
                         </h3>
                         <p className="text-xs text-[#a4adbe] mt-1">
@@ -1259,7 +1251,7 @@ export const WelcomeInstaller: React.FC<WelcomeInstallerProps> = ({
                     <div className="space-y-4 font-mono">
                       <div>
                         <h3 className="text-base font-bold text-white flex items-center gap-2">
-                          <CheckCircle2 className="w-5 h-5 text-[#e5b567]" />
+                          <CheckCircle2 className="w-5 h-5 text-tinapple-gold" />
                           Step 7: Installation Summary & Drive Review
                         </h3>
                         <p className="text-xs text-[#a4adbe] mt-1">
@@ -1269,7 +1261,7 @@ export const WelcomeInstaller: React.FC<WelcomeInstallerProps> = ({
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                         <div className="p-3.5 rounded-xl bg-[#161a22] border border-[#353c4a] space-y-1.5">
-                          <span className="text-[#e5b567] font-bold block">Storage Target</span>
+                          <span className="text-tinapple-gold font-bold block">Storage Target</span>
                           <div className="text-white">Drive: {selectedDisk}</div>
                           <div className="text-[#a4adbe]">Filesystem: {filesystem.toUpperCase()}</div>
                           <div className="text-[#a4adbe]">ESP: 1024 MB (FAT32) | Swap: 4096 MB</div>
@@ -1277,7 +1269,7 @@ export const WelcomeInstaller: React.FC<WelcomeInstallerProps> = ({
                         </div>
 
                         <div className="p-3.5 rounded-xl bg-[#161a22] border border-[#353c4a] space-y-1.5">
-                          <span className="text-[#e5b567] font-bold block">System Identity</span>
+                          <span className="text-tinapple-gold font-bold block">System Identity</span>
                           <div className="text-white">Hostname: {hostname}</div>
                           <div className="text-[#a4adbe]">User: {username} (sudo: {String(enableSudo)})</div>
                           <div className="text-[#a4adbe]">Kernel: Linux {kernel.toUpperCase()}</div>
@@ -1285,7 +1277,7 @@ export const WelcomeInstaller: React.FC<WelcomeInstallerProps> = ({
                         </div>
 
                         <div className="col-span-full p-3.5 rounded-xl bg-[#161a22] border border-[#353c4a] space-y-2">
-                          <span className="text-[#e5b567] font-bold block">
+                          <span className="text-tinapple-gold font-bold block">
                             Provisioned Applications ({selectedApps.length})
                           </span>
                           <div className="flex flex-wrap gap-2">
@@ -1319,7 +1311,7 @@ export const WelcomeInstaller: React.FC<WelcomeInstallerProps> = ({
                     <div className="space-y-4 font-mono">
                       <div>
                         <h3 className="text-base font-bold text-white flex items-center gap-2">
-                          <Zap className="w-5 h-5 text-[#e5b567]" />
+                          <Zap className="w-5 h-5 text-tinapple-gold" />
                           Step 8: Appliance Deployment in Progress
                         </h3>
                         <p className="text-xs text-[#a4adbe] mt-1">
@@ -1333,11 +1325,11 @@ export const WelcomeInstaller: React.FC<WelcomeInstallerProps> = ({
                           <span className="text-white font-bold">
                             {installComplete ? 'Installation Complete!' : 'Deploying System Root...'}
                           </span>
-                          <span className="text-[#e5b567] font-bold">{installProgress}%</span>
+                          <span className="text-tinapple-gold font-bold">{installProgress}%</span>
                         </div>
                         <div className="w-full bg-[#161a22] h-3 rounded-full overflow-hidden border border-[#353c4a]">
                           <div
-                            className="bg-gradient-to-r from-[#e5b567] to-[#7ec789] h-full transition-all duration-300"
+                            className="bg-gradient-to-r from-tinapple-gold to-tinapple-green h-full transition-all duration-300"
                             style={{ width: `${installProgress}%` }}
                           />
                         </div>
@@ -1350,7 +1342,7 @@ export const WelcomeInstaller: React.FC<WelcomeInstallerProps> = ({
                             key={idx}
                             className={
                               line.includes('[SUCCESS]')
-                                ? 'text-[#7ec789] font-bold'
+                                ? 'text-tinapple-green font-bold'
                                 : line.includes('[WARN]')
                                 ? 'text-amber-400'
                                 : 'text-[#a4adbe]'
@@ -1401,7 +1393,7 @@ export const WelcomeInstaller: React.FC<WelcomeInstallerProps> = ({
                       <button
                         disabled={wizardStep === 6 && !canProceedStep6}
                         onClick={() => setWizardStep(wizardStep + 1)}
-                        className="px-5 py-2 rounded-xl bg-[#e5b567] text-[#0e1116] text-xs font-bold hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
+                        className="px-5 py-2 rounded-xl bg-tinapple-gold text-tinapple-dark text-xs font-bold hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
                       >
                         <span>Next Step</span>
                         <ArrowRight className="w-3.5 h-3.5" />
@@ -1414,7 +1406,7 @@ export const WelcomeInstaller: React.FC<WelcomeInstallerProps> = ({
                           setWizardStep(8);
                           startRealInstallation();
                         }}
-                        className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#e5b567] to-[#7ec789] text-[#0e1116] text-xs font-black shadow-lg shadow-[#e5b567]/25 hover:brightness-110 active:scale-95 flex items-center gap-2"
+                        className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-tinapple-gold to-tinapple-green text-[#0e1116] text-xs font-black shadow-lg shadow-tinapple-gold/25 hover:brightness-110 active:scale-95 flex items-center gap-2"
                       >
                         <Zap className="w-4 h-4" />
                         <span>Install Tinapple OS</span>
@@ -1439,11 +1431,10 @@ export const WelcomeInstaller: React.FC<WelcomeInstallerProps> = ({
         >
           {/* Host conflict notice */}
           <SpotlightCard
-            className="p-5 bg-[#12161f] border-[#e5b567]/40"
-            spotlightColor="rgba(229, 181, 103, 0.15)"
+            className="p-5 bg-[#12161f] border-tinapple-gold/40"
           >
             <div className="flex items-start gap-3.5">
-              <div className="p-2.5 rounded-xl bg-[#e5b567]/15 text-[#e5b567] border border-[#e5b567]/30 shrink-0">
+              <div className="p-2.5 rounded-xl bg-tinapple-gold/15 text-tinapple-gold border border-tinapple-gold/30 shrink-0">
                 <Smartphone className="w-5 h-5" />
               </div>
               <div className="space-y-1 font-mono">
@@ -1451,8 +1442,8 @@ export const WelcomeInstaller: React.FC<WelcomeInstallerProps> = ({
                   Pro-Tip: Workaround for Host Shortcut Conflicts
                 </span>
                 <p className="text-xs text-[#a4adbe] leading-relaxed">
-                  If your Linux host also uses the <code className="text-[#e5b567]">Super</code> (Mod4) key, press{' '}
-                  <kbd className="px-2 py-0.5 rounded bg-[#161a22] text-[#e5b567] border border-[#353c4a] font-bold">
+                  If your Linux host also uses the <code className="text-tinapple-gold">Super</code> (Mod4) key, press{' '}
+                  <kbd className="px-2 py-0.5 rounded bg-[#161a22] text-tinapple-gold border border-[#353c4a] font-bold">
                     Ctrl + Alt + G
                   </kbd>{' '}
                   in the QEMU window to grab 100% of keyboard & mouse inputs directly into the VM. Alternatively, all main actions also support the <kbd className="px-1.5 py-0.5 rounded bg-[#161a22] text-white border border-[#353c4a]">Alt</kbd> key!
@@ -1465,7 +1456,7 @@ export const WelcomeInstaller: React.FC<WelcomeInstallerProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 font-mono">
             {/* Terminal & Core Applications */}
             <div className="p-5 rounded-2xl bg-[#0e1116] border border-[#353c4a] space-y-3">
-              <span className="text-xs font-bold text-[#e5b567] uppercase tracking-wider block">
+              <span className="text-xs font-bold text-tinapple-gold uppercase tracking-wider block">
                 Applications & Terminal
               </span>
               <div className="space-y-2 text-xs">
@@ -1493,7 +1484,7 @@ export const WelcomeInstaller: React.FC<WelcomeInstallerProps> = ({
 
             {/* Rice, Wallpaper & Theming (niri-btw) */}
             <div className="p-5 rounded-2xl bg-[#0e1116] border border-[#353c4a] space-y-3">
-              <span className="text-xs font-bold text-[#7ec789] uppercase tracking-wider block">
+              <span className="text-xs font-bold text-tinapple-green uppercase tracking-wider block">
                 Niri Rice & Wallpaper Engine (niri-btw)
               </span>
               <div className="space-y-2 text-xs">
@@ -1508,7 +1499,7 @@ export const WelcomeInstaller: React.FC<WelcomeInstallerProps> = ({
                   <div key={i} className="flex items-center justify-between py-1.5 border-b border-[#353c4a]/40">
                     <div className="flex gap-1.5">
                       {k.keys.map((key) => (
-                        <kbd key={key} className="px-2 py-0.5 rounded bg-[#161a22] text-[#7ec789] border border-[#353c4a] text-[11px]">
+                        <kbd key={key} className="px-2 py-0.5 rounded bg-[#161a22] text-tinapple-green border border-[#353c4a] text-[11px]">
                           {key}
                         </kbd>
                       ))}
@@ -1560,7 +1551,7 @@ export const WelcomeInstaller: React.FC<WelcomeInstallerProps> = ({
           className="space-y-6"
         >
           {tweakStatus && (
-            <div className="p-4 rounded-xl bg-[#e5b567]/15 border border-[#e5b567]/40 text-xs font-mono text-[#e5b567] flex items-center gap-2">
+            <div className="p-4 rounded-xl bg-tinapple-gold/15 border border-tinapple-gold/40 text-xs font-mono text-tinapple-gold flex items-center gap-2">
               <Sparkles className="w-4 h-4 shrink-0" />
               <span>{tweakStatus}</span>
             </div>
@@ -1569,7 +1560,6 @@ export const WelcomeInstaller: React.FC<WelcomeInstallerProps> = ({
           {/* Running Service Endpoints */}
           <SpotlightCard
             className="p-6 bg-[#0e1116] border-[#353c4a]"
-            spotlightColor="rgba(229, 181, 103, 0.1)"
           >
             <div className="mb-4 font-mono">
               <span className="text-xs font-bold text-white uppercase tracking-wider block">
@@ -1594,18 +1584,18 @@ export const WelcomeInstaller: React.FC<WelcomeInstallerProps> = ({
                   href={svc.url}
                   target="_blank"
                   rel="noreferrer"
-                  className="p-3.5 rounded-xl bg-[#161a22] border border-[#353c4a] hover:border-[#e5b567] transition-all flex items-center justify-between group"
+                  className="p-3.5 rounded-xl bg-[#161a22] border border-[#353c4a] hover:border-tinapple-gold transition-all flex items-center justify-between group"
                 >
                   <div className="flex items-center gap-2.5">
                     <AppBrandIcon id={svc.icon} size={24} />
                     <div>
-                      <span className="text-xs font-bold text-white group-hover:text-[#e5b567] transition-colors block">
+                      <span className="text-xs font-bold text-white group-hover:text-tinapple-gold transition-colors block">
                         {svc.name}
                       </span>
                       <span className="text-[10px] text-[#a4adbe]">{svc.desc}</span>
                     </div>
                   </div>
-                  <ExternalLink className="w-3.5 h-3.5 text-[#a4adbe] group-hover:text-[#e5b567]" />
+                  <ExternalLink className="w-3.5 h-3.5 text-[#a4adbe] group-hover:text-tinapple-gold" />
                 </a>
               ))}
             </div>
@@ -1615,18 +1605,18 @@ export const WelcomeInstaller: React.FC<WelcomeInstallerProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 font-mono">
             <button
               onClick={() => handleTweak('Wallpaper Refresh', '/api/v1/desktop/wallpaper/random')}
-              className="p-4 rounded-xl bg-[#161a22] border border-[#353c4a] hover:border-[#e5b567] text-left transition-all"
+              className="p-4 rounded-xl bg-[#161a22] border border-[#353c4a] hover:border-tinapple-gold text-left transition-all"
             >
-              <RefreshCw className="w-4 h-4 text-[#e5b567] mb-2" />
+              <RefreshCw className="w-4 h-4 text-tinapple-gold mb-2" />
               <span className="text-xs font-bold text-white block">Randomize Wallpaper</span>
               <span className="text-[11px] text-[#a4adbe]">Triggers Swww & Pywal color regen</span>
             </button>
 
             <button
               onClick={() => handleTweak('NTP Time Sync', '/api/v1/system/timesync')}
-              className="p-4 rounded-xl bg-[#161a22] border border-[#353c4a] hover:border-[#7ec789] text-left transition-all"
+              className="p-4 rounded-xl bg-[#161a22] border border-[#353c4a] hover:border-tinapple-green text-left transition-all"
             >
-              <Zap className="w-4 h-4 text-[#7ec789] mb-2" />
+              <Zap className="w-4 h-4 text-tinapple-green mb-2" />
               <span className="text-xs font-bold text-white block">Synchronize NTP Time</span>
               <span className="text-[11px] text-[#a4adbe]">Sync system clock with pool.ntp.org</span>
             </button>

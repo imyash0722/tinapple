@@ -4,6 +4,14 @@
 
 :root {
   color-scheme: dark;
+  --tinapple-accent: #e5b567;
+  --tinapple-accent-rgb: 229 181 103;
+  --tinapple-accent-glow: rgba(229, 181, 103, 0.35);
+  --tinapple-accent-secondary: #7ec789;
+  --tinapple-secondary-rgb: 126 199 137;
+  --glass-bg: rgba(18, 22, 31, 0.65);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-filter: blur(20px) saturate(180%);
 }
 
 body {
@@ -31,4 +39,59 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(122, 162, 247, 0.45);
+}
+
+/* Opacity variants are generated from the RGB variables in Tailwind. */
+.text-tinapple-gold { color: var(--tinapple-accent, #e5b567) !important; }
+.bg-tinapple-gold { background-color: var(--tinapple-accent, #e5b567) !important; }
+.border-tinapple-gold { border-color: var(--tinapple-accent, #e5b567) !important; }
+
+.tinapple-glass-card {
+  background-color: var(--glass-bg) !important;
+  background-image: none !important;
+  backdrop-filter: var(--glass-filter);
+  -webkit-backdrop-filter: var(--glass-filter);
+  border: 1px solid var(--glass-border) !important;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+}
+
+.appearance-drawer::backdrop {
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(4px);
+}
+
+/* Compatibility for legacy arbitrary accent utilities. New components use theme tokens. */
+[class*="text-[#e5b567]"],
+[class*="text-[#f59e0b]"] {
+  color: var(--tinapple-accent, #e5b567) !important;
+}
+[class*="bg-[#e5b567]"],
+[class*="bg-[#f59e0b]"] {
+  background-color: var(--tinapple-accent, #e5b567) !important;
+}
+[class*="border-[#e5b567]"],
+[class*="border-[#f59e0b]"] {
+  border-color: var(--tinapple-accent, #e5b567) !important;
+}
+[class*="ring-[#e5b567]"],
+[class*="ring-[#f59e0b]"] {
+  --tw-ring-color: var(--tinapple-accent, #e5b567) !important;
+}
+[class*="shadow-[#e5b567]"],
+[class*="shadow-[#f59e0b]"] {
+  --tw-shadow-color: var(--tinapple-accent-glow, rgba(229, 181, 103, 0.25)) !important;
+}
+[class*="from-[#e5b567]"],
+[class*="from-[#f59e0b]"] {
+  --tw-gradient-from: var(--tinapple-accent, #e5b567) var(--tw-gradient-from-position) !important;
+  --tw-gradient-to: transparent var(--tw-gradient-to-position) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+}
+[class*="via-[#e5b567]"],
+[class*="via-[#f59e0b]"] {
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tinapple-accent, #e5b567) var(--tw-gradient-via-position), var(--tw-gradient-to) !important;
+}
+[class*="to-[#f59e0b]"],
+[class*="to-[#e5b567]"] {
+  --tw-gradient-to: var(--tinapple-accent-secondary, var(--tinapple-accent, #7ec789)) var(--tw-gradient-to-position) !important;
 }

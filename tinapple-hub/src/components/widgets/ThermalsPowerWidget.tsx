@@ -25,7 +25,7 @@ export const ThermalsPowerWidget: React.FC<ThermalsPowerWidgetProps> = ({
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
       {/* THERMALS & ACOUSTICS */}
-      <SpotlightCard className="p-6" spotlightColor="rgba(229, 181, 103, 0.15)" borderColor="rgba(229, 181, 103, 0.4)">
+      <SpotlightCard className="p-6" spotlightColor="rgb(var(--tinapple-accent-rgb) / 0.15)" borderColor="rgb(var(--tinapple-accent-rgb) / 0.4)">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-2xl bg-tinapple-gold/15 text-tinapple-gold border border-tinapple-gold/25">
@@ -88,7 +88,7 @@ export const ThermalsPowerWidget: React.FC<ThermalsPowerWidgetProps> = ({
       </SpotlightCard>
 
       {/* POWER GOVERNOR */}
-      <SpotlightCard className="p-6" spotlightColor="rgba(126, 199, 137, 0.15)" borderColor="rgba(126, 199, 137, 0.4)">
+      <SpotlightCard className="p-6" spotlightColor="rgb(var(--tinapple-secondary-rgb) / 0.15)" borderColor="rgb(var(--tinapple-secondary-rgb) / 0.4)">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-2xl bg-tinapple-green/15 text-tinapple-green border border-tinapple-green/25">
@@ -137,7 +137,7 @@ export const ThermalsPowerWidget: React.FC<ThermalsPowerWidgetProps> = ({
       </SpotlightCard>
 
       {/* BATTERY & BMS CHARGE LIMIT */}
-      <SpotlightCard className="p-6" spotlightColor="rgba(229, 181, 103, 0.15)" borderColor="rgba(229, 181, 103, 0.4)">
+      <SpotlightCard className="p-6" spotlightColor="rgb(var(--tinapple-accent-rgb) / 0.15)" borderColor="rgb(var(--tinapple-accent-rgb) / 0.4)">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-2xl bg-tinapple-gold/15 text-tinapple-gold border border-tinapple-gold/25">

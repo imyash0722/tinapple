@@ -3,6 +3,7 @@ import { SystemInfo, TelemetrySnapshot, ServiceInfo, HardwareInfo, SessionMode, 
 const API_BASE = '/api/v1';
 
 export const MOCK_SYSTEM_INFO: SystemInfo = {
+  installed: false,
   hostname: 'tinapple-appliance',
   kernel: '6.12.8-cachyos-tinapple',
   uptime: 7260,
@@ -294,6 +295,7 @@ class ApiService {
       if (!res.ok) throw new Error('API offline');
       const data = await res.json();
       return {
+        installed: data.installed === true,
         hostname: data.hostname || 'tinapple-server',
         kernel: data.kernel ? `linux-${data.kernel}` : 'linux-cachyos',
         uptime: typeof data.uptime === 'number' ? data.uptime : 7260,

@@ -1,13 +1,7 @@
 import React from 'react';
 import { Cpu, Shield, Disc, CircuitBoard, Server, CheckCircle2, Zap } from 'lucide-react';
 import { SpotlightCard } from '../reactbits/SpotlightCard';
-import TechText from '../reactbits/TechText';
-import ElectricLogo from '../reactbits/ElectricLogo';
 import { HardwareInfo } from '../../types/api';
-
-const HARDWARE_BADGE_SVG = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
-  '<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96"><path d="M48 8 L72 32 L48 56 L24 32 Z M48 40 L72 64 L48 88 L24 64 Z" fill="#ffffff" fill-rule="evenodd"/><circle cx="48" cy="48" r="6" fill="#ffffff"/></svg>'
-)}`;
 
 interface HardwareSensorsProps {
   hardware: HardwareInfo;
@@ -16,21 +10,13 @@ interface HardwareSensorsProps {
 export const HardwareSensors: React.FC<HardwareSensorsProps> = ({ hardware }) => {
   return (
     <div className="space-y-5">
-      {/* Blueprint Header with TechText */}
+      {/* Hardware Header */}
       <div className="p-5 rounded-2xl bg-gradient-to-r from-tinapple-card/90 via-tinapple-surface/90 to-tinapple-card/90 border border-tinapple-border backdrop-blur-2xl flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="h-7 w-96 mb-1">
-            <TechText
-              text="HARDWARE ATTESTATION & TOPOLOGY"
-              fontSize={14}
-              fontWeight={800}
-              color="#ffffff"
-              accentColor="#e5b567"
-              labels={true}
-              guides={true}
-              intro="metrics"
-              clickKick={true}
-            />
+          <div className="mb-1">
+            <h2 className="text-base font-mono font-bold tracking-wider text-white uppercase">
+              HARDWARE ATTESTATION & TOPOLOGY
+            </h2>
           </div>
           <p className="text-xs text-tinapple-subtext font-mono">
             Low-level firmware telemetry, TPM 2.0 silicon endorsement, and PCI bus topology.
@@ -46,7 +32,7 @@ export const HardwareSensors: React.FC<HardwareSensorsProps> = ({ hardware }) =>
       {/* Overview Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         {/* PLATFORM PROFILE */}
-        <SpotlightCard className="p-6" spotlightColor="rgba(229, 181, 103, 0.15)" borderColor="rgba(229, 181, 103, 0.4)">
+        <SpotlightCard className="p-6" spotlightColor="rgb(var(--tinapple-accent-rgb) / 0.15)" borderColor="rgb(var(--tinapple-accent-rgb) / 0.4)">
           <div className="flex items-center gap-3 mb-3">
             <div className="p-2.5 rounded-2xl bg-tinapple-gold/15 text-tinapple-gold border border-tinapple-gold/25">
               <Server className="w-5 h-5" />
@@ -79,7 +65,7 @@ export const HardwareSensors: React.FC<HardwareSensorsProps> = ({ hardware }) =>
         </SpotlightCard>
 
         {/* SECURITY & TPM */}
-        <SpotlightCard className="p-6" spotlightColor="rgba(126, 199, 137, 0.15)" borderColor="rgba(126, 199, 137, 0.4)">
+        <SpotlightCard className="p-6" spotlightColor="rgb(var(--tinapple-secondary-rgb) / 0.15)" borderColor="rgb(var(--tinapple-secondary-rgb) / 0.4)">
           <div className="flex items-center gap-3 mb-3">
             <div className="p-2.5 rounded-2xl bg-tinapple-green/15 text-tinapple-green border border-tinapple-green/25">
               <Shield className="w-5 h-5" />
@@ -123,7 +109,7 @@ export const HardwareSensors: React.FC<HardwareSensorsProps> = ({ hardware }) =>
         </SpotlightCard>
 
         {/* GPU & ACCELERATION */}
-        <SpotlightCard className="p-6" spotlightColor="rgba(229, 181, 103, 0.15)" borderColor="rgba(229, 181, 103, 0.4)">
+        <SpotlightCard className="p-6" spotlightColor="rgb(var(--tinapple-accent-rgb) / 0.15)" borderColor="rgb(var(--tinapple-accent-rgb) / 0.4)">
           <div className="flex items-center gap-3 mb-3">
             <div className="p-2.5 rounded-2xl bg-tinapple-gold/15 text-tinapple-gold border border-tinapple-gold/25">
               <CircuitBoard className="w-5 h-5" />
@@ -158,25 +144,13 @@ export const HardwareSensors: React.FC<HardwareSensorsProps> = ({ hardware }) =>
         </SpotlightCard>
       </div>
 
-      {/* Silicon Cryptographic Attestation Card with ElectricLogo */}
-      <SpotlightCard className="p-6" spotlightColor="rgba(229, 181, 103, 0.2)" borderColor="rgba(229, 181, 103, 0.45)">
+      {/* Silicon Cryptographic Attestation Card */}
+      <SpotlightCard className="p-6" spotlightColor="rgb(var(--tinapple-accent-rgb) / 0.2)" borderColor="rgb(var(--tinapple-accent-rgb) / 0.45)">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-5">
-            {/* Active ElectricLogo Silicon Seal */}
+            {/* Silicon Seal */}
             <div className="relative w-24 h-24 rounded-2xl bg-tinapple-dark/90 border border-tinapple-border overflow-hidden p-2 flex items-center justify-center shadow-lg shadow-tinapple-gold/10">
-              <ElectricLogo
-                src={HARDWARE_BADGE_SVG}
-                color="#e5b567"
-                glowColor="#7ec789"
-                scale={0.9}
-                thickness={2}
-                intensity={1.5}
-                glow={0.9}
-                arcs={5}
-                speed={1.2}
-                interactive={true}
-                className="w-full h-full"
-              />
+              <Cpu className="w-10 h-10 text-tinapple-gold" />
             </div>
 
             <div>
@@ -213,7 +187,7 @@ export const HardwareSensors: React.FC<HardwareSensorsProps> = ({ hardware }) =>
       </SpotlightCard>
 
       {/* Storage Physical Disks */}
-      <SpotlightCard className="p-6" spotlightColor="rgba(126, 199, 137, 0.12)" borderColor="rgba(126, 199, 137, 0.35)">
+      <SpotlightCard className="p-6" spotlightColor="rgb(var(--tinapple-secondary-rgb) / 0.12)" borderColor="rgb(var(--tinapple-secondary-rgb) / 0.35)">
         <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2 font-mono uppercase tracking-wide">
           <Disc className="w-4 h-4 text-tinapple-green" />
           <span>Physical Storage Controller & Attached Drives</span>

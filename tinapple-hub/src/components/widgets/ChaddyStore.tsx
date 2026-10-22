@@ -21,7 +21,6 @@ import {
 import confetti from 'canvas-confetti';
 import { SpotlightCard } from '../reactbits/SpotlightCard';
 import CircularCarousel, { CircularCarouselItem } from '../reactbits/CircularCarousel';
-import TechText from '../reactbits/TechText';
 import { AppBrandIcon } from '../common/AppBrandIcons';
 import { api } from '../../services/api';
 import { AppInfo } from '../../types/api';
@@ -435,7 +434,7 @@ export const ChaddyStore: React.FC = () => {
             particleCount: 70,
             spread: 60,
             origin: { y: 0.6 },
-            colors: ['#e5b567', '#10b981', '#3b82f6'],
+            colors: [getComputedStyle(document.documentElement).getPropertyValue('--tinapple-accent').trim(), getComputedStyle(document.documentElement).getPropertyValue('--tinapple-accent-secondary').trim(), '#ffffff'],
           });
         }
       } else if (action === 'uninstall') {
@@ -549,11 +548,10 @@ export const ChaddyStore: React.FC = () => {
             <span>Tinapple Appliance & App Management</span>
           </div>
 
-          <div className="h-8 w-80 mb-1">
-            <TechText
-              text="APPLIANCE STORE & LIFECYCLE"
-              className="text-xl md:text-2xl font-black text-white tracking-tight"
-            />
+          <div className="mb-1">
+            <h2 className="text-xl md:text-2xl font-black text-white tracking-tight font-mono uppercase">
+              APPLIANCE STORE & LIFECYCLE
+            </h2>
           </div>
 
           <p className="text-xs md:text-sm text-tinapple-subtext leading-relaxed">
@@ -615,19 +613,17 @@ export const ChaddyStore: React.FC = () => {
           <div className="relative rounded-2xl bg-tinapple-card/60 border border-tinapple-border/80 backdrop-blur-xl p-4 overflow-hidden flex items-center justify-center min-h-[380px]">
             <CircularCarousel
               items={carouselItems}
-              radius={220}
               cardWidth={170}
-              cardHeight={210}
-              onSelect={(idx) => setSelectedIndex(idx)}
-              selectedIndex={selectedIndex}
+              aspectRatio={170 / 210}
+              curve={220}
+              onChange={(idx) => setSelectedIndex(idx)}
+              onItemClick={(_item, idx) => setSelectedIndex(idx)}
             />
           </div>
 
           {/* Selected App Inspector Card */}
           <SpotlightCard
             className="p-6 md:p-8"
-            spotlightColor={`${selectedApp.accentColor}25`}
-            borderColor={`${selectedApp.accentColor}60`}
           >
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 pb-6 border-b border-tinapple-border/70">
               <div className="flex items-center gap-4">
@@ -764,8 +760,6 @@ export const ChaddyStore: React.FC = () => {
               <SpotlightCard
                 key={app.id}
                 className="p-6 flex flex-col justify-between"
-                spotlightColor={`${app.accentColor}18`}
-                borderColor={`${app.accentColor}40`}
               >
                 <div>
                   {/* Card Header */}

@@ -19,7 +19,6 @@ import {
 import { SpotlightCard } from '../reactbits/SpotlightCard';
 import { SquishSwitch } from '../reactbits/SquishSwitch';
 import HoldButton from '../reactbits/HoldButton';
-import TechText from '../reactbits/TechText';
 import { SystemInfo, SessionMode } from '../../types/api';
 
 interface SettingsManifestProps {
@@ -275,8 +274,8 @@ export const SettingsManifest: React.FC<SettingsManifestProps> = ({
     <div className="space-y-6">
       <SpotlightCard
         className="p-6 bg-[#0e1116] border-[#353c4a]"
-        spotlightColor="rgba(229, 181, 103, 0.15)"
-        borderColor="rgba(229, 181, 103, 0.45)"
+        spotlightColor="rgb(var(--tinapple-accent-rgb) / 0.15)"
+        borderColor="rgb(var(--tinapple-accent-rgb) / 0.45)"
       >
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
@@ -285,18 +284,10 @@ export const SettingsManifest: React.FC<SettingsManifestProps> = ({
               <Settings className="w-5 h-5" />
             </div>
             <div>
-              <div className="h-6 w-80">
-                <TechText
-                  text="SYSTEM MANIFEST ENGINE"
-                  fontSize={13}
-                  fontWeight={800}
-                  color="#ffffff"
-                  accentColor="#e5b567"
-                  labels={true}
-                  guides={true}
-                  intro="metrics"
-                  clickKick={true}
-                />
+              <div>
+                <h2 className="text-lg font-bold text-white tracking-tight font-mono uppercase">
+                  SYSTEM MANIFEST ENGINE
+                </h2>
               </div>
               <p className="text-xs text-tinapple-subtext font-mono mt-0.5">
                 Validates and compiles parameters into <code className="text-tinapple-gold">/etc/tinapple/manifest.yaml</code>
