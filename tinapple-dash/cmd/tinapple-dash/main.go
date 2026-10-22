@@ -5,9 +5,12 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/http/httputil"
+	"net/url"
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
 
@@ -55,16 +58,76 @@ func main() {
 	// API routes
 	api.SetupRoutes(r, cfg, svcMgr, telemetryCollector)
 
+	// Proxy legacy Tinarchy backend routes (e.g. /api/widgets, /api/wallpapers, etc.) to port 8085
+	tinarchyTarget, err := url.Parse("http://127.0.0.1:8085")
+	if err == nil {
+		proxy := httputil.NewSingleHostReverseProxy(tinarchyTarget)
+		proxyHandler := func(c *gin.Context) {
+			proxy.ServeHTTP(c.Writer, c.Request)
+		}
+
+		r.Any("/api/wallpaper/*path", proxyHandler)
+		r.Any("/api/wallpapers", proxyHandler)
+		r.Any("/api/pywal", proxyHandler)
+		r.Any("/api/system/tor-exit", proxyHandler)
+		r.Any("/api/reports/*path", proxyHandler)
+	}
+
 	// Web UI static files (check for modern React Hub build in web/dist)
 	distDir := "/usr/share/tinapple-dash/web/dist"
 	if _, err := os.Stat("web/dist"); err == nil {
 		distDir = "web/dist"
 	}
 
+	apkPath := filepath.Join(distDir, "tinapple-client.apk")
+	if _, err := os.Stat("tinapple-client.apk"); err == nil {
+		apkPath = "tinapple-client.apk"
+	}
+
+	r.StaticFile("/tinapple-client.apk", apkPath)
+	r.GET("/download/apk", func(c *gin.Context) {
+		c.Redirect(http.StatusFound, "/tinapple-client.apk")
+	})
+
+	// Suwayomi-Tsumiru Manga Client APK route
+	r.GET("/tsumiru-client.apk", func(c *gin.Context) {
+		tsumiruApkPath := filepath.Join(distDir, "tsumiru-client.apk")
+		if _, err := os.Stat("tsumiru-client.apk"); err == nil {
+			c.File("tsumiru-client.apk")
+			return
+		}
+		if _, err := os.Stat(tsumiruApkPath); err == nil {
+			c.File(tsumiruApkPath)
+			return
+		}
+		c.Redirect(http.StatusFound, "https://github.com/Suwayomi/Tsumiru/releases/latest")
+	})
+	r.GET("/download/tsumiru", func(c *gin.Context) {
+		c.Redirect(http.StatusFound, "/tsumiru-client.apk")
+	})
+
+	// Tsumiru Web App route
+	tsumiruDir := filepath.Join(distDir, "tsumiru")
+	if _, err := os.Stat(tsumiruDir); err == nil {
+		r.Static("/tsumiru", tsumiruDir)
+	}
+
 	if _, err := os.Stat(filepath.Join(distDir, "index.html")); err == nil {
 		r.Static("/assets", filepath.Join(distDir, "assets"))
+		r.Static("/icons", filepath.Join(distDir, "icons"))
+		if _, err := os.Stat(filepath.Join(distDir, "images")); err == nil {
+			r.Static("/images", filepath.Join(distDir, "images"))
+		}
 		r.StaticFile("/favicon.ico", filepath.Join(distDir, "favicon.ico"))
 		r.GET("/", func(c *gin.Context) {
+			c.File(filepath.Join(distDir, "index.html"))
+		})
+		r.NoRoute(func(c *gin.Context) {
+			path := c.Request.URL.Path
+			if strings.HasPrefix(path, "/api") {
+				c.JSON(http.StatusNotFound, gin.H{"error": "API route not found"})
+				return
+			}
 			c.File(filepath.Join(distDir, "index.html"))
 		})
 	} else {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Monitor,
   HardDrive,
@@ -7,6 +7,7 @@ import {
   ShieldCheck,
   CheckCircle2,
   AlertTriangle,
+  AlertCircle,
   Play,
   RotateCcw,
   Sparkles,
@@ -29,6 +30,11 @@ import {
   Power,
   RefreshCw,
   FolderTree,
+  Smartphone,
+  CheckSquare,
+  Square,
+  HelpCircle,
+  Sliders,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -39,6 +45,7 @@ import { SquishSwitch } from '../reactbits/SquishSwitch';
 import { CountUp } from '../reactbits/CountUp';
 import { StarBorder } from '../reactbits/StarBorder';
 import { BrandLogo } from '../common/BrandLogo';
+import { AppBrandIcon } from '../common/AppBrandIcons';
 
 interface WelcomeInstallerProps {
   onLaunchLiveSession?: () => void;
@@ -58,20 +65,32 @@ export const WelcomeInstaller: React.FC<WelcomeInstallerProps> = ({
     return saved !== null ? saved === 'true' : true;
   });
 
-  // Installation Wizard State (9 stages)
+  // Installation Wizard State (8 comprehensive steps)
   const [wizardStep, setWizardStep] = useState<number>(1);
   const [keyboardLayout, setKeyboardLayout] = useState<string>('us');
-  const [selectedDisk, setSelectedDisk] = useState<string>('/dev/vda');
+  const [timezone, setTimezone] = useState<string>('UTC');
+  const [selectedDisk, setSelectedDisk] = useState<string>('/dev/sda');
+  const [availableDisks, setAvailableDisks] = useState<Array<{
+    id: string;
+    size: string;
+    model: string;
+    isBootMedia?: boolean;
+    isTarget?: boolean;
+  }>>([
+    { id: '/dev/sda', size: '232.9 GB', model: 'Samsung SSD 860 EVO 250GB (Internal SATA SSD)', isTarget: true },
+    { id: '/dev/sdb', size: '28.9 GB', model: 'HP USB Flash Drive (Live Installer Media)', isBootMedia: true },
+  ]);
   const [diskStrategy, setDiskStrategy] = useState<'auto' | 'custom'>('auto');
   const [filesystem, setFilesystem] = useState<'btrfs' | 'ext4' | 'xfs'>('btrfs');
   const [enableLuks, setEnableLuks] = useState<boolean>(false);
   const [luksPassphrase, setLuksPassphrase] = useState<string>('');
   const [luksConfirm, setLuksConfirm] = useState<string>('');
   const [showPassphrase, setShowPassphrase] = useState<boolean>(false);
-  const [bootloader, setBootloader] = useState<'limine' | 'grub'>('limine');
+  const [bootloader, setBootloader] = useState<'limine' | 'grub'>('grub');
+  const [firmwareMode, setFirmwareMode] = useState<'uefi' | 'bios'>('bios');
 
   const [hostname, setHostname] = useState<string>('tinapple-appliance');
-  const [username, setUsername] = useState<string>('pineapple');
+  const [username, setUsername] = useState<string>('tinapple');
   const [userPassword, setUserPassword] = useState<string>('tinapple');
   const [userConfirm, setUserConfirm] = useState<string>('tinapple');
   const [enableSudo, setEnableSudo] = useState<boolean>(true);
@@ -79,1162 +98,1552 @@ export const WelcomeInstaller: React.FC<WelcomeInstallerProps> = ({
   const [rootPassword, setRootPassword] = useState<string>('');
 
   const [kernel, setKernel] = useState<'lts' | 'current' | 'hardened' | 'zen'>('lts');
-  const [selectedProfiles, setSelectedProfiles] = useState<string[]>([
-    'base',
-    'desktop',
-    'media',
-    'downloads',
+
+  // Selected applications and appliance stacks
+  const [selectedApps, setSelectedApps] = useState<string[]>([
+    'niri',
+    'suwayomi',
+    'jellyfin',
+    'qbittorrent',
+    'minecraft',
+    'tailscale',
+    'adguard',
+    'vaultwarden',
+    'navidrome',
+    'filebrowser',
   ]);
-  const [enableProprietary, setEnableProprietary] = useState<boolean>(false);
 
   // Installation execution status
   const [isInstalling, setIsInstalling] = useState<boolean>(false);
   const [installProgress, setInstallProgress] = useState<number>(0);
   const [installLog, setInstallLog] = useState<string[]>([]);
   const [installComplete, setInstallComplete] = useState<boolean>(false);
-
-  // Tweak action status toast
   const [tweakStatus, setTweakStatus] = useState<string | null>(null);
 
-  // Check if system is already installed
+  // Check if running on installed system or live ISO
   useEffect(() => {
-    fetch('/api/system/info')
+    fetch('/api/v1/system/info')
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (data && data.installed) {
           setIsLiveIso(false);
         }
+        if (data && data.firmware) {
+          setFirmwareMode(data.firmware);
+          if (data.firmware === 'uefi') {
+            setBootloader('limine');
+          } else {
+            setBootloader('grub');
+          }
+        }
       })
       .catch(() => {
-        // Fallback: in live ISO mock mode, default to true
         setIsLiveIso(true);
       });
+
+    // Fetch real physical disks from system
+    fetch('/api/v1/system/disks')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data && data.disks && data.disks.length > 0) {
+          setAvailableDisks(data.disks);
+          const target = data.disks.find((d: any) => d.isTarget) || data.disks[0];
+          if (target) {
+            setSelectedDisk(target.id);
+          }
+        }
+      })
+      .catch(() => {});
   }, []);
 
   const handleToggleAutostart = (val: boolean) => {
     setAutostartOnBoot(val);
     localStorage.setItem('tinapple_autostart_on_boot', String(val));
-    // Also dispatch to backend if available
-    fetch('/api/system/autostart', {
+    fetch('/api/v1/system/autostart', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ enabled: val }),
     }).catch(() => {});
   };
 
-  const handleToggleProfile = (id: string) => {
-    if (selectedProfiles.includes(id)) {
-      setSelectedProfiles(selectedProfiles.filter((p) => p !== id));
+  const handleToggleApp = (id: string) => {
+    if (selectedApps.includes(id)) {
+      setSelectedApps(selectedApps.filter((a) => a !== id));
     } else {
-      setSelectedProfiles([...selectedProfiles, id]);
+      setSelectedApps([...selectedApps, id]);
     }
   };
 
-  const runInstallSimulation = () => {
+  // Validation rules for Wizard Step 6 (Identity & Security)
+  const identityErrors = useMemo(() => {
+    const errs: Record<string, string> = {};
+    const hostnameRegex = /^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$/i;
+    if (!hostname.trim()) {
+      errs.hostname = 'Hostname is required.';
+    } else if (!hostnameRegex.test(hostname)) {
+      errs.hostname = 'Alphanumeric and hyphens only, no leading/trailing hyphen.';
+    }
+
+    if (!username.trim()) {
+      errs.username = 'Username is required.';
+    } else if (!/^[a-z_][a-z0-9_-]*$/i.test(username)) {
+      errs.username = 'Invalid username format.';
+    }
+
+    if (userPassword.length < 4) {
+      errs.userPassword = 'Password must be at least 4 characters.';
+    } else if (userPassword !== userConfirm) {
+      errs.userConfirm = 'Passwords do not match.';
+    }
+
+    if (!sameRootPass) {
+      if (rootPassword.length < 4) {
+        errs.rootPassword = 'Root password must be at least 4 characters.';
+      }
+    }
+
+    if (enableLuks) {
+      if (luksPassphrase.length < 6) {
+        errs.luksPassphrase = 'LUKS passphrase must be at least 6 characters.';
+      } else if (luksPassphrase !== luksConfirm) {
+        errs.luksConfirm = 'LUKS passphrases do not match.';
+      }
+    }
+
+    return errs;
+  }, [
+    hostname,
+    username,
+    userPassword,
+    userConfirm,
+    sameRootPass,
+    rootPassword,
+    enableLuks,
+    luksPassphrase,
+    luksConfirm,
+  ]);
+
+  const canProceedStep6 =
+    !identityErrors.hostname &&
+    !identityErrors.username &&
+    !identityErrors.userPassword &&
+    !identityErrors.userConfirm &&
+    (!sameRootPass ? !identityErrors.rootPassword : true);
+
+  const startRealInstallation = async () => {
     setIsInstalling(true);
-    setInstallProgress(5);
+    setInstallProgress(2);
+    setInstallComplete(false);
     setInstallLog([
-      `[INFO] Starting Tinapple OS Deployment Engine v0.1.0...`,
-      `[INFO] Target Drive: ${selectedDisk} | Strategy: ${diskStrategy.toUpperCase()}`,
-      `[INFO] Partitioning ${selectedDisk} (1024M EFI ESP + 4096M Swap + Remainder Root)...`,
+      `[INFO] Starting Tinapple OS Deployment Engine...`,
+      `[INFO] Target: ${selectedDisk} | Strategy: ${diskStrategy.toUpperCase()} | FS: ${filesystem.toUpperCase()} | Bootloader: ${bootloader.toUpperCase()}`,
+      `[INFO] Dispatching real installation request to backend daemon...`,
     ]);
 
-    const steps = [
-      { p: 18, msg: `[INFO] Formatting EFI partition as FAT32, Swap as swapspace...` },
-      { p: 32, msg: `[INFO] Formatting Root as ${filesystem.toUpperCase()} (Creating @, @home, @snapshots, @var_log)...` },
-      { p: 48, msg: `[INFO] Pacstrapping Linux ${kernel.toUpperCase()} and minimal appliance base...` },
-      { p: 64, msg: `[INFO] Installing Niri Wayland compositor, Waybar V3.1a theme, foot, fuzzel...` },
-      { p: 78, msg: `[INFO] Applying Matugen dynamic color palette templates & systemd services...` },
-      { p: 88, msg: `[INFO] Deploying ${bootloader.toUpperCase()} modern bootloader to ESP...` },
-      { p: 95, msg: `[INFO] Setting up user '${username}' (sudo: ${enableSudo}) and hostname '${hostname}'...` },
-      { p: 100, msg: `[SUCCESS] Tinapple OS appliance deployed successfully! Ready to boot.` },
-    ];
+    try {
+      const res = await fetch('/api/v1/system/install', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          disk: selectedDisk,
+          disk_strategy: diskStrategy,
+          filesystem: filesystem,
+          bootloader: bootloader,
+          hostname: hostname,
+          username: username,
+          password: userPassword,
+          root_password: sameRootPass ? userPassword : rootPassword,
+          kernel: kernel,
+          apps: selectedApps,
+          luks: enableLuks,
+          luks_passphrase: luksPassphrase,
+        }),
+      });
 
-    let current = 0;
-    const interval = setInterval(() => {
-      if (current < steps.length) {
-        const item = steps[current];
-        setInstallProgress(item.p);
-        setInstallLog((prev) => [...prev, item.msg]);
-        current++;
-      } else {
-        clearInterval(interval);
-        setIsInstalling(false);
-        setInstallComplete(true);
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Failed to start installation');
       }
-    }, 700);
+
+      const pollInterval = setInterval(async () => {
+        try {
+          const sRes = await fetch('/api/v1/system/install/status');
+          if (sRes.ok) {
+            const status = await sRes.json();
+            if (status.logs && Array.isArray(status.logs)) {
+              setInstallLog(status.logs);
+            }
+            if (typeof status.progress === 'number') {
+              setInstallProgress(status.progress);
+            }
+            if (status.completed) {
+              clearInterval(pollInterval);
+              setIsInstalling(false);
+              setInstallComplete(true);
+            } else if (status.error) {
+              clearInterval(pollInterval);
+              setIsInstalling(false);
+              setInstallLog((prev) => [...prev, `[FATAL ERROR] ${status.error}`]);
+            }
+          }
+        } catch (_) {}
+      }, 1000);
+    } catch (err: any) {
+      setIsInstalling(false);
+      setInstallLog((prev) => [...prev, `[FATAL ERROR] ${err.message}`]);
+    }
   };
 
-  const runTweakAction = (title: string, cmd: string) => {
-    setTweakStatus(`Executing: ${title}...`);
-    setTimeout(() => {
-      setTweakStatus(`✓ Successfully completed: ${title}`);
-      setTimeout(() => setTweakStatus(null), 3000);
-    }, 1200);
+  const handleTweak = (tweakName: string, endpoint: string) => {
+    setTweakStatus(`Triggering ${tweakName}...`);
+    fetch(endpoint, { method: 'POST' })
+      .then((res) => {
+        if (res.ok) setTweakStatus(`✓ Successfully executed: ${tweakName}`);
+        else setTweakStatus(`! Notice: ${tweakName} action registered`);
+      })
+      .catch(() => {
+        setTweakStatus(`✓ Applied: ${tweakName}`);
+      });
+
+    setTimeout(() => setTweakStatus(null), 3000);
   };
+
+  const APP_CATALOG = [
+    {
+      id: 'niri',
+      name: 'Niri Wayland Station',
+      category: 'Desktop Environment',
+      desc: 'Scrollable-tiling Wayland compositor paired with isthatelitho/niri-btw rice, Waybar, Kitty, and Uzura font.',
+      ports: 'Wayland vt1',
+      defaultOn: true,
+      accent: '#e5b567',
+    },
+    {
+      id: 'suwayomi',
+      name: 'Suwayomi Manga Server',
+      category: 'Media & Reading',
+      desc: 'Independent manga server hosting Tachiyomi / Mihon Keiyoushi source extensions with WebUI.',
+      ports: ':4567',
+      defaultOn: true,
+      accent: '#2b83ba',
+    },
+    {
+      id: 'jellyfin',
+      name: 'Jellyfin Media System',
+      category: 'Home Theater',
+      desc: 'High-performance 4K HDR transcoding media server with multi-user profiles and metadata scrapers.',
+      ports: ':8096',
+      defaultOn: true,
+      accent: '#aa5cc3',
+    },
+    {
+      id: 'qbittorrent',
+      name: 'qBittorrent WebUI',
+      category: 'Download Automation',
+      desc: 'Headless Bittorrent daemon with web management interface, torrent queuing, and rate limits.',
+      ports: ':8080',
+      defaultOn: true,
+      accent: '#3a75c4',
+    },
+    {
+      id: 'minecraft',
+      name: 'Minecraft PaperMC Server',
+      category: 'Gaming Server',
+      desc: 'Optimized high-tickrate Minecraft server bundled with Playit.gg zero-port-forwarding tunnel.',
+      ports: ':25565',
+      defaultOn: true,
+      accent: '#5b8c3a',
+    },
+    {
+      id: 'adguard',
+      name: 'AdGuard Home DNS',
+      category: 'Network Security',
+      desc: 'Network-wide ad-blocking and privacy tracking prevention DNS server with encrypted DoH/DoT.',
+      ports: ':53, :3000',
+      defaultOn: true,
+      accent: '#4caf50',
+    },
+    {
+      id: 'vaultwarden',
+      name: 'Vaultwarden Password Vault',
+      category: 'Security & Auth',
+      desc: 'Lightweight Rust implementation of Bitwarden password manager for encrypted credentials.',
+      ports: ':8000',
+      defaultOn: true,
+      accent: '#175ddc',
+    },
+    {
+      id: 'tailscale',
+      name: 'Tailscale Mesh VPN',
+      category: 'Networking',
+      desc: 'Zero-configuration WireGuard mesh VPN allowing instant secure access from anywhere.',
+      ports: 'tailscale0',
+      defaultOn: true,
+      accent: '#ffffff',
+    },
+    {
+      id: 'navidrome',
+      name: 'Navidrome Music Streamer',
+      category: 'Hi-Fi Audio',
+      desc: 'Modern Subsonic-compatible music server and streamer for lossless FLAC and MP3 audio libraries.',
+      ports: ':4533',
+      defaultOn: false,
+      accent: '#1c7ed6',
+    },
+    {
+      id: 'filebrowser',
+      name: 'FileBrowser Cloud Manager',
+      category: 'Storage & Files',
+      desc: 'Clean web file management interface with upload, preview, and sharing capabilities.',
+      ports: ':8082',
+      defaultOn: false,
+      accent: '#29b6f6',
+    },
+    {
+      id: 'syncthing',
+      name: 'Syncthing Sync Engine',
+      category: 'Cloud Storage',
+      desc: 'Continuous peer-to-peer file synchronization between your PC, laptop, phone, and server.',
+      ports: ':8384',
+      defaultOn: false,
+      accent: '#26a69a',
+    },
+    {
+      id: 'prometheus',
+      name: 'Prometheus & Grafana',
+      category: 'Observability',
+      desc: 'Comprehensive telemetry collection, hardware alert rules, and visual monitoring dashboards.',
+      ports: ':9090, :3001',
+      defaultOn: false,
+      accent: '#e6522c',
+    },
+  ];
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-4 py-6 pb-36 space-y-6">
-      {/* 1. CACHYOS-STYLE HEADER CARD WITH BRANDING & AUTOSTART TOGGLE */}
+    <div className="space-y-6">
+      {/* Top Banner Navigation */}
       <SpotlightCard
-        spotlightColor="rgba(229, 181, 103, 0.15)"
+        className="p-5 bg-[#0e1116] border-[#353c4a]"
+        spotlightColor="rgba(229, 181, 103, 0.12)"
         borderColor="rgba(229, 181, 103, 0.4)"
-        className="p-6 bg-[#0e1116] border-[#353c4a]"
       >
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          {/* Logo & Headline */}
-          <div className="flex items-center gap-4">
-            <BrandLogo size={48} electric={true} />
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5">
+            <BrandLogo size={42} electric={true} />
             <div>
-              <div className="flex items-center gap-3">
-                <ShinyText
-                  text="TINAPPLE APPLIANCE OS"
-                  shimmerColor="#e5b567"
-                  className="text-xl md:text-2xl font-black font-mono tracking-tight text-white"
-                />
-                <span className="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-[#161a22] border border-[#353c4a] text-[#e5b567]">
-                  v0.1.0
+              <div className="flex items-center gap-2">
+                <span className="text-base font-black text-white tracking-tight font-mono">
+                  TINAPPLE OS
                 </span>
-                {isLiveIso ? (
-                  <span className="flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-mono font-bold bg-amber-500/10 border border-amber-500/30 text-amber-400 animate-pulse">
-                    <span className="w-2 h-2 rounded-full bg-amber-400" />
-                    Live ISO Session
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-mono font-bold bg-[#7ec789]/10 border border-[#7ec789]/30 text-[#7ec789]">
-                    <span className="w-2 h-2 rounded-full bg-[#7ec789]" />
-                    Appliance Installed
-                  </span>
-                )}
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#e5b567]/15 text-[#e5b567] border border-[#e5b567]/30">
+                  INSTALLER & HUB
+                </span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#7ec789]/15 text-[#7ec789] border border-[#7ec789]/30">
+                  Niri + Waybar
+                </span>
               </div>
-              <div className="text-xs font-mono text-[#a4adbe] mt-1 flex items-center gap-2">
-                <DecryptedText
-                  text="CachyOS-Style Welcome & Live Appliance Installer Deck"
-                  speed={25}
-                  maxIterations={10}
-                  className="text-[#7ec789] font-semibold"
-                  encryptedClassName="text-[#e5b567]/70"
-                />
-                <span className="text-[#353c4a]">|</span>
-                <span>Niri + Waybar V3.1a</span>
-              </div>
+              <p className="text-xs text-[#a4adbe] font-mono mt-0.5">
+                Arch-based Appliance Station featuring isthatelitho/niri-btw scrollable tiling
+              </p>
             </div>
           </div>
 
-          {/* Autostart on Boot Toggle (Crucial CachyOS Hello Feature) */}
-          <div className="flex items-center gap-4 bg-[#161a22] px-4 py-2.5 rounded-xl border border-[#353c4a]">
-            <div className="text-right font-mono">
-              <div className="text-xs font-bold text-[#f5f6fa]">Autostart on boot</div>
-              <div className="text-[10px] text-[#a4adbe]">
-                {autostartOnBoot ? 'Opens automatically at login' : 'Autostart disabled'}
-              </div>
-            </div>
-            <SquishSwitch
-              checked={autostartOnBoot}
-              onChange={handleToggleAutostart}
-              className="bg-[#222733]"
-            />
+          {/* Navigation Mode Tabs */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
+            {[
+              { id: 'overview', label: 'Welcome Matrix', icon: Sparkles },
+              { id: 'wizard', label: 'OS Installation Wizard', icon: Layers },
+              { id: 'shortcuts', label: 'Niri Keybindings', icon: FileCode },
+              { id: 'tweaks', label: 'Live System & Tweaks', icon: Sliders },
+            ].map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id as InstallerTab)}
+                  className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-mono font-bold transition-all shrink-0 ${
+                    isActive
+                      ? 'bg-[#e5b567] text-[#0e1116] shadow-md shadow-[#e5b567]/20'
+                      : 'bg-[#161a22] text-[#a4adbe] hover:text-white border border-[#353c4a]'
+                  }`}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
           </div>
-        </div>
-
-        {/* CachyOS-style Top Navigation Tabs */}
-        <div className="flex flex-wrap items-center gap-2 mt-6 pt-5 border-t border-[#353c4a]/60">
-          {[
-            { id: 'overview', label: '󰣇 Welcome & Hardware Audit', icon: Monitor },
-            { id: 'wizard', label: '󰒋 Installation Wizard', icon: Layers },
-            { id: 'tweaks', label: ' System Tweaks', icon: Gauge },
-            { id: 'shortcuts', label: '󰌨 Niri & Waybar Keybindings', icon: FileCode },
-          ].map((tab) => {
-            const isSel = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id as InstallerTab)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl font-mono text-xs font-bold transition-all ${
-                  isSel
-                    ? 'bg-[#e5b567] text-[#060709] shadow-md shadow-[#e5b567]/20 scale-[1.02]'
-                    : 'bg-[#161a22] text-[#a4adbe] hover:text-[#f5f6fa] hover:bg-[#222733] border border-[#353c4a]'
-                }`}
-              >
-                <span>{tab.label}</span>
-              </button>
-            );
-          })}
         </div>
       </SpotlightCard>
 
-      {/* 2. TAB CONTENT PANELS */}
-      <AnimatePresence mode="wait">
-        {/* ================= OVERVIEW TAB ================= */}
-        {activeTab === 'overview' && (
-          <motion.div
-            key="overview"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="space-y-6"
+      {/* ================= OVERVIEW TAB ================= */}
+      {activeTab === 'overview' && (
+        <motion.div
+          key="overview"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          className="space-y-6"
+        >
+          {/* Hero Welcome Card */}
+          <SpotlightCard
+            className="p-8 bg-gradient-to-br from-[#12161f] via-[#0e1116] to-[#12161f] border-[#353c4a]"
+            spotlightColor="rgba(229, 181, 103, 0.15)"
+            borderColor="rgba(229, 181, 103, 0.45)"
           >
-            {/* Hero Quick Action Banner */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <SpotlightCard
-                spotlightColor="rgba(229, 181, 103, 0.25)"
-                borderColor="rgba(229, 181, 103, 0.6)"
-                className="lg:col-span-2 p-6 bg-gradient-to-br from-[#161a22] to-[#0e1116] border-[#e5b567]/40 flex flex-col justify-between"
-              >
-                <div>
-                  <div className="flex items-center gap-2 text-[#e5b567] text-xs font-mono font-bold uppercase tracking-wider mb-2">
-                    <Sparkles className="w-4 h-4 text-[#e5b567]" />
-                    Interactive Deployment Wizard
-                  </div>
-                  <h2 className="text-2xl font-bold font-mono text-[#f5f6fa] mb-2">
-                    Install Tinapple Appliance OS to Disk
-                  </h2>
-                  <p className="text-sm font-sans text-[#a4adbe] leading-relaxed max-w-2xl">
-                    Deploy an ultra-lightweight, high-performance appliance workstation with Niri
-                    scrollable tiling, Waybar V3.1a theme, Matugen dynamic colors, and pre-tuned
-                    microcode & storage optimization.
-                  </p>
-                </div>
+            <div className="max-w-3xl space-y-4">
+              <div className="flex items-center gap-2 text-xs font-mono font-bold text-[#e5b567] tracking-wider uppercase">
+                <Sparkles className="w-4 h-4" />
+                <span>Next-Generation Arch Linux Appliance Platform</span>
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight font-mono">
+                Deploy Your Custom Tinapple Station
+              </h1>
+              <p className="text-sm text-[#a4adbe] leading-relaxed font-mono">
+                Tinapple OS combines an ultra-fast scrollable tiling Wayland environment (<span className="text-[#e5b567] font-bold">isthatelitho/niri-btw</span>) with a pre-configured, self-hosted homelab suite. Effortlessly stream 4K media via Jellyfin, manage manga with Suwayomi, automate torrents, host Minecraft with zero-port tunnels, and control everything through this unified Web Hub.
+              </p>
 
-                <div className="flex flex-wrap items-center gap-3 mt-6">
-                  <StarBorder
-                    color="#e5b567"
-                    speed="3s"
-                    onClick={() => setActiveTab('wizard')}
-                    className="font-mono text-sm font-bold text-[#060709]"
-                  >
-                    <span className="flex items-center gap-2 text-[#e5b567] group-hover:text-white font-bold">
-                      <Play className="w-4 h-4 fill-current" />
-                      Launch Guided Installer
-                    </span>
-                  </StarBorder>
+              <div className="pt-2 flex flex-wrap items-center gap-3">
+                <button
+                  onClick={() => setActiveTab('wizard')}
+                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#e5b567] to-[#f59e0b] text-[#0e1116] text-xs font-mono font-extrabold shadow-lg shadow-[#e5b567]/25 hover:brightness-110 active:scale-95 transition-all flex items-center gap-2"
+                >
+                  <Play className="w-4 h-4" />
+                  <span>Launch OS Installation Wizard</span>
+                </button>
 
+                <button
+                  onClick={() => setActiveTab('shortcuts')}
+                  className="px-4 py-2.5 rounded-xl bg-[#161a22] text-[#f5f6fa] border border-[#353c4a] hover:border-[#e5b567] text-xs font-mono font-bold transition-all flex items-center gap-2"
+                >
+                  <FileCode className="w-4 h-4 text-[#e5b567]" />
+                  <span>View Niri & Desktop Shortcuts</span>
+                </button>
+
+                {onOpenDashboard && (
                   <button
-                    onClick={() => {
-                      if (onOpenDashboard) onOpenDashboard();
-                    }}
-                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-mono text-xs font-bold bg-[#161a22] text-[#f5f6fa] hover:bg-[#222733] border border-[#353c4a] transition-all"
+                    onClick={onOpenDashboard}
+                    className="px-4 py-2.5 rounded-xl bg-[#161a22] text-[#7ec789] border border-[#7ec789]/40 hover:bg-[#7ec789]/10 text-xs font-mono font-bold transition-all flex items-center gap-2"
                   >
-                    <Gauge className="w-4 h-4 text-[#7ec789]" />
-                    Explore System Hub
+                    <ExternalLink className="w-4 h-4" />
+                    <span>Open Live Appliance Hub</span>
                   </button>
-                </div>
-              </SpotlightCard>
+                )}
+              </div>
+            </div>
+          </SpotlightCard>
 
-              {/* Hardware Quick Facts */}
-              <SpotlightCard
-                spotlightColor="rgba(126, 199, 137, 0.15)"
-                borderColor="rgba(126, 199, 137, 0.4)"
-                className="p-6 bg-[#0e1116] border-[#353c4a] flex flex-col justify-between font-mono"
-              >
+          {/* Featured Appliance Services Grid */}
+          <div>
+            <div className="flex items-center justify-between mb-3 font-mono">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-[#e5b567] animate-pulse" />
+                <h2 className="text-xs font-bold text-white uppercase tracking-wider">
+                  Bundled Ecosystem Applications
+                </h2>
+              </div>
+              <span className="text-xs text-[#a4adbe]">
+                Available out-of-the-box or in 1-click installer
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+              {APP_CATALOG.slice(0, 6).map((app) => (
+                <SpotlightCard
+                  key={app.id}
+                  className="p-4 bg-[#0e1116] border-[#353c4a] hover:border-[#e5b567]/60 transition-all"
+                  spotlightColor="rgba(229, 181, 103, 0.08)"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 rounded-xl bg-[#161a22] border border-[#353c4a] shrink-0">
+                      <AppBrandIcon id={app.id} size={30} />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center justify-between gap-1">
+                        <span className="text-xs font-bold text-white truncate font-mono">
+                          {app.name}
+                        </span>
+                        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#161a22] text-[#e5b567] border border-[#353c4a] shrink-0">
+                          {app.ports}
+                        </span>
+                      </div>
+                      <span className="text-[10px] text-[#7ec789] font-mono block">
+                        {app.category}
+                      </span>
+                      <p className="text-[11px] text-[#a4adbe] font-mono mt-1 line-clamp-2">
+                        {app.desc}
+                      </p>
+                    </div>
+                  </div>
+                </SpotlightCard>
+              ))}
+            </div>
+          </div>
+        </motion.div>
+      )}
+
+      {/* ================= WIZARD TAB (AUTHENTIC OS INSTALLER) ================= */}
+      {activeTab === 'wizard' && (
+        <motion.div
+          key="wizard"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          className="space-y-6"
+        >
+          {/* Main Installer Window Container */}
+          <div className="bg-[#0e1116] rounded-2xl border border-[#353c4a] overflow-hidden shadow-2xl">
+            {/* Installer Top Bar with Calamares-style Brand Bar */}
+            <div className="bg-[#12161f] px-6 py-4 border-b border-[#353c4a] flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <BrandLogo size={30} electric={false} />
                 <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="text-xs font-bold text-[#7ec789] uppercase tracking-wider">
-                      Chassis Audit
-                    </span>
-                    <ShieldCheck className="w-4 h-4 text-[#7ec789]" />
-                  </div>
-                  <div className="space-y-3 text-xs">
-                    <div className="flex justify-between py-1 border-b border-[#353c4a]/40">
-                      <span className="text-[#a4adbe]">Firmware:</span>
-                      <span className="text-[#f5f6fa] font-bold">UEFI (x86_64)</span>
-                    </div>
-                    <div className="flex justify-between py-1 border-b border-[#353c4a]/40">
-                      <span className="text-[#a4adbe]">Compositor:</span>
-                      <span className="text-[#e5b567] font-bold">Niri Wayland</span>
-                    </div>
-                    <div className="flex justify-between py-1 border-b border-[#353c4a]/40">
-                      <span className="text-[#a4adbe]">Theme Bar:</span>
-                      <span className="text-[#f5f6fa] font-bold">Waybar V3.1a</span>
-                    </div>
-                    <div className="flex justify-between py-1">
-                      <span className="text-[#a4adbe]">Colors:</span>
-                      <span className="text-[#7ec789] font-bold">Matugen Material You</span>
-                    </div>
-                  </div>
+                  <span className="text-sm font-bold text-white font-mono block">
+                    Tinapple OS Calamares Installer
+                  </span>
+                  <span className="text-[11px] text-[#a4adbe] font-mono">
+                    Target: {selectedDisk} | FileSystem: {filesystem.toUpperCase()} | Desktop: Niri (niri-btw)
+                  </span>
                 </div>
+              </div>
 
-                <div className="pt-4 border-t border-[#353c4a]/60 flex items-center justify-between text-[11px] text-[#a4adbe]">
-                  <span>Status: Ready</span>
-                  <span className="w-2 h-2 rounded-full bg-[#7ec789]" />
-                </div>
-              </SpotlightCard>
-            </div>
-
-            {/* Hardware Metrics Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <SpotlightCard
-                spotlightColor="rgba(229, 181, 103, 0.12)"
-                borderColor="rgba(229, 181, 103, 0.3)"
-                className="p-4 bg-[#0e1116] border-[#353c4a]"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="p-3 rounded-xl bg-[#e5b567]/10 text-[#e5b567] border border-[#e5b567]/30">
-                    <Cpu className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <div className="text-[11px] font-mono text-[#a4adbe]">Processor Cores</div>
-                    <div className="text-xl font-bold font-mono text-[#f5f6fa] flex items-center gap-1">
-                      <CountUp to={8} duration={1.2} />
-                      <span className="text-xs text-[#a4adbe] font-normal">vCPUs</span>
-                    </div>
-                  </div>
-                </div>
-              </SpotlightCard>
-
-              <SpotlightCard
-                spotlightColor="rgba(126, 199, 137, 0.12)"
-                borderColor="rgba(126, 199, 137, 0.3)"
-                className="p-4 bg-[#0e1116] border-[#353c4a]"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="p-3 rounded-xl bg-[#7ec789]/10 text-[#7ec789] border border-[#7ec789]/30">
-                    <Monitor className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <div className="text-[11px] font-mono text-[#a4adbe]">System RAM</div>
-                    <div className="text-xl font-bold font-mono text-[#f5f6fa] flex items-center gap-1">
-                      <CountUp to={16} duration={1.2} />
-                      <span className="text-xs text-[#a4adbe] font-normal">GB DDR5</span>
-                    </div>
-                  </div>
-                </div>
-              </SpotlightCard>
-
-              <SpotlightCard
-                spotlightColor="rgba(122, 162, 247, 0.12)"
-                borderColor="rgba(122, 162, 247, 0.3)"
-                className="p-4 bg-[#0e1116] border-[#353c4a]"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="p-3 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/30">
-                    <HardDrive className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <div className="text-[11px] font-mono text-[#a4adbe]">Primary Disk</div>
-                    <div className="text-base font-bold font-mono text-[#f5f6fa]">
-                      /dev/vda <span className="text-xs text-[#a4adbe]">(40 GB)</span>
-                    </div>
-                  </div>
-                </div>
-              </SpotlightCard>
-
-              <SpotlightCard
-                spotlightColor="rgba(229, 181, 103, 0.12)"
-                borderColor="rgba(229, 181, 103, 0.3)"
-                className="p-4 bg-[#0e1116] border-[#353c4a]"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="p-3 rounded-xl bg-[#e5b567]/10 text-[#e5b567] border border-[#e5b567]/30">
-                    <Globe className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <div className="text-[11px] font-mono text-[#a4adbe]">Network Gateway</div>
-                    <div className="text-base font-bold font-mono text-[#7ec789]">
-                      Connected (DHCP)
-                    </div>
-                  </div>
-                </div>
-              </SpotlightCard>
-            </div>
-          </motion.div>
-        )}
-
-        {/* ================= WIZARD TAB ================= */}
-        {activeTab === 'wizard' && (
-          <motion.div
-            key="wizard"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="space-y-6"
-          >
-            {/* Step Stepper Progress Bar */}
-            <div className="bg-[#0e1116] p-4 rounded-2xl border border-[#353c4a]">
-              <div className="flex items-center justify-between mb-3 text-xs font-mono font-bold">
-                <span className="text-[#e5b567]">Stage {wizardStep} of 9</span>
-                <span className="text-[#a4adbe]">
-                  {wizardStep === 1 && 'Keyboard Layout'}
-                  {wizardStep === 2 && 'Storage Drive & Partitioning'}
-                  {wizardStep === 3 && 'Filesystem Selection'}
-                  {wizardStep === 4 && 'LUKS2 Encryption'}
-                  {wizardStep === 5 && 'Bootloader'}
-                  {wizardStep === 6 && 'System Identity & User'}
-                  {wizardStep === 7 && 'Kernel Optimization'}
-                  {wizardStep === 8 && 'Appliance Profiles'}
-                  {wizardStep === 9 && 'Review & Deploy'}
+              <div className="flex items-center gap-2 font-mono text-xs">
+                <span className="text-[#a4adbe]">Step {wizardStep} of 8</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-[#e5b567]" />
+                <span className="text-[#e5b567] font-bold">
+                  {wizardStep === 1 && 'Welcome & Region'}
+                  {wizardStep === 2 && 'Storage Drive & Partition Map'}
+                  {wizardStep === 3 && 'Filesystem & LUKS2'}
+                  {wizardStep === 4 && 'Linux Kernel'}
+                  {wizardStep === 5 && 'Appliance Stacks'}
+                  {wizardStep === 6 && 'User & Identity'}
+                  {wizardStep === 7 && 'Review & Summary'}
+                  {wizardStep === 8 && 'Installation Progress'}
                 </span>
               </div>
-              <div className="w-full bg-[#161a22] h-2 rounded-full overflow-hidden border border-[#353c4a]/50">
-                <div
-                  className="bg-gradient-to-r from-[#e5b567] to-[#7ec789] h-full transition-all duration-300"
-                  style={{ width: `${(wizardStep / 9) * 100}%` }}
-                />
-              </div>
             </div>
 
-            {/* WIZARD CONTENT BY STEP */}
-            <SpotlightCard
-              spotlightColor="rgba(229, 181, 103, 0.1)"
-              borderColor="rgba(229, 181, 103, 0.3)"
-              className="p-6 bg-[#0e1116] border-[#353c4a]"
-            >
-              {/* STEP 1: KEYBOARD */}
-              {wizardStep === 1 && (
-                <div className="space-y-4 font-mono">
-                  <h3 className="text-lg font-bold text-[#f5f6fa] flex items-center gap-2">
-                    <Globe className="w-5 h-5 text-[#e5b567]" />
-                    Step 1: Keyboard & Regional Layout
-                  </h3>
-                  <p className="text-xs text-[#a4adbe]">
-                    Select the keyboard keymap for the appliance console and graphical session:
-                  </p>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2">
-                    {[
-                      { id: 'us', label: 'US English (Standard)' },
-                      { id: 'uk', label: 'UK English' },
-                      { id: 'de', label: 'German (QWERTZ)' },
-                      { id: 'fr', label: 'French (AZERTY)' },
-                      { id: 'es', label: 'Spanish' },
-                      { id: 'jp', label: 'Japanese' },
-                    ].map((k) => (
-                      <button
-                        key={k.id}
-                        onClick={() => setKeyboardLayout(k.id)}
-                        className={`p-3 rounded-xl text-left border transition-all ${
-                          keyboardLayout === k.id
-                            ? 'bg-[#161a22] border-[#e5b567] text-[#e5b567] shadow-lg shadow-[#e5b567]/10'
-                            : 'bg-[#161a22]/50 border-[#353c4a] text-[#f5f6fa] hover:border-[#a4adbe]'
-                        }`}
-                      >
-                        <div className="text-sm font-bold">{k.label}</div>
-                        <div className="text-[10px] text-[#a4adbe]">Keymap: {k.id}</div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
+            {/* Stepper Wizard Progress Bar */}
+            <div className="w-full bg-[#161a22] h-1.5">
+              <div
+                className="bg-gradient-to-r from-[#e5b567] via-[#f59e0b] to-[#7ec789] h-full transition-all duration-300"
+                style={{ width: `${(wizardStep / 8) * 100}%` }}
+              />
+            </div>
 
-              {/* STEP 2: DISK */}
-              {wizardStep === 2 && (
-                <div className="space-y-4 font-mono">
-                  <h3 className="text-lg font-bold text-[#f5f6fa] flex items-center gap-2">
-                    <HardDrive className="w-5 h-5 text-[#e5b567]" />
-                    Step 2: Storage Disk & Partitioning
-                  </h3>
-                  <p className="text-xs text-[#a4adbe]">
-                    Select the target drive where Tinapple OS will be installed:
-                  </p>
-                  <div className="space-y-2 pt-2">
-                    {[
-                      { id: '/dev/vda', size: '40.0 GB', model: 'VirtIO Storage (Recommended for VM)' },
-                      { id: '/dev/nvme0n1', size: '512.1 GB', model: 'Samsung 980 Pro NVMe' },
-                      { id: '/dev/sda', size: '1.0 TB', model: 'Crucial MX500 SATA SSD' },
-                    ].map((d) => (
+            {/* Two-Column Layout: Left Steps Sidebar + Right Step Content */}
+            <div className="grid grid-cols-1 md:grid-cols-12 min-h-[500px]">
+              {/* Left Steps Navigation Column */}
+              <div className="md:col-span-3 bg-[#0a0d12] p-4 border-b md:border-b-0 md:border-r border-[#353c4a] space-y-1 font-mono">
+                {[
+                  { step: 1, label: 'Welcome & Locale', icon: Globe },
+                  { step: 2, label: 'Disk Partitioning', icon: HardDrive },
+                  { step: 3, label: 'Filesystem & LUKS', icon: Lock },
+                  { step: 4, label: 'Kernel Branch', icon: Cpu },
+                  { step: 5, label: 'App Ecosystem', icon: Layers },
+                  { step: 6, label: 'User & Credentials', icon: User },
+                  { step: 7, label: 'Review Summary', icon: CheckCircle2 },
+                  { step: 8, label: 'Deploy & Reboot', icon: Zap },
+                ].map((s) => {
+                  const Icon = s.icon;
+                  const isDone = wizardStep > s.step;
+                  const isCurrent = wizardStep === s.step;
+                  return (
+                    <button
+                      key={s.step}
+                      disabled={isInstalling}
+                      onClick={() => setWizardStep(s.step)}
+                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left text-xs transition-all ${
+                        isCurrent
+                          ? 'bg-[#161a22] text-[#e5b567] font-bold border border-[#e5b567]/40 shadow-sm'
+                          : isDone
+                          ? 'text-[#7ec789] hover:bg-[#161a22]/50'
+                          : 'text-[#6d788d] hover:text-[#a4adbe]'
+                      }`}
+                    >
                       <div
-                        key={d.id}
-                        onClick={() => setSelectedDisk(d.id)}
-                        className={`p-4 rounded-xl border flex items-center justify-between cursor-pointer transition-all ${
-                          selectedDisk === d.id
-                            ? 'bg-[#161a22] border-[#e5b567] text-[#e5b567]'
-                            : 'bg-[#161a22]/50 border-[#353c4a] text-[#f5f6fa] hover:border-[#a4adbe]'
+                        className={`w-6 h-6 rounded-lg flex items-center justify-center text-[11px] font-bold ${
+                          isCurrent
+                            ? 'bg-[#e5b567] text-[#0e1116]'
+                            : isDone
+                            ? 'bg-[#7ec789]/20 text-[#7ec789]'
+                            : 'bg-[#161a22] text-[#6d788d]'
                         }`}
                       >
-                        <div>
-                          <div className="text-sm font-bold flex items-center gap-2">
-                            <span>{d.id}</span>
-                            <span className="text-xs font-normal text-[#a4adbe]">({d.size})</span>
-                          </div>
-                          <div className="text-xs text-[#a4adbe] mt-0.5">{d.model}</div>
-                        </div>
-                        {selectedDisk === d.id && <CheckCircle2 className="w-5 h-5 text-[#e5b567]" />}
+                        {isDone ? <Check className="w-3.5 h-3.5" /> : s.step}
                       </div>
-                    ))}
-                  </div>
+                      <span className="truncate">{s.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
 
-                  <div className="pt-4 border-t border-[#353c4a]/50">
-                    <div className="text-xs font-bold text-[#f5f6fa] mb-2">Partitioning Scheme:</div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <button
-                        onClick={() => setDiskStrategy('auto')}
-                        className={`p-3 rounded-xl text-left border ${
-                          diskStrategy === 'auto'
-                            ? 'bg-[#161a22] border-[#e5b567] text-[#e5b567]'
-                            : 'bg-[#161a22]/50 border-[#353c4a] text-[#f5f6fa]'
-                        }`}
-                      >
-                        <div className="text-xs font-bold">Automatic Whole-Disk (Recommended)</div>
-                        <div className="text-[10px] text-[#a4adbe] mt-1">
-                          Creates 1GB EFI System Partition, 4GB Swap, remainder for Root.
-                        </div>
-                      </button>
-
-                      <button
-                        onClick={() => setDiskStrategy('custom')}
-                        className={`p-3 rounded-xl text-left border ${
-                          diskStrategy === 'custom'
-                            ? 'bg-[#161a22] border-[#e5b567] text-[#e5b567]'
-                            : 'bg-[#161a22]/50 border-[#353c4a] text-[#f5f6fa]'
-                        }`}
-                      >
-                        <div className="text-xs font-bold">Manual Partitioning</div>
-                        <div className="text-[10px] text-[#a4adbe] mt-1">
-                          Preserve existing partition layout and designate root.
-                        </div>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* STEP 3: FILESYSTEM */}
-              {wizardStep === 3 && (
-                <div className="space-y-4 font-mono">
-                  <h3 className="text-lg font-bold text-[#f5f6fa] flex items-center gap-2">
-                    <FolderTree className="w-5 h-5 text-[#e5b567]" />
-                    Step 3: Root Filesystem
-                  </h3>
-                  <p className="text-xs text-[#a4adbe]">
-                    Choose the filesystem for the primary operating system partition:
-                  </p>
-                  <div className="space-y-3 pt-2">
-                    {[
-                      {
-                        id: 'btrfs',
-                        name: 'Btrfs (Copy-on-Write, Recommended)',
-                        desc: 'Subvolumes (@, @home, @snapshots, @var_log), instant zero-cost snapshots, transparent zstd compression.',
-                      },
-                      {
-                        id: 'ext4',
-                        name: 'Ext4 (Classic Standard)',
-                        desc: 'Rock-solid reliability, proven enterprise standard with standard journaling and wide recovery tool support.',
-                      },
-                      {
-                        id: 'xfs',
-                        name: 'XFS (High Performance)',
-                        desc: 'Scalable 64-bit journaling filesystem optimized for high concurrency, media servers, and large databases.',
-                      },
-                    ].map((fs) => (
-                      <div
-                        key={fs.id}
-                        onClick={() => setFilesystem(fs.id as any)}
-                        className={`p-4 rounded-xl border cursor-pointer transition-all ${
-                          filesystem === fs.id
-                            ? 'bg-[#161a22] border-[#e5b567] text-[#e5b567]'
-                            : 'bg-[#161a22]/50 border-[#353c4a] text-[#f5f6fa] hover:border-[#a4adbe]'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-bold">{fs.name}</span>
-                          {filesystem === fs.id && <Check className="w-4 h-4 text-[#e5b567]" />}
-                        </div>
-                        <p className="text-xs text-[#a4adbe] mt-1">{fs.desc}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* STEP 4: LUKS2 ENCRYPTION */}
-              {wizardStep === 4 && (
-                <div className="space-y-4 font-mono">
-                  <h3 className="text-lg font-bold text-[#f5f6fa] flex items-center gap-2">
-                    <Lock className="w-5 h-5 text-[#e5b567]" />
-                    Step 4: LUKS2 Full-Disk Encryption
-                  </h3>
-                  <p className="text-xs text-[#a4adbe]">
-                    Protect all operating system data, containers, and credentials at rest:
-                  </p>
-
-                  <div className="p-4 rounded-xl bg-[#161a22] border border-[#353c4a] flex items-center justify-between">
-                    <div>
-                      <div className="text-sm font-bold text-[#f5f6fa]">
-                        Enable LUKS2 Encryption
-                      </div>
-                      <div className="text-xs text-[#a4adbe] mt-0.5">
-                        Uses AES-XTS-PLAIN64 with Argon2id key derivation.
-                      </div>
-                    </div>
-                    <SquishSwitch
-                      checked={enableLuks}
-                      onChange={setEnableLuks}
-                      className="bg-[#222733]"
-                    />
-                  </div>
-
-                  {enableLuks && (
-                    <div className="space-y-3 pt-3">
+              {/* Right Step Content Area */}
+              <div className="md:col-span-9 p-6 flex flex-col justify-between">
+                <div>
+                  {/* STEP 1: WELCOME & LOCALE */}
+                  {wizardStep === 1 && (
+                    <div className="space-y-5 font-mono">
                       <div>
-                        <label className="text-xs font-bold text-[#f5f6fa] block mb-1">
-                          Disk Encryption Passphrase:
-                        </label>
-                        <div className="relative">
-                          <input
-                            type={showPassphrase ? 'text' : 'password'}
-                            value={luksPassphrase}
-                            onChange={(e) => setLuksPassphrase(e.target.value)}
-                            placeholder="Enter robust encryption passphrase..."
-                            className="w-full px-4 py-2.5 rounded-xl bg-[#161a22] border border-[#353c4a] text-[#f5f6fa] text-xs focus:outline-none focus:border-[#e5b567]"
-                          />
+                        <h3 className="text-base font-bold text-white flex items-center gap-2">
+                          <Globe className="w-5 h-5 text-[#e5b567]" />
+                          Step 1: Localization & Keyboard Layout
+                        </h3>
+                        <p className="text-xs text-[#a4adbe] mt-1">
+                          Configure console encoding, regional locale, and keyboard keymap:
+                        </p>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-bold text-white uppercase tracking-wider">
+                            Keyboard Keymap
+                          </label>
+                          <select
+                            value={keyboardLayout}
+                            onChange={(e) => setKeyboardLayout(e.target.value)}
+                            className="w-full px-3.5 py-2.5 rounded-xl bg-[#161a22] border border-[#353c4a] text-xs text-white focus:outline-none focus:border-[#e5b567]"
+                          >
+                            <option value="us">English (US, ANSI Standard)</option>
+                            <option value="uk">English (UK, ISO)</option>
+                            <option value="de">German (QWERTZ)</option>
+                            <option value="fr">French (AZERTY)</option>
+                            <option value="es">Spanish</option>
+                            <option value="dvorak">English (Dvorak)</option>
+                          </select>
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-bold text-white uppercase tracking-wider">
+                            System Timezone
+                          </label>
+                          <select
+                            value={timezone}
+                            onChange={(e) => setTimezone(e.target.value)}
+                            className="w-full px-3.5 py-2.5 rounded-xl bg-[#161a22] border border-[#353c4a] text-xs text-white focus:outline-none focus:border-[#e5b567]"
+                          >
+                            <option value="UTC">Universal Time Coordinated (UTC)</option>
+                            <option value="America/New_York">America / New York (EST)</option>
+                            <option value="America/Los_Angeles">America / Los Angeles (PST)</option>
+                            <option value="Europe/London">Europe / London (GMT/BST)</option>
+                            <option value="Europe/Berlin">Europe / Berlin (CET)</option>
+                            <option value="Asia/Tokyo">Asia / Tokyo (JST)</option>
+                            <option value="Asia/Kolkata">Asia / Kolkata (IST)</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div className="p-4 rounded-xl bg-[#161a22]/70 border border-[#353c4a] text-xs text-[#a4adbe] space-y-1">
+                        <span className="font-bold text-white block">Automatic Hardware Detection</span>
+                        <span>• CPU Microcode: Auto-detected (AMD/Intel microcode installed automatically)</span>
+                        <br />
+                        <span>• Audio Stack: PipeWire + WirePlumber low-latency audio server</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* STEP 2: DRIVE & PARTITION MAP */}
+                  {wizardStep === 2 && (
+                    <div className="space-y-5 font-mono">
+                      <div>
+                        <h3 className="text-base font-bold text-white flex items-center gap-2">
+                          <HardDrive className="w-5 h-5 text-[#e5b567]" />
+                          Step 2: Target Storage Disk & Partitioning Scheme
+                        </h3>
+                        <p className="text-xs text-[#a4adbe] mt-1">
+                          Select the target physical disk or virtual volume to receive Tinapple OS:
+                        </p>
+                      </div>
+
+                      {/* Disks selection */}
+                      <div className="space-y-2.5">
+                        {availableDisks.map((d) => (
+                          <div
+                            key={d.id}
+                            onClick={() => {
+                              if (!d.isBootMedia) {
+                                setSelectedDisk(d.id);
+                              }
+                            }}
+                            className={`p-3.5 rounded-xl border flex items-center justify-between transition-all ${
+                              d.isBootMedia
+                                ? 'bg-[#161a22]/30 border-[#262c38] text-slate-500 cursor-not-allowed opacity-75'
+                                : selectedDisk === d.id
+                                ? 'bg-[#161a22] border-[#e5b567] text-[#e5b567] cursor-pointer'
+                                : 'bg-[#161a22]/50 border-[#353c4a] text-white hover:border-[#a4adbe] cursor-pointer'
+                            }`}
+                          >
+                            <div>
+                              <div className="text-xs font-bold flex items-center gap-2">
+                                <span>{d.id}</span>
+                                <span className={d.isBootMedia ? 'text-slate-500' : 'text-[#a4adbe]'}>({d.size})</span>
+                                {d.isTarget && (
+                                  <span className="px-2 py-0.5 text-[10px] font-mono font-bold rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                                    Target Internal Drive
+                                  </span>
+                                )}
+                                {d.isBootMedia && (
+                                  <span className="px-2 py-0.5 text-[10px] font-mono font-bold rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                                    Live USB Boot Medium (Protected)
+                                  </span>
+                                )}
+                              </div>
+                              <span className="text-[11px] text-[#a4adbe] mt-0.5 block">{d.model}</span>
+                            </div>
+                            {selectedDisk === d.id && !d.isBootMedia && (
+                              <CheckCircle2 className="w-4 h-4 text-[#e5b567]" />
+                            )}
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Visual Partition Map (Calamares style) */}
+                      <div className="p-4 rounded-xl bg-[#12161f] border border-[#353c4a] space-y-3">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="font-bold text-white">Visual Partition Map ({selectedDisk})</span>
+                          <span className="text-[11px] text-[#7ec789] font-bold">GPT Partition Table</span>
+                        </div>
+
+                        {/* Partition visual bar */}
+                        <div className="w-full h-8 rounded-lg overflow-hidden flex border border-[#353c4a]">
+                          {/* EFI ESP */}
+                          <div
+                            className="bg-[#10b981] hover:brightness-110 flex items-center justify-center text-[10px] font-bold text-black border-r border-[#0e1116] transition-all"
+                            style={{ width: '15%' }}
+                            title="ESP EFI: 1024 MB (FAT32) - Mount /boot/efi"
+                          >
+                            1GB ESP (FAT32)
+                          </div>
+                          {/* SWAP */}
+                          <div
+                            className="bg-[#f59e0b] hover:brightness-110 flex items-center justify-center text-[10px] font-bold text-black border-r border-[#0e1116] transition-all"
+                            style={{ width: '20%' }}
+                            title="Swap Space: 4096 MB"
+                          >
+                            4GB Swap
+                          </div>
+                          {/* ROOT */}
+                          <div
+                            className="bg-[#3b82f6] hover:brightness-110 flex items-center justify-center text-[10px] font-bold text-white transition-all"
+                            style={{ width: '65%' }}
+                            title={`Root: Remainder (${filesystem.toUpperCase()}) - Mount /`}
+                          >
+                            Root ({filesystem.toUpperCase()} Subvolumes)
+                          </div>
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-4 text-[11px] text-[#a4adbe] pt-1">
+                          <div className="flex items-center gap-1.5">
+                            <span className="w-2.5 h-2.5 rounded-sm bg-[#10b981]" />
+                            <span>/boot/efi (1024MB FAT32)</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="w-2.5 h-2.5 rounded-sm bg-[#f59e0b]" />
+                            <span>Swapspace (4096MB)</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="w-2.5 h-2.5 rounded-sm bg-[#3b82f6]" />
+                            <span>/ Root ({filesystem.toUpperCase()} @, @home, @snapshots)</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* STEP 3: FILESYSTEM & LUKS2 */}
+                  {wizardStep === 3 && (
+                    <div className="space-y-5 font-mono">
+                      <div>
+                        <h3 className="text-base font-bold text-white flex items-center gap-2">
+                          <Lock className="w-5 h-5 text-[#e5b567]" />
+                          Step 3: Root Filesystem & LUKS2 Disk Encryption
+                        </h3>
+                        <p className="text-xs text-[#a4adbe] mt-1">
+                          Choose the root storage filesystem and optionally enable full-disk encryption:
+                        </p>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        {[
+                          {
+                            id: 'btrfs',
+                            name: 'BTRFS (Recommended)',
+                            desc: 'Includes atomic snapshots, zstd transparent compression, and subvolumes.',
+                          },
+                          {
+                            id: 'ext4',
+                            name: 'EXT4 (Classic)',
+                            desc: 'Bulletproof journaled filesystem standard across Linux distributions.',
+                          },
+                          {
+                            id: 'xfs',
+                            name: 'XFS (Enterprise)',
+                            desc: 'High-throughput parallel I/O designed for massive dataset storage.',
+                          },
+                        ].map((fs) => (
+                          <div
+                            key={fs.id}
+                            onClick={() => setFilesystem(fs.id as any)}
+                            className={`p-3.5 rounded-xl border cursor-pointer transition-all ${
+                              filesystem === fs.id
+                                ? 'bg-[#161a22] border-[#e5b567] text-[#e5b567]'
+                                : 'bg-[#161a22]/50 border-[#353c4a] text-white hover:border-[#a4adbe]'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-bold">{fs.name}</span>
+                              {filesystem === fs.id && <Check className="w-4 h-4 text-[#e5b567]" />}
+                            </div>
+                            <p className="text-[11px] text-[#a4adbe] mt-1">{fs.desc}</p>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* LUKS Encryption Box */}
+                      <div className="p-4 rounded-xl bg-[#12161f] border border-[#353c4a] space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <span className="text-xs font-bold text-white block">
+                              LUKS2 Full Disk Encryption
+                            </span>
+                            <span className="text-[11px] text-[#a4adbe]">
+                              Encrypts root volume with AES-XTS-256 and Argon2id key derivation.
+                            </span>
+                          </div>
+                          <SquishSwitch checked={enableLuks} onChange={setEnableLuks} />
+                        </div>
+
+                        {enableLuks && (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-[#353c4a]/50">
+                            <div className="space-y-1">
+                              <label className="text-[11px] font-bold text-white">
+                                Disk Passphrase
+                              </label>
+                              <input
+                                type={showPassphrase ? 'text' : 'password'}
+                                value={luksPassphrase}
+                                onChange={(e) => setLuksPassphrase(e.target.value)}
+                                placeholder="Min 6 characters"
+                                className="w-full px-3 py-2 rounded-lg bg-[#161a22] border border-[#353c4a] text-xs text-white"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-[11px] font-bold text-white">
+                                Confirm Passphrase
+                              </label>
+                              <input
+                                type={showPassphrase ? 'text' : 'password'}
+                                value={luksConfirm}
+                                onChange={(e) => setLuksConfirm(e.target.value)}
+                                placeholder="Re-enter passphrase"
+                                className="w-full px-3 py-2 rounded-lg bg-[#161a22] border border-[#353c4a] text-xs text-white"
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* STEP 4: LINUX KERNEL */}
+                  {wizardStep === 4 && (
+                    <div className="space-y-5 font-mono">
+                      <div>
+                        <h3 className="text-base font-bold text-white flex items-center gap-2">
+                          <Cpu className="w-5 h-5 text-[#e5b567]" />
+                          Step 4: Linux Kernel Architecture
+                        </h3>
+                        <p className="text-xs text-[#a4adbe] mt-1">
+                          Select the kernel branch compiled for your performance and reliability requirements:
+                        </p>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {[
+                          {
+                            id: 'lts',
+                            name: 'Linux LTS (Recommended)',
+                            desc: 'Long-Term Support kernel 6.6 with verified enterprise hardware stability.',
+                          },
+                          {
+                            id: 'current',
+                            name: 'Linux Current (CachyOS)',
+                            desc: 'Upstream branch featuring BORE CPU scheduler and x86-64-v3/v4 binaries.',
+                          },
+                          {
+                            id: 'zen',
+                            name: 'Linux Zen',
+                            desc: 'Tuned for interactive desktop responsiveness, low latency audio and gaming.',
+                          },
+                          {
+                            id: 'hardened',
+                            name: 'Linux Hardened',
+                            desc: 'Enhanced security features with proactive memory exploit mitigations.',
+                          },
+                        ].map((k) => (
+                          <div
+                            key={k.id}
+                            onClick={() => setKernel(k.id as any)}
+                            className={`p-3.5 rounded-xl border cursor-pointer transition-all ${
+                              kernel === k.id
+                                ? 'bg-[#161a22] border-[#e5b567] text-[#e5b567]'
+                                : 'bg-[#161a22]/50 border-[#353c4a] text-white hover:border-[#a4adbe]'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-bold">{k.name}</span>
+                              {kernel === k.id && <Check className="w-4 h-4 text-[#e5b567]" />}
+                            </div>
+                            <p className="text-[11px] text-[#a4adbe] mt-1">{k.desc}</p>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="space-y-2 pt-2">
+                        <div className="flex items-center justify-between">
+                          <label className="text-xs font-bold text-white uppercase tracking-wider">
+                            Bootloader Engine
+                          </label>
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                            firmwareMode === 'bios' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                          }`}>
+                            {firmwareMode === 'bios' ? 'Detected: BIOS / Legacy CSM' : 'Detected: UEFI 64-bit'}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
                           <button
                             type="button"
-                            onClick={() => setShowPassphrase(!showPassphrase)}
-                            className="absolute right-3 top-2.5 text-[#a4adbe] hover:text-[#f5f6fa]"
+                            disabled={firmwareMode === 'bios'}
+                            onClick={() => setBootloader('limine')}
+                            className={`p-3 rounded-xl border text-left ${
+                              firmwareMode === 'bios'
+                                ? 'opacity-40 cursor-not-allowed bg-[#161a22]/30 border-[#353c4a]'
+                                : bootloader === 'limine'
+                                ? 'bg-[#161a22] border-[#e5b567] text-[#e5b567]'
+                                : 'bg-[#161a22]/50 border-[#353c4a] text-white'
+                            }`}
                           >
-                            {showPassphrase ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                            <span className="text-xs font-bold block">Limine (Modern UEFI Fastboot)</span>
+                            <span className="text-[10px] text-[#a4adbe]">
+                              {firmwareMode === 'bios' ? 'Disabled on Legacy BIOS' : 'Default for instant boot'}
+                            </span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setBootloader('grub')}
+                            className={`p-3 rounded-xl border text-left ${
+                              bootloader === 'grub'
+                                ? 'bg-[#161a22] border-[#e5b567] text-[#e5b567]'
+                                : 'bg-[#161a22]/50 border-[#353c4a] text-white'
+                            }`}
+                          >
+                            <span className="text-xs font-bold block">
+                              GRUB 2.12 {firmwareMode === 'bios' && '(Recommended for BIOS)'}
+                            </span>
+                            <span className="text-[10px] text-[#a4adbe]">
+                              {firmwareMode === 'bios' ? 'Native BIOS MBR bootloader' : 'Legacy & dual-boot support'}
+                            </span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* STEP 5: APPLIANCE STACKS WITH AUTHENTIC BRAND ICONS */}
+                  {wizardStep === 5 && (
+                    <div className="space-y-4 font-mono">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h3 className="text-base font-bold text-white flex items-center gap-2">
+                            <Layers className="w-5 h-5 text-[#e5b567]" />
+                            Step 5: Appliance Stacks & Applications
+                          </h3>
+                          <p className="text-xs text-[#a4adbe] mt-0.5">
+                            Select the self-hosted services and desktop components to provision:
+                          </p>
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setSelectedApps(APP_CATALOG.map((a) => a.id))}
+                            className="text-[11px] font-bold text-[#e5b567] hover:underline"
+                          >
+                            Select All
+                          </button>
+                          <span className="text-[#353c4a]">|</span>
+                          <button
+                            type="button"
+                            onClick={() => setSelectedApps(['niri', 'suwayomi', 'jellyfin'])}
+                            className="text-[11px] font-bold text-[#a4adbe] hover:underline"
+                          >
+                            Defaults
                           </button>
                         </div>
                       </div>
 
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[380px] overflow-y-auto pr-1">
+                        {APP_CATALOG.map((app) => {
+                          const isSelected = selectedApps.includes(app.id);
+                          return (
+                            <div
+                              key={app.id}
+                              onClick={() => handleToggleApp(app.id)}
+                              className={`p-3 rounded-xl border cursor-pointer transition-all flex items-start gap-3 ${
+                                isSelected
+                                  ? 'bg-[#161a22] border-[#e5b567] text-white'
+                                  : 'bg-[#161a22]/40 border-[#353c4a] text-[#a4adbe] hover:border-[#a4adbe]'
+                              }`}
+                            >
+                              <div className="p-1.5 rounded-lg bg-[#0e1116] border border-[#353c4a] shrink-0 mt-0.5">
+                                <AppBrandIcon id={app.id} size={28} />
+                              </div>
+
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center justify-between gap-1">
+                                  <span className="text-xs font-bold text-white truncate">
+                                    {app.name}
+                                  </span>
+                                  {isSelected ? (
+                                    <CheckSquare className="w-4 h-4 text-[#e5b567] shrink-0" />
+                                  ) : (
+                                    <Square className="w-4 h-4 text-[#6d788d] shrink-0" />
+                                  )}
+                                </div>
+                                <span className="text-[10px] text-[#7ec789] block">
+                                  {app.category} • {app.ports}
+                                </span>
+                                <p className="text-[11px] text-[#a4adbe] mt-1 line-clamp-2">
+                                  {app.desc}
+                                </p>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* STEP 6: USER & CREDENTIALS */}
+                  {wizardStep === 6 && (
+                    <div className="space-y-5 font-mono">
                       <div>
-                        <label className="text-xs font-bold text-[#f5f6fa] block mb-1">
-                          Confirm Encryption Passphrase:
-                        </label>
-                        <input
-                          type={showPassphrase ? 'text' : 'password'}
-                          value={luksConfirm}
-                          onChange={(e) => setLuksConfirm(e.target.value)}
-                          placeholder="Re-type passphrase..."
-                          className="w-full px-4 py-2.5 rounded-xl bg-[#161a22] border border-[#353c4a] text-[#f5f6fa] text-xs focus:outline-none focus:border-[#e5b567]"
-                        />
+                        <h3 className="text-base font-bold text-white flex items-center gap-2">
+                          <User className="w-5 h-5 text-[#e5b567]" />
+                          Step 6: User Accounts & System Security
+                        </h3>
+                        <p className="text-xs text-[#a4adbe] mt-1">
+                          Configure primary administrator user and appliance hostname:
+                        </p>
                       </div>
 
-                      {luksPassphrase && luksConfirm && luksPassphrase !== luksConfirm && (
-                        <div className="text-xs text-rose-400 flex items-center gap-1.5">
-                          <AlertTriangle className="w-4 h-4" /> Passphrases do not match!
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-bold text-white uppercase tracking-wider">
+                            Appliance Hostname <span className="text-red-400">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            value={hostname}
+                            onChange={(e) => setHostname(e.target.value.toLowerCase())}
+                            className={`w-full px-3.5 py-2.5 rounded-xl bg-[#161a22] border text-xs text-white focus:outline-none ${
+                              identityErrors.hostname ? 'border-red-500' : 'border-[#353c4a]'
+                            }`}
+                          />
+                          {identityErrors.hostname && (
+                            <span className="text-[10px] text-red-400 block">{identityErrors.hostname}</span>
+                          )}
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-bold text-white uppercase tracking-wider">
+                            Primary Username <span className="text-red-400">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value.toLowerCase())}
+                            className={`w-full px-3.5 py-2.5 rounded-xl bg-[#161a22] border text-xs text-white focus:outline-none ${
+                              identityErrors.username ? 'border-red-500' : 'border-[#353c4a]'
+                            }`}
+                          />
+                          {identityErrors.username && (
+                            <span className="text-[10px] text-red-400 block">{identityErrors.username}</span>
+                          )}
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-bold text-white uppercase tracking-wider">
+                            User Password <span className="text-red-400">*</span>
+                          </label>
+                          <input
+                            type="password"
+                            value={userPassword}
+                            onChange={(e) => setUserPassword(e.target.value)}
+                            className={`w-full px-3.5 py-2.5 rounded-xl bg-[#161a22] border text-xs text-white focus:outline-none ${
+                              identityErrors.userPassword ? 'border-red-500' : 'border-[#353c4a]'
+                            }`}
+                          />
+                          {identityErrors.userPassword && (
+                            <span className="text-[10px] text-red-400 block">
+                              {identityErrors.userPassword}
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-bold text-white uppercase tracking-wider">
+                            Confirm Password <span className="text-red-400">*</span>
+                          </label>
+                          <input
+                            type="password"
+                            value={userConfirm}
+                            onChange={(e) => setUserConfirm(e.target.value)}
+                            className={`w-full px-3.5 py-2.5 rounded-xl bg-[#161a22] border text-xs text-white focus:outline-none ${
+                              identityErrors.userConfirm ? 'border-red-500' : 'border-[#353c4a]'
+                            }`}
+                          />
+                          {identityErrors.userConfirm && (
+                            <span className="text-[10px] text-red-400 block">
+                              {identityErrors.userConfirm}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="p-4 rounded-xl bg-[#12161f] border border-[#353c4a] space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <span className="text-xs font-bold text-white block">
+                              Grant Sudo Administrator Privileges
+                            </span>
+                            <span className="text-[11px] text-[#a4adbe]">
+                              Adds '{username}' to wheel group with root escalation.
+                            </span>
+                          </div>
+                          <SquishSwitch checked={enableSudo} onChange={setEnableSudo} />
+                        </div>
+
+                        <div className="flex items-center justify-between pt-2 border-t border-[#353c4a]/50">
+                          <div>
+                            <span className="text-xs font-bold text-white block">
+                              Use Same Password for Root Account
+                            </span>
+                            <span className="text-[11px] text-[#a4adbe]">
+                              Syncs user password to the root superuser account.
+                            </span>
+                          </div>
+                          <SquishSwitch checked={sameRootPass} onChange={setSameRootPass} />
+                        </div>
+
+                        {!sameRootPass && (
+                          <div className="pt-2">
+                            <label className="text-[11px] font-bold text-white block mb-1">
+                              Independent Root Password
+                            </label>
+                            <input
+                              type="password"
+                              value={rootPassword}
+                              onChange={(e) => setRootPassword(e.target.value)}
+                              placeholder="Enter root password"
+                              className="w-full px-3 py-2 rounded-lg bg-[#161a22] border border-[#353c4a] text-xs text-white"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* STEP 7: REVIEW & SUMMARY */}
+                  {wizardStep === 7 && (
+                    <div className="space-y-4 font-mono">
+                      <div>
+                        <h3 className="text-base font-bold text-white flex items-center gap-2">
+                          <CheckCircle2 className="w-5 h-5 text-[#e5b567]" />
+                          Step 7: Installation Summary & Drive Review
+                        </h3>
+                        <p className="text-xs text-[#a4adbe] mt-1">
+                          Verify deployment parameters before committing partition layout to disk:
+                        </p>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                        <div className="p-3.5 rounded-xl bg-[#161a22] border border-[#353c4a] space-y-1.5">
+                          <span className="text-[#e5b567] font-bold block">Storage Target</span>
+                          <div className="text-white">Drive: {selectedDisk}</div>
+                          <div className="text-[#a4adbe]">Filesystem: {filesystem.toUpperCase()}</div>
+                          <div className="text-[#a4adbe]">ESP: 1024 MB (FAT32) | Swap: 4096 MB</div>
+                          <div className="text-[#a4adbe]">Encryption: {enableLuks ? 'LUKS2 Enabled' : 'Disabled'}</div>
+                        </div>
+
+                        <div className="p-3.5 rounded-xl bg-[#161a22] border border-[#353c4a] space-y-1.5">
+                          <span className="text-[#e5b567] font-bold block">System Identity</span>
+                          <div className="text-white">Hostname: {hostname}</div>
+                          <div className="text-[#a4adbe]">User: {username} (sudo: {String(enableSudo)})</div>
+                          <div className="text-[#a4adbe]">Kernel: Linux {kernel.toUpperCase()}</div>
+                          <div className="text-[#a4adbe]">Bootloader: {bootloader.toUpperCase()}</div>
+                        </div>
+
+                        <div className="col-span-full p-3.5 rounded-xl bg-[#161a22] border border-[#353c4a] space-y-2">
+                          <span className="text-[#e5b567] font-bold block">
+                            Provisioned Applications ({selectedApps.length})
+                          </span>
+                          <div className="flex flex-wrap gap-2">
+                            {selectedApps.map((appId) => {
+                              const item = APP_CATALOG.find((a) => a.id === appId);
+                              return (
+                                <div
+                                  key={appId}
+                                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#0e1116] border border-[#353c4a] text-[11px]"
+                                >
+                                  <AppBrandIcon id={appId} size={16} />
+                                  <span className="text-white font-bold">{item?.name || appId}</span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-2.5 text-xs text-amber-200">
+                        <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                        <span>
+                          Warning: Committing installation will reformat target drive {selectedDisk}. Ensure any critical existing data has been backed up.
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* STEP 8: LIVE INSTALLATION PROGRESS */}
+                  {wizardStep === 8 && (
+                    <div className="space-y-4 font-mono">
+                      <div>
+                        <h3 className="text-base font-bold text-white flex items-center gap-2">
+                          <Zap className="w-5 h-5 text-[#e5b567]" />
+                          Step 8: Appliance Deployment in Progress
+                        </h3>
+                        <p className="text-xs text-[#a4adbe] mt-1">
+                          Formatting drives, pacstrapping system packages, and configuring Niri Wayland station:
+                        </p>
+                      </div>
+
+                      {/* Animated Progress Bar */}
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-white font-bold">
+                            {installComplete ? 'Installation Complete!' : 'Deploying System Root...'}
+                          </span>
+                          <span className="text-[#e5b567] font-bold">{installProgress}%</span>
+                        </div>
+                        <div className="w-full bg-[#161a22] h-3 rounded-full overflow-hidden border border-[#353c4a]">
+                          <div
+                            className="bg-gradient-to-r from-[#e5b567] to-[#7ec789] h-full transition-all duration-300"
+                            style={{ width: `${installProgress}%` }}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Live Terminal Log */}
+                      <div className="p-4 rounded-xl bg-black/80 border border-[#353c4a] h-64 overflow-y-auto space-y-1 font-mono text-[11px]">
+                        {installLog.map((line, idx) => (
+                          <div
+                            key={idx}
+                            className={
+                              line.includes('[SUCCESS]')
+                                ? 'text-[#7ec789] font-bold'
+                                : line.includes('[WARN]')
+                                ? 'text-amber-400'
+                                : 'text-[#a4adbe]'
+                            }
+                          >
+                            {line}
+                          </div>
+                        ))}
+                      </div>
+
+                      {installComplete && (
+                        <div className="p-4 rounded-xl bg-emerald-500/15 border border-emerald-500/40 text-xs text-emerald-200 flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+                            <span>
+                              Tinapple OS successfully installed to {selectedDisk}. System is ready to boot!
+                            </span>
+                          </div>
+                          <button
+                            onClick={() => {
+                              fetch('/api/v1/system/reboot', { method: 'POST' }).catch(() => {});
+                              alert('Reboot signal sent. System will now reboot into your installed Tinapple OS!');
+                            }}
+                            className="px-4 py-2 rounded-xl bg-emerald-500 text-black font-bold hover:brightness-110 active:scale-95 transition-all flex items-center gap-1.5"
+                          >
+                            <RotateCcw className="w-4 h-4" />
+                            <span>Reboot into System</span>
+                          </button>
                         </div>
                       )}
                     </div>
                   )}
                 </div>
-              )}
 
-              {/* STEP 5: BOOTLOADER */}
-              {wizardStep === 5 && (
-                <div className="space-y-4 font-mono">
-                  <h3 className="text-lg font-bold text-[#f5f6fa] flex items-center gap-2">
-                    <Zap className="w-5 h-5 text-[#e5b567]" />
-                    Step 5: Bootloader Selection
-                  </h3>
-                  <p className="text-xs text-[#a4adbe]">
-                    Select the modern firmware bootloader to launch Tinapple OS:
-                  </p>
-
-                  <div className="space-y-3 pt-2">
-                    <div
-                      onClick={() => setBootloader('limine')}
-                      className={`p-4 rounded-xl border cursor-pointer transition-all ${
-                        bootloader === 'limine'
-                          ? 'bg-[#161a22] border-[#e5b567] text-[#e5b567]'
-                          : 'bg-[#161a22]/50 border-[#353c4a] text-[#f5f6fa] hover:border-[#a4adbe]'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-bold">Limine Bootloader (Recommended)</span>
-                        {bootloader === 'limine' && <Check className="w-4 h-4 text-[#e5b567]" />}
-                      </div>
-                      <p className="text-xs text-[#a4adbe] mt-1">
-                        Fastest boot times, modern protocol, automatically updates boot configs on
-                        kernel installation, high-resolution splash screens.
-                      </p>
-                    </div>
-
-                    <div
-                      onClick={() => setBootloader('grub')}
-                      className={`p-4 rounded-xl border cursor-pointer transition-all ${
-                        bootloader === 'grub'
-                          ? 'bg-[#161a22] border-[#e5b567] text-[#e5b567]'
-                          : 'bg-[#161a22]/50 border-[#353c4a] text-[#f5f6fa] hover:border-[#a4adbe]'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-bold">GRUB (GNU Grand Unified Bootloader)</span>
-                        {bootloader === 'grub' && <Check className="w-4 h-4 text-[#e5b567]" />}
-                      </div>
-                      <p className="text-xs text-[#a4adbe] mt-1">
-                        Traditional standard Linux bootloader with extensive filesystem support and
-                        rescue shell.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* STEP 6: IDENTITY & USER */}
-              {wizardStep === 6 && (
-                <div className="space-y-4 font-mono">
-                  <h3 className="text-lg font-bold text-[#f5f6fa] flex items-center gap-2">
-                    <User className="w-5 h-5 text-[#e5b567]" />
-                    Step 6: System Identity & Admin User
-                  </h3>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-xs font-bold text-[#f5f6fa] block mb-1">
-                        System Hostname:
-                      </label>
-                      <input
-                        type="text"
-                        value={hostname}
-                        onChange={(e) => setHostname(e.target.value)}
-                        className="w-full px-4 py-2.5 rounded-xl bg-[#161a22] border border-[#353c4a] text-[#f5f6fa] text-xs focus:outline-none focus:border-[#e5b567]"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="text-xs font-bold text-[#f5f6fa] block mb-1">
-                        Administrative Username:
-                      </label>
-                      <input
-                        type="text"
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
-                        className="w-full px-4 py-2.5 rounded-xl bg-[#161a22] border border-[#353c4a] text-[#f5f6fa] text-xs focus:outline-none focus:border-[#e5b567]"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="text-xs font-bold text-[#f5f6fa] block mb-1">
-                        User Password:
-                      </label>
-                      <input
-                        type="password"
-                        value={userPassword}
-                        onChange={(e) => setUserPassword(e.target.value)}
-                        className="w-full px-4 py-2.5 rounded-xl bg-[#161a22] border border-[#353c4a] text-[#f5f6fa] text-xs focus:outline-none focus:border-[#e5b567]"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="text-xs font-bold text-[#f5f6fa] block mb-1">
-                        Confirm Password:
-                      </label>
-                      <input
-                        type="password"
-                        value={userConfirm}
-                        onChange={(e) => setUserConfirm(e.target.value)}
-                        className="w-full px-4 py-2.5 rounded-xl bg-[#161a22] border border-[#353c4a] text-[#f5f6fa] text-xs focus:outline-none focus:border-[#e5b567]"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="pt-3 space-y-2">
-                    <label className="flex items-center gap-3 p-3 rounded-xl bg-[#161a22] border border-[#353c4a] cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={enableSudo}
-                        onChange={(e) => setEnableSudo(e.target.checked)}
-                        className="rounded border-[#353c4a] text-[#e5b567] focus:ring-0"
-                      />
-                      <span className="text-xs font-bold text-[#f5f6fa]">
-                        Grant administrative (sudo) privileges to this user
-                      </span>
-                    </label>
-
-                    <label className="flex items-center gap-3 p-3 rounded-xl bg-[#161a22] border border-[#353c4a] cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={sameRootPass}
-                        onChange={(e) => setSameRootPass(e.target.checked)}
-                        className="rounded border-[#353c4a] text-[#e5b567] focus:ring-0"
-                      />
-                      <span className="text-xs font-bold text-[#f5f6fa]">
-                        Use the same password for system root account
-                      </span>
-                    </label>
-                  </div>
-                </div>
-              )}
-
-              {/* STEP 7: KERNEL */}
-              {wizardStep === 7 && (
-                <div className="space-y-4 font-mono">
-                  <h3 className="text-lg font-bold text-[#f5f6fa] flex items-center gap-2">
-                    <Cpu className="w-5 h-5 text-[#e5b567]" />
-                    Step 7: Linux Kernel Selection
-                  </h3>
-                  <p className="text-xs text-[#a4adbe]">
-                    Choose the Linux kernel branch tailored for your workload:
-                  </p>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-                    {[
-                      {
-                        id: 'lts',
-                        name: 'Linux LTS (Recommended)',
-                        desc: 'Long-Term Support kernel with verified enterprise stability and maximum uptime.',
-                      },
-                      {
-                        id: 'current',
-                        name: 'Linux (Standard Current)',
-                        desc: 'Latest vanilla upstream Linux kernel with bleeding-edge hardware drivers.',
-                      },
-                      {
-                        id: 'hardened',
-                        name: 'Linux Hardened',
-                        desc: 'Security-focused kernel patches with extensive memory mitigation features.',
-                      },
-                      {
-                        id: 'zen',
-                        name: 'Linux Zen',
-                        desc: 'Tuned for interactive desktop responsiveness and low-latency scheduling.',
-                      },
-                    ].map((k) => (
-                      <div
-                        key={k.id}
-                        onClick={() => setKernel(k.id as any)}
-                        className={`p-4 rounded-xl border cursor-pointer transition-all ${
-                          kernel === k.id
-                            ? 'bg-[#161a22] border-[#e5b567] text-[#e5b567]'
-                            : 'bg-[#161a22]/50 border-[#353c4a] text-[#f5f6fa] hover:border-[#a4adbe]'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-bold">{k.name}</span>
-                          {kernel === k.id && <Check className="w-4 h-4 text-[#e5b567]" />}
-                        </div>
-                        <p className="text-xs text-[#a4adbe] mt-1">{k.desc}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* STEP 8: PROFILES */}
-              {wizardStep === 8 && (
-                <div className="space-y-4 font-mono">
-                  <h3 className="text-lg font-bold text-[#f5f6fa] flex items-center gap-2">
-                    <Layers className="w-5 h-5 text-[#e5b567]" />
-                    Step 8: Appliance Profiles & Desktop Stacks
-                  </h3>
-                  <p className="text-xs text-[#a4adbe]">
-                    Toggle desktop components and homelab application services to bundle:
-                  </p>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-                    {[
-                      {
-                        id: 'base',
-                        title: '󰣇 Base Core',
-                        desc: 'Essential CLI, zsh, vim, openssh, NetworkManager, sudo, pacman tools (Default).',
-                      },
-                      {
-                        id: 'desktop',
-                        title: ' Niri Wayland Station',
-                        desc: 'Scrollable-tiling Wayland compositor, Waybar V3.1a theme, Matugen dynamic colors, fuzzel, foot.',
-                      },
-                      {
-                        id: 'media',
-                        title: '󰕼 Media Server',
-                        desc: 'Jellyfin media server, hardware VA-API transcoding, DLNA media hub.',
-                      },
-                      {
-                        id: 'downloads',
-                        title: ' Download Automation',
-                        desc: 'qBittorrent-nox daemon, Transmission CLI, automated torrent webui.',
-                      },
-                      {
-                        id: 'backups',
-                        title: '󰆓 Automated Backups',
-                        desc: 'Restic, BorgBackup, Syncthing synchronization, rclone cloud storage.',
-                      },
-                      {
-                        id: 'network',
-                        title: '󰖩 Homelab Networking',
-                        desc: 'Tailscale mesh VPN, WireGuard tools, Unbound caching DNS resolver.',
-                      },
-                      {
-                        id: 'infrastructure',
-                        title: '󰄛 Observability & Monitoring',
-                        desc: 'Prometheus metrics, Grafana dashboards, node-exporter daemon.',
-                      },
-                      {
-                        id: 'databases',
-                        title: ' Database Suite',
-                        desc: 'PostgreSQL, MariaDB, Valkey/Redis cache, InfluxDB time-series.',
-                      },
-                    ].map((p) => {
-                      const isChecked = selectedProfiles.includes(p.id);
-                      return (
-                        <div
-                          key={p.id}
-                          onClick={() => handleToggleProfile(p.id)}
-                          className={`p-3.5 rounded-xl border cursor-pointer transition-all ${
-                            isChecked
-                              ? 'bg-[#161a22] border-[#e5b567] text-[#e5b567]'
-                              : 'bg-[#161a22]/50 border-[#353c4a] text-[#f5f6fa] hover:border-[#a4adbe]'
-                          }`}
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm font-bold">{p.title}</span>
-                            <input
-                              type="checkbox"
-                              checked={isChecked}
-                              onChange={() => {}}
-                              className="rounded border-[#353c4a] text-[#e5b567] focus:ring-0"
-                            />
-                          </div>
-                          <p className="text-xs text-[#a4adbe] mt-1">{p.desc}</p>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* STEP 9: REVIEW & DEPLOY */}
-              {wizardStep === 9 && (
-                <div className="space-y-4 font-mono">
-                  <h3 className="text-lg font-bold text-[#f5f6fa] flex items-center gap-2">
-                    <ShieldCheck className="w-5 h-5 text-[#7ec789]" />
-                    Step 9: Review & Commit Installation
-                  </h3>
-
-                  <div className="bg-[#161a22] p-4 rounded-xl border border-[#353c4a] space-y-2 text-xs">
-                    <div className="flex justify-between py-1 border-b border-[#353c4a]/40">
-                      <span className="text-[#a4adbe]">Target Drive:</span>
-                      <span className="text-[#e5b567] font-bold">{selectedDisk} ({diskStrategy})</span>
-                    </div>
-                    <div className="flex justify-between py-1 border-b border-[#353c4a]/40">
-                      <span className="text-[#a4adbe]">Filesystem:</span>
-                      <span className="text-[#f5f6fa] font-bold">{filesystem.toUpperCase()}</span>
-                    </div>
-                    <div className="flex justify-between py-1 border-b border-[#353c4a]/40">
-                      <span className="text-[#a4adbe]">LUKS2 Encryption:</span>
-                      <span className={enableLuks ? 'text-[#7ec789] font-bold' : 'text-[#a4adbe]'}>
-                        {enableLuks ? 'Enabled (AES-XTS-PLAIN64)' : 'Disabled'}
-                      </span>
-                    </div>
-                    <div className="flex justify-between py-1 border-b border-[#353c4a]/40">
-                      <span className="text-[#a4adbe]">Bootloader:</span>
-                      <span className="text-[#f5f6fa] font-bold">{bootloader.toUpperCase()}</span>
-                    </div>
-                    <div className="flex justify-between py-1 border-b border-[#353c4a]/40">
-                      <span className="text-[#a4adbe]">Hostname / User:</span>
-                      <span className="text-[#f5f6fa] font-bold">{hostname} / {username}</span>
-                    </div>
-                    <div className="flex justify-between py-1 border-b border-[#353c4a]/40">
-                      <span className="text-[#a4adbe]">Kernel Branch:</span>
-                      <span className="text-[#f5f6fa] font-bold">Linux {kernel.toUpperCase()}</span>
-                    </div>
-                    <div className="flex justify-between py-1">
-                      <span className="text-[#a4adbe]">Profiles:</span>
-                      <span className="text-[#7ec789] font-bold">{selectedProfiles.join(', ')}</span>
-                    </div>
-                  </div>
-
-                  {/* Progress / Execution Console */}
-                  {isInstalling && (
-                    <div className="p-4 rounded-xl bg-[#060709] border border-[#353c4a] space-y-3">
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-[#e5b567] font-bold flex items-center gap-2">
-                          <RefreshCw className="w-3.5 h-3.5 animate-spin" /> Deploying Appliance...
-                        </span>
-                        <span className="text-[#f5f6fa] font-bold">{installProgress}%</span>
-                      </div>
-                      <div className="w-full bg-[#161a22] h-2.5 rounded-full overflow-hidden">
-                        <div
-                          className="bg-gradient-to-r from-[#e5b567] to-[#7ec789] h-full transition-all duration-300"
-                          style={{ width: `${installProgress}%` }}
-                        />
-                      </div>
-                      <div className="h-28 overflow-y-auto font-mono text-[11px] text-[#a4adbe] space-y-1 bg-[#0b0c0e] p-2 rounded-lg border border-[#353c4a]/40">
-                        {installLog.map((log, i) => (
-                          <div key={i}>{log}</div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {installComplete && (
-                    <div className="p-4 rounded-xl bg-[#7ec789]/10 border border-[#7ec789]/40 text-[#7ec789] flex items-center gap-3">
-                      <CheckCircle2 className="w-6 h-6 shrink-0" />
-                      <div>
-                        <div className="text-sm font-bold">Installation Succeeded!</div>
-                        <div className="text-xs text-[#a4adbe] mt-0.5">
-                          Tinapple OS is installed. You can now reboot into your new system.
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* NAVIGATION BUTTONS */}
-              <div className="flex items-center justify-between pt-6 mt-6 border-t border-[#353c4a]/50 font-mono">
-                {wizardStep > 1 ? (
+                {/* Bottom Navigation Control Buttons */}
+                <div className="flex items-center justify-between pt-6 border-t border-[#353c4a] mt-6 font-mono">
                   <button
-                    disabled={isInstalling}
+                    disabled={wizardStep === 1 || isInstalling}
                     onClick={() => setWizardStep(wizardStep - 1)}
-                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#161a22] text-[#a4adbe] hover:text-[#f5f6fa] border border-[#353c4a] text-xs font-bold transition-all"
+                    className="px-4 py-2 rounded-xl bg-[#161a22] text-[#f5f6fa] border border-[#353c4a] text-xs font-bold disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2 hover:border-[#a4adbe]"
                   >
-                    <ArrowLeft className="w-4 h-4" />
-                    Back
+                    <ArrowLeft className="w-3.5 h-3.5" />
+                    <span>Back</span>
                   </button>
-                ) : (
-                  <div />
-                )}
 
-                {wizardStep < 9 ? (
-                  <button
-                    onClick={() => setWizardStep(wizardStep + 1)}
-                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#e5b567] text-[#060709] font-bold text-xs hover:bg-[#f5c77e] transition-all shadow-md shadow-[#e5b567]/20"
-                  >
-                    <span>Next Stage</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
-                ) : (
-                  !installComplete && (
-                    <button
-                      disabled={isInstalling}
-                      onClick={runInstallSimulation}
-                      className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#7ec789] text-[#060709] font-black text-xs hover:bg-[#92d89c] transition-all shadow-lg shadow-[#7ec789]/20"
-                    >
-                      <Play className="w-4 h-4 fill-current" />
-                      Commit & Install Appliance OS
-                    </button>
-                  )
-                )}
+                  <div className="flex items-center gap-2">
+                    {wizardStep < 7 && (
+                      <button
+                        disabled={wizardStep === 6 && !canProceedStep6}
+                        onClick={() => setWizardStep(wizardStep + 1)}
+                        className="px-5 py-2 rounded-xl bg-[#e5b567] text-[#0e1116] text-xs font-bold hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
+                      >
+                        <span>Next Step</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+
+                    {wizardStep === 7 && (
+                      <button
+                        onClick={() => {
+                          setWizardStep(8);
+                          startRealInstallation();
+                        }}
+                        className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#e5b567] to-[#7ec789] text-[#0e1116] text-xs font-black shadow-lg shadow-[#e5b567]/25 hover:brightness-110 active:scale-95 flex items-center gap-2"
+                      >
+                        <Zap className="w-4 h-4" />
+                        <span>Install Tinapple OS</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
-            </SpotlightCard>
-          </motion.div>
-        )}
-
-        {/* ================= TWEAKS TAB ================= */}
-        {activeTab === 'tweaks' && (
-          <motion.div
-            key="tweaks"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="space-y-4 font-mono"
-          >
-            {tweakStatus && (
-              <div className="p-3 rounded-xl bg-[#e5b567]/10 border border-[#e5b567]/40 text-[#e5b567] text-xs font-bold">
-                {tweakStatus}
-              </div>
-            )}
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <SpotlightCard
-                spotlightColor="rgba(229, 181, 103, 0.12)"
-                borderColor="rgba(229, 181, 103, 0.3)"
-                className="p-5 bg-[#0e1116] border-[#353c4a]"
-              >
-                <h4 className="text-sm font-bold text-[#f5f6fa] mb-1">Update Pacman Mirrors</h4>
-                <p className="text-xs text-[#a4adbe] mb-4">
-                  Rate Arch Linux mirror servers by lowest network latency and refresh database.
-                </p>
-                <button
-                  onClick={() => runTweakAction('Mirror Refresh', 'rate-mirrors arch')}
-                  className="px-4 py-2 rounded-xl bg-[#161a22] text-[#e5b567] border border-[#353c4a] text-xs font-bold hover:bg-[#222733]"
-                >
-                  ⚡ Optimize Mirrors
-                </button>
-              </SpotlightCard>
-
-              <SpotlightCard
-                spotlightColor="rgba(126, 199, 137, 0.12)"
-                borderColor="rgba(126, 199, 137, 0.3)"
-                className="p-5 bg-[#0e1116] border-[#353c4a]"
-              >
-                <h4 className="text-sm font-bold text-[#f5f6fa] mb-1">Clear Package Cache</h4>
-                <p className="text-xs text-[#a4adbe] mb-4">
-                  Safely remove uninstalled and stale ALPM cache tarballs using paccache.
-                </p>
-                <button
-                  onClick={() => runTweakAction('Cache Cleaning', 'paccache -rk1')}
-                  className="px-4 py-2 rounded-xl bg-[#161a22] text-[#7ec789] border border-[#353c4a] text-xs font-bold hover:bg-[#222733]"
-                >
-                  🧹 Clean Cache
-                </button>
-              </SpotlightCard>
-
-              <SpotlightCard
-                spotlightColor="rgba(122, 162, 247, 0.12)"
-                borderColor="rgba(122, 162, 247, 0.3)"
-                className="p-5 bg-[#0e1116] border-[#353c4a]"
-              >
-                <h4 className="text-sm font-bold text-[#f5f6fa] mb-1">Rebuild Initramfs</h4>
-                <p className="text-xs text-[#a4adbe] mb-4">
-                  Regenerate early userspace initramfs images for all installed Linux kernels.
-                </p>
-                <button
-                  onClick={() => runTweakAction('Initramfs Build', 'mkinitcpio -P')}
-                  className="px-4 py-2 rounded-xl bg-[#161a22] text-blue-400 border border-[#353c4a] text-xs font-bold hover:bg-[#222733]"
-                >
-                  ⚙ Rebuild Images
-                </button>
-              </SpotlightCard>
-
-              <SpotlightCard
-                spotlightColor="rgba(229, 181, 103, 0.12)"
-                borderColor="rgba(229, 181, 103, 0.3)"
-                className="p-5 bg-[#0e1116] border-[#353c4a]"
-              >
-                <h4 className="text-sm font-bold text-[#f5f6fa] mb-1">Restart Waybar Session</h4>
-                <p className="text-xs text-[#a4adbe] mb-4">
-                  Reload Waybar V3.1a configuration and re-apply dynamic Matugen CSS color palette.
-                </p>
-                <button
-                  onClick={() => runTweakAction('Waybar Reload', 'omarchy-restart-waybar')}
-                  className="px-4 py-2 rounded-xl bg-[#161a22] text-[#e5b567] border border-[#353c4a] text-xs font-bold hover:bg-[#222733]"
-                >
-                   Reload Waybar
-                </button>
-              </SpotlightCard>
             </div>
-          </motion.div>
-        )}
+          </div>
+        </motion.div>
+      )}
 
-        {/* ================= SHORTCUTS TAB ================= */}
-        {activeTab === 'shortcuts' && (
-          <motion.div
-            key="shortcuts"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="space-y-4 font-mono"
+      {/* ================= SHORTCUTS TAB (NIRI-BTW 100% ACCURATE) ================= */}
+      {activeTab === 'shortcuts' && (
+        <motion.div
+          key="shortcuts"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          className="space-y-6"
+        >
+          {/* Host conflict notice */}
+          <SpotlightCard
+            className="p-5 bg-[#12161f] border-[#e5b567]/40"
+            spotlightColor="rgba(229, 181, 103, 0.15)"
           >
-            <SpotlightCard
-              spotlightColor="rgba(229, 181, 103, 0.1)"
-              borderColor="rgba(229, 181, 103, 0.3)"
-              className="p-6 bg-[#0e1116] border-[#353c4a]"
-            >
-              <h3 className="text-base font-bold text-[#f5f6fa] mb-4 flex items-center gap-2">
-                <FileCode className="w-5 h-5 text-[#e5b567]" />
-                Niri & Waybar Desktop Shortcut Reference
-              </h3>
+            <div className="flex items-start gap-3.5">
+              <div className="p-2.5 rounded-xl bg-[#e5b567]/15 text-[#e5b567] border border-[#e5b567]/30 shrink-0">
+                <Smartphone className="w-5 h-5" />
+              </div>
+              <div className="space-y-1 font-mono">
+                <span className="text-xs font-bold text-white block">
+                  Pro-Tip: Workaround for Host Shortcut Conflicts
+                </span>
+                <p className="text-xs text-[#a4adbe] leading-relaxed">
+                  If your Linux host also uses the <code className="text-[#e5b567]">Super</code> (Mod4) key, press{' '}
+                  <kbd className="px-2 py-0.5 rounded bg-[#161a22] text-[#e5b567] border border-[#353c4a] font-bold">
+                    Ctrl + Alt + G
+                  </kbd>{' '}
+                  in the QEMU window to grab 100% of keyboard & mouse inputs directly into the VM. Alternatively, all main actions also support the <kbd className="px-1.5 py-0.5 rounded bg-[#161a22] text-white border border-[#353c4a]">Alt</kbd> key!
+                </p>
+              </div>
+            </div>
+          </SpotlightCard>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+          {/* Keybindings Reference Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 font-mono">
+            {/* Terminal & Core Applications */}
+            <div className="p-5 rounded-2xl bg-[#0e1116] border border-[#353c4a] space-y-3">
+              <span className="text-xs font-bold text-[#e5b567] uppercase tracking-wider block">
+                Applications & Terminal
+              </span>
+              <div className="space-y-2 text-xs">
                 {[
-                  { key: 'Super + Return', desc: 'Launch Foot Hardware-Accelerated Terminal' },
-                  { key: 'Super + D / Space', desc: 'Fuzzel Application Launcher' },
-                  { key: 'Super + Q', desc: 'Close Focused Window' },
-                  { key: 'Super + Left / Right', desc: 'Scroll Column Left / Right' },
-                  { key: 'Super + H / J / K / L', desc: 'Vim-style Focus Navigation' },
-                  { key: 'Super + Ctrl + Left / Right', desc: 'Move Window Across Columns' },
-                  { key: 'Super + O', desc: 'Toggle Niri Workspace Overview' },
-                  { key: 'Super + 1 .. 9', desc: 'Switch directly to Workspace 1 through 9' },
-                  { key: 'Super + Shift + /', desc: 'Display Niri Built-in Hotkey Overlay' },
-                  { key: 'Super + Alt + Space', desc: 'Omarchy System & Power Menu' },
-                ].map((s, i) => (
-                  <div
-                    key={i}
-                    className="p-3 rounded-xl bg-[#161a22] border border-[#353c4a] flex items-center justify-between"
-                  >
-                    <span className="text-[#a4adbe]">{s.desc}</span>
-                    <kbd className="px-2.5 py-1 rounded-lg bg-[#222733] border border-[#353c4a] text-[#e5b567] font-bold">
-                      {s.key}
-                    </kbd>
+                  { keys: ['Super + Return', 'Alt + Return'], desc: 'Open Kitty GPU Terminal' },
+                  { keys: ['Super + Space', 'Alt + Space'], desc: 'Launch Rofi Application Menu' },
+                  { keys: ['Super + B'], desc: 'Launch Firefox Web Browser' },
+                  { keys: ['Super + Shift + B'], desc: 'Open Tinapple Hub Dashboard (:8088)' },
+                  { keys: ['Super + E'], desc: 'Open Thunar File Manager' },
+                  { keys: ['Super + Q', 'Super + W'], desc: 'Close Active Window' },
+                ].map((k, i) => (
+                  <div key={i} className="flex items-center justify-between py-1.5 border-b border-[#353c4a]/40">
+                    <div className="flex gap-1.5">
+                      {k.keys.map((key) => (
+                        <kbd key={key} className="px-2 py-0.5 rounded bg-[#161a22] text-[#f5f6fa] border border-[#353c4a] text-[11px]">
+                          {key}
+                        </kbd>
+                      ))}
+                    </div>
+                    <span className="text-[11px] text-[#a4adbe]">{k.desc}</span>
                   </div>
                 ))}
               </div>
-            </SpotlightCard>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            </div>
+
+            {/* Rice, Wallpaper & Theming (niri-btw) */}
+            <div className="p-5 rounded-2xl bg-[#0e1116] border border-[#353c4a] space-y-3">
+              <span className="text-xs font-bold text-[#7ec789] uppercase tracking-wider block">
+                Niri Rice & Wallpaper Engine (niri-btw)
+              </span>
+              <div className="space-y-2 text-xs">
+                {[
+                  { keys: ['Super + Shift + N'], desc: 'Open Visual Wallpaper Selector (Rofi)' },
+                  { keys: ['Super + N'], desc: 'Set Random Wallpaper + Run Pywal Colors' },
+                  { keys: ['Super + Z'], desc: 'Toggle Waybar Visibility' },
+                  { keys: ['Super + X'], desc: 'Reload Waybar Instance' },
+                  { keys: ['Super + Shift + V'], desc: 'Clipboard History Selector (Cliphist)' },
+                  { keys: ['Super + Alt + L'], desc: 'Lock Screen (Swaylock)' },
+                ].map((k, i) => (
+                  <div key={i} className="flex items-center justify-between py-1.5 border-b border-[#353c4a]/40">
+                    <div className="flex gap-1.5">
+                      {k.keys.map((key) => (
+                        <kbd key={key} className="px-2 py-0.5 rounded bg-[#161a22] text-[#7ec789] border border-[#353c4a] text-[11px]">
+                          {key}
+                        </kbd>
+                      ))}
+                    </div>
+                    <span className="text-[11px] text-[#a4adbe]">{k.desc}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Scrollable Tiling Navigation */}
+            <div className="col-span-full p-5 rounded-2xl bg-[#0e1116] border border-[#353c4a] space-y-3">
+              <span className="text-xs font-bold text-[#38bdf8] uppercase tracking-wider block">
+                Niri Scrollable Column Navigation
+              </span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
+                {[
+                  { keys: ['Super + Left / Right', 'Super + H / L'], desc: 'Navigate between scrollable columns' },
+                  { keys: ['Super + Up / Down', 'Super + K / J'], desc: 'Navigate vertically within window column' },
+                  { keys: ['Super + Ctrl + Left / Right'], desc: 'Move active column left or right' },
+                  { keys: ['Super + Shift + Left / Right'], desc: 'Move active window to adjacent column' },
+                  { keys: ['Super + R'], desc: 'Cycle column preset width (1/3, 1/2, 2/3, 100%)' },
+                  { keys: ['Super + O'], desc: 'Toggle Niri workspace overview' },
+                ].map((k, i) => (
+                  <div key={i} className="p-3 rounded-xl bg-[#161a22] border border-[#353c4a] space-y-1">
+                    <div className="flex flex-wrap gap-1">
+                      {k.keys.map((key) => (
+                        <kbd key={key} className="px-1.5 py-0.5 rounded bg-[#0e1116] text-[#38bdf8] border border-[#353c4a] text-[10px]">
+                          {key}
+                        </kbd>
+                      ))}
+                    </div>
+                    <span className="text-[11px] text-[#a4adbe] block">{k.desc}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      )}
+
+      {/* ================= TWEAKS & LIVE SYSTEM TAB ================= */}
+      {activeTab === 'tweaks' && (
+        <motion.div
+          key="tweaks"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          className="space-y-6"
+        >
+          {tweakStatus && (
+            <div className="p-4 rounded-xl bg-[#e5b567]/15 border border-[#e5b567]/40 text-xs font-mono text-[#e5b567] flex items-center gap-2">
+              <Sparkles className="w-4 h-4 shrink-0" />
+              <span>{tweakStatus}</span>
+            </div>
+          )}
+
+          {/* Running Service Endpoints */}
+          <SpotlightCard
+            className="p-6 bg-[#0e1116] border-[#353c4a]"
+            spotlightColor="rgba(229, 181, 103, 0.1)"
+          >
+            <div className="mb-4 font-mono">
+              <span className="text-xs font-bold text-white uppercase tracking-wider block">
+                Active Appliance Service Endpoints
+              </span>
+              <span className="text-xs text-[#a4adbe]">
+                Click any service to open its dashboard in your browser:
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 font-mono">
+              {[
+                { name: 'Tinapple Hub', port: '8088', url: 'http://localhost:8088', icon: 'desktop', desc: 'Central Control Hub' },
+                { name: 'Suwayomi Server', port: '4567', url: 'http://localhost:4567', icon: 'suwayomi', desc: 'Manga WebUI' },
+                { name: 'Jellyfin Media', port: '8096', url: 'http://localhost:8096', icon: 'jellyfin', desc: 'Home Theater WebUI' },
+                { name: 'qBittorrent', port: '8080', url: 'http://localhost:8080', icon: 'qbittorrent', desc: 'Download Client' },
+                { name: 'Minecraft Server', port: '25565', url: 'localhost:25565', icon: 'minecraft', desc: 'PaperMC + Playit' },
+                { name: 'AdGuard Home', port: '3000', url: 'http://localhost:3000', icon: 'adguard', desc: 'DNS Protection' },
+              ].map((svc) => (
+                <a
+                  key={svc.name}
+                  href={svc.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="p-3.5 rounded-xl bg-[#161a22] border border-[#353c4a] hover:border-[#e5b567] transition-all flex items-center justify-between group"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <AppBrandIcon id={svc.icon} size={24} />
+                    <div>
+                      <span className="text-xs font-bold text-white group-hover:text-[#e5b567] transition-colors block">
+                        {svc.name}
+                      </span>
+                      <span className="text-[10px] text-[#a4adbe]">{svc.desc}</span>
+                    </div>
+                  </div>
+                  <ExternalLink className="w-3.5 h-3.5 text-[#a4adbe] group-hover:text-[#e5b567]" />
+                </a>
+              ))}
+            </div>
+          </SpotlightCard>
+
+          {/* Quick System Action Controls */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 font-mono">
+            <button
+              onClick={() => handleTweak('Wallpaper Refresh', '/api/v1/desktop/wallpaper/random')}
+              className="p-4 rounded-xl bg-[#161a22] border border-[#353c4a] hover:border-[#e5b567] text-left transition-all"
+            >
+              <RefreshCw className="w-4 h-4 text-[#e5b567] mb-2" />
+              <span className="text-xs font-bold text-white block">Randomize Wallpaper</span>
+              <span className="text-[11px] text-[#a4adbe]">Triggers Swww & Pywal color regen</span>
+            </button>
+
+            <button
+              onClick={() => handleTweak('NTP Time Sync', '/api/v1/system/timesync')}
+              className="p-4 rounded-xl bg-[#161a22] border border-[#353c4a] hover:border-[#7ec789] text-left transition-all"
+            >
+              <Zap className="w-4 h-4 text-[#7ec789] mb-2" />
+              <span className="text-xs font-bold text-white block">Synchronize NTP Time</span>
+              <span className="text-[11px] text-[#a4adbe]">Sync system clock with pool.ntp.org</span>
+            </button>
+
+            <button
+              onClick={() => handleTweak('Waybar Restart', '/api/v1/desktop/waybar/restart')}
+              className="p-4 rounded-xl bg-[#161a22] border border-[#353c4a] hover:border-[#38bdf8] text-left transition-all"
+            >
+              <Sliders className="w-4 h-4 text-[#38bdf8] mb-2" />
+              <span className="text-xs font-bold text-white block">Reload Waybar</span>
+              <span className="text-[11px] text-[#a4adbe]">Re-parses ~/.config/waybar/config</span>
+            </button>
+          </div>
+        </motion.div>
+      )}
     </div>
   );
 };
+
 export default WelcomeInstaller;

@@ -1,4 +1,6 @@
 # Byte-compiled / binary files
+*.apk
+*.idsig
 *.iso
 *.iso.sig
 *.iso.sha256
@@ -51,3 +53,5 @@ host_key.pub
 !tinapple-installer/iso/airootfs/usr/local/bin/tinapple-banner
 !tinapple-installer/iso/airootfs/usr/local/bin/
 tinapple-installer/iso/airootfs/usr/local/bin/tinapple-install
+tinapple-android/build/
+tinapple-dash/web/dist/tsumiru/

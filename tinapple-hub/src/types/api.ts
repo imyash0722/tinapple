@@ -56,14 +56,43 @@ export interface TelemetrySnapshot {
 
 export interface ServiceInfo {
   name: string;
+  displayName?: string;
+  tagline?: string;
   description: string;
-  activeState: 'active' | 'inactive' | 'failed' | 'activating' | 'deactivating';
+  activeState: 'active' | 'inactive' | 'failed' | 'activating' | 'deactivating' | 'not_installed';
   subState: string;
-  unitFileState: 'enabled' | 'disabled' | 'masked' | 'static';
-  category: 'core' | 'media' | 'database' | 'network' | 'desktop' | 'system';
+  unitFileState: 'enabled' | 'disabled' | 'masked' | 'static' | 'not-found';
+  category: 'core' | 'media' | 'database' | 'network' | 'desktop' | 'system' | 'downloads' | 'security' | 'gaming' | 'backups';
   memoryBytes?: number;
   cpuPercent?: number;
   port?: number;
+  installed?: boolean;
+  running?: boolean;
+  icon?: string;
+  accentColor?: string;
+}
+
+export interface AppInfo {
+  id: string;
+  name: string;
+  description: string;
+  tagline: string;
+  category: string;
+  package: string;
+  unit: string;
+  binary: string;
+  port: number;
+  icon: string;
+  accentColor: string;
+  configPath?: string;
+  installed: boolean;
+  running: boolean;
+  status: 'running' | 'stopped' | 'not_installed' | 'failed' | 'starting';
+  loadState?: string;
+  activeState?: string;
+  subState?: string;
+  enabled?: boolean;
+  config?: Record<string, string>;
 }
 
 export interface HardwareInfo {

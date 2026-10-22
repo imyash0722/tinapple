@@ -12,11 +12,11 @@ func TestStoreCatalogSearchAndFind(t *testing.T) {
 	}
 
 	// Test find
-	chadwm := st.Repo.Find("chadwm")
-	if chadwm == nil {
-		t.Errorf("Expected to find 'chadwm' in catalog")
-	} else if chadwm.Category != "System" {
-		t.Errorf("Expected chadwm category 'System', got '%s'", chadwm.Category)
+	niri := st.Repo.Find("niri")
+	if niri == nil {
+		t.Errorf("Expected to find 'niri' in catalog")
+	} else if niri.Category != "System" {
+		t.Errorf("Expected niri category 'System', got '%s'", niri.Category)
 	}
 
 	// Test search

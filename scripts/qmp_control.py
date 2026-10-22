@@ -3,9 +3,11 @@ import sys
 import socket
 import json
 import time
+import os
 from PIL import Image
-
-SOCK_PATH = "/var/tmp/qmp-sock"
+SOCK_PATH = os.environ.get("QMP_SOCK", "/tmp/qemu-tinapple-qmp.sock")
+if not os.path.exists(SOCK_PATH) and os.path.exists("/var/tmp/qmp-sock"):
+    SOCK_PATH = "/var/tmp/qmp-sock"
 
 def qmp_cmd(cmd_dict):
     s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)

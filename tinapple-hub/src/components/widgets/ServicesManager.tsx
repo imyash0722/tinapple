@@ -11,6 +11,7 @@ import {
 import { SpotlightCard } from '../reactbits/SpotlightCard';
 import HoldButton from '../reactbits/HoldButton';
 import { ServiceInfo } from '../../types/api';
+import { AppBrandIcon } from '../common/AppBrandIcons';
 
 interface ServicesManagerProps {
   services: ServiceInfo[];
@@ -145,7 +146,9 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredServices.map((service) => {
             const isLoading = Boolean(loadingMap[service.name]);
-            const isActive = service.activeState === 'active';
+            const isActive = service.activeState === 'active' || service.running;
+            const isInstalled = service.installed !== false && service.activeState !== 'not_installed';
+            const isFailed = service.activeState === 'failed';
 
             return (
               <SpotlightCard
@@ -155,33 +158,44 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({
                 borderColor={isActive ? 'rgba(126, 199, 137, 0.4)' : 'rgba(255, 255, 255, 0.08)'}
               >
                 <div>
-                  <div className="flex items-start justify-between gap-2 mb-2.5">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={`w-2 h-2 rounded-full ${
-                            isActive
-                              ? 'bg-tinapple-green shadow-sm shadow-tinapple-green animate-pulse'
-                              : 'bg-tinapple-muted'
-                          }`}
-                        />
-                        <h4 className="text-sm font-bold text-white font-mono truncate">
-                          {service.name}
-                        </h4>
+                  <div className="flex items-start justify-between gap-3 mb-2.5">
+                    <div className="flex items-start gap-3">
+                      <AppBrandIcon id={service.name} size={32} showBadge />
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={`w-2 h-2 rounded-full ${
+                              isActive
+                                ? 'bg-tinapple-green shadow-sm shadow-tinapple-green animate-pulse'
+                                : isFailed
+                                ? 'bg-tinapple-red'
+                                : isInstalled
+                                ? 'bg-amber-400'
+                                : 'bg-slate-500'
+                            }`}
+                          />
+                          <h4 className="text-sm font-bold text-white font-mono truncate">
+                            {service.displayName || service.name}
+                          </h4>
+                        </div>
+                        <p className="text-xs text-tinapple-subtext mt-1 line-clamp-2 leading-relaxed">
+                          {service.description}
+                        </p>
                       </div>
-                      <p className="text-xs text-tinapple-subtext mt-1 line-clamp-2 leading-relaxed">
-                        {service.description}
-                      </p>
                     </div>
 
                     <span
-                      className={`text-[10px] font-mono px-2 py-0.5 rounded-full border uppercase ${
+                      className={`text-[10px] font-mono px-2 py-0.5 rounded-full border uppercase whitespace-nowrap ${
                         isActive
-                          ? 'bg-tinapple-green/10 text-tinapple-green border-tinapple-green/20 font-semibold'
+                          ? 'bg-tinapple-green/10 text-tinapple-green border-tinapple-green/20 font-bold'
+                          : isFailed
+                          ? 'bg-tinapple-red/10 text-tinapple-red border-tinapple-red/20 font-bold'
+                          : isInstalled
+                          ? 'bg-amber-400/10 text-amber-400 border-amber-400/20 font-semibold'
                           : 'bg-tinapple-muted/10 text-tinapple-muted border-tinapple-border'
                       }`}
                     >
-                      {service.activeState}
+                      {isActive ? 'Running' : isFailed ? 'Failed' : isInstalled ? 'Stopped' : 'Not Installed'}
                     </span>
                   </div>
 
@@ -282,7 +296,12 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({
                         {service.activeState}
                       </span>
                     </td>
-                    <td className="px-4 py-3 font-bold text-white">{service.name}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2.5">
+                        <AppBrandIcon id={service.name} size={22} showBadge />
+                        <span className="font-bold text-white">{service.displayName || service.name}</span>
+                      </div>
+                    </td>
                     <td className="px-4 py-3 capitalize text-tinapple-green">{service.category}</td>
                     <td className="px-4 py-3 text-tinapple-gold font-semibold">
                       {service.port ? `:${service.port}` : '—'}

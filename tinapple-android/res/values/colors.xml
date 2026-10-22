@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="tinapple_bg">#090d16</color>
+    <color name="tinapple_card">#111927</color>
+    <color name="tinapple_primary">#10b981</color>
+    <color name="tinapple_accent">#3b82f6</color>
+    <color name="tinapple_text">#f3f4f6</color>
+    <color name="tinapple_muted">#9ca3af</color>
+</resources>

@@ -28,6 +28,11 @@ import { HardwareSensors } from './components/widgets/HardwareSensors';
 import { SettingsManifest } from './components/widgets/SettingsManifest';
 import { LogsModal } from './components/widgets/LogsModal';
 import { WelcomeInstaller } from './components/installer/WelcomeInstaller';
+import { QuickConnectCard } from './components/widgets/QuickConnectCard';
+import { TransfersWidget } from './components/widgets/TransfersWidget';
+import { MangaShelfWidget } from './components/widgets/MangaShelfWidget';
+import { TorPrivacyWidget } from './components/widgets/TorPrivacyWidget';
+import { PywalThemingWidget } from './components/widgets/PywalThemingWidget';
 
 import { api, MOCK_SYSTEM_INFO, MOCK_TELEMETRY, MOCK_SERVICES, MOCK_HARDWARE } from './services/api';
 import { SystemInfo, TelemetrySnapshot, ServiceInfo, HardwareInfo, SessionMode } from './types/api';
@@ -140,7 +145,7 @@ export const App: React.FC = () => {
     },
     {
       id: 'store',
-      label: 'Chaddy Store',
+      label: 'Appliance Store',
       icon: <ShoppingBag className="w-5 h-5" />,
     },
     {
@@ -237,6 +242,17 @@ export const App: React.FC = () => {
               <Sparkles className="w-3.5 h-3.5" />
               <span>{activeTab === 'welcome' ? 'Live Matrix' : 'Installer'}</span>
             </button>
+
+            {/* Android APK Direct Download */}
+            <a
+              href="/download/apk"
+              download="tinapple-client.apk"
+              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-400 text-xs font-mono font-bold transition-all shadow-sm"
+              title="Download Android Mobile Client APK"
+            >
+              <span>📱</span>
+              <span>Download APK</span>
+            </a>
           </div>
 
           {/* Right Action Cluster with HoldButton Safety Controls */}
@@ -325,6 +341,18 @@ export const App: React.FC = () => {
               transition={{ duration: 0.25, ease: 'easeOut' }}
               className="space-y-6"
             >
+              {/* Quick Connect Portals & Android Client Download */}
+              <QuickConnectCard />
+
+              {/* Transfers: qBittorrent & JDownloader Remote Queue */}
+              <TransfersWidget />
+
+              {/* Suwayomi Manga Shelf: Reading / History / Updates */}
+              <MangaShelfWidget />
+
+              {/* Tor Anonymity & Privacy Guard */}
+              <TorPrivacyWidget />
+
               {/* Bento Row 1: Processor & Memory & Storage & Network */}
               <TelemetryCards telemetry={telemetry} history={history} />
 
@@ -420,7 +448,9 @@ export const App: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -14 }}
               transition={{ duration: 0.25, ease: 'easeOut' }}
+              className="space-y-6"
             >
+              <PywalThemingWidget />
               <SettingsManifest systemInfo={systemInfo} onUpdateSession={handleUpdateSession} />
             </motion.div>
           )}

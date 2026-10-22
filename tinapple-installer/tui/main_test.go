@@ -199,7 +199,7 @@ func TestViewRendering(t *testing.T) {
 	}
 
 	m.step = stepProfile
-	m.choices = []string{"base", "chadwm", "media", "downloads", "backups", "network", "infrastructure", "databases"}
+	m.choices = []string{"base", "niri", "media", "downloads", "backups", "network", "infrastructure", "databases"}
 	view = m.View()
 	t.Logf("\n--- PROFILE VIEW ---\n%s\n--------------------\n", view)
 	if !strings.Contains(view, "Service Profiles") {
@@ -378,34 +378,34 @@ func TestBuildStageEnv(t *testing.T) {
 	if !strings.Contains(joined, "TINAPPLE_KERNEL_PROFILE=hardened") {
 		t.Errorf("env missing TINAPPLE_KERNEL_PROFILE=hardened: %s", joined)
 	}
-	if !strings.Contains(joined, "TINAPPLE_PROFILES=") || !strings.Contains(joined, "base") || !strings.Contains(joined, "chadwm") || !strings.Contains(joined, "media") {
-		t.Errorf("env missing TINAPPLE_PROFILES with base, chadwm, media: %s", joined)
+	if !strings.Contains(joined, "TINAPPLE_PROFILES=") || !strings.Contains(joined, "base") || !strings.Contains(joined, "niri") || !strings.Contains(joined, "media") {
+		t.Errorf("env missing TINAPPLE_PROFILES with base, niri, media: %s", joined)
 	}
 	if !strings.Contains(joined, "TINAPPLE_DISK=") {
 		t.Errorf("env missing TINAPPLE_DISK: %s", joined)
 	}
 }
 
-func TestChadwmDefaultProfile(t *testing.T) {
+func TestNiriDefaultProfile(t *testing.T) {
 	m := initialModel()
-	if !m.selected["chadwm"] {
-		t.Errorf("expected chadwm to be pre-selected in initialModel")
+	if !m.selected["niri"] {
+		t.Errorf("expected niri to be pre-selected in initialModel")
 	}
 	profs := m.selectedProfilesList()
 	found := false
 	for _, p := range profs {
-		if p == "chadwm" {
+		if p == "niri" {
 			found = true
 			break
 		}
 	}
 	if !found {
-		t.Errorf("expected chadwm to be present in selectedProfilesList")
+		t.Errorf("expected niri to be present in selectedProfilesList")
 	}
 
 	manifest := m.generateManifest()
-	if !strings.Contains(manifest, "- chadwm") {
-		t.Errorf("expected manifest to include '- chadwm' by default, got:\n%s", manifest)
+	if !strings.Contains(manifest, "- niri") {
+		t.Errorf("expected manifest to include '- niri' by default, got:\n%s", manifest)
 	}
 }
 

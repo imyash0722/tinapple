@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Tinapple Hub</string>
+    <string name="server_title">Server Settings</string>
+    <string name="connect">Connect</string>
+    <string name="server_hint">http://100.112.193.54:8088</string>
+    <string name="error_offline">Unable to connect to Tinapple server.</string>
+    <string name="retry">Retry Connection</string>
+    <string name="change_server">Change Server Address</string>
+</resources>

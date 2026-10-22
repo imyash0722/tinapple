@@ -148,7 +148,10 @@ EOP"
     if [[ -f "/etc/systemd/system/$unit" ]]; then
       run_sh "cp -f '/etc/systemd/system/$unit' '$target/etc/systemd/system/$unit' 2>/dev/null || true; arch-chroot '$target' systemctl enable '$unit' 2>/dev/null || true"
     fi
-  run_sh "mkdir -p $target/var/lib/tinapple && touch $target/var/lib/tinapple/firstboot-done $target/var/lib/tinapple/installed"
+  done
+  run_sh "mkdir -p $target/var/lib/tinapple && touch $target/var/lib/tinapple/firstboot-done $target/var/lib/tinapple/installed $target/etc/tinapple-installed"
+  run_sh "touch /tmp/installation-complete /etc/tinapple-installed 2>/dev/null || true"
+  run_sh "eject /dev/sr0 2>/dev/null || eject /dev/cdrom 2>/dev/null || true"
   run_sh "arch-chroot '$target' systemctl disable tinapple-install.service tinapple-firstboot.service 2>/dev/null || true"
   run_sh "rm -f $target/etc/systemd/system/graphical.target.wants/tinapple-install.service $target/etc/systemd/system/multi-user.target.wants/tinapple-install.service $target/etc/systemd/system/multi-user.target.wants/tinapple-firstboot.service 2>/dev/null || true"
 

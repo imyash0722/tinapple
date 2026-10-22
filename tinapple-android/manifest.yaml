@@ -1,0 +1,86 @@
+version: 1
+hostname: "pineapple-station"
+kernel_profile: lts
+session_mode: headless
+hardware_profile: server
+cachyos_repos: true
+ease_of_use_mode: true
+filesystem: ext4
+bootloader: auto
+profiles:
+  - base
+  - appliance
+  - media
+  - storage
+services:
+  dash:
+    port: 8088
+    description: "Tinapple Web Dashboard & Unified Hub"
+    enabled: true
+    state: "running"
+  jellyfin:
+    port: 8096
+    description: "Jellyfin Media Server"
+    enabled: true
+    state: "running"
+  suwayomi:
+    port: 4567
+    description: "Suwayomi Manga Server"
+    enabled: true
+    state: "running"
+  qbittorrent:
+    port: 8080
+    description: "qBittorrent Remote Engine"
+    enabled: true
+    state: "running"
+  syncthing:
+    port: 8384
+    description: "Syncthing Continuous Synchronization"
+    enabled: true
+    state: "running"
+  navidrome:
+    port: 4533
+    description: "Navidrome Personal Music Streaming"
+    enabled: true
+    state: "running"
+  seerr:
+    port: 5055
+    description: "Overseerr / Seerr Media Request Portal"
+    enabled: true
+    state: "running"
+  minecraft:
+    port: 25565
+    description: "PaperMC Dedicated Gaming Server"
+    enabled: false
+    state: "stopped"
+  nginx:
+    port: 443
+    description: "Nginx Secure Reverse Proxy & TLS Gateway"
+    enabled: true
+    state: "running"
+hardware:
+  battery:
+    charge_limit: 80
+    charge_limit_min: 40
+    critical_action: hibernate
+    critical_threshold: 5
+  power_profile: performance
+  thermal_profile: server
+  lid_policy: ignore
+  ups_monitor: true
+network:
+  interfaces:
+    - name: "tailscale0"
+      address: "100.112.193.54/32"
+      type: "wireguard"
+    - name: "wlan0"
+      address: "10.3.4.31/20"
+      type: "wifi"
+    - name: "enp2s0f0"
+      address: "192.168.99.1/24"
+      type: "ethernet_direct"
+  dhcp: true
+  static_fallback:
+    address: "192.168.99.1/24"
+    gateway: "192.168.99.2"
+    dns: [1.1.1.1, 9.9.9.9]

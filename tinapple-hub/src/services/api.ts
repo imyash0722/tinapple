@@ -1,4 +1,4 @@
-import { SystemInfo, TelemetrySnapshot, ServiceInfo, HardwareInfo, SessionMode } from '../types/api';
+import { SystemInfo, TelemetrySnapshot, ServiceInfo, HardwareInfo, SessionMode, AppInfo } from '../types/api';
 
 const API_BASE = '/api/v1';
 
@@ -134,6 +134,35 @@ export const MOCK_SERVICES: ServiceInfo[] = [
     port: 8384,
     memoryBytes: 64 * 1024 * 1024,
   },
+  {
+    name: 'minecraft-server',
+    description: 'PaperMC Headless Minecraft Server',
+    activeState: 'active',
+    subState: 'running',
+    unitFileState: 'enabled',
+    category: 'core',
+    port: 25565,
+    memoryBytes: 1536 * 1024 * 1024,
+  },
+  {
+    name: 'playit',
+    description: 'Playit.gg Zero-Port Domain Tunnel Agent',
+    activeState: 'active',
+    subState: 'running',
+    unitFileState: 'enabled',
+    category: 'network',
+    memoryBytes: 18 * 1024 * 1024,
+  },
+  {
+    name: 'suwayomi-server',
+    description: 'Suwayomi Manga & Comic Server (Tachiyomi)',
+    activeState: 'active',
+    subState: 'running',
+    unitFileState: 'enabled',
+    category: 'media',
+    port: 4567,
+    memoryBytes: 512 * 1024 * 1024,
+  },
 ];
 
 export const MOCK_HARDWARE: HardwareInfo = {
@@ -204,13 +233,21 @@ function normalizeTelemetry(raw: any): TelemetrySnapshot {
   const rawThermal = raw.thermal || {};
   const temp = rawThermal.cpu_temp ?? rawThermal.max_temp_c ?? 46.5;
 
+  // Battery normalization
+  const rawBat = raw.battery || {};
+  const batPresent = rawBat.present ?? true;
+  const batPercent = rawBat.percent ?? 100;
+  const batCharging = rawBat.charging ?? false;
+  const batLimit = rawBat.charge_limit ?? 80;
+  const batHealth = rawBat.health_percent ?? 98;
+
   return {
     timestamp: raw.timestamp ? raw.timestamp * 1000 : Date.now(),
     cpu: {
       usagePercent: rawCpu.usage_percent ?? rawCpu.usagePercent ?? 5.0,
       cores: coresArr,
       loadAvg: rawCpu.loadAvg || [0.42, 0.58, 0.51],
-      modelName: rawCpu.modelName || 'AMD Ryzen 7 7840HS w/ Radeon 780M',
+      modelName: rawCpu.modelName || rawCpu.model_name || 'Intel(R) Core(TM) i5-3210M CPU @ 2.50GHz',
     },
     memory: {
       totalBytes: totalMem,
@@ -232,7 +269,7 @@ function normalizeTelemetry(raw: any): TelemetrySnapshot {
       bytesSent: tx,
       rateIn,
       rateOut,
-      interfaces: ['wlan0', 'tailscale0'],
+      interfaces: ['wlan0', 'enp1s0', 'enp2s0f0'],
     },
     thermal: {
       cpuTemp: temp,
@@ -241,11 +278,11 @@ function normalizeTelemetry(raw: any): TelemetrySnapshot {
       profile: rawThermal.profile || 'balanced',
     },
     battery: {
-      present: true,
-      percent: 86,
-      charging: false,
-      chargeLimit: 80,
-      healthPercent: 98,
+      present: batPresent,
+      percent: batPercent,
+      charging: batCharging,
+      chargeLimit: batLimit,
+      healthPercent: batHealth,
     },
   };
 }
@@ -288,31 +325,114 @@ class ApiService {
       const rawList = Array.isArray(data) ? data : data.services || [];
       if (rawList.length === 0) return MOCK_SERVICES;
 
-      const descriptions: Record<string, { desc: string; cat: any }> = {
-        nginx: { desc: 'High Performance Reverse Proxy & Gateway', cat: 'core' },
-        jellyfin: { desc: 'Jellyfin Free Software Media System', cat: 'media' },
-        qbittorrent: { desc: 'qBittorrent Headless Torrent Client', cat: 'media' },
-        syncthing: { desc: 'Continuous Decentralized File Synchronization', cat: 'network' },
-        tailscale: { desc: 'Tailscale Zero-Trust WireGuard Mesh VPN', cat: 'network' },
-        dash: { desc: 'Tinapple Hub Dashboard Web Backend', cat: 'core' },
-        docker: { desc: 'Docker Container Runtime Daemon', cat: 'system' },
-      };
-
       return rawList.map((s: any) => {
-        const meta = descriptions[s.name] || { desc: `System service ${s.name}`, cat: 'system' };
+        let activeState: any = 'not_installed';
+        if (s.installed) {
+          if (s.running || s.status === 'running') activeState = 'active';
+          else if (s.status === 'failed') activeState = 'failed';
+          else activeState = 'inactive';
+        } else {
+          activeState = 'not_installed';
+        }
+
         return {
-          name: s.name,
-          description: meta.desc,
-          activeState: s.status === 'running' || s.enabled ? 'active' : 'inactive',
-          subState: s.status || (s.enabled ? 'running' : 'dead'),
-          unitFileState: s.enabled ? 'enabled' : 'disabled',
-          category: meta.cat,
+          name: s.name || s.id,
+          displayName: s.displayName || s.name,
+          tagline: s.tagline || '',
+          description: s.description || `Appliance service ${s.name}`,
+          activeState,
+          subState: s.subState || (s.running ? 'running' : 'dead'),
+          unitFileState: s.unitFileState || (s.enabled ? 'enabled' : 'disabled'),
+          category: s.category || 'system',
           port: s.port > 0 ? s.port : undefined,
-          memoryBytes: 48 * 1024 * 1024,
+          installed: Boolean(s.installed),
+          running: Boolean(s.running),
+          icon: s.icon || s.name,
+          accentColor: s.accentColor || '#3A75C4',
+          memoryBytes: s.running ? 48 * 1024 * 1024 : 0,
         };
       });
     } catch {
       return MOCK_SERVICES;
+    }
+  }
+
+  async getApps(): Promise<AppInfo[]> {
+    try {
+      const res = await fetch(`${API_BASE}/apps`);
+      if (!res.ok) throw new Error('API offline');
+      const data = await res.json();
+      return data.apps || [];
+    } catch {
+      return [];
+    }
+  }
+
+  async installApp(id: string): Promise<boolean> {
+    try {
+      const res = await fetch(`${API_BASE}/apps/${id}/install`, { method: 'POST' });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  async uninstallApp(id: string): Promise<boolean> {
+    try {
+      const res = await fetch(`${API_BASE}/apps/${id}/uninstall`, { method: 'POST' });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  async startApp(id: string): Promise<boolean> {
+    try {
+      const res = await fetch(`${API_BASE}/apps/${id}/start`, { method: 'POST' });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  async stopApp(id: string): Promise<boolean> {
+    try {
+      const res = await fetch(`${API_BASE}/apps/${id}/stop`, { method: 'POST' });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  async restartApp(id: string): Promise<boolean> {
+    try {
+      const res = await fetch(`${API_BASE}/apps/${id}/restart`, { method: 'POST' });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  async getAppConfig(id: string): Promise<any> {
+    try {
+      const res = await fetch(`${API_BASE}/apps/${id}/config`);
+      if (!res.ok) throw new Error('Config fetch failed');
+      return await res.json();
+    } catch {
+      return null;
+    }
+  }
+
+  async updateAppConfig(id: string, config: { port?: number; customEnv?: Record<string, string> }): Promise<boolean> {
+    try {
+      const res = await fetch(`${API_BASE}/apps/${id}/config`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(config),
+      });
+      return res.ok;
+    } catch {
+      return false;
     }
   }
 
@@ -427,6 +547,76 @@ class ApiService {
       return res.ok;
     } catch {
       return true;
+    }
+  }
+
+  async getPlayitStatus(): Promise<{
+    installed: boolean;
+    running: boolean;
+    configured: boolean;
+    claimUrl?: string;
+    claimCode?: string;
+    publicAddress?: string;
+    secretPath: string;
+    lastLog?: string;
+  }> {
+    try {
+      const res = await fetch(`${API_BASE}/playit/status`);
+      if (res.ok) return await res.json();
+    } catch {}
+    return {
+      installed: true,
+      running: false,
+      configured: false,
+      secretPath: '/etc/playit/playit.toml',
+    };
+  }
+
+  async generatePlayitClaim(): Promise<{ claimUrl: string; claimCode: string } | null> {
+    try {
+      const res = await fetch(`${API_BASE}/playit/claim`, { method: 'POST' });
+      if (res.ok) return await res.json();
+    } catch {}
+    return null;
+  }
+
+  async setPlayitSecret(secret: string): Promise<boolean> {
+    try {
+      const res = await fetch(`${API_BASE}/playit/secret`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ secret }),
+      });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  async startPlayit(): Promise<boolean> {
+    try {
+      const res = await fetch(`${API_BASE}/playit/start`, { method: 'POST' });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  async stopPlayit(): Promise<boolean> {
+    try {
+      const res = await fetch(`${API_BASE}/playit/stop`, { method: 'POST' });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  async resetPlayit(): Promise<boolean> {
+    try {
+      const res = await fetch(`${API_BASE}/playit/reset`, { method: 'POST' });
+      return res.ok;
+    } catch {
+      return false;
     }
   }
 

@@ -210,7 +210,6 @@ var (
 	cardStyle = lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
 			BorderForeground(TinappleBorder).
-			Width(76).
 			Padding(1, 2)
 
 	cardStyleFocus = cardStyle.Copy().
@@ -372,7 +371,7 @@ func detectDisksOrChoices() []string {
 		fields := strings.Fields(line)
 		if len(fields) >= 3 && fields[len(fields)-1] == "disk" {
 			name := fields[0]
-			if strings.HasPrefix(name, "zram") || strings.HasPrefix(name, "loop") || strings.HasPrefix(name, "sr") {
+			if strings.HasPrefix(name, "zram") || strings.HasPrefix(name, "loop") || strings.HasPrefix(name, "sr") || strings.HasPrefix(name, "fd") {
 				continue
 			}
 			size := fields[1]
@@ -397,10 +396,19 @@ func detectDisksOrChoices() []string {
 func initialModel() model {
 	dryRun := os.Getenv("TINAPPLE_DRYRUN") == "1"
 	skipPacstrap := os.Getenv("TINAPPLE_SKIP_PACSTRAP") == "1"
+	firmware := "uefi"
+	if _, err := os.Stat("/sys/firmware/efi"); err != nil {
+		firmware = "bios"
+	}
 	answers := map[string]string{
-		"hostname": "tinapple",
-		"username": "tinapple",
-		"firmware": "uefi",
+		"hostname":   "tinapple",
+		"username":   "tinapple",
+		"firmware":   firmware,
+		"bootloader": "grub",
+		"filesystem": "btrfs",
+	}
+	if firmware == "uefi" {
+		answers["bootloader"] = "limine"
 	}
 
 	for i := 0; i < len(os.Args[1:]); i++ {
@@ -425,7 +433,7 @@ func initialModel() model {
 
 	selected := map[string]bool{
 		"base":      true,
-		"chadwm":    true,
+		"niri":      true,
 		"media":     true,
 		"downloads": true,
 	}
@@ -750,11 +758,11 @@ func (m model) handleEnter() (tea.Model, tea.Cmd) {
 		}
 		m.step = stepProfile
 		m.cursor = 0
-		m.choices = []string{"base", "chadwm", "media", "downloads", "backups", "network", "infrastructure", "databases"}
+		m.choices = []string{"base", "niri", "media", "downloads", "backups", "network", "infrastructure", "databases"}
 		if m.selected == nil {
 			m.selected = make(map[string]bool)
 		}
-		for _, p := range []string{"base", "chadwm", "media", "downloads"} {
+		for _, p := range []string{"base", "niri", "media", "downloads"} {
 			m.selected[p] = true
 		}
 
@@ -794,7 +802,7 @@ func (m *model) toggleChoice() {
 		} else {
 			m.selected[choice] = true
 			if choice == "base" {
-				m.selected["chadwm"] = true
+				m.selected["niri"] = true
 			}
 		}
 	}
@@ -854,10 +862,10 @@ func (m *model) startInstall() tea.Cmd {
 
 func (m model) selectedProfilesList() []string {
 	var list []string
-	allProfiles := []string{"base", "chadwm", "media", "downloads", "backups", "network", "infrastructure", "databases"}
+	allProfiles := []string{"base", "niri", "media", "downloads", "backups", "network", "infrastructure", "databases"}
 	for _, p := range allProfiles {
-		if p == "chadwm" {
-			if m.selected["chadwm"] || m.selected["base"] || len(m.selected) == 0 {
+		if p == "niri" {
+			if m.selected["niri"] || m.selected["base"] || len(m.selected) == 0 {
 				list = append(list, p)
 			}
 		} else if m.selected[p] {
@@ -871,7 +879,7 @@ func (m model) generateManifest() string {
 	var profiles strings.Builder
 	profs := m.selectedProfilesList()
 	if len(profs) == 0 {
-		profs = []string{"base", "chadwm", "media", "downloads"}
+		profs = []string{"base", "niri", "media", "downloads"}
 	}
 	for _, p := range profs {
 		profiles.WriteString(fmt.Sprintf("  - %s\n", p))
@@ -911,78 +919,43 @@ profiles:
 %s`, hostname, kernel, hw, fs, boot, profiles.String())
 }
 
+func (m model) getCardWidth() int {
+	w := m.width
+	if w <= 0 {
+		return 80
+	}
+	cw := w - 8
+	if cw < 74 {
+		cw = 74
+	}
+	if cw > 98 {
+		cw = 98
+	}
+	return cw
+}
+
+func (m model) getInnerWidth() int {
+	return m.getCardWidth() - 6
+}
+
 func (m model) renderBanner() string {
-	if m.height > 0 && m.height < 28 {
-		topLine := lipgloss.NewStyle().Foreground(TinappleRed).Bold(true).Render("╭────────────────────────────────────────────────────────────────────────────╮")
-		botLine := lipgloss.NewStyle().Foreground(TinappleYellow).Bold(true).Render("╰────────────────────────────────────────────────────────────────────────────╯")
-		tagline := lipgloss.NewStyle().
-			Width(74).
-			Align(lipgloss.Center).
-			Render(
-				lipgloss.NewStyle().Foreground(TinappleRed).Bold(true).Render("◈  ") +
-					lipgloss.NewStyle().Foreground(TinappleYellow).Bold(true).Render("TINAPPLE SERVER OS") +
-					lipgloss.NewStyle().Foreground(TinappleFgMuted).Render("  ▪  HOMELAB APPLIANCE  ▪  ") +
-					lipgloss.NewStyle().Foreground(TinappleYellow).Bold(true).Render("Tinapple Installer v0.0.1") +
-					lipgloss.NewStyle().Foreground(TinappleRed).Bold(true).Render(" ◈"),
-			)
-		midLine := lipgloss.NewStyle().Foreground(TinappleBorder).Render("│") + tagline + lipgloss.NewStyle().Foreground(TinappleBorder).Render("│")
-		return fmt.Sprintf("%s\n%s\n%s", topLine, midLine, botLine)
-	}
-
-	appleSil := []struct {
-		leaf bool
-		text string
-	}{
-		{leaf: true, text: "   ▄█   "},
-		{leaf: true, text: " ▄██▀   "},
-		{leaf: false, text: "▄████▄  "},
-		{leaf: false, text: "██████  "},
-		{leaf: false, text: "██████  "},
-		{leaf: false, text: " ▀██▀   "},
-	}
-
-	textLines := []string{
-		"████████╗██╗███╗   ██╗ █████╗ ██████╗ ██████╗ ██╗     ███████╗",
-		"╚══██╔══╝██║████╗  ██║██╔══██╗██╔══██╗██╔══██╗██║     ██╔════╝",
-		"   ██║   ██║██╔██╗ ██║███████║██████╔╝██████╔╝██║     █████╗  ",
-		"   ██║   ██║██║╚██╗██║██╔══██║██╔═══╝ ██╔═══╝ ██║     ██╔══╝  ",
-		"   ██║   ██║██║ ╚████║██║  ██║██║     ██║     ███████╗███████╗",
-		"   ╚═╝   ╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝╚═╝     ╚═╝     ╚══════╝╚══════╝",
-	}
-
-	topBorder := lipgloss.NewStyle().Foreground(TinappleBorder).Render("╭──────────────────────────────────────────────────────────────────────────╮")
-	botBorder := lipgloss.NewStyle().Foreground(TinappleBorder).Render("╰──────────────────────────────────────────────────────────────────────────╯")
-
-	var b strings.Builder
-	b.WriteString(topBorder + "\n")
-
-	for i := 0; i < len(appleSil); i++ {
-		var silStyled string
-		if appleSil[i].leaf {
-			silStyled = lipgloss.NewStyle().Foreground(TinappleYellow).Bold(true).Render(appleSil[i].text)
-		} else {
-			silStyled = lipgloss.NewStyle().Foreground(TinappleRed).Bold(true).Render(appleSil[i].text)
-		}
-
-		c := gradientColors[i%len(gradientColors)]
-		titleStyled := lipgloss.NewStyle().Foreground(c).Bold(true).Render(textLines[i])
-
-		leftBorder := lipgloss.NewStyle().Foreground(TinappleBorder).Render("│")
-		rightBorder := lipgloss.NewStyle().Foreground(TinappleBorder).Render("│")
-
-		b.WriteString(fmt.Sprintf("%s %s  %s %s\n", leftBorder, silStyled, titleStyled, rightBorder))
-	}
-	b.WriteString(botBorder + "\n")
-
-	sub := lipgloss.NewStyle().
-		Foreground(TinappleRed).Bold(true).Render("◈  ") +
-		lipgloss.NewStyle().Foreground(TinappleYellow).Bold(true).Render("TINAPPLE SERVER OS") +
-		lipgloss.NewStyle().Foreground(TinappleFgMuted).Render("  ▪  HOMELAB APPLIANCE  ▪  ") +
-		lipgloss.NewStyle().Foreground(TinappleYellow).Bold(true).Render("Tinapple Installer v0.0.1") +
-		lipgloss.NewStyle().Foreground(TinappleRed).Bold(true).Render(" ◈")
-
-	b.WriteString(lipgloss.NewStyle().Width(76).Align(lipgloss.Center).Render(sub))
-	return lipgloss.NewStyle().Width(76).Align(lipgloss.Center).Render(b.String())
+	cardW := m.getCardWidth()
+	tagline := lipgloss.NewStyle().
+		Width(cardW - 4).
+		Align(lipgloss.Center).
+		Render(
+			lipgloss.NewStyle().Foreground(TinappleRed).Bold(true).Render("◈  ") +
+				lipgloss.NewStyle().Foreground(TinappleYellow).Bold(true).Render("TINAPPLE SERVER OS") +
+				lipgloss.NewStyle().Foreground(TinappleFgMuted).Render("  ▪  HOMELAB APPLIANCE  ▪  ") +
+				lipgloss.NewStyle().Foreground(TinappleYellow).Bold(true).Render("Tinapple Installer v0.0.1") +
+				lipgloss.NewStyle().Foreground(TinappleRed).Bold(true).Render(" ◈"),
+		)
+	return lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(TinappleBorder).
+		Width(cardW).
+		Align(lipgloss.Center).
+		Render(tagline)
 }
 
 func (m model) renderStepper() string {
@@ -1018,7 +991,7 @@ func (m model) renderStepper() string {
 		}
 	}
 
-	totalWidth := 72
+	totalWidth := m.getInnerWidth()
 	used := lipgloss.Width(pill) + 2 + lipgloss.Width(currName) + lipgloss.Width(dots.String())
 	gap := totalWidth - used
 	if gap < 2 {
@@ -1062,7 +1035,8 @@ func (m model) placeCentered(content string) string {
 	if h < boxHeight {
 		h = boxHeight
 	}
-	return lipgloss.Place(w, h, lipgloss.Center, lipgloss.Center, content)
+	res := lipgloss.Place(w, h, lipgloss.Center, lipgloss.Center, content)
+	return strings.TrimRight(res, "\n")
 }
 
 func (m model) renderKeybinds() string {
@@ -1124,8 +1098,15 @@ func renderProgressBar(progress float64, width int) string {
 	return bar.String()
 }
 
-func renderChoices(choices []string, cursor int) string {
+func renderChoices(choices []string, cursor int, innerW ...int) string {
 	var s strings.Builder
+	rowW := 62
+	if len(innerW) > 0 && innerW[0] > 20 {
+		rowW = innerW[0] - 8
+	}
+	if rowW < 48 {
+		rowW = 48
+	}
 	for i, c := range choices {
 		isCursor := i == cursor
 		var indicator string
@@ -1139,7 +1120,7 @@ func renderChoices(choices []string, cursor int) string {
 			radio := lipgloss.NewStyle().Foreground(TinappleYellow).Bold(true).Render("[●] ")
 			label := lipgloss.NewStyle().Foreground(TinappleFg).Bold(true).Render(c)
 			rowContent := fmt.Sprintf("%s%s", radio, label)
-			styledRow := selectedStyle.Copy().Width(62).Padding(0, 1).Render(rowContent)
+			styledRow := selectedStyle.Copy().Width(rowW).Padding(0, 1).Render(rowContent)
 			s.WriteString(fmt.Sprintf("%s%s\n", indicator, styledRow))
 		} else {
 			radio := lipgloss.NewStyle().Foreground(TinappleFgDim).Render("[○] ")
@@ -1150,11 +1131,15 @@ func renderChoices(choices []string, cursor int) string {
 	return s.String()
 }
 
-func renderMultiChoices(choices []string, selected map[string]bool, cursor ...int) string {
+func renderMultiChoices(choices []string, selected map[string]bool, cursor int, innerW ...int) string {
 	var s strings.Builder
-	activeCursor := -1
-	if len(cursor) > 0 {
-		activeCursor = cursor[0]
+	activeCursor := cursor
+	rowW := 62
+	if len(innerW) > 0 && innerW[0] > 20 {
+		rowW = innerW[0] - 8
+	}
+	if rowW < 48 {
+		rowW = 48
 	}
 
 	for i, c := range choices {
@@ -1181,10 +1166,10 @@ func renderMultiChoices(choices []string, selected map[string]bool, cursor ...in
 			labelStyle = lipgloss.NewStyle().Foreground(TinappleFgMuted)
 		}
 
-		name := labelStyle.Width(18).Render(c)
+		name := labelStyle.Width(22).Render(c)
 		rowContent := fmt.Sprintf("%s  %s  %s", box, name, badge)
 		if isCursor {
-			styledRow := selectedStyle.Copy().Width(62).Padding(0, 1).Render(rowContent)
+			styledRow := selectedStyle.Copy().Width(rowW).Padding(0, 1).Render(rowContent)
 			s.WriteString(fmt.Sprintf("%s%s\n", indicator, styledRow))
 		} else {
 			s.WriteString(fmt.Sprintf("%s %s\n", indicator, rowContent))
@@ -1195,6 +1180,8 @@ func renderMultiChoices(choices []string, selected map[string]bool, cursor ...in
 
 func (m model) View() string {
 	banner := m.renderBanner()
+	cardW := m.getCardWidth()
+	innerW := m.getInnerWidth()
 
 	if m.err != "" {
 		var content strings.Builder
@@ -1209,8 +1196,8 @@ func (m model) View() string {
 		content.WriteString(btnDanger.Render("Quit [q]"))
 		content.WriteString("\n")
 
-		card := cardStyle.Copy().BorderForeground(TinappleRed).Render(content.String())
-		full := lipgloss.JoinVertical(lipgloss.Center, banner, "\n", card, m.renderKeybinds())
+		card := cardStyle.Copy().BorderForeground(TinappleRed).Width(cardW).Render(content.String())
+		full := lipgloss.JoinVertical(lipgloss.Center, banner, card, m.renderKeybinds())
 		return m.placeCentered(full)
 	}
 
@@ -1219,7 +1206,7 @@ func (m model) View() string {
 		content.WriteString(sectionHeader.Render(fmt.Sprintf("Installing... %.0f%%", m.progress*100)))
 		content.WriteString("\n\n")
 		content.WriteString(fmt.Sprintf("%s  %s\n\n",
-			renderProgressBar(m.progress, 46),
+			renderProgressBar(m.progress, innerW-18),
 			badgeRunning.Render("IN PROGRESS"),
 		))
 
@@ -1228,14 +1215,14 @@ func (m model) View() string {
 			Background(TinappleBgFloat).
 			Border(lipgloss.RoundedBorder()).
 			BorderForeground(TinappleBorder).
-			Width(68).
+			Width(innerW - 4).
 			Padding(0, 1).
 			Render(m.installOutput)
 		content.WriteString(logBox)
 		content.WriteString("\n")
 
-		card := cardStyleFocus.Render(content.String())
-		full := lipgloss.JoinVertical(lipgloss.Center, banner, "\n", card, m.renderKeybinds())
+		card := cardStyleFocus.Copy().Width(cardW).Render(content.String())
+		full := lipgloss.JoinVertical(lipgloss.Center, banner, card, m.renderKeybinds())
 		return m.placeCentered(full)
 	}
 
@@ -1251,8 +1238,8 @@ func (m model) View() string {
 		content.WriteString(btnPrimary.Render("Reboot [Enter]") + "  " + btnSecondary.Render("Quit [q]"))
 		content.WriteString("\n")
 
-		card := cardStyle.Copy().BorderForeground(TinappleSuccess).Render(content.String())
-		full := lipgloss.JoinVertical(lipgloss.Center, banner, "\n", card, m.renderKeybinds())
+		card := cardStyle.Copy().BorderForeground(TinappleSuccess).Width(cardW).Render(content.String())
+		full := lipgloss.JoinVertical(lipgloss.Center, banner, card, m.renderKeybinds())
 		return m.placeCentered(full)
 	}
 
@@ -1268,7 +1255,7 @@ func (m model) View() string {
 		content.WriteString("\n")
 		content.WriteString(helpStyle.Render("Choose your console keymap"))
 		content.WriteString("\n\n")
-		content.WriteString(renderChoices(m.choices, m.cursor))
+		content.WriteString(renderChoices(m.choices, m.cursor, innerW))
 		content.WriteString("\n")
 		content.WriteString(btnPrimary.Render("Next [Enter]"))
 		content.WriteString("\n")
@@ -1278,7 +1265,7 @@ func (m model) View() string {
 		content.WriteString("\n")
 		content.WriteString(helpStyle.Render("Select connection management method"))
 		content.WriteString("\n\n")
-		content.WriteString(renderChoices(m.choices, m.cursor))
+		content.WriteString(renderChoices(m.choices, m.cursor, innerW))
 		content.WriteString("\n")
 		content.WriteString(btnPrimary.Render("Next [Enter]"))
 		content.WriteString("\n")
@@ -1290,7 +1277,7 @@ func (m model) View() string {
 		content.WriteString(fmt.Sprintf("Firmware: %s\n", fwBadge))
 		content.WriteString(helpStyle.Render("Select bootloader for your system"))
 		content.WriteString("\n\n")
-		content.WriteString(renderChoices(m.choices, m.cursor))
+		content.WriteString(renderChoices(m.choices, m.cursor, innerW))
 		content.WriteString("\n")
 		content.WriteString(btnPrimary.Render("Next [Enter]"))
 		content.WriteString("\n")
@@ -1300,7 +1287,7 @@ func (m model) View() string {
 		content.WriteString("\n")
 		content.WriteString(helpStyle.Render("Select disk partitioning strategy"))
 		content.WriteString("\n\n")
-		content.WriteString(renderChoices(m.choices, m.cursor))
+		content.WriteString(renderChoices(m.choices, m.cursor, innerW))
 		content.WriteString("\n")
 		content.WriteString(btnPrimary.Render("Next [Enter]"))
 		content.WriteString("\n")
@@ -1310,7 +1297,7 @@ func (m model) View() string {
 		content.WriteString("\n")
 		content.WriteString(helpStyle.Render("Select filesystem type for root"))
 		content.WriteString("\n\n")
-		content.WriteString(renderChoices(m.choices, m.cursor))
+		content.WriteString(renderChoices(m.choices, m.cursor, innerW))
 		content.WriteString("\n")
 		content.WriteString(btnPrimary.Render("Next [Enter]"))
 		content.WriteString("\n")
@@ -1320,7 +1307,7 @@ func (m model) View() string {
 		content.WriteString("\n")
 		content.WriteString(helpStyle.Render("Configure full disk encryption"))
 		content.WriteString("\n\n")
-		content.WriteString(renderChoices(m.choices, m.cursor))
+		content.WriteString(renderChoices(m.choices, m.cursor, innerW))
 		content.WriteString("\n")
 		if m.cursor >= 0 && m.cursor < len(m.choices) && strings.HasPrefix(m.choices[m.cursor], "LUKS2") {
 			content.WriteString(inputStyle.Render("Encryption: LUKS2 AES-XTS-PLAIN64") + "\n\n")
@@ -1333,7 +1320,7 @@ func (m model) View() string {
 		content.WriteString("\n")
 		content.WriteString(helpStyle.Render("Select user and hostname profile"))
 		content.WriteString("\n\n")
-		content.WriteString(renderChoices(m.choices, m.cursor))
+		content.WriteString(renderChoices(m.choices, m.cursor, innerW))
 		content.WriteString("\n")
 		content.WriteString(lipgloss.NewStyle().Foreground(TinappleFgMuted).Render("Active credentials:") + "\n")
 		content.WriteString(fmt.Sprintf("%s  %s\n\n",
@@ -1348,7 +1335,7 @@ func (m model) View() string {
 		content.WriteString("\n")
 		content.WriteString(helpStyle.Render("Select target hardware profile"))
 		content.WriteString("\n\n")
-		content.WriteString(renderChoices(m.choices, m.cursor))
+		content.WriteString(renderChoices(m.choices, m.cursor, innerW))
 		content.WriteString("\n")
 		content.WriteString(btnPrimary.Render("Next [Enter]"))
 		content.WriteString("\n")
@@ -1358,7 +1345,7 @@ func (m model) View() string {
 		content.WriteString("\n")
 		content.WriteString(helpStyle.Render("Select Linux kernel flavor"))
 		content.WriteString("\n\n")
-		content.WriteString(renderChoices(m.choices, m.cursor))
+		content.WriteString(renderChoices(m.choices, m.cursor, innerW))
 		content.WriteString("\n")
 		content.WriteString(btnPrimary.Render("Next [Enter]"))
 		content.WriteString("\n")
@@ -1368,13 +1355,13 @@ func (m model) View() string {
 			m.selected = make(map[string]bool)
 		}
 		if m.selected["base"] {
-			m.selected["chadwm"] = true
+			m.selected["niri"] = true
 		}
 		content.WriteString(sectionHeader.Render(stepIcons[stepProfile] + "  Service Profiles"))
 		content.WriteString("\n")
 		content.WriteString(helpStyle.Render("Space toggle │ Enter next │ [A] App Store (chaddy-store) │ [S] Settings (chaddy-settings)"))
 		content.WriteString("\n\n")
-		content.WriteString(renderMultiChoices(m.choices, m.selected, m.cursor))
+		content.WriteString(renderMultiChoices(m.choices, m.selected, m.cursor, innerW))
 		content.WriteString("\n")
 		content.WriteString(btnPrimary.Render("Next [Enter]"))
 		content.WriteString("\n")
@@ -1384,7 +1371,7 @@ func (m model) View() string {
 		content.WriteString("\n")
 		content.WriteString(helpStyle.Render("Explicit consent required for proprietary drivers (NVIDIA, etc.)"))
 		content.WriteString("\n\n")
-		content.WriteString(renderChoices(m.choices, m.cursor))
+		content.WriteString(renderChoices(m.choices, m.cursor, innerW))
 		content.WriteString("\n")
 		content.WriteString(btnPrimary.Render("Next [Enter]"))
 		content.WriteString("\n")
@@ -1427,7 +1414,7 @@ func (m model) View() string {
 			Background(TinappleBgFloat).
 			Border(lipgloss.RoundedBorder()).
 			BorderForeground(TinappleRed).
-			Width(70).
+			Width(innerW - 4).
 			Padding(0, 1).
 			Align(lipgloss.Center).
 			Render("⚠ CAUTION: DATA ON TARGET DRIVE WILL BE COMPLETELY OVERWRITTEN ⚠")
@@ -1437,8 +1424,8 @@ func (m model) View() string {
 		content.WriteString("\n")
 	}
 
-	card := cardStyleFocus.Render(content.String())
-	full := lipgloss.JoinVertical(lipgloss.Center, banner, "\n", card, m.renderKeybinds())
+	card := cardStyleFocus.Copy().Width(cardW).Render(content.String())
+	full := lipgloss.JoinVertical(lipgloss.Center, banner, card, m.renderKeybinds())
 	return m.placeCentered(full)
 }
 
@@ -1521,7 +1508,8 @@ Navigation:
 
 func main() {
 	isAuto := os.Getenv("TINAPPLE_AUTO") == "1"
-	for _, arg := range os.Args[1:] {
+	for i := 1; i < len(os.Args); i++ {
+		arg := os.Args[i]
 		if arg == "--help" || arg == "-h" {
 			printHelp()
 			return
@@ -1531,6 +1519,25 @@ func main() {
 		}
 		if arg == "--skip-pacstrap" {
 			os.Setenv("TINAPPLE_SKIP_PACSTRAP", "1")
+		}
+		if (arg == "--disk" || arg == "-disk") && i+1 < len(os.Args) {
+			os.Setenv("TINAPPLE_DISK", os.Args[i+1])
+			i++
+		}
+		if (arg == "--target" || arg == "-target") && i+1 < len(os.Args) {
+			os.Setenv("TINAPPLE_TARGET", os.Args[i+1])
+			i++
+		}
+		if (arg == "--profiles" || arg == "-profiles") && i+1 < len(os.Args) {
+			os.Setenv("TINAPPLE_PROFILES", os.Args[i+1])
+			i++
+		}
+		if (arg == "--password" || arg == "-password") && i+1 < len(os.Args) {
+			os.Setenv("TINAPPLE_USER_PASSWORD", os.Args[i+1])
+			i++
+		}
+		if arg == "--dry-run" || arg == "-d" {
+			os.Setenv("TINAPPLE_DRYRUN", "1")
 		}
 	}
 	if isAuto {

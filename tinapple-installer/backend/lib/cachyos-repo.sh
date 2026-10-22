@@ -64,29 +64,34 @@ tinapple_cachyos_repo() {
     v4)
       arch_str="x86_64_v4"
       repo_block="[cachyos-v4]
-Include = /etc/pacman.d/cachyos-mirrorlist
+Include = /etc/pacman.d/cachyos-v4-mirrorlist
 
 [cachyos-core-v4]
-Include = /etc/pacman.d/cachyos-mirrorlist
+Include = /etc/pacman.d/cachyos-v4-mirrorlist
 
 [cachyos-extra-v4]
-Include = /etc/pacman.d/cachyos-mirrorlist
+Include = /etc/pacman.d/cachyos-v4-mirrorlist
 
 [cachyos]
 Include = /etc/pacman.d/cachyos-mirrorlist"
       ;;
-    v3|*)
+    v3)
       arch_str="x86_64_v3"
       repo_block="[cachyos-v3]
-Include = /etc/pacman.d/cachyos-mirrorlist
+Include = /etc/pacman.d/cachyos-v3-mirrorlist
 
 [cachyos-core-v3]
-Include = /etc/pacman.d/cachyos-mirrorlist
+Include = /etc/pacman.d/cachyos-v3-mirrorlist
 
 [cachyos-extra-v3]
-Include = /etc/pacman.d/cachyos-mirrorlist
+Include = /etc/pacman.d/cachyos-v3-mirrorlist
 
 [cachyos]
+Include = /etc/pacman.d/cachyos-mirrorlist"
+      ;;
+    *)
+      arch_str="x86_64"
+      repo_block="[cachyos]
 Include = /etc/pacman.d/cachyos-mirrorlist"
       ;;
   esac

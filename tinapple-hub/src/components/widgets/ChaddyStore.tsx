@@ -1,505 +1,889 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
-  Monitor,
-  Film,
-  DownloadCloud,
-  Database,
-  ShieldCheck,
-  Archive,
-  Cpu,
-  Check,
-  Plus,
-  Loader2,
   Sparkles,
   Layers,
-  ArrowRight,
-  Rotate3d,
   LayoutGrid,
+  Play,
+  Square,
+  RotateCw,
+  ExternalLink,
+  Settings,
+  Download,
+  Trash2,
+  CheckCircle2,
+  AlertTriangle,
+  XCircle,
+  HelpCircle,
+  X,
+  Save,
+  Loader2,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { SpotlightCard } from '../reactbits/SpotlightCard';
 import CircularCarousel, { CircularCarouselItem } from '../reactbits/CircularCarousel';
-import HoldButton from '../reactbits/HoldButton';
 import TechText from '../reactbits/TechText';
-import { generateProfileCardSvg } from '../../utils/profileCards';
-import { ApplianceProfile } from '../../types/api';
+import { AppBrandIcon } from '../common/AppBrandIcons';
+import { api } from '../../services/api';
+import { AppInfo } from '../../types/api';
 
-const GLYPHS: Record<string, string> = {
-  desktop: `<rect x="-24" y="-18" width="48" height="32" rx="4" fill="none" stroke="currentColor" stroke-width="2"/><line x1="-12" y1="18" x2="12" y2="18" stroke="currentColor" stroke-width="2"/><line x1="-24" y1="-2" x2="24" y2="-2" stroke="currentColor" stroke-width="1.5"/><line x1="0" y1="-2" x2="0" y2="14" stroke="currentColor" stroke-width="1.5"/>`,
-  media: `<polygon points="-10,-18 20,0 -10,18" fill="currentColor"/><circle cx="0" cy="0" r="32" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 4"/>`,
-  downloads: `<path d="M0 -20 V12 M-12 0 L0 12 L12 0" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M-22 18 H22" stroke="currentColor" stroke-width="2.5"/>`,
-  databases: `<ellipse cx="0" cy="-14" rx="22" ry="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="M-22 -14 V0 C-22 5 22 5 22 0 V-14 M-22 0 V14 C-22 19 22 19 22 14 V0" fill="none" stroke="currentColor" stroke-width="2"/>`,
-  network: `<polygon points="0,-22 19,-11 19,11 0,22 -19,11 -19,-11" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="0" cy="0" r="6" fill="currentColor"/>`,
-  backups: `<path d="M-18 0 A18 18 0 1 1 14 12" fill="none" stroke="currentColor" stroke-width="2.5"/><polyline points="10,18 14,12 18,16" stroke="currentColor" stroke-width="2" fill="none"/>`,
-  'ai-neural': `<circle cx="-14" cy="-14" r="5" fill="currentColor"/><circle cx="14" cy="-14" r="5" fill="currentColor"/><circle cx="0" cy="14" r="6" fill="currentColor"/><line x1="-14" y1="-14" x2="0" y2="14" stroke="currentColor" stroke-width="1.5"/><line x1="14" y1="-14" x2="0" y2="14" stroke="currentColor" stroke-width="1.5"/><line x1="-14" y1="-14" x2="14" y2="-14" stroke="currentColor" stroke-width="1.5"/>`,
-};
-
-const DEFAULT_PROFILES: ApplianceProfile[] = [
+const FALLBACK_APPS: AppInfo[] = [
   {
-    id: 'desktop',
-    name: 'Niri Wayland Station',
-    category: 'Workstation',
-    icon: 'Monitor',
-    tagline: 'Scrollable-tiling Wayland compositor & Waybar desktop',
-    description:
-      'Ultra-fluid scrollable-tiling Wayland session powered by Niri, Waybar (V3.1a theme), Matugen dynamic coloring, Foot, and PipeWire sound.',
-    installed: true,
-    status: 'active',
-    services: ['tinapple-session.service', 'seatd.service', 'pipewire.service'],
-    accentColor: '#e5b567',
-  },
-  {
-    id: 'media',
-    name: 'Jellyfin Media Appliance',
-    category: 'Entertainment',
-    icon: 'Film',
-    tagline: '4K HDR hardware transcoding & streaming hub',
-    description:
-      'Zero-bloat media server with VA-API / NVDEC hardware acceleration, DLNA broadcasting, and automated subtitle scraping.',
-    installed: true,
-    status: 'active',
-    services: ['jellyfin.service'],
-    accentColor: '#7ec789',
-  },
-  {
-    id: 'downloads',
-    name: 'Automated Cloud Downloader',
-    category: 'Automation',
-    icon: 'DownloadCloud',
-    tagline: 'qBittorrent-nox headless & wireguard daemon',
-    description:
-      'High-throughput web downloader with automated seed ratio limits, RSS feed watching, and hardlinked library sorting.',
+    id: 'jellyfin',
+    name: 'Jellyfin Media Server',
+    tagline: 'Self-hosted privacy-first streaming server',
+    description: 'Free Software media system for streaming movies, series, music, and live TV with hardware transcoding.',
+    category: 'media',
+    package: 'jellyfin-server',
+    unit: 'jellyfin.service',
+    binary: 'jellyfin',
+    port: 8096,
+    icon: 'jellyfin',
+    accentColor: '#AA5CC3',
     installed: false,
-    status: 'uninstalled',
-    services: ['qbittorrent-nox@root.service'],
-    accentColor: '#e5b567',
+    running: false,
+    status: 'not_installed',
   },
   {
-    id: 'databases',
-    name: 'Enterprise DB Cluster',
-    category: 'Databases',
-    icon: 'Database',
-    tagline: 'PostgreSQL 16, Redis 7 & InfluxDB telemetry store',
-    description:
-      'Fully tuned database stack with high-write memory caching, timeseries retention policies, and automated daily vacuuming.',
-    installed: true,
-    status: 'active',
-    services: ['postgresql.service', 'redis.service'],
-    accentColor: '#7ec789',
-  },
-  {
-    id: 'network',
-    name: 'Tailnet Zero-Trust Mesh',
-    category: 'Security & Mesh',
-    icon: 'ShieldCheck',
-    tagline: 'Encrypted WireGuard peer mesh & Subnet Gateway',
-    description:
-      'Connect securely from anywhere in the world without port-forwarding or public IP exposure. LAN route advertisement enabled.',
-    installed: true,
-    status: 'active',
-    services: ['tailscaled.service'],
-    accentColor: '#e5b567',
-  },
-  {
-    id: 'backups',
-    name: 'Snapper Immutable Backups',
-    category: 'Reliability',
-    icon: 'Archive',
-    tagline: 'Atomic Btrfs snapshots with instant rollback',
-    description:
-      'Hourly snapshot timeline with automatic pre/post pacman update snapshots, bootable via Limine/GRUB boot menu.',
-    installed: true,
-    status: 'active',
-    services: ['snapper-timeline.timer', 'snapper-cleanup.timer'],
-    accentColor: '#7ec789',
-  },
-  {
-    id: 'ai-neural',
-    name: 'Local AI & LLM Engine',
-    category: 'Neural Compute',
-    icon: 'Cpu',
-    tagline: 'Ollama, Whisper & Vulkan GPU acceleration',
-    description:
-      'On-device neural inference runner optimized for AMD ROCm and Intel Vulkan compute with zero telemetry phoning home.',
+    id: 'qbittorrent',
+    name: 'qBittorrent Headless',
+    tagline: 'High-performance torrent engine with WebUI',
+    description: 'Feature-rich BitTorrent client running headless with clean Web UI, automated categories, and RSS.',
+    category: 'downloads',
+    package: 'qbittorrent-nox',
+    unit: 'qbittorrent-nox.service',
+    binary: 'qbittorrent-nox',
+    port: 8080,
+    icon: 'qbittorrent',
+    accentColor: '#3A75C4',
     installed: false,
-    status: 'uninstalled',
-    services: ['ollama.service'],
-    accentColor: '#e5b567',
+    running: false,
+    status: 'not_installed',
+  },
+  {
+    id: 'suwayomi',
+    name: 'Suwayomi Manga Server',
+    tagline: 'Keiyoushi extension hub & Mihon sync',
+    description: 'Self-hosted manga streaming and offline sync server with Keiyoushi source extensions and Tachidesk WebUI.',
+    category: 'media',
+    package: 'suwayomi-server',
+    unit: 'suwayomi-server.service',
+    binary: 'suwayomi-server',
+    port: 4567,
+    icon: 'suwayomi',
+    accentColor: '#F43F5E',
+    installed: false,
+    running: false,
+    status: 'not_installed',
+  },
+  {
+    id: 'navidrome',
+    name: 'Navidrome Music Server',
+    tagline: 'Modern Subsonic-compatible audio streamer',
+    description: 'Lightweight, fast, and modern music server and streamer with full Subsonic API compatibility.',
+    category: 'media',
+    package: 'navidrome',
+    unit: 'navidrome.service',
+    binary: 'navidrome',
+    port: 4533,
+    icon: 'navidrome',
+    accentColor: '#0086D6',
+    installed: false,
+    running: false,
+    status: 'not_installed',
+  },
+  {
+    id: 'tailscale',
+    name: 'Tailscale Mesh VPN',
+    tagline: 'Encrypted WireGuard peer network & subnet router',
+    description: 'Zero-config WireGuard mesh network connecting your homelab devices securely from anywhere without port forwarding.',
+    category: 'network',
+    package: 'tailscale',
+    unit: 'tailscaled.service',
+    binary: 'tailscaled',
+    port: 0,
+    icon: 'tailscale',
+    accentColor: '#4C72B0',
+    installed: false,
+    running: false,
+    status: 'not_installed',
+  },
+  {
+    id: 'syncthing',
+    name: 'Syncthing Decentralized Sync',
+    tagline: 'Continuous peer-to-peer folder replication',
+    description: 'Continuous peer-to-peer decentralized file synchronization protecting your photos, documents, and backups.',
+    category: 'backups',
+    package: 'syncthing',
+    unit: 'syncthing@tinapple.service',
+    binary: 'syncthing',
+    port: 8384,
+    icon: 'syncthing',
+    accentColor: '#148FD2',
+    installed: false,
+    running: false,
+    status: 'not_installed',
+  },
+  {
+    id: 'adguard',
+    name: 'AdGuard Home DNS',
+    tagline: 'Network-wide tracking & ad blocker',
+    description: 'Network-wide ad-blocking and privacy protection DNS server with DNS-over-HTTPS and parental controls.',
+    category: 'network',
+    package: 'adguardhome',
+    unit: 'adguardhome.service',
+    binary: 'adguardhome',
+    port: 3000,
+    icon: 'adguard',
+    accentColor: '#68BC71',
+    installed: false,
+    running: false,
+    status: 'not_installed',
+  },
+  {
+    id: 'vaultwarden',
+    name: 'Vaultwarden Password Vault',
+    tagline: 'Self-hosted end-to-end encrypted password vault',
+    description: 'Lightweight Bitwarden-compatible API server written in Rust for managing secure logins, keys, and 2FA secrets.',
+    category: 'security',
+    package: 'vaultwarden',
+    unit: 'vaultwarden.service',
+    binary: 'vaultwarden',
+    port: 8000,
+    icon: 'vaultwarden',
+    accentColor: '#175DDC',
+    installed: false,
+    running: false,
+    status: 'not_installed',
+  },
+  {
+    id: 'minecraft',
+    name: 'Minecraft Gaming Appliance',
+    tagline: 'PaperMC server & Playit.gg Anycast domain tunnel',
+    description: 'High-tickrate PaperMC server with Aikar GC memory optimization, Anycast domain tunnel, and Crafty 4 support.',
+    category: 'gaming',
+    package: 'jre17-openjdk-headless',
+    unit: 'minecraft-server.service',
+    binary: 'minecraft-server',
+    port: 25565,
+    icon: 'minecraft',
+    accentColor: '#34D399',
+    installed: false,
+    running: false,
+    status: 'not_installed',
+  },
+  {
+    id: 'docker',
+    name: 'Docker Container Engine',
+    tagline: 'OCI container runtime & compose engine',
+    description: 'Enterprise container runtime engine and Compose orchestrator for running third-party homelab services.',
+    category: 'system',
+    package: 'docker',
+    unit: 'docker.service',
+    binary: 'dockerd',
+    port: 0,
+    icon: 'docker',
+    accentColor: '#2496ED',
+    installed: false,
+    running: false,
+    status: 'not_installed',
+  },
+  {
+    id: 'niri',
+    name: 'Niri Wayland Desktop',
+    tagline: 'Modern scrollable tiling Wayland session',
+    description: 'Scrollable tiling Wayland compositor with Waybar status integration and hardware acceleration.',
+    category: 'desktop',
+    package: 'niri',
+    unit: 'tinapple-session.service',
+    binary: 'niri',
+    port: 0,
+    icon: 'niri',
+    accentColor: '#268BD2',
+    installed: true,
+    running: false,
+    status: 'stopped',
+  },
+  {
+    id: 'playit',
+    name: 'Playit.gg Anycast Tunnel',
+    tagline: 'Anycast public tunnel for Minecraft & servers',
+    description: 'Global Anycast mesh tunnel providing public domains for Minecraft and homelab services without port forwarding.',
+    category: 'network',
+    package: 'playit',
+    unit: 'playit.service',
+    binary: 'playit',
+    port: 0,
+    icon: 'playit',
+    accentColor: '#10B981',
+    installed: true,
+    running: false,
+    status: 'stopped',
+  },
+  {
+    id: 'filebrowser',
+    name: 'FileBrowser Quantum',
+    tagline: 'Web-based file manager and cloud portal',
+    description: 'Modern web file manager with integrated document viewing, media streaming, and upload management.',
+    category: 'storage',
+    package: 'filebrowser',
+    unit: 'filebrowser.service',
+    binary: 'filebrowser',
+    port: 8081,
+    icon: 'filebrowser',
+    accentColor: '#10B981',
+    installed: false,
+    running: false,
+    status: 'not_installed',
+  },
+  {
+    id: 'couchdb',
+    name: 'Obsidian LiveSync CouchDB',
+    tagline: 'E2EE sync backend for Obsidian notes',
+    description: 'End-to-end encrypted synchronization database backend for Obsidian markdown vaults.',
+    category: 'storage',
+    package: 'couchdb',
+    unit: 'couchdb.service',
+    binary: 'couchdb',
+    port: 5984,
+    icon: 'couchdb',
+    accentColor: '#E03C31',
+    installed: false,
+    running: false,
+    status: 'not_installed',
+  },
+  {
+    id: 'radarr',
+    name: 'Radarr Movie Automator',
+    tagline: 'Automated movie manager & grabber',
+    description: 'Automated movie collection manager, quality profiler, and BitTorrent/Usenet download orchestrator.',
+    category: 'automation',
+    package: 'radarr',
+    unit: 'radarr.service',
+    binary: 'radarr',
+    port: 7878,
+    icon: 'radarr',
+    accentColor: '#FFC230',
+    installed: false,
+    running: false,
+    status: 'not_installed',
+  },
+  {
+    id: 'sonarr',
+    name: 'Sonarr TV Series Automator',
+    tagline: 'Smart PVR for TV series & anime',
+    description: 'Automated TV show collection manager, episode tracker, and download orchestrator.',
+    category: 'automation',
+    package: 'sonarr',
+    unit: 'sonarr.service',
+    binary: 'sonarr',
+    port: 8989,
+    icon: 'sonarr',
+    accentColor: '#00C4FF',
+    installed: false,
+    running: false,
+    status: 'not_installed',
+  },
+  {
+    id: 'prowlarr',
+    name: 'Prowlarr Indexer Proxy',
+    tagline: 'Torrent indexer & tracker sync engine',
+    description: 'Unified torrent indexer and Usenet tracker proxy integrating seamlessly with Radarr and Sonarr.',
+    category: 'automation',
+    package: 'prowlarr',
+    unit: 'prowlarr.service',
+    binary: 'prowlarr',
+    port: 9696,
+    icon: 'prowlarr',
+    accentColor: '#F59E0B',
+    installed: false,
+    running: false,
+    status: 'not_installed',
+  },
+  {
+    id: 'bazarr',
+    name: 'Bazarr Subtitle Manager',
+    tagline: 'Automated multilingual subtitle manager',
+    description: 'Companion subtitle fetcher for Sonarr and Radarr across dozens of multi-language subtitle providers.',
+    category: 'automation',
+    package: 'bazarr',
+    unit: 'bazarr.service',
+    binary: 'bazarr',
+    port: 6767,
+    icon: 'bazarr',
+    accentColor: '#8B5CF6',
+    installed: false,
+    running: false,
+    status: 'not_installed',
+  },
+  {
+    id: 'seerr',
+    name: 'Seerr / Jellyseerr Media Discovery',
+    tagline: 'Media request & discovery platform for Jellyfin',
+    description: 'Clean media request and discovery portal for Jellyfin with integrated user management.',
+    category: 'media',
+    package: 'jellyseerr',
+    unit: 'jellyseerr.service',
+    binary: 'jellyseerr',
+    port: 5055,
+    icon: 'seerr',
+    accentColor: '#6366F1',
+    installed: false,
+    running: false,
+    status: 'not_installed',
+  },
+  {
+    id: 'jdownloader',
+    name: 'JDownloader 2 Headless',
+    tagline: 'Universal download manager via MyJDownloader',
+    description: 'Headless direct-download manager supporting 1000+ hosters, cloud storage, and MyJDownloader cloud control.',
+    category: 'downloads',
+    package: 'jdownloader2',
+    unit: 'jdownloader.service',
+    binary: 'jdownloader',
+    port: 0,
+    icon: 'jdownloader',
+    accentColor: '#2563EB',
+    installed: false,
+    running: false,
+    status: 'not_installed',
+  },
+  {
+    id: 'syncyomi',
+    name: 'SyncYomi Manga Sync',
+    tagline: 'Tachiyomi, Mihon & Suwayomi reading progress sync',
+    description: 'Progress synchronization bridge between Tachiyomi, Mihon, and Suwayomi server.',
+    category: 'media',
+    package: 'syncyomi',
+    unit: 'syncyomi.service',
+    binary: 'syncyomi',
+    port: 8282,
+    icon: 'syncyomi',
+    accentColor: '#EC4899',
+    installed: false,
+    running: false,
+    status: 'not_installed',
+  },
+  {
+    id: 'beeper',
+    name: 'Beeper Matrix Chat Bridges',
+    tagline: 'Self-hosted multi-network Matrix chat bridges',
+    description: 'Self-hosted Matrix chat bridges connecting WhatsApp, Telegram, Signal, Discord, and iMessage.',
+    category: 'network',
+    package: 'bbctl',
+    unit: 'bbctl@tinapple.service',
+    binary: 'bbctl',
+    port: 0,
+    icon: 'beeper',
+    accentColor: '#F43F5E',
+    installed: false,
+    running: false,
+    status: 'not_installed',
+  },
+  {
+    id: 'tor',
+    name: 'Tor Onion Router',
+    tagline: 'Anonymity proxy network daemon',
+    description: 'Decentralized privacy routing daemon with SOCKS5 proxy and onion hidden services.',
+    category: 'security',
+    package: 'tor',
+    unit: 'tor.service',
+    binary: 'tor',
+    port: 9050,
+    icon: 'tor',
+    accentColor: '#7D4698',
+    installed: false,
+    running: false,
+    status: 'not_installed',
   },
 ];
 
 export const ChaddyStore: React.FC = () => {
-  const [profiles, setProfiles] = useState<ApplianceProfile[]>(DEFAULT_PROFILES);
+  const [apps, setApps] = useState<AppInfo[]>(FALLBACK_APPS);
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
-  const [viewMode, setViewMode] = useState<'carousel' | 'grid'>('carousel');
-  const [installingId, setInstallingId] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'carousel' | 'grid'>('grid');
+  const [loadingAction, setLoadingAction] = useState<Record<string, string>>({});
+  const [filterCategory, setFilterCategory] = useState<string>('all');
 
-  const selectedProfile = profiles[selectedIndex] || profiles[0];
+  // Config modal state
+  const [configModalApp, setConfigModalApp] = useState<AppInfo | null>(null);
+  const [editPort, setEditPort] = useState<number>(0);
+  const [rawConfigPreview, setRawConfigPreview] = useState<string>('');
+  const [savingConfig, setSavingConfig] = useState<boolean>(false);
 
-  const carouselItems: CircularCarouselItem[] = useMemo(() => {
-    return profiles.map((p) => {
-      const rawGlyph = GLYPHS[p.id] || GLYPHS.desktop;
-      const glyph = rawGlyph.replace(/currentColor/g, p.accentColor);
-      return {
-        src: generateProfileCardSvg({
-          id: p.id,
-          name: p.name,
-          category: p.category,
-          tagline: p.tagline,
-          accentColor: p.accentColor,
-          installed: p.installed,
-          glyph,
-        }),
-        title: p.name,
-        subtitle: p.tagline,
-        alt: p.name,
-      };
-    });
-  }, [profiles]);
+  const fetchApps = useCallback(async () => {
+    const list = await api.getApps();
+    if (list && list.length > 0) {
+      setApps(list);
+    }
+  }, []);
 
-  const handleToggleInstall = (id: string) => {
-    setInstallingId(id);
-    setTimeout(() => {
-      setProfiles((prev) =>
-        prev.map((p) => {
-          if (p.id === id) {
-            const nextInstalled = !p.installed;
-            if (nextInstalled) {
-              confetti({
-                particleCount: 80,
-                spread: 70,
-                origin: { y: 0.6 },
-                colors: ['#e5b567', '#f59e0b', '#7ec789', '#10b981', '#f3f4f6'],
-              });
-            }
-            return {
-              ...p,
-              installed: nextInstalled,
-              status: nextInstalled ? 'active' : 'uninstalled',
-            };
-          }
-          return p;
-        })
-      );
-      setInstallingId(null);
-    }, 600);
+  useEffect(() => {
+    fetchApps();
+    const timer = setInterval(fetchApps, 4000);
+    return () => clearInterval(timer);
+  }, [fetchApps]);
+
+  const currentHost = typeof window !== 'undefined' ? window.location.hostname : '127.0.0.1';
+
+  const handleAction = async (id: string, action: 'install' | 'uninstall' | 'start' | 'stop' | 'restart') => {
+    setLoadingAction((prev) => ({ ...prev, [id]: action }));
+    try {
+      if (action === 'install') {
+        const ok = await api.installApp(id);
+        if (ok) {
+          confetti({
+            particleCount: 70,
+            spread: 60,
+            origin: { y: 0.6 },
+            colors: ['#e5b567', '#10b981', '#3b82f6'],
+          });
+        }
+      } else if (action === 'uninstall') {
+        await api.uninstallApp(id);
+      } else if (action === 'start') {
+        await api.startApp(id);
+      } else if (action === 'stop') {
+        await api.stopApp(id);
+      } else if (action === 'restart') {
+        await api.restartApp(id);
+      }
+      await fetchApps();
+    } finally {
+      setLoadingAction((prev) => {
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      });
+    }
   };
 
-  const getIcon = (name: string) => {
-    switch (name) {
-      case 'Monitor':
-        return <Monitor className="w-5 h-5" />;
-      case 'Film':
-        return <Film className="w-5 h-5" />;
-      case 'DownloadCloud':
-        return <DownloadCloud className="w-5 h-5" />;
-      case 'Database':
-        return <Database className="w-5 h-5" />;
-      case 'ShieldCheck':
-        return <ShieldCheck className="w-5 h-5" />;
-      case 'Archive':
-        return <Archive className="w-5 h-5" />;
-      case 'Cpu':
-        return <Cpu className="w-5 h-5" />;
-      default:
-        return <Sparkles className="w-5 h-5" />;
+  const handleOpenConfig = async (app: AppInfo) => {
+    setConfigModalApp(app);
+    setEditPort(app.port || 0);
+    setRawConfigPreview('Loading current system configuration...');
+    const data = await api.getAppConfig(app.id);
+    if (data) {
+      if (data.port) setEditPort(data.port);
+      setRawConfigPreview(data.rawConfig || data.rawOverride || 'No custom config file found. Using system defaults.');
+    } else {
+      setRawConfigPreview('Configuration not yet initialized on filesystem.');
     }
+  };
+
+  const handleSaveConfig = async () => {
+    if (!configModalApp) return;
+    setSavingConfig(true);
+    try {
+      await api.updateAppConfig(configModalApp.id, {
+        port: editPort > 0 ? editPort : undefined,
+      });
+      await fetchApps();
+      setConfigModalApp(null);
+    } finally {
+      setSavingConfig(false);
+    }
+  };
+
+  const categories = useMemo(() => {
+    const set = new Set<string>(['all']);
+    apps.forEach((a) => set.add(a.category));
+    return Array.from(set);
+  }, [apps]);
+
+  const filteredApps = useMemo(() => {
+    if (filterCategory === 'all') return apps;
+    return apps.filter((a) => a.category === filterCategory);
+  }, [apps, filterCategory]);
+
+  const selectedApp = filteredApps[selectedIndex] || filteredApps[0] || apps[0];
+
+  const carouselItems: CircularCarouselItem[] = useMemo(() => {
+    return filteredApps.map((a) => ({
+      src: a.icon ? `/icons/${a.icon}.${a.id === 'suwayomi' || a.id === 'navidrome' ? 'png' : 'svg'}` : '/icons/archlinux.svg',
+      title: a.name,
+      subtitle: a.tagline,
+      alt: a.name,
+    }));
+  }, [filteredApps]);
+
+  const renderStatusBadge = (app: AppInfo) => {
+    if (app.status === 'running') {
+      return (
+        <span className="px-2.5 py-1 text-[11px] font-mono font-bold rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5 shadow-sm">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+          ACTIVE • RUNNING
+        </span>
+      );
+    }
+    if (app.status === 'stopped') {
+      return (
+        <span className="px-2.5 py-1 text-[11px] font-mono font-semibold rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/30 flex items-center gap-1.5 shadow-sm">
+          <span className="w-2 h-2 rounded-full bg-amber-400" />
+          INSTALLED • STOPPED
+        </span>
+      );
+    }
+    if (app.status === 'failed') {
+      return (
+        <span className="px-2.5 py-1 text-[11px] font-mono font-bold rounded-full bg-rose-500/15 text-rose-400 border border-rose-500/30 flex items-center gap-1.5 shadow-sm">
+          <span className="w-2 h-2 rounded-full bg-rose-400" />
+          FAILED
+        </span>
+      );
+    }
+    return (
+      <span className="px-2.5 py-1 text-[11px] font-mono font-medium rounded-full bg-slate-800/80 text-slate-400 border border-slate-700/60 flex items-center gap-1.5 shadow-sm">
+        <span className="w-2 h-2 rounded-full bg-slate-500" />
+        NOT INSTALLED
+      </span>
+    );
   };
 
   return (
     <div className="space-y-6">
-      {/* Header Banner with Blueprint TechText & View Switcher */}
-      <div className="p-6 rounded-2xl bg-gradient-to-r from-tinapple-card/90 via-tinapple-surface/90 to-tinapple-card/90 border border-tinapple-border backdrop-blur-2xl relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-4">
+      {/* Header Banner */}
+      <div className="p-6 rounded-2xl bg-gradient-to-r from-tinapple-card/95 via-tinapple-surface/90 to-tinapple-card/95 border border-tinapple-border backdrop-blur-2xl relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="relative z-10 max-w-xl">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-tinapple-gold/15 text-tinapple-gold border border-tinapple-gold/25 text-xs mb-3 font-mono">
             <Sparkles className="w-3.5 h-3.5" />
-            <span>Chaddy Store Appliance Profiles</span>
+            <span>Tinapple Appliance & App Management</span>
           </div>
 
           <div className="h-8 w-80 mb-1">
             <TechText
-              text="CHADDY APPLIANCE STACKS"
-              fontSize={18}
-              fontWeight={900}
-              color="#ffffff"
-              accentColor="#e5b567"
-              labels={true}
-              guides={true}
-              intro="assemble"
-              clickKick={true}
+              text="APPLIANCE STORE & LIFECYCLE"
+              className="text-xl md:text-2xl font-black text-white tracking-tight"
             />
           </div>
 
-          <p className="text-xs text-tinapple-subtext leading-relaxed font-sans mt-1">
-            Browse and deploy pre-tuned software appliances optimized for the Tinapple kernel scheduler and Btrfs subvolumes.
+          <p className="text-xs md:text-sm text-tinapple-subtext leading-relaxed">
+            Install, start, stop, configure, and monitor live systemd appliances with verified official packages and zero background telemetry.
           </p>
         </div>
 
-        {/* View Mode Switcher: 3D Cylinder vs Grid */}
-        <div className="flex items-center gap-2 p-1.5 rounded-xl bg-tinapple-dark/90 border border-tinapple-border self-start md:self-center">
-          <button
-            onClick={() => setViewMode('carousel')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all ${
-              viewMode === 'carousel'
-                ? 'bg-tinapple-gold text-tinapple-dark shadow-sm'
-                : 'text-tinapple-subtext hover:text-white'
-            }`}
-          >
-            <Rotate3d className="w-4 h-4" />
-            <span>3D Cylinder</span>
-          </button>
-          <button
-            onClick={() => setViewMode('grid')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all ${
-              viewMode === 'grid'
-                ? 'bg-tinapple-gold text-tinapple-dark shadow-sm'
-                : 'text-tinapple-subtext hover:text-white'
-            }`}
-          >
-            <LayoutGrid className="w-4 h-4" />
-            <span>Bento Grid</span>
-          </button>
+        {/* View Switcher & Category Filter */}
+        <div className="relative z-10 flex flex-wrap items-center gap-3">
+          <div className="flex items-center p-1 rounded-xl bg-tinapple-dark/90 border border-tinapple-border overflow-x-auto">
+            {categories.map((c) => (
+              <button
+                key={c}
+                onClick={() => {
+                  setFilterCategory(c);
+                  setSelectedIndex(0);
+                }}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold capitalize font-mono transition-all ${
+                  filterCategory === c
+                    ? 'bg-tinapple-gold text-tinapple-dark shadow-sm'
+                    : 'text-tinapple-subtext hover:text-white'
+                }`}
+              >
+                {c}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex items-center p-1 rounded-xl bg-tinapple-dark/90 border border-tinapple-border">
+            <button
+              onClick={() => setViewMode('grid')}
+              className={`p-2 rounded-lg transition-all ${
+                viewMode === 'grid'
+                  ? 'bg-tinapple-gold text-tinapple-dark shadow-sm'
+                  : 'text-tinapple-subtext hover:text-white'
+              }`}
+              title="Bento Grid View"
+            >
+              <LayoutGrid className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setViewMode('carousel')}
+              className={`p-2 rounded-lg transition-all ${
+                viewMode === 'carousel'
+                  ? 'bg-tinapple-gold text-tinapple-dark shadow-sm'
+                  : 'text-tinapple-subtext hover:text-white'
+              }`}
+              title="3D Radial View"
+            >
+              <Layers className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* VIEW 1: 3D CYLINDRICAL CAROUSEL VIEW */}
-      {viewMode === 'carousel' && (
+      {/* VIEW 1: 3D RADIAL CAROUSEL VIEW */}
+      {viewMode === 'carousel' && selectedApp && (
         <div className="space-y-6">
-          {/* Circular Carousel Stage */}
-          <div className="relative h-[380px] w-full rounded-2xl bg-tinapple-card/60 border border-tinapple-border overflow-hidden p-4 backdrop-blur-xl">
+          <div className="relative rounded-2xl bg-tinapple-card/60 border border-tinapple-border/80 backdrop-blur-xl p-4 overflow-hidden flex items-center justify-center min-h-[380px]">
             <CircularCarousel
               items={carouselItems}
-              preset="cylinder"
-              cardWidth={210}
-              aspectRatio={1.28}
-              curve={55}
-              draggable={true}
-              snap={true}
-              autoplay="drift"
-              speed={0.4}
-              pauseOnHover={true}
-              captions={true}
-              fadeColor="#060709"
-              onChange={(idx) => setSelectedIndex(idx)}
-              onItemClick={(_, idx) => setSelectedIndex(idx)}
-              className="h-full w-full"
+              radius={220}
+              cardWidth={170}
+              cardHeight={210}
+              onSelect={(idx) => setSelectedIndex(idx)}
+              selectedIndex={selectedIndex}
             />
-            {/* Quick Helper Badge */}
-            <div className="absolute top-4 left-4 pointer-events-none text-[10px] font-mono text-tinapple-muted flex items-center gap-2 bg-tinapple-dark/80 px-2.5 py-1 rounded-md border border-tinapple-border">
-              <span>● DRAG TO ROTATE 3D STACK</span>
-              <span>• CLICK TO INSPECT</span>
-            </div>
           </div>
 
-          {/* Selected Appliance Detail Deck with HoldButton Action */}
+          {/* Selected App Inspector Card */}
           <SpotlightCard
-            className="p-6 border border-tinapple-border"
-            spotlightColor={`${selectedProfile.accentColor}25`}
-            borderColor={`${selectedProfile.accentColor}55`}
+            className="p-6 md:p-8"
+            spotlightColor={`${selectedApp.accentColor}25`}
+            borderColor={`${selectedApp.accentColor}60`}
           >
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-              <div className="space-y-3 max-w-2xl">
-                <div className="flex items-center gap-3">
-                  <div
-                    className="p-3 rounded-2xl border"
-                    style={{
-                      backgroundColor: `${selectedProfile.accentColor}18`,
-                      borderColor: `${selectedProfile.accentColor}30`,
-                      color: selectedProfile.accentColor,
-                    }}
-                  >
-                    {getIcon(selectedProfile.icon)}
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 pb-6 border-b border-tinapple-border/70">
+              <div className="flex items-center gap-4">
+                <AppBrandIcon id={selectedApp.id} size={56} showBadge />
+                <div>
+                  <div className="flex items-center gap-3">
+                    <h2 className="text-2xl font-black text-white tracking-tight">{selectedApp.name}</h2>
+                    {renderStatusBadge(selectedApp)}
                   </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-tinapple-surface border border-tinapple-border text-tinapple-gold font-bold">
-                        {selectedProfile.category.toUpperCase()}
-                      </span>
-                      <span
-                        className={`text-[10px] font-mono px-2 py-0.5 rounded-md border uppercase ${
-                          selectedProfile.installed
-                            ? 'bg-tinapple-green/10 text-tinapple-green border-tinapple-green/20 font-bold'
-                            : 'bg-tinapple-muted/10 text-tinapple-muted border-tinapple-border'
-                        }`}
-                      >
-                        {selectedProfile.installed ? 'Installed & Active' : 'Available'}
-                      </span>
-                    </div>
-                    <h3 className="text-xl font-bold text-white tracking-tight mt-1">
-                      {selectedProfile.name}
-                    </h3>
-                  </div>
-                </div>
-
-                <p className="text-xs font-semibold text-tinapple-gold font-mono">
-                  {selectedProfile.tagline}
-                </p>
-                <p className="text-xs text-tinapple-subtext leading-relaxed">
-                  {selectedProfile.description}
-                </p>
-
-                {/* Sub-services / units managed */}
-                <div className="pt-2">
-                  <span className="text-[10px] uppercase font-mono text-tinapple-muted tracking-wider block mb-1.5">
-                    Managed System Units:
-                  </span>
-                  <div className="flex flex-wrap gap-1.5">
-                    {selectedProfile.services.map((svc) => (
-                      <span
-                        key={svc}
-                        className="text-[10px] font-mono px-2.5 py-1 rounded-md bg-tinapple-dark/90 text-tinapple-text border border-tinapple-border flex items-center gap-1.5"
-                      >
-                        <span className="w-1.5 h-1.5 rounded-full bg-tinapple-green" />
-                        <span>{svc}</span>
-                      </span>
-                    ))}
-                  </div>
+                  <p className="text-sm font-semibold text-tinapple-gold font-mono mt-0.5">{selectedApp.tagline}</p>
                 </div>
               </div>
 
-              {/* HoldButton Safety Installation Confirmation */}
-              <div className="flex flex-col items-start lg:items-end justify-center gap-2.5 border-t lg:border-t-0 lg:border-l border-tinapple-border/70 pt-4 lg:pt-0 lg:pl-6 min-w-[240px]">
-                <span className="text-[10px] font-mono text-tinapple-muted uppercase tracking-wider">
-                  Action Confirmation
-                </span>
-
-                {selectedProfile.installed ? (
-                  <HoldButton
-                    backgroundColor="#15181f"
-                    fillColor="#ef4444"
-                    textColor="#f87171"
-                    fillTextColor="#ffffff"
-                    size="md"
-                    holdTime={1600}
-                    wave={true}
-                    glow={true}
-                    doneLabel="Profile Uninstalled"
-                    onHold={() => handleToggleInstall(selectedProfile.id)}
-                    className="w-full font-mono text-xs font-bold"
-                  >
-                    Hold to Uninstall Profile
-                  </HoldButton>
-                ) : (
-                  <HoldButton
-                    backgroundColor="#15181f"
-                    fillColor="#e5b567"
-                    textColor="#e5b567"
-                    fillTextColor="#060709"
-                    size="md"
-                    holdTime={1400}
-                    wave={true}
-                    glow={true}
-                    doneLabel="Profile Deployed!"
-                    onHold={() => handleToggleInstall(selectedProfile.id)}
-                    className="w-full font-mono text-xs font-bold"
-                  >
-                    Hold to Deploy Profile
-                  </HoldButton>
+              {/* Action Buttons */}
+              <div className="flex flex-wrap items-center gap-2.5">
+                {selectedApp.status === 'running' && selectedApp.port > 0 && (
+                  <>
+                    <a
+                      href={`http://${currentHost}:${selectedApp.port}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-xs font-mono font-bold transition-all shadow-sm"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      {selectedApp.id === 'suwayomi' ? 'Suwayomi Web (:4567)' : `Open WebUI (:${selectedApp.port})`}
+                    </a>
+                    {selectedApp.id === 'suwayomi' && (
+                      <>
+                        <a
+                          href="/tsumiru/"
+                          target="_blank"
+                          rel="noreferrer"
+                          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/40 text-xs font-mono font-bold transition-all shadow-sm"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                          Tsumiru Web
+                        </a>
+                        <a
+                          href="/download/tsumiru"
+                          download="tsumiru-client.apk"
+                          className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 text-xs font-mono font-bold transition-all shadow-sm"
+                          title="Download Suwayomi-Tsumiru Native Android APK"
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                          Tsumiru APK
+                        </a>
+                      </>
+                    )}
+                  </>
                 )}
 
-                <span className="text-[10px] font-mono text-tinapple-muted text-center w-full">
-                  Press and hold for 1.4s to confirm
-                </span>
+                {selectedApp.status === 'running' && (
+                  <>
+                    <button
+                      onClick={() => handleAction(selectedApp.id, 'restart')}
+                      disabled={Boolean(loadingAction[selectedApp.id])}
+                      className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-mono font-medium transition-all"
+                    >
+                      <RotateCw className={`w-3.5 h-3.5 ${loadingAction[selectedApp.id] === 'restart' ? 'animate-spin' : ''}`} />
+                      Restart
+                    </button>
+                    <button
+                      onClick={() => handleAction(selectedApp.id, 'stop')}
+                      disabled={Boolean(loadingAction[selectedApp.id])}
+                      className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 text-xs font-mono font-medium transition-all"
+                    >
+                      <Square className="w-3.5 h-3.5" />
+                      Stop
+                    </button>
+                  </>
+                )}
+
+                {selectedApp.status === 'stopped' && (
+                  <button
+                    onClick={() => handleAction(selectedApp.id, 'start')}
+                    disabled={Boolean(loadingAction[selectedApp.id])}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500 text-slate-950 font-bold text-xs font-mono transition-all hover:bg-emerald-400 shadow-md shadow-emerald-500/20"
+                  >
+                    <Play className="w-3.5 h-3.5 fill-current" />
+                    Start Service
+                  </button>
+                )}
+
+                {selectedApp.status === 'not_installed' && (
+                  <button
+                    onClick={() => handleAction(selectedApp.id, 'install')}
+                    disabled={Boolean(loadingAction[selectedApp.id])}
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-tinapple-gold to-amber-500 text-slate-950 font-bold text-xs font-mono transition-all hover:brightness-110 shadow-lg shadow-tinapple-gold/20"
+                  >
+                    {loadingAction[selectedApp.id] === 'install' ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Download className="w-4 h-4" />
+                    )}
+                    Install Appliance Package
+                  </button>
+                )}
+
+                {selectedApp.installed && (
+                  <>
+                    <button
+                      onClick={() => handleOpenConfig(selectedApp)}
+                      className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-mono transition-all"
+                      title="Configure Service"
+                    >
+                      <Settings className="w-3.5 h-3.5" />
+                      Configure
+                    </button>
+                    <button
+                      onClick={() => handleAction(selectedApp.id, 'uninstall')}
+                      disabled={Boolean(loadingAction[selectedApp.id])}
+                      className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 text-xs font-mono transition-all"
+                      title="Uninstall Package"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      Uninstall
+                    </button>
+                  </>
+                )}
               </div>
             </div>
+
+            <p className="text-sm text-tinapple-subtext leading-relaxed mt-5">{selectedApp.description}</p>
           </SpotlightCard>
         </div>
       )}
 
-      {/* VIEW 2: BENTO GRID VIEW WITH HOLDBUTTON */}
+      {/* VIEW 2: BENTO GRID VIEW */}
       {viewMode === 'grid' && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {profiles.map((profile) => {
-            const isBusy = installingId === profile.id;
+          {filteredApps.map((app) => {
+            const isLoading = Boolean(loadingAction[app.id]);
             return (
               <SpotlightCard
-                key={profile.id}
+                key={app.id}
                 className="p-6 flex flex-col justify-between"
-                spotlightColor={`${profile.accentColor}20`}
-                borderColor={`${profile.accentColor}50`}
+                spotlightColor={`${app.accentColor}18`}
+                borderColor={`${app.accentColor}40`}
               >
                 <div>
-                  <div className="flex items-start justify-between mb-4">
-                    <div
-                      className="p-3 rounded-2xl border"
-                      style={{
-                        backgroundColor: `${profile.accentColor}18`,
-                        borderColor: `${profile.accentColor}30`,
-                        color: profile.accentColor,
-                      }}
-                    >
-                      {getIcon(profile.icon)}
-                    </div>
-
-                    <span
-                      className={`text-[10px] font-mono px-2.5 py-1 rounded-full border uppercase ${
-                        profile.installed
-                          ? 'bg-tinapple-green/10 text-tinapple-green border-tinapple-green/20 font-bold'
-                          : 'bg-tinapple-muted/10 text-tinapple-muted border-tinapple-border'
-                      }`}
-                    >
-                      {profile.installed ? 'Installed' : 'Available'}
-                    </span>
+                  {/* Card Header */}
+                  <div className="flex items-start justify-between gap-3 mb-4">
+                    <AppBrandIcon id={app.id} size={44} showBadge />
+                    {renderStatusBadge(app)}
                   </div>
 
-                  <h3 className="text-base font-bold text-white tracking-tight">{profile.name}</h3>
-                  <p className="text-xs font-semibold text-tinapple-gold mt-0.5 font-mono">{profile.tagline}</p>
-                  <p className="text-xs text-tinapple-subtext mt-2.5 leading-relaxed">
-                    {profile.description}
+                  <h3 className="text-base font-bold text-white tracking-tight">{app.name}</h3>
+                  <p className="text-xs font-semibold text-tinapple-gold mt-0.5 font-mono">{app.tagline}</p>
+                  <p className="text-xs text-tinapple-subtext mt-2.5 leading-relaxed line-clamp-3">
+                    {app.description}
                   </p>
 
-                  {/* Sub-services list */}
-                  <div className="mt-4 pt-3 border-t border-tinapple-border/70">
-                    <span className="text-[10px] uppercase font-mono text-tinapple-muted tracking-wider block mb-1.5">
-                      Managed Units:
-                    </span>
-                    <div className="flex flex-wrap gap-1.5">
-                      {profile.services.map((svc) => (
-                        <span
-                          key={svc}
-                          className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-tinapple-dark/80 text-tinapple-text border border-tinapple-border"
-                        >
-                          {svc}
-                        </span>
-                      ))}
-                    </div>
+                  {/* Port & Unit Metadata */}
+                  <div className="mt-4 pt-3 border-t border-tinapple-border/70 flex items-center justify-between text-[11px] font-mono text-tinapple-muted">
+                    <span>Unit: <code className="text-slate-300">{app.unit}</code></span>
+                    {app.port > 0 && (
+                      <span className="text-emerald-400 font-bold">Port :{app.port}</span>
+                    )}
                   </div>
                 </div>
 
-                {/* HoldButton in Grid */}
-                <div className="mt-5 pt-3">
-                  {profile.installed ? (
-                    <HoldButton
-                      backgroundColor="#15181f"
-                      fillColor="#ef4444"
-                      textColor="#f87171"
-                      fillTextColor="#ffffff"
-                      size="sm"
-                      holdTime={1500}
-                      wave={true}
-                      glow={true}
-                      doneLabel="Uninstalled"
-                      onHold={() => handleToggleInstall(profile.id)}
-                      className="w-full font-mono text-xs font-bold"
-                    >
-                      Hold to Uninstall
-                    </HoldButton>
-                  ) : (
-                    <HoldButton
-                      backgroundColor="#15181f"
-                      fillColor={profile.accentColor}
-                      textColor={profile.accentColor}
-                      fillTextColor="#060709"
-                      size="sm"
-                      holdTime={1400}
-                      wave={true}
-                      glow={true}
-                      doneLabel="Installed!"
-                      onHold={() => handleToggleInstall(profile.id)}
-                      className="w-full font-mono text-xs font-bold"
-                    >
-                      Hold to Install
-                    </HoldButton>
+                {/* Card Action Bar */}
+                <div className="mt-5 pt-3 border-t border-tinapple-border/50 flex flex-wrap items-center justify-between gap-2">
+                  {/* Left Action Buttons */}
+                  <div className="flex items-center gap-1.5">
+                    {app.status === 'running' && (
+                      <>
+                        {app.port > 0 && (
+                          <a
+                            href={`http://${currentHost}:${app.port}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="px-2.5 py-1.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-xs font-mono font-bold flex items-center gap-1"
+                            title={app.id === 'suwayomi' ? 'Open Suwayomi WebUI' : 'Open Web Dashboard'}
+                          >
+                            <ExternalLink className="w-3.5 h-3.5" />
+                            {app.id === 'suwayomi' ? 'WebUI' : 'Open'}
+                          </a>
+                        )}
+                        {app.id === 'suwayomi' && (
+                          <a
+                            href="/tsumiru/"
+                            target="_blank"
+                            rel="noreferrer"
+                            className="px-2.5 py-1.5 rounded-lg bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/40 text-xs font-mono font-bold flex items-center gap-1"
+                            title="Open Suwayomi-Tsumiru Web"
+                          >
+                            <ExternalLink className="w-3.5 h-3.5" />
+                            Tsumiru
+                          </a>
+                        )}
+                        <button
+                          onClick={() => handleAction(app.id, 'restart')}
+                          disabled={isLoading}
+                          className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs"
+                          title="Restart Daemon"
+                        >
+                          <RotateCw className={`w-3.5 h-3.5 ${loadingAction[app.id] === 'restart' ? 'animate-spin' : ''}`} />
+                        </button>
+                        <button
+                          onClick={() => handleAction(app.id, 'stop')}
+                          disabled={isLoading}
+                          className="p-1.5 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 text-xs"
+                          title="Stop Daemon"
+                        >
+                          <Square className="w-3.5 h-3.5" />
+                        </button>
+                      </>
+                    )}
+
+                    {app.status === 'stopped' && (
+                      <button
+                        onClick={() => handleAction(app.id, 'start')}
+                        disabled={isLoading}
+                        className="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs font-mono flex items-center gap-1.5 shadow-sm"
+                      >
+                        <Play className="w-3 h-3 fill-current" />
+                        Start
+                      </button>
+                    )}
+
+                    {app.status === 'not_installed' && (
+                      <button
+                        onClick={() => handleAction(app.id, 'install')}
+                        disabled={isLoading}
+                        className="px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-tinapple-gold to-amber-500 hover:brightness-110 text-slate-950 font-bold text-xs font-mono flex items-center gap-1.5 shadow-sm"
+                      >
+                        {loadingAction[app.id] === 'install' ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <Download className="w-3.5 h-3.5" />
+                        )}
+                        Install
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Right Tools (Configure & Uninstall) */}
+                  {app.installed && (
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => handleOpenConfig(app)}
+                        className="p-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 border border-slate-700/60 text-xs transition-colors"
+                        title="Configure settings & port"
+                      >
+                        <Settings className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => handleAction(app.id, 'uninstall')}
+                        disabled={isLoading}
+                        className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 text-xs transition-colors"
+                        title="Uninstall package"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   )}
                 </div>
               </SpotlightCard>
@@ -507,7 +891,85 @@ export const ChaddyStore: React.FC = () => {
           })}
         </div>
       )}
+
+      {/* CONFIG MANAGEMENT MODAL */}
+      {configModalApp && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+          <div className="w-full max-w-xl rounded-2xl bg-slate-900 border border-slate-700 shadow-2xl p-6 space-y-5 animate-in fade-in zoom-in-95 duration-150">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+              <div className="flex items-center gap-3">
+                <AppBrandIcon id={configModalApp.id} size={36} showBadge />
+                <div>
+                  <h3 className="text-base font-bold text-white">{configModalApp.name} Configuration</h3>
+                  <span className="text-xs font-mono text-tinapple-gold">{configModalApp.unit}</span>
+                </div>
+              </div>
+              <button
+                onClick={() => setConfigModalApp(null)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="space-y-4">
+              {/* Port configuration */}
+              <div>
+                <label className="block text-xs font-mono uppercase tracking-wider text-slate-400 mb-1.5">
+                  Service Listen Port
+                </label>
+                <input
+                  type="number"
+                  value={editPort || ''}
+                  onChange={(e) => setEditPort(parseInt(e.target.value) || 0)}
+                  placeholder="e.g. 8096"
+                  className="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-sm font-mono text-white focus:outline-none focus:border-tinapple-gold"
+                />
+                <span className="text-[11px] text-slate-500 mt-1 block">
+                  Updates systemd service drop-in environment <code>PORT={editPort}</code>.
+                </span>
+              </div>
+
+              {/* System Config File Preview */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-xs font-mono uppercase tracking-wider text-slate-400">
+                    Configuration File Preview
+                  </span>
+                  <span className="text-[10px] font-mono text-slate-500">
+                    {configModalApp.configPath || 'systemd drop-in'}
+                  </span>
+                </div>
+                <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 font-mono text-xs text-slate-300 max-h-48 overflow-y-auto whitespace-pre leading-relaxed">
+                  {rawConfigPreview}
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="pt-4 border-t border-slate-800 flex items-center justify-end gap-3">
+              <button
+                onClick={() => setConfigModalApp(null)}
+                className="px-4 py-2 rounded-xl text-xs font-mono text-slate-300 hover:bg-slate-800 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveConfig}
+                disabled={savingConfig}
+                className="flex items-center gap-2 px-5 py-2 rounded-xl bg-tinapple-gold hover:brightness-110 text-slate-950 font-bold text-xs font-mono transition-all shadow-md shadow-tinapple-gold/20"
+              >
+                {savingConfig ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                Save & Restart Service
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
+
 export default ChaddyStore;

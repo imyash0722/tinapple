@@ -199,7 +199,11 @@ tinapple_mount_all() {
       esp_mount="$target/${esp_mount#/}"
     fi
     mkdir -p "$esp_mount"
-    mount -t vfat -o umask=0077 "$esp_dev" "$esp_mount" || die "failed to mount ESP %s to %s" "$esp_dev" "$esp_mount"
+    if [[ "${TINAPPLE_FIRMWARE:-}" == "bios" ]] || [[ ! -d /sys/firmware/efi ]]; then
+      mount "$esp_dev" "$esp_mount" || die "failed to mount boot %s to %s" "$esp_dev" "$esp_mount"
+    else
+      mount -t vfat -o umask=0077 "$esp_dev" "$esp_mount" || die "failed to mount ESP %s to %s" "$esp_dev" "$esp_mount"
+    fi
   fi
 
   if [[ -n "$swap_dev" && "$swap_dev" != "none" ]]; then

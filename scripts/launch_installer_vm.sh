@@ -5,7 +5,7 @@ set -euo pipefail
 PROJECT_DIR="/mnt/shared/projects/tinapple"
 LATEST_ISO=$(ls -t "${PROJECT_DIR}"/out/tinapple-os-*.iso 2>/dev/null | head -n1 || true)
 ISO="${LATEST_ISO:-${PROJECT_DIR}/out/tinapple-os-gui-x86_64.iso}"
-DISK="${PROJECT_DIR}/out/tinapple-target.qcow2"
+DISK="${TINAPPLE_DISK:-/var/tmp/tinapple-target.qcow2}"
 OVMF_CODE="/usr/share/edk2/x64/OVMF_CODE.4m.fd"
 OVMF_VARS="/tmp/OVMF_VARS.fd"
 
@@ -23,6 +23,10 @@ while [[ $# -gt 0 ]]; do
             BOOT_ORDER="c"
             BOOT_MODE="Installed Appliance Disk"
             shift
+            ;;
+        --iso)
+            ISO="$2"
+            shift 2
             ;;
         *)
             EXTRA_ARGS+=("$1")
@@ -57,23 +61,49 @@ QEMU_CMD=(
     -m 4096
     -drive if=pflash,format=raw,readonly=on,file="$OVMF_CODE"
     -drive if=pflash,format=raw,file="$OVMF_VARS"
-    -drive file="$DISK",format=qcow2,if=virtio
+    -drive file="$DISK",format=qcow2,if=none,id=disk0
     -vga virtio
-    -display gtk
+    -display gtk,grab-on-hover=on,show-menubar=on
     -qmp unix:/tmp/qemu-tinapple-qmp.sock,server,nowait
     -serial file:"${PROJECT_DIR}/out/qemu-serial.log"
-    -netdev user,id=net0,ipv6=off,hostfwd=tcp::2222-:22,hostfwd=tcp::3000-:3000,hostfwd=tcp::8088-:8088,hostfwd=tcp::3389-:3389
-    -device virtio-net-pci,netdev=net0
+    -netdev user,id=net0,ipv6=off,hostfwd=tcp::2222-:22,hostfwd=tcp::3000-:3000,hostfwd=tcp::4566-:4566,hostfwd=tcp::4567-:4567,hostfwd=tcp::8080-:8080,hostfwd=tcp::8088-:8088,hostfwd=tcp::8096-:8096,hostfwd=tcp::3389-:3389,hostfwd=tcp::25565-:25565,hostfwd=tcp::8443-:8443
+    -device virtio-net-pci,netdev=net0,bootindex=3
+    -device usb-ehci,id=ehci
+    -device usb-kbd
+    -device usb-tablet
 )
 
-if [[ "$BOOT_ORDER" == "d" ]]; then
+# Auto-detect if target disk already has an installed operating system
+DISK_INSTALLED=false
+if [[ -f "$DISK" ]]; then
+    ACTUAL_SIZE=$(qemu-img info --output=json "$DISK" 2>/dev/null | grep -m1 '"actual-size"' | awk -F': ' '{print $2}' | tr -d ', ' || echo "0")
+    if [[ -n "$ACTUAL_SIZE" && "$ACTUAL_SIZE" -gt 500000000 ]]; then
+        DISK_INSTALLED=true
+    fi
+fi
+
+if [[ "$BOOT_ORDER" == "d" && "$DISK_INSTALLED" == "true" ]]; then
+    echo "==> Detected installed Tinapple OS on target drive ($DISK)!"
+    echo "    Defaulting boot priority to Disk (bootindex=1). CD-ROM attached as fallback (bootindex=2)."
     QEMU_CMD+=(
-        -cdrom "$ISO"
-        -boot menu=on,order=d
+        -device virtio-blk-pci,drive=disk0,bootindex=1
+        -drive file="$ISO",media=cdrom,readonly=on,if=none,id=cdrom0
+        -device ide-cd,drive=cdrom0,bootindex=2
+        -boot menu=on
+    )
+elif [[ "$BOOT_ORDER" == "d" ]]; then
+    echo "==> Target disk ($DISK) is blank/uninstalled. Prioritizing Live ISO Installer (bootindex=1)..."
+    QEMU_CMD+=(
+        -drive file="$ISO",media=cdrom,readonly=on,if=none,id=cdrom0
+        -device ide-cd,drive=cdrom0,bootindex=1
+        -device virtio-blk-pci,drive=disk0,bootindex=2
+        -boot menu=on
     )
 else
+    echo "==> Disk only mode. Booting from $DISK..."
     QEMU_CMD+=(
-        -boot menu=on,order=c
+        -device virtio-blk-pci,drive=disk0,bootindex=1
+        -boot menu=on
     )
 fi
 

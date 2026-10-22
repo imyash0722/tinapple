@@ -61,17 +61,19 @@ export const HardwareSensors: React.FC<HardwareSensorsProps> = ({ hardware }) =>
           <div className="space-y-2 pt-3 border-t border-tinapple-border/70 text-xs font-mono">
             <div className="flex justify-between text-tinapple-subtext">
               <span>Instruction Set:</span>
-              <span className="text-tinapple-gold font-bold">x86-64-v4 (AVX-512)</span>
+              <span className="text-tinapple-gold font-bold">
+                {hardware.cpu?.arch || 'x86_64'} ({(hardware.cpu?.features || []).slice(0, 3).join(', ').toUpperCase() || 'AVX, SSE4.2'})
+              </span>
             </div>
             <div className="flex justify-between text-tinapple-subtext">
               <span>Core Topology:</span>
               <span className="text-white">
-                {hardware.cpu?.cores || 16} Cores / {hardware.cpu?.threads || 32} Threads
+                {hardware.cpu?.cores || 2} Cores / {hardware.cpu?.threads || 4} Threads
               </span>
             </div>
             <div className="flex justify-between text-tinapple-subtext">
               <span>Total RAM:</span>
-              <span className="text-tinapple-green font-bold">{hardware.memoryGb || 16} GB DDR5</span>
+              <span className="text-tinapple-green font-bold">{hardware.memoryGb || 8} GB RAM</span>
             </div>
           </div>
         </SpotlightCard>
@@ -86,26 +88,36 @@ export const HardwareSensors: React.FC<HardwareSensorsProps> = ({ hardware }) =>
               <h4 className="text-xs font-bold text-tinapple-subtext uppercase tracking-wider font-mono">
                 Hardware Security
               </h4>
-              <p className="text-sm font-bold text-white mt-0.5">TPM 2.0 Cryptoprocessor</p>
+              <p className="text-sm font-bold text-white mt-0.5">
+                {hardware.tpm2Present ? 'TPM 2.0 Cryptoprocessor' : 'Standard Silicon Security'}
+              </p>
             </div>
           </div>
           <div className="space-y-2 pt-3 border-t border-tinapple-border/70 text-xs font-mono">
             <div className="flex items-center justify-between">
               <span className="text-tinapple-subtext">TPM 2.0 State:</span>
-              <span className="px-2 py-0.5 rounded-md bg-tinapple-green/15 text-tinapple-green font-bold border border-tinapple-green/25 flex items-center gap-1">
-                <CheckCircle2 className="w-3 h-3" />
-                <span>Active (CRB)</span>
-              </span>
+              {hardware.tpm2Present ? (
+                <span className="px-2 py-0.5 rounded-md bg-tinapple-green/15 text-tinapple-green font-bold border border-tinapple-green/25 flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3" />
+                  <span>Active (Hardware)</span>
+                </span>
+              ) : (
+                <span className="px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-400 font-bold border border-amber-500/25 flex items-center gap-1">
+                  <span>None Detected (Legacy)</span>
+                </span>
+              )}
             </div>
             <div className="flex items-center justify-between">
               <span className="text-tinapple-subtext">Secure Boot:</span>
               <span className="px-2 py-0.5 rounded-md bg-tinapple-dark text-tinapple-muted border border-tinapple-border">
-                {hardware.secureBootEnabled ? 'Enforced' : 'Custom / Unlocked'}
+                {hardware.secureBootEnabled ? 'Enforced' : 'Disabled / Legacy Mode'}
               </span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-tinapple-subtext">LUKS Autounlock:</span>
-              <span className="text-tinapple-gold font-bold">tpm2-pcr-sealed</span>
+              <span className="text-tinapple-gold font-bold">
+                {hardware.tpm2Present ? 'tpm2-pcr-sealed' : 'Passphrase Authentication'}
+              </span>
             </div>
           </div>
         </SpotlightCard>
@@ -120,23 +132,27 @@ export const HardwareSensors: React.FC<HardwareSensorsProps> = ({ hardware }) =>
               <h4 className="text-xs font-bold text-tinapple-subtext uppercase tracking-wider font-mono">
                 GPU Acceleration
               </h4>
-              <p className="text-sm font-bold text-white mt-0.5">
-                {hardware.gpu?.model || 'Radeon 780M RDNA3'}
+              <p className="text-sm font-bold text-white mt-0.5 truncate max-w-[200px]" title={hardware.gpu?.model || 'Integrated Graphics'}>
+                {hardware.gpu?.model || 'Integrated Display Controller'}
               </p>
             </div>
           </div>
           <div className="space-y-2 pt-3 border-t border-tinapple-border/70 text-xs font-mono">
             <div className="flex justify-between text-tinapple-subtext">
-              <span>Mesa Driver:</span>
-              <span className="text-white">radv / amdgpu</span>
+              <span>Display Driver:</span>
+              <span className="text-white font-bold">{hardware.gpu?.driver || 'modesetting'}</span>
             </div>
             <div className="flex justify-between text-tinapple-subtext">
               <span>Hardware Video:</span>
-              <span className="text-tinapple-green font-bold">VA-API AV1/HEVC</span>
+              <span className="text-tinapple-green font-bold">
+                {hardware.gpu?.driver === 'i915' ? 'Intel QuickSync / VA-API' : 'VA-API Hardware Video'}
+              </span>
             </div>
             <div className="flex justify-between text-tinapple-subtext">
               <span>Vulkan Runtime:</span>
-              <span className="text-tinapple-gold font-bold">Vulkan 1.3.296</span>
+              <span className="text-tinapple-gold font-bold">
+                {hardware.gpu?.driver === 'i915' ? 'Intel ANV Vulkan' : 'Mesa Vulkan Runtime'}
+              </span>
             </div>
           </div>
         </SpotlightCard>
@@ -179,16 +195,18 @@ export const HardwareSensors: React.FC<HardwareSensorsProps> = ({ hardware }) =>
 
           <div className="p-3.5 rounded-xl bg-tinapple-dark/70 border border-tinapple-border font-mono text-xs space-y-1.5 min-w-[240px]">
             <div className="flex justify-between text-[11px]">
-              <span className="text-tinapple-muted">PCR[7] Hash:</span>
-              <span className="text-tinapple-gold font-bold">0x8a92...e41b</span>
+              <span className="text-tinapple-muted">Firmware Mode:</span>
+              <span className="text-tinapple-gold font-bold">
+                {(hardware as any).firmware === 'uefi' ? 'UEFI 64-bit' : 'BIOS / Legacy CSM'}
+              </span>
             </div>
             <div className="flex justify-between text-[11px]">
-              <span className="text-tinapple-muted">Firmware Vendor:</span>
-              <span className="text-white">American Megatrends</span>
+              <span className="text-tinapple-muted">Platform Root:</span>
+              <span className="text-white">{hardware.profile}</span>
             </div>
             <div className="flex justify-between text-[11px]">
-              <span className="text-tinapple-muted">Trust Status:</span>
-              <span className="text-tinapple-green font-bold">Verified Authentic</span>
+              <span className="text-tinapple-muted">Hardware State:</span>
+              <span className="text-tinapple-green font-bold">Online & Verified</span>
             </div>
           </div>
         </div>
@@ -198,24 +216,32 @@ export const HardwareSensors: React.FC<HardwareSensorsProps> = ({ hardware }) =>
       <SpotlightCard className="p-6" spotlightColor="rgba(126, 199, 137, 0.12)" borderColor="rgba(126, 199, 137, 0.35)">
         <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2 font-mono uppercase tracking-wide">
           <Disc className="w-4 h-4 text-tinapple-green" />
-          <span>Physical Storage Controller & NVMe Fabric</span>
+          <span>Physical Storage Controller & Attached Drives</span>
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {(hardware.storageDrives || []).map((drive) => (
-            <div
-              key={drive.name}
-              className="p-4 rounded-xl bg-tinapple-dark/80 border border-tinapple-border flex items-center justify-between font-mono"
-            >
-              <div>
-                <span className="text-sm font-bold text-white">/dev/{drive.name}</span>
-                <p className="text-xs text-tinapple-subtext mt-0.5">{drive.model}</p>
+          {(hardware.storageDrives || []).map((drive) => {
+            const devPath = drive.name.startsWith('/') ? drive.name : `/dev/${drive.name}`;
+            const devSize = drive.sizeGb || (drive as any).size || 'Unknown';
+            return (
+              <div
+                key={drive.name}
+                className="p-4 rounded-xl bg-tinapple-dark/80 border border-tinapple-border flex items-center justify-between font-mono"
+              >
+                <div>
+                  <span className="text-sm font-bold text-white">{devPath}</span>
+                  <p className="text-xs text-tinapple-subtext mt-0.5">{drive.model}</p>
+                </div>
+                <div className="text-right">
+                  <span className="text-base font-extrabold text-tinapple-gold">
+                    {typeof devSize === 'number' ? `${devSize} GB` : devSize}
+                  </span>
+                  <span className="text-[10px] block uppercase text-tinapple-green font-bold">
+                    {drive.type || 'SATA'} Interface
+                  </span>
+                </div>
               </div>
-              <div className="text-right">
-                <span className="text-base font-extrabold text-tinapple-gold">{drive.sizeGb} GB</span>
-                <span className="text-[10px] block uppercase text-tinapple-green font-bold">{drive.type} Gen4</span>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </SpotlightCard>
     </div>
