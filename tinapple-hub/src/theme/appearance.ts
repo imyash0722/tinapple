@@ -32,6 +32,15 @@ export const BUNDLED_WALLPAPERS = [
   { name: 'Tropical Palm', url: '/wallpapers/1205654.jpg', defaultPrimary: '#7ec789', defaultSecondary: '#06b6d4' },
   { name: 'Obsidian Minimal', url: '/wallpapers/tinapple-cinematic-monochrome.png', defaultPrimary: '#e4e4e7', defaultSecondary: '#71717a' },
   { name: 'Pineapple Modern', url: '/wallpapers/Aesthetic-Pineapple-Wallpaper-1920x1080-1.jpg', defaultPrimary: '#facc15', defaultSecondary: '#10b981' },
+  { name: 'Blue Night Fishbowl', url: '/wallpapers/blue-night-fishbowl-room.jpg', defaultPrimary: '#38bdf8', defaultSecondary: '#6366f1' },
+  { name: 'Ocean Torii Gate', url: '/wallpapers/ocean-torii-gate.png', defaultPrimary: '#0ea5e9', defaultSecondary: '#3b82f6' },
+  { name: 'Floating Pagoda City', url: '/wallpapers/floating-pagoda-city.jpg', defaultPrimary: '#6366f1', defaultSecondary: '#06b6d4' },
+  { name: 'Pixel Retro Forest', url: '/wallpapers/pixel-art-retro-forest.png', defaultPrimary: '#f43f5e', defaultSecondary: '#a855f7' },
+  { name: 'Rainy Mountain Town', url: '/wallpapers/rainy-mountain-town-crossing.jpg', defaultPrimary: '#38bdf8', defaultSecondary: '#14b8a6' },
+  { name: 'Sakura Torii Shrine', url: '/wallpapers/wallhaven-9mjoy1.png', defaultPrimary: '#f472b6', defaultSecondary: '#10b981' },
+  { name: 'Engraved Katana', url: '/wallpapers/wallhaven-qrow67.png', defaultPrimary: '#e4e4e7', defaultSecondary: '#71717a' },
+  { name: 'Nachi Falls Pagoda', url: '/wallpapers/wallhaven-w5x99p.jpg', defaultPrimary: '#f97316', defaultSecondary: '#84cc16' },
+  { name: 'Sakura Railway Train', url: '/wallpapers/wallhaven-yqg6r7.jpg', defaultPrimary: '#ec4899', defaultSecondary: '#84cc16' },
 ];
 
 export const isHexColor = (value: unknown): value is string => typeof value === 'string' && /^#[\da-f]{6}$/i.test(value);
