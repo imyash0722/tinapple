@@ -12,7 +12,7 @@ export const DEFAULT_SETTINGS: BackgroundSettings = {
   enableNebula: true,
   enableGlass: true,
   glassBlur: 20,
-  glassOpacity: 75,
+  glassTranslucency: 45,
   uiScale: '100%',
 };
 
@@ -63,11 +63,20 @@ export function normalizeSettings(value: unknown): BackgroundSettings {
     const legacyBlur = Number(localStorage.getItem('tinapple_blur'));
     if (!Number.isNaN(legacyBlur) && legacyBlur >= 0 && legacyBlur <= 40) settings.glassBlur = legacyBlur;
   }
-  if (typeof saved.glassOpacity === 'number' && Number.isFinite(saved.glassOpacity)) {
-    settings.glassOpacity = Math.min(95, Math.max(20, Math.round(saved.glassOpacity)));
+  if (typeof saved.glassTranslucency === 'number' && Number.isFinite(saved.glassTranslucency)) {
+    settings.glassTranslucency = Math.min(90, Math.max(10, Math.round(saved.glassTranslucency)));
+  } else if (typeof saved.glassOpacity === 'number' && Number.isFinite(saved.glassOpacity)) {
+    settings.glassTranslucency = Math.min(90, Math.max(10, Math.round(100 - saved.glassOpacity)));
   } else if (typeof window !== 'undefined') {
-    const legacyOpacity = Number(localStorage.getItem('tinapple_opacity'));
-    if (!Number.isNaN(legacyOpacity) && legacyOpacity >= 20 && legacyOpacity <= 95) settings.glassOpacity = legacyOpacity;
+    const legacyTrans = Number(localStorage.getItem('tinapple_translucency'));
+    if (!Number.isNaN(legacyTrans) && legacyTrans >= 10 && legacyTrans <= 90) {
+      settings.glassTranslucency = legacyTrans;
+    } else {
+      const legacyOpacity = Number(localStorage.getItem('tinapple_opacity'));
+      if (!Number.isNaN(legacyOpacity) && legacyOpacity >= 20 && legacyOpacity <= 95) {
+        settings.glassTranslucency = Math.min(90, Math.max(10, Math.round(100 - legacyOpacity)));
+      }
+    }
   }
   if (typeof saved.uiScale === 'string' && ['90%', '100%', '108%', '115%'].includes(saved.uiScale)) {
     settings.uiScale = saved.uiScale;

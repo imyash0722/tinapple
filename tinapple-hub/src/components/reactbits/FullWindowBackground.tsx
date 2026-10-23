@@ -15,7 +15,7 @@ export interface BackgroundSettings {
   enableNebula: boolean;
   enableGlass: boolean;
   glassBlur: number;
-  glassOpacity: number;
+  glassTranslucency: number;
   uiScale: string;
 }
 

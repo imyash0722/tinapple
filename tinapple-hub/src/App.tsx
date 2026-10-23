@@ -64,10 +64,14 @@ export const App: React.FC = () => {
     root.style.setProperty('--tinapple-secondary-rgb', colorChannels(settings.secondaryColor));
 
     const blur = settings.glassBlur ?? 20;
-    const opacity = (settings.glassOpacity ?? 75) / 100;
+    const translucency = settings.glassTranslucency ?? 45;
+    // Higher translucency = lower alpha (more see-through / clear glass)
+    const alpha = Math.max(0.08, Math.min(0.95, (100 - translucency) / 100));
+
     root.style.setProperty('--glass-blur', `${blur}px`);
-    root.style.setProperty('--glass-opacity', `${opacity}`);
-    root.style.setProperty('--glass-bg', settings.enableGlass ? `rgba(18, 22, 31, ${opacity})` : '#12161f');
+    root.style.setProperty('--glass-opacity', `${alpha.toFixed(2)}`);
+    root.style.setProperty('--glass-translucency', `${translucency}%`);
+    root.style.setProperty('--glass-bg', settings.enableGlass ? `rgba(18, 22, 31, ${alpha.toFixed(2)})` : '#12161f');
     root.style.setProperty('--glass-filter', settings.enableGlass ? `blur(${blur}px) saturate(180%)` : 'none');
 
     const scale = settings.uiScale || '100%';
@@ -78,7 +82,8 @@ export const App: React.FC = () => {
     try {
       localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(settings));
       localStorage.setItem('tinapple_blur', blur.toString());
-      localStorage.setItem('tinapple_opacity', (settings.glassOpacity ?? 75).toString());
+      localStorage.setItem('tinapple_translucency', translucency.toString());
+      localStorage.setItem('tinapple_opacity', Math.round(alpha * 100).toString());
       localStorage.setItem('tinapple_scale', scale);
       setStorageStatus('');
     } catch { setStorageStatus('Browser storage is unavailable. Changes apply for this session only.'); }

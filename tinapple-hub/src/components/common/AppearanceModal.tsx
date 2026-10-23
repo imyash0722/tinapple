@@ -156,19 +156,19 @@ export const AppearanceModal: React.FC<AppearanceModalProps> = ({ isOpen, onClos
               <label className="block text-sm" htmlFor="glass-translucency">
                 <span className="flex justify-between">
                   <span className="text-zinc-200">Glass Translucency</span>
-                  <span className="font-mono text-tinapple-gold font-bold">{settings.glassOpacity}%</span>
+                  <span className="font-mono text-tinapple-gold font-bold">{settings.glassTranslucency}%</span>
                 </span>
                 <input
                   id="glass-translucency"
                   type="range"
-                  min="20"
-                  max="95"
+                  min="10"
+                  max="90"
                   step="1"
-                  value={settings.glassOpacity}
-                  onChange={event => update({ glassOpacity: Number(event.target.value) })}
+                  value={settings.glassTranslucency}
+                  onChange={event => update({ glassTranslucency: Number(event.target.value) })}
                   className="mt-2 w-full accent-tinapple-gold cursor-pointer"
                 />
-                <span className="block mt-1 text-xs text-zinc-400">Controls background alpha transparency</span>
+                <span className="block mt-1 text-xs text-zinc-400">Controls see-through glass clarity (higher = more translucent)</span>
               </label>
             </div>
           </section>
