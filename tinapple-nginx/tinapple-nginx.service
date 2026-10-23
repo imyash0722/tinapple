@@ -1,18 +1,20 @@
 [Unit]
-Description=Tinapple Caddy Reverse Proxy
+Description=Tinapple NGINX Reverse Proxy
 Documentation=https://github.com/tinapple/tinapple-arch
 After=network-online.target
 Wants=network-online.target
-ConditionPathExists=/etc/tinapple/Caddyfile
+ConditionPathExists=/etc/nginx/nginx.conf
 
 [Service]
-Type=simple
-ExecStart=/usr/bin/caddy run --config /etc/tinapple/Caddyfile
-ExecReload=/usr/bin/caddy reload --config /etc/tinapple/Caddyfile
-Restart=on-failure
-RestartSec=5
-StandardOutput=journal
-StandardError=journal
+Type=forking
+PIDFile=/run/nginx.pid
+ExecStartPre=/usr/bin/nginx -t -q -g 'daemon on; master_process on;'
+ExecStart=/usr/bin/nginx -g 'daemon on; master_process on;'
+ExecReload=/usr/bin/nginx -g 'daemon on; master_process on;' -s reload
+ExecStop=-/sbin/start-stop-daemon --quiet --stop --retry QUIT/5 --pidfile /run/nginx.pid
+TimeoutStopSec=5
+KillMode=mixed
+PrivateTmp=true
 
 [Install]
 WantedBy=multi-user.target

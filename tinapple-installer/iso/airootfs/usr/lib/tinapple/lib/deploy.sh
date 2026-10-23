@@ -47,28 +47,69 @@ tinapple_deploy() {
     run_sh "tinapple-config-generator generate $manifest $gen_dir"
   fi
 
-  # 2. Deploy Caddyfile from manifest services
-  log_info "generating Caddyfile from manifest services..."
-  run_sh "mkdir -p $target/etc/caddy $target/etc/tinapple && cat << 'EOC' > $target/etc/caddy/Caddyfile
-# Auto-generated Caddyfile for tinapple OS
-{
-    admin off
-    auto_https disable_redirects
+  # 2. Deploy NGINX reverse proxy configuration from manifest services
+  log_info "generating NGINX reverse proxy configuration from manifest services..."
+  run_sh "mkdir -p $target/etc/nginx/conf.d $target/etc/tinapple && cat << 'EON' > $target/etc/nginx/conf.d/tinapple.conf
+# Auto-generated NGINX reverse proxy configuration for tinapple OS
+map \$http_upgrade \$connection_upgrade {
+    default upgrade;
+    ''      close;
 }
 
-:8088 {
-    reverse_proxy localhost:8088
-}
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+    server_name _;
 
-jellyfin.local {
-    reverse_proxy localhost:8096
-}
+    # Web Hub Dashboard
+    location / {
+        proxy_pass http://127.0.0.1:8088;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection \$connection_upgrade;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_read_timeout 86400s;
+        proxy_buffering off;
+    }
 
-qbittorrent.local {
-    reverse_proxy localhost:8080
+    # Jellyfin Media Server
+    location ^~ /jellyfin/ {
+        proxy_pass http://127.0.0.1:8096/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection \$connection_upgrade;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+    }
+
+    # qBittorrent Headless
+    location ^~ /qbittorrent/ {
+        proxy_pass http://127.0.0.1:8080/;
+        proxy_http_version 1.1;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+    }
+
+    # Suwayomi Manga
+    location ^~ /suwayomi/ {
+        proxy_pass http://127.0.0.1:4567/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection \$connection_upgrade;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+    }
 }
-EOC
-cp $target/etc/caddy/Caddyfile $target/etc/tinapple/Caddyfile 2>/dev/null || true"
+EON
+cp $target/etc/nginx/conf.d/tinapple.conf $target/etc/tinapple/nginx.conf 2>/dev/null || true"
 
   # 3. Generate systemd drop-ins for service overrides
   log_info "generating systemd drop-ins for service overrides..."
@@ -122,7 +163,38 @@ EOP"
   # 7. Deploy to target system (/mnt/etc/, /mnt/usr/share/tinapple/)
   log_info "deploying configurations to /etc/ and /usr/share/tinapple/..."
   run_sh "mkdir -p $target/usr/share/tinapple && cp -r $target/etc/tinapple/* $target/usr/share/tinapple/ 2>/dev/null || true"
-  run_sh "mkdir -p $target/var/lib/tinapple && touch $target/var/lib/tinapple/firstboot-done"
+
+  # 8. Deploy Tinapple appliance approved applications, wrappers, and configs
+  log_info "deploying Tinapple appliance approved applications and scripts to %s..." "$target"
+  run_sh "mkdir -p $target/usr/bin $target/usr/local/bin $target/etc/skel $target/etc/systemd/system $target/usr/share/backgrounds"
+  for f in /usr/bin/niri /usr/bin/waybar /usr/bin/fuzzel /usr/bin/foot /usr/bin/btop /usr/local/bin/omarchy-* /usr/local/bin/wttrbar /usr/bin/dwl /usr/local/bin/dwl /usr/bin/ironbar /usr/local/bin/ironbar /usr/local/bin/qdirstat /usr/local/bin/tinapple-* /usr/bin/tinapple-*; do
+    if [[ -f "$f" ]]; then
+      run_sh "cp -f '$f' '$target/usr/bin/' 2>/dev/null || true; cp -f '$f' '$target/usr/local/bin/' 2>/dev/null || true; chmod 755 '$target/usr/bin/$(basename \"$f\")' '$target/usr/local/bin/$(basename \"$f\")' 2>/dev/null || true"
+    fi
+  done
+  run_sh "mkdir -p $target/etc/skel/.config/niri $target/etc/skel/.config/waybar $target/etc/skel/.config/matugen"
+  if [[ -d /home/pineapple/.config/niri ]]; then
+    run_sh "cp -rf /home/pineapple/.config/niri/. $target/etc/skel/.config/niri/ 2>/dev/null || true"
+  fi
+  if [[ -d /home/pineapple/.config/waybar ]]; then
+    run_sh "cp -rf /home/pineapple/.config/waybar/. $target/etc/skel/.config/waybar/ 2>/dev/null || true"
+  fi
+  if [[ -d /home/pineapple/.config/matugen ]]; then
+    run_sh "cp -rf /home/pineapple/.config/matugen/. $target/etc/skel/.config/matugen/ 2>/dev/null || true"
+  fi
+  if [[ -f /usr/share/backgrounds/wallpaper.png ]]; then
+    run_sh "cp -f /usr/share/backgrounds/wallpaper.png $target/usr/share/backgrounds/ 2>/dev/null || true"
+  fi
+  for unit in tinapple-truenas-backup.service tinapple-truenas-backup.timer; do
+    if [[ -f "/etc/systemd/system/$unit" ]]; then
+      run_sh "cp -f '/etc/systemd/system/$unit' '$target/etc/systemd/system/$unit' 2>/dev/null || true; arch-chroot '$target' systemctl enable '$unit' 2>/dev/null || true"
+    fi
+  done
+  run_sh "mkdir -p $target/var/lib/tinapple && touch $target/var/lib/tinapple/firstboot-done $target/var/lib/tinapple/installed $target/etc/tinapple-installed"
+  run_sh "touch /tmp/installation-complete /etc/tinapple-installed 2>/dev/null || true"
+  run_sh "eject /dev/sr0 2>/dev/null || eject /dev/cdrom 2>/dev/null || true"
+  run_sh "arch-chroot '$target' systemctl disable tinapple-install.service tinapple-firstboot.service 2>/dev/null || true"
+  run_sh "rm -f $target/etc/systemd/system/graphical.target.wants/tinapple-install.service $target/etc/systemd/system/multi-user.target.wants/tinapple-install.service $target/etc/systemd/system/multi-user.target.wants/tinapple-firstboot.service 2>/dev/null || true"
 
   # Export output variables for next stage
   export TINAPPLE_DEPLOYED="true"

@@ -47,28 +47,69 @@ tinapple_deploy() {
     run_sh "tinapple-config-generator generate $manifest $gen_dir"
   fi
 
-  # 2. Deploy Caddyfile from manifest services
-  log_info "generating Caddyfile from manifest services..."
-  run_sh "mkdir -p $target/etc/caddy $target/etc/tinapple && cat << 'EOC' > $target/etc/caddy/Caddyfile
-# Auto-generated Caddyfile for tinapple OS
-{
-    admin off
-    auto_https disable_redirects
+  # 2. Deploy NGINX reverse proxy configuration from manifest services
+  log_info "generating NGINX reverse proxy configuration from manifest services..."
+  run_sh "mkdir -p $target/etc/nginx/conf.d $target/etc/tinapple && cat << 'EON' > $target/etc/nginx/conf.d/tinapple.conf
+# Auto-generated NGINX reverse proxy configuration for tinapple OS
+map \$http_upgrade \$connection_upgrade {
+    default upgrade;
+    ''      close;
 }
 
-:8088 {
-    reverse_proxy localhost:8088
-}
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+    server_name _;
 
-jellyfin.local {
-    reverse_proxy localhost:8096
-}
+    # Web Hub Dashboard
+    location / {
+        proxy_pass http://127.0.0.1:8088;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection \$connection_upgrade;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_read_timeout 86400s;
+        proxy_buffering off;
+    }
 
-qbittorrent.local {
-    reverse_proxy localhost:8080
+    # Jellyfin Media Server
+    location ^~ /jellyfin/ {
+        proxy_pass http://127.0.0.1:8096/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection \$connection_upgrade;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+    }
+
+    # qBittorrent Headless
+    location ^~ /qbittorrent/ {
+        proxy_pass http://127.0.0.1:8080/;
+        proxy_http_version 1.1;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+    }
+
+    # Suwayomi Manga
+    location ^~ /suwayomi/ {
+        proxy_pass http://127.0.0.1:4567/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection \$connection_upgrade;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+    }
 }
-EOC
-cp $target/etc/caddy/Caddyfile $target/etc/tinapple/Caddyfile 2>/dev/null || true"
+EON
+cp $target/etc/nginx/conf.d/tinapple.conf $target/etc/tinapple/nginx.conf 2>/dev/null || true"
 
   # 3. Generate systemd drop-ins for service overrides
   log_info "generating systemd drop-ins for service overrides..."
