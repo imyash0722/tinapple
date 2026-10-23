@@ -1,4 +1,5 @@
 post_install() {
+  [[ ! -f /etc/tinapple/.provisioned ]] || return 0
   systemctl enable tinapple-firstboot.service >/dev/null 2>&1 || true
 }
 

@@ -1,0 +1,7 @@
+[Unit]
+Description=Refresh routes after service state changes
+[Timer]
+OnBootSec=45s
+OnUnitActiveSec=30s
+[Install]
+WantedBy=timers.target

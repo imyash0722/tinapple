@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+# Fail closed before a package transaction if no bootable recovery point can be made.
+set -euo pipefail
+DRY_RUN=0
+ACTION=${1:-}; shift || true
+[[ ${1:-} != --dry-run ]] || { DRY_RUN=1; shift; }
+[[ $# == 0 && ( $ACTION == pre || $ACTION == post ) ]] || { echo 'Usage: tinapple-update-hook {pre|post} [--dry-run]' >&2; exit 2; }
+source "${TINAPPLE_MAINTENANCE_LIB:-/usr/lib/tinapple-maintenance}/common.sh"
+need_root
+trap 'log "Transaction hook failed at line $LINENO; recovery points have been retained"' ERR
+if (( DRY_RUN )); then
+  if [[ $ACTION == pre ]]; then
+    run snapper -c root create --type pre --print-number --description "pre-update-$(date -u +%Y%m%dT%H%M%SZ)" --userdata tinapple=recovery
+    run tinapple-snapshot-boot prepare SNAPSHOT_ID
+    log 'Would record the recovery point only after snapshot and boot-menu validation'
+  else
+    run snapper -c root create --type post --pre-number SNAPSHOT_ID --print-number --description "post-update-$(date -u +%Y%m%dT%H%M%SZ)"
+    run tinapple-health-check
+    run tinapple-snapshot-boot sync
+  fi
+  exit 0
+fi
+lock_maintenance
+# Non-Btrfs installs remain supported, but explicitly advertise the missing guarantee.
+if [[ $(findmnt -n -o FSTYPE -T "$ROOT") != btrfs ]]; then
+  log 'WARNING: root is not Btrfs; transaction is NOT protected by snapshots'
+  exit 0
+fi
+require_btrfs
+state=$(root_path /var/lib/tinapple/maintenance)
+install -d -m 700 "$state"
+if [[ $ACTION == pre ]]; then
+  [[ ! -f $state/transaction ]] || die "Unfinished transaction recorded in $state/transaction; inspect it before clearing it"
+  # Snapshots must include the package database and all OS binaries.
+  for path in /usr /etc /var/lib/pacman; do
+    [[ $(findmnt -n -o FSROOT -T "$(root_path "$path")") == /@ ]] || die "$path is outside the root snapshot"
+  done
+  snapper -c root get-config >/dev/null
+  id=$(snapper -c root create --type pre --print-number --description "pre-update-$(date -u +%Y%m%dT%H%M%SZ)" --userdata tinapple=recovery)
+  [[ $id =~ ^[1-9][0-9]*$ ]] || die 'Snapper returned an invalid snapshot number'
+  # No automatic cleanup algorithm: pinned recovery points must retain kernels and clones.
+  tinapple-snapshot-boot prepare "$id"
+  printf '%s\n' "$id" > "$state/transaction.tmp"
+  mv "$state/transaction.tmp" "$state/transaction"
+  log "Read-only pre-update snapshot $id and bootable recovery entry ready"
+else
+  [[ -f $state/transaction ]] || die 'No matching pre-transaction recovery point'
+  read -r id < "$state/transaction"
+  [[ $id =~ ^[1-9][0-9]*$ ]] || die 'Invalid recovery point state'
+  post=$(snapper -c root create --type post --pre-number "$id" --print-number --description "post-update-$(date -u +%Y%m%dT%H%M%SZ)" --cleanup-algorithm number)
+  systemctl daemon-reload
+  failed=0
+  tinapple-snapshot-boot sync || failed=1
+  if command -v tinapple-config-generator >/dev/null; then
+    tinapple-config-generator nginx-sync || failed=1
+  fi
+  tinapple-health-check || failed=1
+  jq -n --arg pre "$id" --arg post "$post" --arg date "$(date -Iseconds)" --argjson healthy "$((1-failed))" '{pre:$pre,post:$post,checked_at:$date,healthy:($healthy==1)}' > "$state/last-transaction.json.tmp"
+  mv "$state/last-transaction.json.tmp" "$state/last-transaction.json"
+  rm "$state/transaction"
+  log "Recovery point $id retained; post snapshot $post; health failures=$failed"
+  (( failed == 0 )) || exit 1
+fi

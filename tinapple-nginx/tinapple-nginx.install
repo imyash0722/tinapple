@@ -1,5 +1,5 @@
 post_install() {
-  systemctl enable tinapple-nginx.service >/dev/null 2>&1 || true
+  systemctl enable tinapple-nginx.service tinapple-nginx-routes.timer >/dev/null 2>&1 || true
 }
 
 post_upgrade() {
@@ -7,5 +7,5 @@ post_upgrade() {
 }
 
 pre_remove() {
-  systemctl disable tinapple-nginx.service >/dev/null 2>&1 || true
+  systemctl disable tinapple-nginx.service tinapple-nginx-routes.timer >/dev/null 2>&1 || true
 }

@@ -119,3 +119,7 @@ http {
 - `systemctl enable tinapple-nginx.service` works
 - `tinapple-config-generator generate /etc/tinapple/manifest.yaml /etc/tinapple/generated` produces valid NGINX configuration
 - `nginx -t -c /etc/nginx/nginx.conf` passes
+
+## Current implementation
+
+The source now supersedes the illustrative snippets above. See [native appliance operations](../docs/native-appliance.md) for routing, noninteractive provisioning, recovery prerequisites, and validation commands.

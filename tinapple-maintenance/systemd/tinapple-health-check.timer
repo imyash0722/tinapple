@@ -1,0 +1,7 @@
+[Unit]
+Description=Refresh Tinapple health report
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=5min
+[Install]
+WantedBy=timers.target

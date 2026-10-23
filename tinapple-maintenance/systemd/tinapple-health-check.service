@@ -1,0 +1,8 @@
+[Unit]
+Description=Tinapple appliance health report
+After=multi-user.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/tinapple-health-check
+TimeoutStartSec=5min

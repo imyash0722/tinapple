@@ -1,21 +1,18 @@
 [Unit]
-Description=Tinapple First-Boot Setup Wizard
-Documentation=https://github.com/tinapple/tinapple-arch
-After=network-online.target tinapple-hw-detect.service
+Description=Tinapple unattended first-boot provisioning
+After=network-online.target systemd-machine-id-commit.service
 Wants=network-online.target
-ConditionPathExists=!/var/lib/tinapple/firstboot-done
+ConditionPathExists=!/etc/tinapple/.provisioned
 ConditionPathExists=!/run/archiso
 
 [Service]
 Type=oneshot
 ExecStart=/usr/bin/tinapple-setup
-StandardInput=tty
+StandardInput=null
 StandardOutput=journal+console
 StandardError=journal+console
-TTYPath=/dev/tty1
-TTYReset=yes
-TTYVHangup=yes
-TTYVTDisallocate=yes
+TimeoutStartSec=300
+UMask=0077
 
 [Install]
 WantedBy=multi-user.target

@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+# Structured, bounded health probes. Failures do not prevent JSON publication.
+set -euo pipefail
+OUTPUT=${TINAPPLE_HEALTH_OUTPUT:-/var/run/tinapple/health.json}
+ROOT=${TINAPPLE_ROOT:-/}
+log() { printf '[tinapple-health] %s\n' "$*" >&2; }
+[[ $EUID == 0 || ${TINAPPLE_TESTING:-0} == 1 ]] || { log 'Must run as root'; exit 1; }
+work=$(mktemp -d)
+trap 'rm -rf "$work"' EXIT
+checks="$work/checks.jsonl"
+: > "$checks"
+record() {
+  log "$1: $2: $3"
+  jq -nc --arg status "$1" --arg check "$2" --arg detail "$3" '{status:$status,check:$check,detail:$detail}' >> "$checks"
+}
+if timeout 30 smartctl --scan-open -j > "$work/drives.json" 2>/dev/null && jq -e '.devices | type == "array"' "$work/drives.json" >/dev/null; then
+  count=$(jq '.devices | length' "$work/drives.json")
+  (( count != 0 )) || record warn smart 'No SMART-capable drives detected'
+  while IFS=$'\t' read -r device kind; do
+    [[ -n $device && $device == /dev/* ]] || continue
+    rc=0
+    timeout 30 smartctl -H -j -d "$kind" "$device" > "$work/smart.json" 2>/dev/null || rc=$?
+    if (( rc == 124 || (rc & 7) != 0 )); then
+      record fail "smart:$device" "SMART query failed (exit $rc)"
+    elif jq -e '.smart_status.passed == true' "$work/smart.json" >/dev/null 2>&1 && (( rc == 0 )); then
+      record ok "smart:$device" 'SMART health passed'
+    elif jq -e '.smart_status.passed == false' "$work/smart.json" >/dev/null 2>&1 || (( (rc & 248) != 0 )); then
+      record fail "smart:$device" "SMART reported a failure or error history (exit $rc)"
+    else
+      record warn "smart:$device" 'Device does not report an overall SMART health result'
+    fi
+  done < <(jq -r '.devices[] | [.name, (.type // "auto")] | @tsv' "$work/drives.json")
+else
+  record fail smart 'Drive discovery failed'
+fi
+if [[ $(findmnt -n -o FSTYPE -T "$ROOT") == btrfs ]]; then
+  if timeout 30 btrfs device stats "$ROOT" > "$work/btrfs" 2>&1; then
+    if awk 'NF && $NF !~ /^[0-9]+$/ {bad=1} NF && $NF+0>0 {bad=1} END{exit bad || NR==0}' "$work/btrfs"; then
+      record ok btrfs 'All Btrfs device error counters are zero'
+    else record fail btrfs "$(cat "$work/btrfs")"; fi
+  else record fail btrfs 'Unable to read Btrfs device stats'; fi
+else record warn btrfs 'Root is not Btrfs; snapshot recovery unavailable'; fi
+for service in tinapple-dash tinapple-nginx tailscaled docker; do
+  if timeout 10 systemctl is-active --quiet "$service.service"; then
+    record ok "service:$service" 'active'
+  else record fail "service:$service" 'not active'; fi
+done
+if usage=$(df -P "$ROOT" | awk 'NR==2{gsub(/%/,"",$5);print $5}') && [[ $usage =~ ^[0-9]+$ ]]; then
+  if (( usage >= 90 )); then record fail disk "Root usage ${usage}%";
+  elif (( usage >= 80 )); then record warn disk "Root usage ${usage}%";
+  else record ok disk "Root usage ${usage}%"; fi
+else record fail disk 'Cannot read filesystem usage'; fi
+mkdir -p "$(dirname "$OUTPUT")"
+staged=$(mktemp "${OUTPUT}.XXXXXX")
+jq -s --arg timestamp "$(date -Iseconds)" '{timestamp:$timestamp,healthy:all(.[];.status != "fail"),summary:{ok:map(select(.status=="ok"))|length,warn:map(select(.status=="warn"))|length,fail:map(select(.status=="fail"))|length},checks:.}' "$checks" > "$staged"
+chmod 644 "$staged"
+mv -f "$staged" "$OUTPUT"
+jq -e '.healthy' "$OUTPUT" >/dev/null

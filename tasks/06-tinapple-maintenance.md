@@ -282,3 +282,7 @@ post_upgrade() { post_install; }
 - `tinapple-update-hook post` regenerates configs, reloads services, updates limine
 - `tinapple-rollback <id>` restores snapshot and updates limine
 - Pacman hooks trigger correctly on upgrade
+
+## Current implementation
+
+The source now supersedes the illustrative snippets above. See [native appliance operations](../docs/native-appliance.md) for routing, noninteractive provisioning, recovery prerequisites, and validation commands.

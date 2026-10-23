@@ -1,0 +1,8 @@
+[Unit]
+Description=Reconcile Tinapple native service proxy routes
+After=tinapple-nginx.service
+ConditionPathExists=/etc/nginx/nginx.conf
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/tinapple-config-generator nginx-sync
+TimeoutStartSec=2min

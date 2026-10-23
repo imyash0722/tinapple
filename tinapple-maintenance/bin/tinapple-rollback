@@ -1,0 +1,74 @@
+#!/usr/bin/env bash
+# Restore @ only from live media or a recovery boot; never undo a running OS in place.
+set -euo pipefail
+ACTION=${1:-list}; shift || true
+ID=''; DRY_RUN=0
+if [[ $ACTION == restore || $ACTION == diff ]]; then
+  if [[ ${1:-} != --* ]]; then ID=${1:-}; shift || true; fi
+fi
+while (( $# )); do
+  case $1 in
+    --dry-run) DRY_RUN=1; shift ;;
+    --root) export TINAPPLE_ROOT=${2:?Missing root path}; shift 2 ;;
+    *) echo 'Usage: tinapple-rollback [list|restore <id>|diff [id]] [--root /mnt] [--dry-run]' >&2; exit 2 ;;
+  esac
+done
+source "${TINAPPLE_MAINTENANCE_LIB:-/usr/lib/tinapple-maintenance}/common.sh"
+need_root
+trap 'log "Operation failed at line $LINENO; existing recovery data has been retained"' ERR
+[[ $ACTION == list || $ACTION == diff || $ACTION == restore ]] || die 'Unknown action'
+[[ -z $ID || $ID =~ ^[1-9][0-9]*$ ]] || die 'Snapshot ID must be a positive integer'
+if [[ $ACTION == list ]]; then
+  run snapper --no-dbus --root "$ROOT" -c root list
+  exit 0
+fi
+if [[ -z $ID && $ACTION == diff ]]; then
+  (( ! DRY_RUN )) || { run snapper -c root status RECOVERY_ID..0; exit 0; }
+  ID=$(jq -r .pre "$(root_path /var/lib/tinapple/maintenance/last-transaction.json)")
+fi
+[[ $ID =~ ^[1-9][0-9]*$ ]] || die 'A valid snapshot ID is required'
+if [[ $ACTION == diff ]]; then run snapper --no-dbus --root "$ROOT" -c root status "$ID..0"; exit 0; fi
+if (( DRY_RUN )); then
+  log "Would validate snapshot $ID, pinned kernels, and offline root $ROOT"
+  run btrfs subvolume snapshot "$(root_path "/.snapshots/$ID/snapshot")" '<btrfs-top>/@tinapple-restore-staging'
+  log 'Would retain the old @ subvolume, replace @ offline, and restore matching boot files; no reboot is issued'
+  exit 0
+fi
+[[ $ROOT != / && -d $ROOT ]] || die 'Restore requires --root /mnt from live media or a recovery boot'
+lock_maintenance
+require_btrfs
+mountpoint -q "$ROOT" || die 'Target root must be a mountpoint'
+boot=$(root_path /boot)
+mountpoint -q "$boot" || die 'Mount the target boot partition under ROOT/boot first'
+snapshot=$(root_path "/.snapshots/$ID/snapshot")
+[[ $(btrfs property get -ts "$snapshot" ro) == 'ro=true' ]] || die 'Source is not a read-only snapshot'
+artifacts="$boot/tinapple-recovery/$ID"
+[[ -f $artifacts/ready ]] || die 'No matching pinned kernel artifacts for this snapshot'
+(cd "$artifacts" && sha256sum --check --status SHA256SUMS)
+device=$(findmnt -n -o SOURCE -T "$ROOT"); device=${device%%\[*}
+boot_device=$(findmnt -n -o SOURCE -M "$boot")
+current_device=$(findmnt -n -o SOURCE -T /); current_device=${current_device%%\[*}
+if [[ $(findmnt -n -o FSTYPE -T /) == btrfs && $(findmnt -n -o UUID -T /) == "$(findmnt -n -o UUID -T "$ROOT")" ]]; then
+  [[ $(btrfs inspect-internal rootid /) != "$(btrfs inspect-internal rootid "$ROOT")" ]] || die 'Refusing to replace the running root subvolume'
+fi
+top=$(mktemp -d /run/tinapple-restore.XXXXXX)
+cleanup() { if mountpoint -q "$top"; then umount "$top"; fi; rmdir "$top"; }
+trap cleanup EXIT
+mount -t btrfs -o subvolid=5 "$device" "$top"
+stamp=$(date -u +%Y%m%dT%H%M%SZ)
+staging="@tinapple-restore-$stamp"
+backup="@tinapple-before-restore-$stamp"
+[[ ! -e $top/$staging && ! -e $top/$backup ]] || die 'Restore name collision'
+btrfs subvolume snapshot "$snapshot" "$top/$staging"
+# Unmount offline target and children before switching paths. Keep original @ intact.
+umount -R "$ROOT"
+mv "$top/@" "$top/$backup"
+if ! mv "$top/$staging" "$top/@"; then mv "$top/$backup" "$top/@"; die 'Failed to publish restored @; original restored'; fi
+mount -t btrfs -o subvol=@ "$device" "$ROOT"
+mkdir -p "$boot"
+mount "$boot_device" "$boot"
+for file in "$artifacts"/vmlinuz-* "$artifacts"/initramfs-* "$artifacts"/*-ucode.img; do
+  [[ ! -f $file ]] || cp -- "$file" "$boot/"
+done
+sync
+log "Restored snapshot $ID to @. Previous root retained as $backup. Reboot manually when ready."

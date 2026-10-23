@@ -1,0 +1,86 @@
+#!/usr/bin/env bash
+# Noninteractive, resumable appliance provisioning. Never print enrollment keys.
+set -euo pipefail
+umask 077
+ROOT=${TINAPPLE_ROOT:-}
+MANIFEST="$ROOT/etc/tinapple/manifest.yaml"
+STATE="$ROOT/etc/tinapple/.provisioned"
+DRY_RUN=0
+[[ ${1:-} == --dry-run ]] && DRY_RUN=1
+[[ $# == 0 || ( $# == 1 && $DRY_RUN == 1 ) ]] || { echo 'Usage: tinapple-setup [--dry-run]' >&2; exit 2; }
+log() { printf '[tinapple-firstboot] %s\n' "$*" >&2; }
+run() { if (( DRY_RUN )); then printf '[dry-run] '; printf '%q ' "$@"; printf '\n'; else "$@"; fi; }
+trap 'log "Provisioning failed at line $LINENO; no completion marker written. Retry after correcting the error."' ERR
+if [[ -f $STATE ]]; then log 'Already provisioned.'; exit 0; fi
+if (( ! DRY_RUN )); then
+  [[ $EUID == 0 ]] || { log 'Must run as root'; exit 1; }
+  install -d -m 755 "$ROOT/etc/tinapple" "$ROOT/run/tinapple"
+  exec 9>"$ROOT/run/tinapple/firstboot.lock"
+  flock -n 9 || { log 'Another provisioning run is active'; exit 1; }
+  [[ ! -f $STATE ]] || exit 0
+  [[ -f $MANIFEST ]] || { log "Missing manifest: $MANIFEST"; exit 1; }
+fi
+
+# Validate/parse YAML before making changes. No shell evaluation of manifest data.
+authfile=''
+cleanup() { [[ -z $authfile ]] || rm -f "$authfile"; }
+trap cleanup EXIT
+if (( ! DRY_RUN )); then
+  authfile=$(mktemp "$ROOT/run/tinapple/tailscale-key.XXXXXX")
+  hostname=$(python3 - "$MANIFEST" "$authfile" <<'PY'
+import sys, re, yaml
+with open(sys.argv[1]) as f: m = yaml.safe_load(f)
+if not isinstance(m, dict): raise ValueError('Manifest must be a mapping')
+host = m.get('hostname', 'tinapple-server')
+if not isinstance(host,str) or not re.fullmatch(r'[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?',host): raise ValueError('Invalid hostname')
+svc = (m.get('services') or {}).get('tailscale') or {}
+key = svc.get('auth_key', '')
+if not isinstance(key, str) or '\n' in key or '\0' in key: raise ValueError('Invalid Tailscale key')
+with open(sys.argv[2], 'w') as f: f.write(key if svc.get('enabled', True) else '')
+print(host)
+PY
+)
+  chmod 600 "$MANIFEST"
+  run hostnamectl set-hostname "$hostname"
+fi
+
+if [[ ! -f $ROOT/etc/tinapple/.identity-initialized ]]; then
+  log 'Initializing machine identity and SSH host keys'
+  # PID 1 assigns a fresh ID when the installed image has an empty machine-id.
+  # Never replace the ID of a running system underneath D-Bus/systemd.
+  run systemd-machine-id-setup
+  if (( ! DRY_RUN )); then
+    for key in "$ROOT"/etc/ssh/ssh_host_*_key "$ROOT"/etc/ssh/ssh_host_*_key.pub; do
+      [[ ! -f $key ]] || rm -f -- "$key"
+    done
+  fi
+  run ssh-keygen -A
+  if (( ! DRY_RUN )); then touch "$ROOT/etc/tinapple/.identity-initialized"; fi
+fi
+log 'Configuring firewall before enabling it'
+run ufw default deny incoming
+run ufw default allow outgoing
+for port in 22 8088 80 443; do run ufw allow "$port/tcp"; done
+run ufw allow in on tailscale0
+run ufw --force enable
+run systemctl enable --now ufw.service sshd.service tailscaled.service
+run systemctl reload-or-restart sshd.service
+if (( DRY_RUN )); then
+  log 'Would enroll Tailscale using a protected key file only if supplied in manifest'
+elif [[ -s $authfile ]]; then
+  log 'Enrolling Tailscale (bounded timeout, key redacted)'
+  timeout 90 tailscale up --auth-key="file:$authfile" --accept-routes --timeout=60s
+else
+  log 'No Tailscale auth key supplied; skipping interactive login'
+fi
+run tinapple-snapshot-boot init
+run tinapple-config-generator generate "$MANIFEST" "$ROOT/etc/tinapple/generated"
+run systemctl enable --now tinapple-nginx.service tinapple-dash.service tinapple-nginx-routes.timer tinapple-health-check.timer
+run systemctl disable tinapple-firstboot.service
+if (( DRY_RUN )); then
+  log "Would atomically mark $STATE after all steps succeed"
+else
+  date -Iseconds > "$STATE.tmp"
+  mv -f "$STATE.tmp" "$STATE"
+  log 'Provisioning complete; Web Hub available on port 80'
+fi

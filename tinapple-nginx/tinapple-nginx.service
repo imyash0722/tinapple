@@ -3,16 +3,18 @@ Description=Tinapple NGINX Reverse Proxy
 Documentation=https://github.com/tinapple/tinapple-arch
 After=network-online.target
 Wants=network-online.target
-ConditionPathExists=/etc/nginx/nginx.conf
+Conflicts=nginx.service
 
 [Service]
 Type=forking
 PIDFile=/run/nginx.pid
+ExecStartPre=/usr/bin/tinapple-config-generator nginx-sync --no-reload
 ExecStartPre=/usr/bin/nginx -t -q -g 'daemon on; master_process on;'
 ExecStart=/usr/bin/nginx -g 'daemon on; master_process on;'
+ExecReload=/usr/bin/nginx -t -q
 ExecReload=/usr/bin/nginx -g 'daemon on; master_process on;' -s reload
-ExecStop=-/sbin/start-stop-daemon --quiet --stop --retry QUIT/5 --pidfile /run/nginx.pid
-TimeoutStopSec=5
+KillSignal=SIGQUIT
+TimeoutStopSec=30
 KillMode=mixed
 PrivateTmp=true
 

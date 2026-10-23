@@ -295,6 +295,9 @@ EOPAC"
     run_sh "mkdir -p $target/opt && cp -a /opt/tinapple-repo $target/opt/ 2>/dev/null || true"
   fi
 
+  # A fresh installed appliance must not inherit an image/installer machine ID.
+  run_sh "truncate -s 0 $target/etc/machine-id && rm -f $target/var/lib/dbus/machine-id"
+
   # Export output variables for next stage
   export TINAPPLE_CONFIGURED="true"
   export TINAPPLE_STAGE="configure"

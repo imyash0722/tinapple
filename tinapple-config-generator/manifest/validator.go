@@ -5,6 +5,7 @@ import (
 	"net"
 	"regexp"
 	"strings"
+	"tinapple-config-generator/routing"
 )
 
 var (
@@ -102,6 +103,9 @@ func Validate(m *Manifest) error {
 	}
 
 	// Network
+	if _, err := routing.Render(nil, m.Network.ProxyDomains); err != nil {
+		errs = append(errs, err.Error())
+	}
 	if strings.TrimSpace(m.Network.Interface) == "" {
 		errs = append(errs, "network.interface cannot be empty")
 	}

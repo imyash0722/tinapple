@@ -1,0 +1,12 @@
+[Trigger]
+Operation = Install
+Operation = Upgrade
+Operation = Remove
+Type = Package
+Target = *
+
+[Action]
+Description = Pin a bootable Tinapple recovery snapshot before changing packages
+When = PreTransaction
+Exec = /usr/bin/tinapple-update-hook pre
+AbortOnFail

@@ -240,3 +240,7 @@ pre_remove() {
 - Selected services enabled
 - State file created at /var/lib/tinapple/firstboot-done
 - Re-run with `--force` flag to re-run
+
+## Current implementation
+
+The source now supersedes the illustrative snippets above. See [native appliance operations](../docs/native-appliance.md) for routing, noninteractive provisioning, recovery prerequisites, and validation commands.

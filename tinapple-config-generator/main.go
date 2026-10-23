@@ -10,12 +10,18 @@ import (
 func main() {
 	if len(os.Args) < 2 {
 		fmt.Fprintf(os.Stderr, "Usage: tinapple-config-generator <command> [args...]\n")
-		fmt.Fprintf(os.Stderr, "Commands: generate, validate, migrate\n")
+		fmt.Fprintf(os.Stderr, "Commands: generate, validate, migrate, nginx-sync\n")
 		os.Exit(1)
 	}
 
 	cmd := os.Args[1]
 	switch cmd {
+	case "nginx-sync":
+		if err := syncNginx(os.Args[2:]); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+
 	case "generate":
 		if len(os.Args) < 3 {
 			fmt.Fprintf(os.Stderr, "Usage: tinapple-config-generator generate <manifest.yaml> [output-dir]\n")

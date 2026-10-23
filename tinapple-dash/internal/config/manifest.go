@@ -52,6 +52,7 @@ type BatteryConfig struct {
 }
 
 type NetworkConfig struct {
+	ProxyDomains   []string              `yaml:"proxy_domains,omitempty" json:"proxy_domains,omitempty"`
 	Interface      string                `yaml:"interface" json:"interface"`
 	DHCP           bool                  `yaml:"dhcp" json:"dhcp"`
 	StaticFallback *StaticFallbackConfig `yaml:"static_fallback,omitempty" json:"static_fallback,omitempty"`
@@ -142,12 +143,12 @@ func LoadManifest(path string) (*Manifest, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to read manifest: %w", err)
 	}
-	
+
 	var m Manifest
 	if err := yaml.Unmarshal(data, &m); err != nil {
 		return nil, fmt.Errorf("failed to parse manifest: %w", err)
 	}
-	
+
 	// Apply default ports for services
 	for name, svc := range m.Services {
 		if svc.Port == 0 {
@@ -157,7 +158,7 @@ func LoadManifest(path string) (*Manifest, error) {
 			}
 		}
 	}
-	
+
 	return &m, nil
 }
 
@@ -166,12 +167,12 @@ func SaveManifest(path string, m *Manifest) error {
 	if err != nil {
 		return fmt.Errorf("failed to serialize manifest: %w", err)
 	}
-	
+
 	// Ensure directory exists
 	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
 		return fmt.Errorf("failed to create manifest directory: %w", err)
 	}
-	
+
 	if err := os.WriteFile(path, data, 0644); err != nil {
 		return fmt.Errorf("failed to write manifest: %w", err)
 	}
@@ -185,7 +186,7 @@ func Validate(m *Manifest) error {
 	if m.Hostname == "" {
 		m.Hostname = "tinapple-server"
 	}
-	
+
 	// Strip human friendly annotations (e.g. "lts (recommended)" -> "lts")
 	if strings.Contains(m.KernelProfile, "lts") {
 		m.KernelProfile = "lts"
@@ -201,17 +202,17 @@ func Validate(m *Manifest) error {
 	if !validSessions[m.SessionMode] {
 		m.SessionMode = "headless"
 	}
-	
+
 	validHardware := map[string]bool{"auto": true, "desktop": true, "laptop": true}
 	if !validHardware[m.HardwareProfile] {
 		m.HardwareProfile = "laptop"
 	}
-	
+
 	validFS := map[string]bool{"ext4": true, "xfs": true, "btrfs": true}
 	if !validFS[m.Filesystem] {
 		m.Filesystem = "btrfs"
 	}
-	
+
 	if strings.Contains(m.Bootloader, "grub") {
 		m.Bootloader = "grub"
 	} else if strings.Contains(m.Bootloader, "limine") {
@@ -241,7 +242,7 @@ func Validate(m *Manifest) error {
 		cleanProfiles = []string{"base", "niri", "media", "downloads", "backups", "network", "gaming"}
 	}
 	m.Profiles = cleanProfiles
-	
+
 	// Validate & sanitize battery config
 	if m.Hardware.Battery.ChargeLimit < 50 || m.Hardware.Battery.ChargeLimit > 100 {
 		m.Hardware.Battery.ChargeLimit = 80
@@ -249,7 +250,7 @@ func Validate(m *Manifest) error {
 	if m.Hardware.Battery.ChargeLimitMin < 1 || m.Hardware.Battery.ChargeLimitMin > m.Hardware.Battery.ChargeLimit {
 		m.Hardware.Battery.ChargeLimitMin = 40
 	}
-	
+
 	validActions := map[string]bool{"hibernate": true, "poweroff": true, "suspend": true, "hybrid-sleep": true}
 	if !validActions[m.Hardware.Battery.CriticalAction] {
 		m.Hardware.Battery.CriticalAction = "hibernate"
@@ -257,26 +258,26 @@ func Validate(m *Manifest) error {
 	if m.Hardware.Battery.CriticalThreshold <= 0 || m.Hardware.Battery.CriticalThreshold > 20 {
 		m.Hardware.Battery.CriticalThreshold = 5
 	}
-	
+
 	validProfiles := map[string]bool{"balanced": true, "performance": true, "power-saver": true, "custom": true}
 	if !validProfiles[m.Hardware.PowerProfile] {
 		m.Hardware.PowerProfile = "balanced"
 	}
-	
+
 	validThermal := map[string]bool{"balanced": true, "performance": true, "quiet": true, "server": true}
 	if !validThermal[m.Hardware.ThermalProfile] {
 		m.Hardware.ThermalProfile = "server"
 	}
-	
+
 	validLid := map[string]bool{"ignore": true, "clamshell": true}
 	if !validLid[m.Hardware.LidPolicy] {
 		m.Hardware.LidPolicy = "ignore"
 	}
-	
+
 	if m.Network.Interface == "" {
 		m.Network.Interface = "wlan0"
 	}
-	
+
 	return nil
 }
 

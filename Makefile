@@ -61,10 +61,10 @@ test-go:
 		(cd tinapple-config-generator && go test -v ./...); \
 	fi
 	@if [ -d tinapple-installer/tui ]; then \
-		(cd tinapple-installer/tui && go test -v ./... 2>/dev/null || true); \
+		(cd tinapple-installer/tui && go test -v ./...); \
 	fi
 	@if [ -d tinapple-dash ]; then \
-		(cd tinapple-dash && go test -v ./... 2>/dev/null || true); \
+		(cd tinapple-dash && go test -v ./...); \
 	fi
 	@if [ -d chaddy-store ]; then \
 		(cd chaddy-store && go test -v ./...); \

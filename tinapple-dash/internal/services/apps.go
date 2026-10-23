@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -44,12 +45,13 @@ type AppStatus struct {
 }
 
 type AppManager struct {
-	mu         sync.RWMutex
-	apps       map[string]AppDefinition
-	appOrder   []string
-	cacheMu    sync.RWMutex
-	cachedAt   time.Time
-	cachedList []AppStatus
+	mu          sync.RWMutex
+	operationMu sync.Mutex
+	apps        map[string]AppDefinition
+	appOrder    []string
+	cacheMu     sync.RWMutex
+	cachedAt    time.Time
+	cachedList  []AppStatus
 }
 
 func NewAppManager() *AppManager {
@@ -340,7 +342,7 @@ func NewAppManager() *AppManager {
 			Icon:        "jdownloader",
 			AccentColor: "#2563EB",
 			ConfigPath:  "/var/lib/jdownloader/cfg/org.jdownloader.api.myjdownloader.MyJDownloaderSettings.json",
-			WebURL:       "https://my.jdownloader.org",
+			WebURL:      "https://my.jdownloader.org",
 		},
 		{
 			ID:          "syncyomi",
@@ -705,6 +707,8 @@ func checkPacmanInstalled(pkg string) bool {
 }
 
 func (m *AppManager) Install(id string) error {
+	m.operationMu.Lock()
+	defer m.operationMu.Unlock()
 	m.mu.RLock()
 	app, ok := m.apps[id]
 	m.mu.RUnlock()
@@ -715,7 +719,7 @@ func (m *AppManager) Install(id string) error {
 	if app.Package != "" {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 		defer cancel()
-		cmd := exec.CommandContext(ctx, "pacman", "-Sy", "--noconfirm", "--needed", app.Package)
+		cmd := exec.CommandContext(ctx, "pacman", "-S", "--noconfirm", "--needed", app.Package)
 		out, err := cmd.CombinedOutput()
 		if err != nil {
 			return fmt.Errorf("pacman install failed for %s: %s (%w)", app.Package, string(out), err)
@@ -723,17 +727,23 @@ func (m *AppManager) Install(id string) error {
 	}
 
 	// Reload systemd daemon
-	_ = exec.Command("systemctl", "daemon-reload").Run()
+	if err := exec.Command("systemctl", "daemon-reload").Run(); err != nil {
+		return err
+	}
 
 	// If unit exists, enable and start it
 	if app.Unit != "" {
-		_ = exec.Command("systemctl", "enable", "--now", app.Unit).Run()
+		if out, err := exec.Command("systemctl", "enable", "--now", app.Unit).CombinedOutput(); err != nil {
+			return fmt.Errorf("package installed but service failed to start: %s: %w", out, err)
+		}
 	}
 
-	return nil
+	return m.refreshProxyRoutes()
 }
 
 func (m *AppManager) Uninstall(id string) error {
+	m.operationMu.Lock()
+	defer m.operationMu.Unlock()
 	m.mu.RLock()
 	app, ok := m.apps[id]
 	m.mu.RUnlock()
@@ -743,8 +753,11 @@ func (m *AppManager) Uninstall(id string) error {
 
 	// Stop and disable service
 	if app.Unit != "" {
-		_ = exec.Command("systemctl", "stop", app.Unit).Run()
-		_ = exec.Command("systemctl", "disable", app.Unit).Run()
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+		if out, err := exec.CommandContext(ctx, "systemctl", "disable", "--now", app.Unit).CombinedOutput(); err != nil {
+			return fmt.Errorf("stop/disable before removal failed: %s (%w)", out, err)
+		}
 	}
 
 	if app.Package != "" {
@@ -757,10 +770,12 @@ func (m *AppManager) Uninstall(id string) error {
 		}
 	}
 
-	return nil
+	return m.refreshProxyRoutes()
 }
 
 func (m *AppManager) Start(id string) error {
+	m.operationMu.Lock()
+	defer m.operationMu.Unlock()
 	m.mu.RLock()
 	app, ok := m.apps[id]
 	m.mu.RUnlock()
@@ -774,10 +789,12 @@ func (m *AppManager) Start(id string) error {
 	if err != nil {
 		return fmt.Errorf("start failed: %s (%w)", string(out), err)
 	}
-	return nil
+	return m.refreshProxyRoutes()
 }
 
 func (m *AppManager) Stop(id string) error {
+	m.operationMu.Lock()
+	defer m.operationMu.Unlock()
 	m.mu.RLock()
 	app, ok := m.apps[id]
 	m.mu.RUnlock()
@@ -791,10 +808,12 @@ func (m *AppManager) Stop(id string) error {
 	if err != nil {
 		return fmt.Errorf("stop failed: %s (%w)", string(out), err)
 	}
-	return nil
+	return m.refreshProxyRoutes()
 }
 
 func (m *AppManager) Restart(id string) error {
+	m.operationMu.Lock()
+	defer m.operationMu.Unlock()
 	m.mu.RLock()
 	app, ok := m.apps[id]
 	m.mu.RUnlock()
@@ -808,7 +827,7 @@ func (m *AppManager) Restart(id string) error {
 	if err != nil {
 		return fmt.Errorf("restart failed: %s (%w)", string(out), err)
 	}
-	return nil
+	return m.refreshProxyRoutes()
 }
 
 func (m *AppManager) GetConfig(id string) (map[string]interface{}, error) {
@@ -820,11 +839,11 @@ func (m *AppManager) GetConfig(id string) (map[string]interface{}, error) {
 	}
 
 	res := map[string]interface{}{
-		"id":          app.ID,
-		"name":        app.Name,
-		"port":        app.Port,
-		"configPath":  app.ConfigPath,
-		"customEnv":   make(map[string]string),
+		"id":         app.ID,
+		"name":       app.Name,
+		"port":       app.Port,
+		"configPath": app.ConfigPath,
+		"customEnv":  make(map[string]string),
 	}
 
 	// If drop-in override exists, read it
@@ -888,5 +907,32 @@ func (m *AppManager) UpdateConfig(id string, req UpdateConfigRequest) error {
 		_ = m.Restart(id)
 	}
 
+	return nil
+}
+
+// Rebuild from the complete catalog, bypassing the UI status cache. The generator
+// serializes configuration publication and restores the old config on failure.
+func (m *AppManager) refreshProxyRoutes() error {
+	m.cacheMu.Lock()
+	m.cachedAt = time.Time{}
+	m.cacheMu.Unlock()
+	m.mu.RLock()
+	catalog := make([]AppDefinition, 0, len(m.appOrder))
+	for _, id := range m.appOrder {
+		catalog = append(catalog, m.apps[id])
+	}
+	m.mu.RUnlock()
+	data, err := json.Marshal(catalog)
+	if err != nil {
+		return err
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	defer cancel()
+	cmd := exec.CommandContext(ctx, "tinapple-config-generator", "nginx-sync", "--catalog-stdin")
+	cmd.Stdin = bytes.NewReader(data)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("app operation completed, but proxy refresh failed: %s (%w)", out, err)
+	}
 	return nil
 }

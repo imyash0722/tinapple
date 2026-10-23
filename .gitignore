@@ -55,3 +55,12 @@ host_key.pub
 tinapple-installer/iso/airootfs/usr/local/bin/tinapple-install
 tinapple-android/build/
 tinapple-dash/web/dist/tsumiru/
+
+# Packaged shell entry points are source, not compiled binaries.
+!tinapple-firstboot/bin/
+!tinapple-firstboot/bin/tinapple-setup
+!tinapple-maintenance/bin/
+!tinapple-maintenance/bin/tinapple-health-check
+!tinapple-maintenance/bin/tinapple-update-hook
+!tinapple-maintenance/bin/tinapple-rollback
+!tinapple-maintenance/bin/tinapple-snapshot-boot

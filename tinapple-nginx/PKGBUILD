@@ -1,17 +1,19 @@
 # Maintainer: tinapple Project <https://github.com/tinapple/tinapple-arch>
 pkgname=tinapple-nginx
 pkgver=0.0.1
-pkgrel=1
+pkgrel=2
 pkgdesc="NGINX reverse proxy core module for tinapple"
 arch=(any)
 url="https://github.com/tinapple/tinapple-arch"
 license=(MIT)
 depends=('nginx' 'tinapple-config-generator')
 install=tinapple-nginx.install
-source=(tinapple-nginx.service nginx.conf.template)
-sha256sums=('SKIP' 'SKIP')
+source=(tinapple-nginx.service nginx.conf.template tinapple-nginx-routes.service tinapple-nginx-routes.timer)
+sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP')
 
 package() {
+  install -Dm644 tinapple-nginx-routes.service "$pkgdir/usr/lib/systemd/system/tinapple-nginx-routes.service"
+  install -Dm644 tinapple-nginx-routes.timer "$pkgdir/usr/lib/systemd/system/tinapple-nginx-routes.timer"
   install -Dm644 tinapple-nginx.service "$pkgdir/usr/lib/systemd/system/tinapple-nginx.service"
   install -Dm644 nginx.conf.template "$pkgdir/etc/tinapple/nginx.conf.template"
 }

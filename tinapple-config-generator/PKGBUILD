@@ -1,7 +1,7 @@
 # Maintainer: tinapple Project <https://github.com/tinapple/tinapple-arch>
 pkgname=tinapple-config-generator
 pkgver=0.0.1
-pkgrel=1
+pkgrel=2
 pkgdesc="Configuration generator from manifest.yaml for tinapple"
 arch=('x86_64')
 url="https://github.com/tinapple/tinapple-arch"

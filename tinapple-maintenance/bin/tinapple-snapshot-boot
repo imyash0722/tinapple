@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+# Pin a writable recovery clone and its matching kernel/initramfs before updates.
+set -euo pipefail
+source "${TINAPPLE_MAINTENANCE_LIB:-/usr/lib/tinapple-maintenance}/common.sh"
+need_root
+trap 'log "Operation failed at line $LINENO; existing recovery data has been retained"' ERR
+ACTION=${1:-}; ID=${2:-}
+if [[ $ACTION == init ]]; then bash "$maintenance_lib/init-snapper.sh"; exit 0; fi
+[[ $ACTION == sync || ( $ACTION == prepare && $ID =~ ^[1-9][0-9]*$ ) ]] || die 'Usage: tinapple-snapshot-boot {prepare <snapshot_id>|sync}'
+boot=$(root_path /boot)
+if [[ $ACTION == prepare ]]; then
+  require_btrfs
+  # The installer uses a separate boot/ESP filesystem. Reject unsupported layouts.
+  mountpoint -q "$boot" || die '/boot must be mounted separately to pin boot artifacts safely'
+  [[ ! -e $boot/tinapple-recovery/$ID ]] || die "Boot artifacts for snapshot $ID already exist"
+  source_snapshot=$(root_path "/.snapshots/$ID/snapshot")
+  [[ $(btrfs property get -ts "$source_snapshot" ro) == 'ro=true' ]] || die 'Recovery source must be a read-only Btrfs snapshot'
+  compgen -G "$boot/vmlinuz-*" >/dev/null || die 'No bootable kernels found in /boot'
+  top=$(mktemp -d /run/tinapple-btrfs.XXXXXX)
+  cleanup() { if mountpoint -q "$top"; then umount "$top"; fi; rmdir "$top"; }
+  trap cleanup EXIT
+  device=$(findmnt -n -o SOURCE -T "$ROOT"); device=${device%%\[*}
+  mount -t btrfs -o subvolid=5 "$device" "$top"
+  clone="@tinapple-recovery-$ID"
+  [[ ! -e $top/$clone ]] || die "Recovery clone $clone already exists"
+  btrfs subvolume snapshot "$source_snapshot" "$top/$clone"
+  # fstab must not remount recovery back onto @ during boot.
+  python3 - "$top/$clone/etc/fstab" "$clone" <<'PY'
+import sys
+p,clone=sys.argv[1:]
+lines=[]
+for line in open(p):
+    fields=line.split()
+    if len(fields)>=4 and not line.lstrip().startswith('#') and fields[1]=='/':
+        opts=[o for o in fields[3].split(',') if not o.startswith(('subvol=','subvolid='))]
+        fields[3]=','.join(opts+['subvol='+clone]); line='\t'.join(fields)+'\n'
+    lines.append(line)
+with open(p,'w') as f:f.writelines(lines)
+PY
+  artifacts="$boot/tinapple-recovery/$ID"
+  mkdir -p "$artifacts"
+  for kernel in "$boot"/vmlinuz-*; do
+    name=${kernel##*/}; flavor=${name#vmlinuz-}
+    [[ -f $boot/initramfs-$flavor.img ]] || die "Missing matching initramfs for $name"
+    cp -- "$kernel" "$boot"/initramfs-"$flavor"*.img "$artifacts/"
+  done
+  for microcode in "$boot"/*-ucode.img; do [[ ! -f $microcode ]] || cp -- "$microcode" "$artifacts/"; done
+  cp /proc/cmdline "$artifacts/cmdline"
+  (cd "$artifacts" && sha256sum vmlinuz-* initramfs-* ./*-ucode.img 2>/dev/null > SHA256SUMS) || {
+    # A machine need not use a separate microcode image.
+    (cd "$artifacts" && sha256sum vmlinuz-* initramfs-* > SHA256SUMS)
+  }
+  touch "$artifacts/ready"
+  sync
+fi
+python3 "$maintenance_lib/boot-menu.py" "$ROOT"

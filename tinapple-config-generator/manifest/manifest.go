@@ -47,6 +47,7 @@ type BatteryConfig struct {
 
 // NetworkConfig defines primary network interface configuration.
 type NetworkConfig struct {
+	ProxyDomains   []string              `yaml:"proxy_domains,omitempty"`
 	Interface      string                `yaml:"interface"`
 	DHCP           bool                  `yaml:"dhcp"`
 	StaticFallback *StaticFallbackConfig `yaml:"static_fallback,omitempty"`
