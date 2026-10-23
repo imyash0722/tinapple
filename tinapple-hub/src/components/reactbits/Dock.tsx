@@ -22,7 +22,7 @@ export const Dock: React.FC<DockProps> = ({ items, activeId, onSelect, className
     <div
       onMouseMove={(e) => mouseX.set(e.pageX)}
       onMouseLeave={() => mouseX.set(Infinity)}
-      className={`flex items-end h-16 gap-3 px-4 pb-2.5 rounded-2xl border border-tinapple-border bg-tinapple-card/90 backdrop-blur-3xl shadow-2xl shadow-black/80 ${className}`}
+      className={`tinapple-glass-card flex items-end h-16 gap-3 px-4 pb-2.5 rounded-2xl shadow-2xl shadow-black/80 ${className}`}
     >
       {items.map((item) => (
         <DockIcon
