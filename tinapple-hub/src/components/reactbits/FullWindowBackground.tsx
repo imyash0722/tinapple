@@ -14,6 +14,9 @@ export interface BackgroundSettings {
   enableParticles: boolean;
   enableNebula: boolean;
   enableGlass: boolean;
+  glassBlur: number;
+  glassOpacity: number;
+  uiScale: string;
 }
 
 export const FullWindowBackground: React.FC<{ settings: BackgroundSettings }> = ({ settings }) => {

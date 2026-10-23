@@ -35,7 +35,6 @@ import { QuickConnectCard } from './components/widgets/QuickConnectCard';
 import { TransfersWidget } from './components/widgets/TransfersWidget';
 import { MangaShelfWidget } from './components/widgets/MangaShelfWidget';
 import { TorPrivacyWidget } from './components/widgets/TorPrivacyWidget';
-import { PywalThemingWidget } from './components/widgets/PywalThemingWidget';
 
 import { api, MOCK_SYSTEM_INFO, MOCK_TELEMETRY, MOCK_SERVICES, MOCK_HARDWARE } from './services/api';
 import { SystemInfo, TelemetrySnapshot, ServiceInfo, HardwareInfo, SessionMode } from './types/api';
@@ -63,10 +62,24 @@ export const App: React.FC = () => {
     root.style.setProperty('--tinapple-accent-glow', `${settings.accentColor}55`);
     root.style.setProperty('--tinapple-accent-secondary', settings.secondaryColor);
     root.style.setProperty('--tinapple-secondary-rgb', colorChannels(settings.secondaryColor));
-    root.style.setProperty('--glass-bg', settings.enableGlass ? 'rgba(18, 22, 31, 0.65)' : '#12161f');
-    root.style.setProperty('--glass-filter', settings.enableGlass ? 'blur(20px) saturate(180%)' : 'none');
+
+    const blur = settings.glassBlur ?? 20;
+    const opacity = (settings.glassOpacity ?? 75) / 100;
+    root.style.setProperty('--glass-blur', `${blur}px`);
+    root.style.setProperty('--glass-opacity', `${opacity}`);
+    root.style.setProperty('--glass-bg', settings.enableGlass ? `rgba(18, 22, 31, ${opacity})` : '#12161f');
+    root.style.setProperty('--glass-filter', settings.enableGlass ? `blur(${blur}px) saturate(180%)` : 'none');
+
+    const scale = settings.uiScale || '100%';
+    root.style.setProperty('--ui-scale', scale);
+    const zoomVal = parseInt(scale) / 100;
+    (document.body.style as any).zoom = zoomVal.toString();
+
     try {
       localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(settings));
+      localStorage.setItem('tinapple_blur', blur.toString());
+      localStorage.setItem('tinapple_opacity', (settings.glassOpacity ?? 75).toString());
+      localStorage.setItem('tinapple_scale', scale);
       setStorageStatus('');
     } catch { setStorageStatus('Browser storage is unavailable. Changes apply for this session only.'); }
   }, [settings]);
@@ -505,7 +518,6 @@ export const App: React.FC = () => {
               transition={{ duration: 0.25, ease: 'easeOut' }}
               className="space-y-6"
             >
-              <PywalThemingWidget />
               <SettingsManifest systemInfo={systemInfo} onUpdateSession={handleUpdateSession} />
             </motion.div>
           )}

@@ -55,7 +55,7 @@ export const AppearanceModal: React.FC<AppearanceModalProps> = ({ isOpen, onClos
   return (
     <dialog ref={dialogRef} aria-labelledby="appearance-title" onCancel={onClose}
       onClick={event => { if (event.target === event.currentTarget) onClose(); }}
-      className="appearance-drawer fixed inset-y-0 left-auto right-0 m-0 h-dvh max-h-none w-full max-w-lg border-l border-white/10 bg-[#0e1118]/95 p-0 text-zinc-200 backdrop-blur-2xl shadow-2xl">
+      className="appearance-drawer fixed inset-y-0 left-auto right-0 m-0 h-dvh max-h-none w-full max-w-lg overflow-y-auto border-l border-white/10 bg-[#0e1118]/95 p-0 text-zinc-200 backdrop-blur-2xl shadow-2xl">
       <div className="flex min-h-full flex-col" onClick={event => event.stopPropagation()}>
         <div className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-white/10 bg-[#0e1118]/95 p-6 backdrop-blur-xl">
           <div>
@@ -131,9 +131,75 @@ export const AppearanceModal: React.FC<AppearanceModalProps> = ({ isOpen, onClos
             {toggle('enableParticles', 'Constellation Particles')}
             {toggle('enableNebula', 'Radial Nebula Glow')}
           </section>
-          <section aria-labelledby="glass-heading">
+          <section aria-labelledby="glass-heading" className="space-y-4">
             <h3 id="glass-heading" className="text-xs font-mono uppercase tracking-wider text-zinc-400">Glassmorphism</h3>
             {toggle('enableGlass', 'Frosted Glass Translucency', 'Let your wallpaper and ambient effects shine through panels.')}
+            <div className={`space-y-4 pt-1 transition-opacity ${settings.enableGlass ? 'opacity-100' : 'opacity-40 pointer-events-none'}`}>
+              <label className="block text-sm" htmlFor="glass-blur">
+                <span className="flex justify-between">
+                  <span className="text-zinc-200">Background Blur</span>
+                  <span className="font-mono text-tinapple-gold font-bold">{settings.glassBlur}px</span>
+                </span>
+                <input
+                  id="glass-blur"
+                  type="range"
+                  min="0"
+                  max="40"
+                  step="1"
+                  value={settings.glassBlur}
+                  onChange={event => update({ glassBlur: Number(event.target.value) })}
+                  className="mt-2 w-full accent-tinapple-gold cursor-pointer"
+                />
+                <span className="block mt-1 text-xs text-zinc-400">Controls frosted backdrop diffusion</span>
+              </label>
+
+              <label className="block text-sm" htmlFor="glass-translucency">
+                <span className="flex justify-between">
+                  <span className="text-zinc-200">Glass Translucency</span>
+                  <span className="font-mono text-tinapple-gold font-bold">{settings.glassOpacity}%</span>
+                </span>
+                <input
+                  id="glass-translucency"
+                  type="range"
+                  min="20"
+                  max="95"
+                  step="1"
+                  value={settings.glassOpacity}
+                  onChange={event => update({ glassOpacity: Number(event.target.value) })}
+                  className="mt-2 w-full accent-tinapple-gold cursor-pointer"
+                />
+                <span className="block mt-1 text-xs text-zinc-400">Controls background alpha transparency</span>
+              </label>
+            </div>
+          </section>
+          <section aria-labelledby="scale-heading" className="space-y-3">
+            <h3 id="scale-heading" className="text-xs font-mono uppercase tracking-wider text-zinc-400">UI Display Scaling</h3>
+            <div className="grid grid-cols-4 gap-2">
+              {[
+                { label: 'Compact', value: '90%' },
+                { label: 'Default', value: '100%' },
+                { label: 'Comfortable', value: '108%' },
+                { label: 'Large', value: '115%' },
+              ].map(preset => {
+                const isSelected = (settings.uiScale || '100%') === preset.value;
+                return (
+                  <button
+                    key={preset.value}
+                    type="button"
+                    onClick={() => update({ uiScale: preset.value })}
+                    className={`p-2.5 rounded-xl text-xs font-mono transition-all text-center border ${
+                      isSelected
+                        ? 'border-tinapple-gold/60 bg-tinapple-gold/10 text-tinapple-gold shadow-sm'
+                        : 'border-white/10 bg-white/[0.03] text-zinc-400 hover:text-zinc-200 hover:border-white/20'
+                    }`}
+                  >
+                    <span className="block font-bold">{preset.label}</span>
+                    <span className="text-[10px] opacity-75">{preset.value}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-xs text-zinc-400">Adjust the entire dashboard scale for your monitor resolution.</p>
           </section>
           <p role="status" className="text-xs text-zinc-500">{storageStatus || 'Preferences saved on this device.'}</p>
         </div>

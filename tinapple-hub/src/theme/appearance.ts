@@ -11,6 +11,9 @@ export const DEFAULT_SETTINGS: BackgroundSettings = {
   enableParticles: true,
   enableNebula: true,
   enableGlass: true,
+  glassBlur: 20,
+  glassOpacity: 75,
+  uiScale: '100%',
 };
 
 export const THEME_PALETTES = [
@@ -53,6 +56,24 @@ export function normalizeSettings(value: unknown): BackgroundSettings {
   }
   for (const key of ['syncWallpaperColors', 'enableParticles', 'enableNebula', 'enableGlass'] as const) {
     if (typeof saved[key] === 'boolean') settings[key] = saved[key];
+  }
+  if (typeof saved.glassBlur === 'number' && Number.isFinite(saved.glassBlur)) {
+    settings.glassBlur = Math.min(40, Math.max(0, Math.round(saved.glassBlur)));
+  } else if (typeof window !== 'undefined') {
+    const legacyBlur = Number(localStorage.getItem('tinapple_blur'));
+    if (!Number.isNaN(legacyBlur) && legacyBlur >= 0 && legacyBlur <= 40) settings.glassBlur = legacyBlur;
+  }
+  if (typeof saved.glassOpacity === 'number' && Number.isFinite(saved.glassOpacity)) {
+    settings.glassOpacity = Math.min(95, Math.max(20, Math.round(saved.glassOpacity)));
+  } else if (typeof window !== 'undefined') {
+    const legacyOpacity = Number(localStorage.getItem('tinapple_opacity'));
+    if (!Number.isNaN(legacyOpacity) && legacyOpacity >= 20 && legacyOpacity <= 95) settings.glassOpacity = legacyOpacity;
+  }
+  if (typeof saved.uiScale === 'string' && ['90%', '100%', '108%', '115%'].includes(saved.uiScale)) {
+    settings.uiScale = saved.uiScale;
+  } else if (typeof window !== 'undefined') {
+    const legacyScale = localStorage.getItem('tinapple_scale');
+    if (legacyScale && ['90%', '100%', '108%', '115%'].includes(legacyScale)) settings.uiScale = legacyScale;
   }
   return settings;
 }
