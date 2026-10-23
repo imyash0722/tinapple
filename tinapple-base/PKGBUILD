@@ -15,7 +15,7 @@ depends=(
   'tinapple-nginx'
 )
 optdepends=(
-  'tinapple-chadwm: minimal GUI for local admin'
+  'niri: scrollable-tiling Wayland compositor'
   'tinapple-media: media server stack'
   'tinapple-downloads: download clients'
   'tinapple-backups: backup tools'

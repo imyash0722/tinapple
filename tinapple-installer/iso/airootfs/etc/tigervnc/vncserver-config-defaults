@@ -1,5 +1,5 @@
 # TigerVNC server defaults
-SESSION=chadwm
+SESSION=niri
 GEOMETRY=1920x1080
 DEPTH=24
 DPI=96

@@ -3,7 +3,7 @@ name = "tinapple-gui-installer"
 version = "0.0.1"
 edition = "2024"
 authors = ["Tinapple Project"]
-description = "Tinapple OS Graphical Installer (Rust / eframe / chadwm)"
+description = "Tinapple OS Graphical Installer (Rust / eframe / Niri Wayland)"
 
 [dependencies]
 eframe = { version = "0.36.2", default-features = false, features = ["default_fonts", "glow", "wayland", "x11"] }

@@ -20,7 +20,7 @@ tinapple_configure() {
   local target=${1:-/mnt}
   local hostname=${TINAPPLE_HOSTNAME:-tinapple-server}
   local username=${TINAPPLE_USERNAME:-tinapple}
-  local password=${TINAPPLE_PASSWORD:-tinapple}
+  local password=${TINAPPLE_USER_PASSWORD:-${TINAPPLE_PASSWORD:-tinapple}}
   local root_password=${TINAPPLE_ROOT_PASSWORD:-$password}
   local locale=${TINAPPLE_LOCALE:-en_US.UTF-8}
   local bootloader=${TINAPPLE_BOOTLOADER:-${TINAPPLE_RECOMMENDED_BOOTLOADER:-grub}}
@@ -58,15 +58,93 @@ EOH"
   run_sh "echo '$username:$password' | arch-chroot $target chpasswd"
   run_sh "echo 'root:$root_password' | arch-chroot $target chpasswd"
 
-  # Deploy default dotfiles (.tmux.conf, .zshrc, foot.ini, TPM plugins)
-  log_info "deploying default tmux, foot, and zsh configurations..."
-  if [[ -f "/etc/skel/.tmux.conf" ]]; then
-    run_sh "mkdir -p $target/etc/skel $target/home/$username $target/root"
+  # Deploy gh0stzk dotfiles, tmux, zsh, and desktop configurations
+  log_info "deploying gh0stzk dotfiles, configs, and fonts to target..."
+  run_sh "mkdir -p $target/etc/skel $target/home/$username $target/root"
+  if [[ -d "/etc/skel/.config" ]]; then
     run_sh "cp -rf /etc/skel/. $target/etc/skel/ 2>/dev/null || true"
     run_sh "cp -rf /etc/skel/. $target/home/$username/ 2>/dev/null || true"
-    run_sh "cp -rf /etc/skel/. $target/root/ 2>/dev/null || true"
-    run_sh "arch-chroot $target chown -R $username:users /home/$username 2>/dev/null || true"
+  elif [[ -d "/home/liveuser/.config" ]]; then
+    run_sh "cp -rf /home/liveuser/. $target/home/$username/ 2>/dev/null || true"
+    run_sh "cp -rf /home/liveuser/.config $target/etc/skel/ 2>/dev/null || true"
   fi
+  if [[ -d "/home/liveuser/.local" ]]; then
+    run_sh "cp -rf /home/liveuser/.local $target/home/$username/ 2>/dev/null || true"
+    run_sh "cp -rf /home/liveuser/.local $target/etc/skel/ 2>/dev/null || true"
+  fi
+  if [[ -f "/usr/local/bin/colorscript" ]]; then
+    run_sh "cp -f /usr/local/bin/colorscript $target/usr/local/bin/ 2>/dev/null || true"
+  fi
+  # Deploy rice fonts
+  if [[ -d "/usr/share/fonts/gh0stzk" ]]; then
+    run_sh "mkdir -p $target/usr/share/fonts && cp -rf /usr/share/fonts/gh0stzk $target/usr/share/fonts/ 2>/dev/null || true"
+    run_sh "arch-chroot $target fc-cache -f 2>/dev/null || true"
+  fi
+
+  # Mark system as installed so installer never autostarts on installed OS
+  run_sh "touch $target/etc/tinapple-installed"
+  run_sh "rm -f $target/etc/xdg/autostart/tinapple-installer.desktop $target/home/$username/Desktop/tinapple-installer.desktop 2>/dev/null || true"
+
+  # Deploy Niri & Waybar modern Wayland Rice Configurations
+  log_info "deploying Niri Wayland rice configuration for %s..." "$username"
+  run_sh "mkdir -p $target/home/$username/.config/niri $target/home/$username/.config/waybar $target/home/$username/.config/foot $target/home/$username/.config/fuzzel"
+  
+  # Copy niri configuration from repo/bundled path
+  for src_dir in "/usr/lib/tinapple-installer/backend/configs/niri" "/mnt/shared/projects/tinapple/configs/niri" "/usr/lib/tinapple/configs/niri" "/etc/tinapple/configs/niri"; do
+    if [[ -d "$src_dir" ]]; then
+      run_sh "cp -rf $src_dir/* $target/home/$username/.config/niri/ 2>/dev/null || true"
+      break
+    fi
+  done
+  for src_dir in "/usr/lib/tinapple-installer/backend/configs/waybar" "/mnt/shared/projects/tinapple/configs/waybar" "/usr/lib/tinapple/configs/waybar" "/etc/tinapple/configs/waybar"; do
+    if [[ -d "$src_dir" ]]; then
+      run_sh "cp -rf $src_dir/* $target/home/$username/.config/waybar/ 2>/dev/null || true"
+      break
+    fi
+  done
+
+  # Add user to required groups for Wayland seat and audio/graphics
+  run_sh "arch-chroot $target groupadd -f seat"
+  run_sh "arch-chroot $target usermod -aG seat,video,input,audio '$username'"
+  run_sh "arch-chroot $target systemctl enable seatd 2>/dev/null || true"
+
+  # Configure TTY1 auto-login directly into Niri Wayland Session
+  log_info "configuring tty1 autologin and Niri Wayland auto-launch for %s..." "$username"
+  run_sh "mkdir -p $target/etc/systemd/system/getty@tty1.service.d"
+  run_sh "cat << 'EOA' > $target/etc/systemd/system/getty@tty1.service.d/autologin.conf
+[Service]
+ExecStart=
+ExecStart=-/usr/bin/agetty --noreset --noclear --autologin '$username' - \\${TERM}
+EOA"
+  run_sh "cat << 'EOZ' >> $target/home/$username/.zlogin
+if [[ \"\$(tty)\" == \"/dev/tty1\" ]]; then
+    if [[ -z \"\${WAYLAND_DISPLAY:-}\" ]] && ! pgrep -x niri >/dev/null; then
+        export XDG_CURRENT_DESKTOP=\"niri\"
+        export XDG_SESSION_DESKTOP=\"niri\"
+        export XDG_SESSION_TYPE=\"wayland\"
+        export MOZ_ENABLE_WAYLAND=1
+        export QT_QPA_PLATFORM=\"wayland;xcb\"
+        export GDK_BACKEND=\"wayland,x11\"
+        export SDL_VIDEODRIVER=\"wayland\"
+        exec niri-session
+    fi
+fi
+EOZ"
+  run_sh "cat << 'EOB' >> $target/home/$username/.bash_profile
+if [[ \"\$(tty)\" == \"/dev/tty1\" ]]; then
+    if [[ -z \"\${WAYLAND_DISPLAY:-}\" ]] && ! pgrep -x niri >/dev/null; then
+        export XDG_CURRENT_DESKTOP=\"niri\"
+        export XDG_SESSION_DESKTOP=\"niri\"
+        export XDG_SESSION_TYPE=\"wayland\"
+        export MOZ_ENABLE_WAYLAND=1
+        export QT_QPA_PLATFORM=\"wayland;xcb\"
+        export GDK_BACKEND=\"wayland,x11\"
+        export SDL_VIDEODRIVER=\"wayland\"
+        exec niri-session
+    fi
+fi
+EOB"
+  run_sh "arch-chroot $target chown -R $username:users /home/$username 2>/dev/null || true"
 
   # 6. Enable Systemd Services
   local -a services=(
@@ -78,7 +156,6 @@ EOH"
     tinapple-battery-daemon
     tinapple-thermal-daemon
     tinapple-power-profile-apply
-    chadwm@"$username"
   )
 
   # Configure SSH on target
@@ -93,8 +170,8 @@ EOH"
     local prof
     prof=$(echo "$raw_prof" | tr -d '[:space:]')
     case "$prof" in
-      base|chadwm)
-        services+=(chadwm@"$username")
+      base|niri|dwl)
+        # Niri is started on tty1 autologin when graphical profile selected
         ;;
       media)
         services+=(jellyfin)
@@ -172,7 +249,7 @@ bootloader: $bootloader
 profiles:
 $(for p in "${prof_array[@]}"; do echo "  - $(echo "$p" | tr -d '[:space:]')"; done)
 services:
-  chadwm:
+  niri:
     enabled: true
     user: $username
   jellyfin:
@@ -199,6 +276,12 @@ EOM"
 
   # 10. Configure pacman repository on target
   log_info "configuring pacman repositories on target..."
+  run_sh "mkdir -p $target/etc/pacman.d"
+  if [[ -s /etc/pacman.d/tinapple-mirrorlist ]]; then
+    run_sh "cp -f /etc/pacman.d/tinapple-mirrorlist $target/etc/pacman.d/tinapple-mirrorlist 2>/dev/null || true"
+  else
+    run_sh "touch $target/etc/pacman.d/tinapple-mirrorlist 2>/dev/null || true"
+  fi
   if ! grep -q '\[tinapple\]' "$target/etc/pacman.conf" 2>/dev/null; then
     run_sh "cat << 'EOPAC' >> $target/etc/pacman.conf
 
@@ -211,6 +294,9 @@ EOPAC"
   if [[ -d /opt/tinapple-repo ]]; then
     run_sh "mkdir -p $target/opt && cp -a /opt/tinapple-repo $target/opt/ 2>/dev/null || true"
   fi
+
+  # A fresh installed appliance must not inherit an image/installer machine ID.
+  run_sh "truncate -s 0 $target/etc/machine-id && rm -f $target/var/lib/dbus/machine-id"
 
   # Export output variables for next stage
   export TINAPPLE_CONFIGURED="true"

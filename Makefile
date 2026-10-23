@@ -4,7 +4,7 @@
 SHELL := /bin/bash
 .DEFAULT_GOAL := help
 
-.PHONY: help all test test-bash test-go build build-tui build-dash build-config build-chadwm clean
+.PHONY: help all test test-bash test-go build build-tui build-dash build-config build-store clean
 
 help:
 	@echo "tinapple v0.0.1 build system"

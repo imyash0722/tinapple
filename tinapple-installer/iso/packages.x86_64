@@ -59,9 +59,7 @@ vulkan-intel
 xf86-video-amdgpu
 xf86-video-intel
 
-# Window Manager (DEFAULT)
-chadwm
-tinapple-chadwm
+# Window Manager (Wayland - Niri)
 foot
 picom
 polybar

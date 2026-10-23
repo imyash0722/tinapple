@@ -170,8 +170,8 @@ EOB"
     local prof
     prof=$(echo "$raw_prof" | tr -d '[:space:]')
     case "$prof" in
-      base|chadwm|dwl)
-        # DWL is started on tty1 autologin
+      base|niri|dwl)
+        # Niri is started on tty1 autologin when graphical profile selected
         ;;
       media)
         services+=(jellyfin)
@@ -249,7 +249,7 @@ bootloader: $bootloader
 profiles:
 $(for p in "${prof_array[@]}"; do echo "  - $(echo "$p" | tr -d '[:space:]')"; done)
 services:
-  chadwm:
+  niri:
     enabled: true
     user: $username
   jellyfin:

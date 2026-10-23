@@ -17,7 +17,6 @@ tinapple-repo/**/pkg/
 tinapple-repo/**/src/
 tinapple-dash/tinapple-dash
 tinapple-installer/tui/tinapple-installer
-tinapple-chadwm/tinapple-session
 tinapple-repo/packages/tinapple-dash/tinapple-dash
 
 # Build & ISO output directories

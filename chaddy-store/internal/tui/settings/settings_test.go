@@ -15,7 +15,7 @@ func TestSettingsModelOperations(t *testing.T) {
 	expectedSecs := map[string]bool{
 		"System":        false,
 		"Network":       false,
-		"chadwm":        false,
+		"niri":          false,
 		"Services":      false,
 		"Security":      false,
 		"Remote Access": false,

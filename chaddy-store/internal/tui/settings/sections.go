@@ -69,12 +69,12 @@ func GetSettingsSections() []SettingsSection {
 			},
 		},
 		{
-			Name:        "chadwm",
+			Name:        "niri",
 			Icon:        "🪟",
 			Color:       lipgloss.Color("#2ecc71"),
-			Description: "chadwm tiling window manager and ricing customization",
+			Description: "niri scrollable-tiling Wayland compositor customization",
 			Items: []SettingItem{
-				{Key: "terminal", Label: "Default Terminal", Type: SelectType, Value: "foot", Options: []string{"foot", "alacritty", "xterm"}, Default: "foot", Description: "Default terminal emulator for chadwm"},
+				{Key: "terminal", Label: "Default Terminal", Type: SelectType, Value: "foot", Options: []string{"foot", "alacritty", "xterm"}, Default: "foot", Description: "Default terminal emulator for niri"},
 				{Key: "gaps", Label: "Window Gaps", Type: IntType, Value: 10, Default: 10, Description: "Window gaps in pixels"},
 				{Key: "border_width", Label: "Border Width", Type: IntType, Value: 2, Default: 2, Description: "Window border thickness in pixels"},
 				{Key: "border_color_focused", Label: "Focused Border Color", Type: ColorType, Value: "#2ecc71", Default: "#2ecc71", Description: "Active window border accent"},
@@ -119,7 +119,7 @@ func GetSettingsSections() []SettingsSection {
 			Name:        "Remote Access",
 			Icon:        "🖥️",
 			Color:       lipgloss.Color("#e0af68"),
-			Description: "Remote desktop access via xrdp (RDP) & TigerVNC for chadwm",
+			Description: "Remote desktop access via xrdp (RDP) & TigerVNC for Niri Wayland",
 			Items: []SettingItem{
 				{Key: "rdp_enabled", Label: "Enable RDP (xrdp)", Type: BoolType, Value: true, Default: true, Description: "Enable Windows/Mac RDP access on :3389"},
 				{Key: "rdp_port", Label: "RDP Port", Type: IntType, Value: 3389, Default: 3389, Description: "xrdp listening port"},

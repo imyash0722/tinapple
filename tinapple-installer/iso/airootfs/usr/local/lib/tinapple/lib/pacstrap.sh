@@ -126,9 +126,10 @@ tinapple_pacstrap() {
   esac
 
   # Bootloader packages
-  if [[ "$bootloader" == "grub" ]]; then
+  if [[ "$bootloader" == "grub" ]] || [[ ! -d /sys/firmware/efi ]]; then
     pkgs+=(grub)
-  elif [[ "$bootloader" == "limine" ]]; then
+  fi
+  if [[ "$bootloader" == "limine" ]] && [[ -d /sys/firmware/efi ]]; then
     pkgs+=(limine)
   fi
 
@@ -155,11 +156,21 @@ tinapple_pacstrap() {
     [[ -n "$prof" ]] || continue
 
     case "$prof" in
-      base)
-        pkgs+=(tinapple-chadwm foot picom polybar rofi dunst sxhkd xorg-xinit xorg-xrandr xorg-xsetroot xorg-xset xorg-xprop xorg-xwininfo xorg-xdpyinfo xorg-xev xorg-xlsfonts xorg-xlsclients xorg-xvinfo xorg-xrdb tigervnc xrdp)
+      niri|desktop|wayland)
+        pkgs+=(niri waybar fuzzel foot btop pipewire pipewire-pulse wireplumber seatd xdg-desktop-portal xdg-desktop-portal-gnome)
         ;;
-      chadwm)
-        pkgs+=(tinapple-chadwm foot picom polybar rofi dunst sxhkd xorg-xinit xorg-xrandr xorg-xsetroot xorg-xset xorg-xprop xorg-xwininfo xorg-xdpyinfo xorg-xev xorg-xlsfonts xorg-xlsclients xorg-xvinfo xorg-xrdb tigervnc xrdp)
+      suwayomi)
+        aur_pkgs+=(suwayomi-server-bin)
+        ;;
+      minecraft)
+        pkgs+=(jre17-openjdk-headless)
+        ;;
+      bspwm|chadwm)
+        log_warn "bspwm is deprecated in favor of Niri Wayland rice; redirecting to Niri..."
+        pkgs+=(niri waybar fuzzel foot btop pipewire pipewire-pulse wireplumber seatd xdg-desktop-portal xdg-desktop-portal-gnome)
+        ;;
+      base)
+        # Core base already included
         ;;
       media)
         pkgs+=(jellyfin-server jellyfin-web)
@@ -234,13 +245,25 @@ tinapple_pacstrap() {
       pacman -Sy --config /etc/pacman.conf --noconfirm || log_warn "pacman -Sy sync completed with warnings"
     fi
   fi
+  # Validate packages against available sync databases to prevent fatal failures
+  local -a valid_pkgs=()
+  for p in "${unique_pkgs[@]}"; do
+    if pacman -Si "$p" &>/dev/null; then
+      valid_pkgs+=("$p")
+    elif [[ -f "/var/cache/pacman/pkg/$p"*.pkg.tar.* ]]; then
+      valid_pkgs+=("$p")
+    else
+      log_warn "package '%s' not found in repos, skipping" "$p"
+    fi
+  done
+
   local retries=3
   local attempt=1
   local pacstrap_success=false
 
   while (( attempt <= retries )); do
-    log_info "running pacstrap (attempt %d/%d)..." "$attempt" "$retries"
-    if run pacstrap -C /etc/pacman.conf "$target" "${unique_pkgs[@]}"; then
+    log_info "running pacstrap with %d packages (attempt %d/%d)..." "${#valid_pkgs[@]}" "$attempt" "$retries"
+    if run pacstrap -C /etc/pacman.conf "$target" "${valid_pkgs[@]}"; then
       pacstrap_success=true
       break
     fi
@@ -255,15 +278,15 @@ tinapple_pacstrap() {
     die "pacstrap failed to install core packages"
   fi
 
-  # Handle AUR packages via paru/yay if needed
+  # Handle AUR packages via paru/yay if available in target
   if (( ${#aur_pkgs[@]} > 0 )); then
-    log_info "handling AUR packages via paru/yay: %s" "${aur_pkgs[*]}"
-    if command -v paru >/dev/null 2>&1 || [[ -n ${TINAPPLE_DRYRUN:-} ]]; then
-      run arch-chroot "$target" paru -S --noconfirm --needed "${aur_pkgs[@]}"
-    elif command -v yay >/dev/null 2>&1; then
-      run arch-chroot "$target" yay -S --noconfirm --needed "${aur_pkgs[@]}"
+    log_info "handling AUR packages: %s" "${aur_pkgs[*]}"
+    if [[ -x "$target/usr/bin/paru" ]]; then
+      arch-chroot "$target" paru -S --noconfirm --needed "${aur_pkgs[@]}" 2>/dev/null || log_warn "AUR package install deferred to first boot: %s" "${aur_pkgs[*]}"
+    elif [[ -x "$target/usr/bin/yay" ]]; then
+      arch-chroot "$target" yay -S --noconfirm --needed "${aur_pkgs[@]}" 2>/dev/null || log_warn "AUR package install deferred to first boot: %s" "${aur_pkgs[*]}"
     else
-      log_warn "neither paru nor yay found; deferred AUR package install: %s" "${aur_pkgs[*]}"
+      log_warn "AUR helpers not present in target; deferred AUR packages to first boot: %s" "${aur_pkgs[*]}"
     fi
   fi
 

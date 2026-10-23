@@ -13,7 +13,7 @@ depends=(
   'tinapple-keyring' 'tinapple-mirrorlist' 'tinapple-hw' 'tinapple-firstboot' 'tinapple-nginx'
 )
 optdepends=(
-  'tinapple-chadwm: minimal GUI for local admin'
+  'niri: scrollable-tiling Wayland compositor'
   'tinapple-service-media: media server stack'
   'tinapple-service-downloads: download clients'
   'tinapple-service-backups: backup tools'
