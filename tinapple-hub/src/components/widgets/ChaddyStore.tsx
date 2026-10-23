@@ -711,7 +711,7 @@ export const ChaddyStore: React.FC = () => {
                   <button
                     onClick={() => handleAction(selectedApp.id, 'install')}
                     disabled={Boolean(loadingAction[selectedApp.id])}
-                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-tinapple-gold to-amber-500 text-slate-950 font-bold text-xs font-mono transition-all hover:brightness-110 shadow-lg shadow-tinapple-gold/20"
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs font-mono transition-all shadow-lg shadow-emerald-950/40"
                   >
                     {loadingAction[selectedApp.id] === 'install' ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
@@ -847,7 +847,7 @@ export const ChaddyStore: React.FC = () => {
                       <button
                         onClick={() => handleAction(app.id, 'install')}
                         disabled={isLoading}
-                        className="px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-tinapple-gold to-amber-500 hover:brightness-110 text-slate-950 font-bold text-xs font-mono flex items-center gap-1.5 shadow-sm"
+                        className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs font-mono flex items-center gap-1.5 shadow-sm transition-colors"
                       >
                         {loadingAction[app.id] === 'install' ? (
                           <Loader2 className="w-3.5 h-3.5 animate-spin" />
