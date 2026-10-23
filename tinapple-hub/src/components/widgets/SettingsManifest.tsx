@@ -412,38 +412,6 @@ export const SettingsManifest: React.FC<SettingsManifestProps> = ({
               )}
             </div>
 
-            {/* Linux Kernel Architecture */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-white uppercase tracking-wider">
-                Kernel Optimization Branch
-              </label>
-              <select
-                value={kernel}
-                onChange={(e) => setKernel(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-tinapple-dark/90 border border-tinapple-border text-xs text-white focus:outline-none focus:border-tinapple-gold transition-colors"
-              >
-                <option value="linux-cachyos">linux-cachyos (BORE Scheduler, x86-64-v4)</option>
-                <option value="linux-lts">linux-lts (Kernel 6.6 LTS - High Stability)</option>
-                <option value="linux-zen">linux-zen (Low Latency Desktop)</option>
-                <option value="linux-hardened">linux-hardened (Security Focused)</option>
-              </select>
-            </div>
-
-            {/* Bootloader Engine */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-white uppercase tracking-wider">
-                Bootloader Engine
-              </label>
-              <select
-                value={bootloader}
-                onChange={(e) => setBootloader(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-tinapple-dark/90 border border-tinapple-border text-xs text-white focus:outline-none focus:border-tinapple-gold transition-colors"
-              >
-                <option value="limine">Limine Bootloader (Instant Modern UEFI - Recommended)</option>
-                <option value="grub">GRUB 2.12 (Multi-Boot & Legacy MBR)</option>
-                <option value="systemd-boot">systemd-boot (Simple EFI Stub)</option>
-              </select>
-            </div>
 
             {/* Display Session Mode (Niri Wayland Station) */}
             <div className="space-y-1.5">
