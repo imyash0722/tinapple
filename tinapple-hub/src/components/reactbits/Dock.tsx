@@ -4,6 +4,7 @@ import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 export interface DockItem {
   id: string;
   label: string;
+  shortLabel?: string;
   icon: React.ReactNode;
   badge?: string | number;
 }
@@ -82,11 +83,6 @@ const DockIcon: React.FC<DockIconProps> = ({ item, mouseX, isActive, onClick }) 
         <span className="absolute -top-1 -right-1 px-1.5 py-0.2 min-w-4 h-4 flex items-center justify-center text-[10px] font-mono font-bold rounded-full bg-tinapple-green text-tinapple-dark shadow-sm">
           {item.badge}
         </span>
-      )}
-
-      {/* Active Indicator dot */}
-      {isActive && (
-        <span className="absolute -bottom-1.5 w-1.5 h-1.5 rounded-full bg-tinapple-gold shadow-sm shadow-tinapple-gold" />
       )}
     </motion.button>
   );

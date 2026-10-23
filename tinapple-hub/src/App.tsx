@@ -21,7 +21,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FullWindowBackground } from './components/reactbits/FullWindowBackground';
 import { AppearanceModal } from './components/common/AppearanceModal';
 import { BUNDLED_WALLPAPERS, THEME_STORAGE_KEY, colorChannels, extractWallpaperColors, loadSettings } from './theme/appearance';
-import { Dock, DockItem } from './components/reactbits/Dock';
+import { DockItem } from './components/reactbits/Dock';
 
 import { TelemetryCards } from './components/widgets/TelemetryCards';
 import { ThermalsPowerWidget } from './components/widgets/ThermalsPowerWidget';
@@ -258,35 +258,41 @@ export const App: React.FC = () => {
       items.push({
         id: 'welcome',
         label: 'Installer & Welcome',
-        icon: <Sparkles className="w-5 h-5" />,
+        shortLabel: 'Installer',
+        icon: <Sparkles className="w-4 h-4" />,
       });
     }
     items.push(
       {
         id: 'dashboard',
         label: 'Telemetry Matrix',
-        icon: <Activity className="w-5 h-5" />,
+        shortLabel: 'Dashboard',
+        icon: <Activity className="w-4 h-4" />,
       },
       {
         id: 'services',
         label: 'Appliance Daemons',
-        icon: <Layers className="w-5 h-5" />,
+        shortLabel: 'Services',
+        icon: <Layers className="w-4 h-4" />,
         badge: services.filter((s) => s.activeState === 'active').length,
       },
       {
         id: 'store',
-        label: 'Appliance Store',
-        icon: <ShoppingBag className="w-5 h-5" />,
+        label: 'App Store',
+        shortLabel: 'Store',
+        icon: <ShoppingBag className="w-4 h-4" />,
       },
       {
         id: 'hardware',
         label: 'Hardware & TPM',
-        icon: <Cpu className="w-5 h-5" />,
+        shortLabel: 'Hardware',
+        icon: <Cpu className="w-4 h-4" />,
       },
       {
         id: 'settings',
         label: 'System Manifest',
-        icon: <Settings className="w-5 h-5" />,
+        shortLabel: 'Settings',
+        icon: <Settings className="w-4 h-4" />,
       },
     );
     return items;
@@ -301,57 +307,77 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="relative isolate min-h-screen text-tinapple-text pb-28 selection:bg-tinapple-gold/20 selection:text-tinapple-gold">
+    <div className="relative isolate min-h-screen text-tinapple-text pb-12 selection:bg-tinapple-gold/20 selection:text-tinapple-gold">
       {/* Configurable background and ambient effects */}
       <FullWindowBackground settings={settings} />
       <AppearanceModal isOpen={appearanceOpen} onClose={() => setAppearanceOpen(false)} settings={settings} onUpdate={setSettings} colorStatus={colorStatus} storageStatus={storageStatus} />
 
       {/* FLOATING TOP COMMAND DOCK */}
       <header className="fixed top-3 sm:top-4 inset-x-0 z-40 flex justify-center pointer-events-none px-3 sm:px-6">
-        <div className="pointer-events-auto w-full max-w-[1440px] tinapple-glass-card rounded-2xl shadow-2xl shadow-black/40 px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-3 transition-all duration-300">
-          {/* System identity */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
+        <div className="pointer-events-auto w-full max-w-[1440px] tinapple-glass-card rounded-2xl shadow-2xl shadow-black/40 px-3 sm:px-5 h-14 sm:h-16 flex items-center justify-between gap-2 sm:gap-4 transition-all duration-300">
+          {/* Left: System identity */}
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            <div className="flex items-center gap-1.5 sm:gap-2">
               <span className="font-mono font-extrabold text-base tracking-tight text-white">tinapple</span>
-              <span className="hidden min-[400px]:inline text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/[0.05] border border-white/10 text-tinapple-gold font-semibold">v0.0.1</span>
+              <span className="hidden min-[420px]:inline text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/[0.05] border border-white/10 text-tinapple-gold font-semibold">v0.0.1</span>
             </div>
-            <span className="hidden sm:block truncate text-[11px] font-mono text-zinc-400" title={`APPLIANCE OS HUB • ${systemInfo.hostname}`}>
-              APPLIANCE OS HUB • {systemInfo.hostname}
+            <span className="hidden 2xl:block truncate text-[11px] font-mono text-zinc-400 max-w-[140px]" title={`APPLIANCE OS HUB • ${systemInfo.hostname}`}>
+              • {systemInfo.hostname}
             </span>
           </div>
 
-          {/* Live status */}
-          <div className="hidden lg:flex shrink-0 items-center justify-center gap-2">
-            <div className={statusPillClass}>
-              <span className="w-1.5 h-1.5 rounded-full bg-tinapple-green animate-pulse" />
-              <Activity className="w-3.5 h-3.5" />
-              <span>SSE Live</span>
-            </div>
-            <div className={statusPillClass}>
-              {systemInfo.sessionMode === 'headless'
-                ? <Terminal className="w-3.5 h-3.5 text-tinapple-gold" />
-                : <Monitor className="w-3.5 h-3.5 text-tinapple-gold" />}
-              <span className="capitalize">{systemInfo.sessionMode} Mode</span>
-            </div>
-            {!systemInfo.installed && (
-              <button
-                onClick={() => setActiveTab(activeTab === 'welcome' ? 'dashboard' : 'welcome')}
-                className={`${statusPillClass} hover:bg-white/[0.08] hover:border-white/20 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tinapple-gold`}
-                title={activeTab === 'welcome' ? 'Open Appliance Dashboard' : 'Open Welcome & Installer'}
-                aria-label={activeTab === 'welcome' ? 'Open Appliance Dashboard' : 'Open Welcome & Installer'}
-              >
-                <Sparkles className="w-3.5 h-3.5 text-tinapple-gold" />
-                <span>{activeTab === 'welcome' ? 'Dashboard' : 'Installer'}</span>
-              </button>
-            )}
-          </div>
+          {/* Center: Main Navigation (Relocated from bottom dock) */}
+          <nav aria-label="Main Navigation" className="flex items-center gap-1 sm:gap-1.5 p-1 rounded-2xl bg-black/25 border border-white/[0.06] backdrop-blur-md">
+            {dockItems.map((item) => {
+              const isActive = activeTab === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveTab(item.id)}
+                  title={item.label}
+                  aria-label={item.label}
+                  className={`relative flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1.5 rounded-xl font-mono text-xs font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tinapple-gold active:scale-95 ${
+                    isActive
+                      ? 'bg-tinapple-surface border border-tinapple-gold/70 text-tinapple-gold shadow-lg shadow-tinapple-gold/15'
+                      : 'border border-transparent text-tinapple-subtext hover:bg-white/[0.06] hover:text-white'
+                  }`}
+                >
+                  <span className="shrink-0">{item.icon}</span>
+                  <span className={`whitespace-nowrap ${isActive ? 'hidden sm:inline' : 'hidden lg:inline'}`}>
+                    {item.shortLabel || item.label}
+                  </span>
+                  {item.badge !== undefined && (
+                    <span className="px-1.5 min-w-4 h-4 flex items-center justify-center text-[10px] font-mono font-bold rounded-full bg-tinapple-green text-tinapple-dark shadow-sm">
+                      {item.badge}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </nav>
 
-          {/* Action center */}
-          <div className="flex lg:flex-1 shrink-0 items-center justify-end gap-1.5 sm:gap-2">
-            <div className="hidden xl:flex items-center gap-1.5 mr-1 text-xs font-mono font-medium text-zinc-300" title="System uptime">
+          {/* Right: Actions and Live Status */}
+          <div className="flex items-center justify-end gap-1.5 sm:gap-2 shrink-0">
+            {/* Live status indicators on large screens */}
+            <div className="hidden xl:flex items-center gap-2 mr-1">
+              <div className={statusPillClass} title="Real-time Server Sent Events connected">
+                <span className="w-1.5 h-1.5 rounded-full bg-tinapple-green animate-pulse" />
+                <Activity className="w-3.5 h-3.5" />
+                <span>SSE Live</span>
+              </div>
+              <div className={statusPillClass} title={`Session mode: ${systemInfo.sessionMode}`}>
+                {systemInfo.sessionMode === 'headless'
+                  ? <Terminal className="w-3.5 h-3.5 text-tinapple-gold" />
+                  : <Monitor className="w-3.5 h-3.5 text-tinapple-gold" />}
+                <span className="capitalize">{systemInfo.sessionMode} Mode</span>
+              </div>
+            </div>
+
+            <div className="hidden 2xl:flex items-center gap-1.5 mr-1 text-xs font-mono font-medium text-zinc-300" title="System uptime">
               <Timer className="w-3.5 h-3.5 text-zinc-400" />
               <span>{formatUptime(systemInfo.uptime)}</span>
             </div>
+
             <button
               onClick={() => setAppearanceOpen(true)}
               className={actionButtonClass}
@@ -528,13 +554,6 @@ export const App: React.FC = () => {
           )}
         </AnimatePresence>
       </main>
-
-      {/* FLOATING NAVIGATION DOCK */}
-      <div className="fixed bottom-6 inset-x-0 flex justify-center z-40 pointer-events-none">
-        <div className="pointer-events-auto">
-          <Dock items={dockItems} activeId={activeTab} onSelect={setActiveTab} />
-        </div>
-      </div>
 
       {/* FLOATING LOGS TERMINAL MODAL */}
       <LogsModal
