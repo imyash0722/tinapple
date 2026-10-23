@@ -42,7 +42,7 @@ func TestSettingsModelOperations(t *testing.T) {
 	}
 
 	// Test Integer Increment
-	m.ActiveSection = 2 // chadwm
+	m.ActiveSection = 2 // niri
 	m.Cursor = 1        // gaps
 	initialGaps := m.Values["gaps"].(int)
 	m.handleIncrement(5)
