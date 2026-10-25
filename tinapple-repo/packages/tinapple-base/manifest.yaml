@@ -19,6 +19,9 @@ services:
   qbittorrent:
     enabled: true
     user: media
+  metube:
+    enabled: true
+    port: 8085
   syncthing:
     enabled: true
     device_id: "ABCDEF-123456"

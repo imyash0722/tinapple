@@ -1,0 +1,12 @@
+[Unit]
+Description=Tinapple YouTube to Jellyfin NFO & Metadata Sync
+After=network.target
+
+[Service]
+Type=oneshot
+User=media
+Group=media
+UMask=0002
+ExecStart=/usr/bin/tinapple-yt-to-jellyfin-nfo /srv/media/youtube
+StandardOutput=journal
+StandardError=journal

@@ -18,5 +18,7 @@ enable tinapple-nginx.service
 # enable tinapple-dash.service          # desktop profile
 # enable jellyfin.service              # media profile
 # enable qbittorrent-nox@.service      # downloads profile
+# enable metube.service                  # downloads profile
+# enable tinapple-youtube-sync.timer     # downloads profile
 # enable syncthing@.service            # base profile
 # enable tailscaled.service            # base profile

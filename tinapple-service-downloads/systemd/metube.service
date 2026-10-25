@@ -1,0 +1,32 @@
+[Unit]
+Description=MeTube Headless YouTube Downloader
+Documentation=https://github.com/alexta69/metube
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=exec
+User=media
+Group=media
+UMask=0002
+EnvironmentFile=-/etc/tinapple/metube.env
+ExecStart=/usr/bin/metube
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+# Security hardening
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/srv/media /var/lib/metube /etc/tinapple
+ProtectControlGroups=yes
+ProtectKernelModules=yes
+ProtectKernelTunables=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictNamespaces=yes
+
+[Install]
+WantedBy=multi-user.target

@@ -32,6 +32,23 @@ func TestRoutesAndAliases(t *testing.T) {
 		t.Fatal("empty catalog must retain only hub")
 	}
 }
+
+func TestMeTubeRoute(t *testing.T) {
+	app := App{ID: "metube", Package: "metube", Unit: "metube.service", Port: 8085}
+	if err := ValidateApp(app); err != nil {
+		t.Fatalf("validation failed for metube: %v", err)
+	}
+	data, err := Render([]App{app}, []string{"server.local"})
+	if err != nil {
+		t.Fatalf("failed to render metube route: %v", err)
+	}
+	if !strings.Contains(string(data), "location ^~ /youtube/") {
+		t.Errorf("missing /youtube/ route in nginx config: %s", string(data))
+	}
+	if !strings.Contains(string(data), "proxy_pass http://127.0.0.1:8085/;") {
+		t.Errorf("missing proxy_pass 8085 in nginx config: %s", string(data))
+	}
+}
 func TestRejectConfigInjection(t *testing.T) {
 	for _, domain := range []string{"bad;server{}", "*.local", "a..b", "-a.local", "a\nb"} {
 		if _, err := Render(Defaults, []string{domain}); err == nil {

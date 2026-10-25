@@ -20,7 +20,7 @@ type App struct {
 }
 
 // Only HTTP applications are proxied; databases and game protocols are excluded.
-var Paths = map[string]string{"jellyfin": "jellyfin", "qbittorrent": "qbittorrent", "suwayomi": "suwayomi", "filebrowser": "files", "navidrome": "navidrome", "vaultwarden": "vault", "sonarr": "sonarr", "radarr": "radarr", "prowlarr": "prowlarr", "bazarr": "bazarr", "syncthing": "syncthing", "grafana": "grafana", "prometheus": "prometheus", "seerr": "seerr", "adguard": "adguard"}
+var Paths = map[string]string{"jellyfin": "jellyfin", "qbittorrent": "qbittorrent", "suwayomi": "suwayomi", "filebrowser": "files", "navidrome": "navidrome", "vaultwarden": "vault", "sonarr": "sonarr", "radarr": "radarr", "prowlarr": "prowlarr", "bazarr": "bazarr", "syncthing": "syncthing", "grafana": "grafana", "prometheus": "prometheus", "seerr": "seerr", "adguard": "adguard", "metube": "youtube"}
 var Defaults = []App{
 	{"jellyfin", "jellyfin-server", "jellyfin.service", 8096},
 	{"qbittorrent", "qbittorrent-nox", "qbittorrent-nox.service", 8080},

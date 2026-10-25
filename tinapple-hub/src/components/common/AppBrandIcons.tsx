@@ -28,6 +28,16 @@ export const APP_BRAND_CONFIG: Record<string, BrandConfig> = {
     iconPath: '/icons/qbittorrent.svg',
     accentColor: '#3A75C4',
   },
+  metube: {
+    name: 'MeTube',
+    iconPath: '/icons/youtube.svg',
+    accentColor: '#FF0000',
+  },
+  youtube: {
+    name: 'YouTube Downloader',
+    iconPath: '/icons/youtube.svg',
+    accentColor: '#FF0000',
+  },
   suwayomi: {
     name: 'Suwayomi',
     iconPath: '/icons/suwayomi.png',

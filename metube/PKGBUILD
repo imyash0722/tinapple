@@ -1,0 +1,53 @@
+# Maintainer: tinapple Project <https://github.com/tinapple/tinapple-arch>
+pkgname=metube
+pkgver=2026.10.23
+pkgrel=1
+pkgdesc="Headless Web GUI for downloading YouTube videos and playlists (using yt-dlp)"
+arch=('any')
+url="https://github.com/alexta69/metube"
+license=('GPL-3.0-only')
+depends=(
+  'python'
+  'python-aiohttp'
+  'python-socketio'
+  'yt-dlp'
+  'python-watchfiles'
+  'ffmpeg'
+)
+optdepends=(
+  'aria2: High-speed multi-threaded downloader support'
+)
+provides=('metube')
+source=()
+sha256sums=()
+
+package() {
+  install -dm755 "$pkgdir/usr/share/metube"
+  cp -r "$startdir/src/app" "$pkgdir/usr/share/metube/"
+  cp -r "$startdir/src/ui" "$pkgdir/usr/share/metube/"
+
+  # Launcher
+  install -Dm755 "$startdir/bin/metube" "$pkgdir/usr/bin/metube"
+
+  # NFO synchronizer
+  install -Dm755 "$startdir/../tinapple-service-downloads/bin/tinapple-yt-to-jellyfin-nfo" \
+    "$pkgdir/usr/bin/tinapple-yt-to-jellyfin-nfo"
+
+  # Systemd units
+  install -Dm644 "$startdir/../tinapple-service-downloads/systemd/metube.service" \
+    "$pkgdir/usr/lib/systemd/system/metube.service"
+  install -Dm644 "$startdir/../tinapple-service-downloads/systemd/tinapple-youtube-sync.service" \
+    "$pkgdir/usr/lib/systemd/system/tinapple-youtube-sync.service"
+  install -Dm644 "$startdir/../tinapple-service-downloads/systemd/tinapple-youtube-sync.timer" \
+    "$pkgdir/usr/lib/systemd/system/tinapple-youtube-sync.timer"
+
+  # Systemd sysusers & tmpfiles
+  install -Dm644 "$startdir/../tinapple-service-downloads/configs/sysusers-metube.conf" \
+    "$pkgdir/usr/lib/sysusers.d/tinapple-metube.conf"
+  install -Dm644 "$startdir/../tinapple-service-downloads/configs/tmpfiles-metube.conf" \
+    "$pkgdir/usr/lib/tmpfiles.d/tinapple-metube.conf"
+
+  # Default environment configuration
+  install -Dm644 "$startdir/../tinapple-service-downloads/configs/metube.env" \
+    "$pkgdir/etc/tinapple/metube.env"
+}

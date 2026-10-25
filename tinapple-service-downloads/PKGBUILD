@@ -2,15 +2,28 @@
 pkgname=tinapple-service-downloads
 pkgver=0.0.1
 pkgrel=1
-pkgdesc="Download clients for tinapple (qbittorrent, transmission, jdownloader2, flaresolverr)"
+pkgdesc="Download clients for tinapple (qbittorrent, transmission, jdownloader2, flaresolverr, metube)"
 arch=(any)
 url="https://github.com/tinapple/tinapple-arch"
 license=(MIT)
-depends=('qbittorrent-nox' 'transmission-cli' 'jdownloader2' 'flaresolverr')
+depends=('qbittorrent-nox' 'transmission-cli' 'jdownloader2' 'flaresolverr' 'metube')
 install=tinapple-service-downloads.install
 source=()
 sha256sums=()
 
 package() {
   install -dm755 "$pkgdir/usr/share/tinapple-service-downloads"
+  
+  # Binaries
+  install -Dm755 bin/tinapple-yt-to-jellyfin-nfo "$pkgdir/usr/bin/tinapple-yt-to-jellyfin-nfo"
+
+  # Systemd services
+  install -Dm644 systemd/metube.service "$pkgdir/usr/lib/systemd/system/metube.service"
+  install -Dm644 systemd/tinapple-youtube-sync.service "$pkgdir/usr/lib/systemd/system/tinapple-youtube-sync.service"
+  install -Dm644 systemd/tinapple-youtube-sync.timer "$pkgdir/usr/lib/systemd/system/tinapple-youtube-sync.timer"
+
+  # Configs
+  install -Dm644 configs/metube.env "$pkgdir/etc/tinapple/metube.env"
+  install -Dm644 configs/sysusers-metube.conf "$pkgdir/usr/lib/sysusers.d/tinapple-metube.conf"
+  install -Dm644 configs/tmpfiles-metube.conf "$pkgdir/usr/lib/tmpfiles.d/tinapple-metube.conf"
 }
