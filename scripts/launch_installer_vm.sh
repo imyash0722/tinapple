@@ -41,8 +41,8 @@ if [[ ! -f "$OVMF_VARS" ]]; then
 fi
 
 if [[ ! -f "$DISK" ]]; then
-    echo "Creating clean 25GB target disk: $DISK"
-    qemu-img create -f qcow2 "$DISK" 25G
+    echo "Creating clean 35GB target disk: $DISK"
+    qemu-img create -f qcow2 "$DISK" 35G
 fi
 
 echo "==> Launching Tinapple VM in QEMU..."
@@ -66,7 +66,7 @@ QEMU_CMD=(
     -display gtk,grab-on-hover=on,show-menubar=on
     -qmp unix:/tmp/qemu-tinapple-qmp.sock,server,nowait
     -serial file:"${PROJECT_DIR}/out/qemu-serial.log"
-    -netdev user,id=net0,ipv6=off,hostfwd=tcp::2222-:22,hostfwd=tcp::3000-:3000,hostfwd=tcp::4566-:4566,hostfwd=tcp::4567-:4567,hostfwd=tcp::8080-:8080,hostfwd=tcp::8088-:8088,hostfwd=tcp::8096-:8096,hostfwd=tcp::3389-:3389,hostfwd=tcp::25565-:25565,hostfwd=tcp::8443-:8443
+    -netdev user,id=net0,ipv6=off,hostfwd=tcp::2222-:22,hostfwd=tcp::3000-:3000,hostfwd=tcp::4566-:4566,hostfwd=tcp::4567-:4567,hostfwd=tcp::8080-:8080,hostfwd=tcp::8085-:8085,hostfwd=tcp::8088-:8088,hostfwd=tcp::8096-:8096,hostfwd=tcp::3389-:3389,hostfwd=tcp::25565-:25565,hostfwd=tcp::8443-:8443
     -device virtio-net-pci,netdev=net0,bootindex=3
     -device usb-ehci,id=ehci
     -device usb-kbd
