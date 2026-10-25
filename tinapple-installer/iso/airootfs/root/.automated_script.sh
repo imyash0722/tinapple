@@ -28,7 +28,7 @@ fi
 if [[ "$(tty)" == "/dev/tty1" ]] && [[ -z "${TINAPPLE_INSTALLER_RUNNING:-}" ]] && [[ ! -f /tmp/.tinapple_installer_exited ]]; then
   export TINAPPLE_INSTALLER_RUNNING=1
   touch /tmp/.tinapple_installer_exited
-  /usr/local/bin/tinapple-install || true
+  /usr/local/bin/tinapple-installer-launcher || /usr/local/bin/tinapple-install || true
   # Fallback to interactive shell on TUI exit (q key)
   echo ""
   echo "Installer exited. Dropping to root shell."

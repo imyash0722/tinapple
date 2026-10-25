@@ -9,7 +9,7 @@ ConditionPathExists=/dev/tty1
 
 [Service]
 Type=simple
-ExecStart=/usr/local/bin/tinapple-install
+ExecStart=/usr/local/bin/tinapple-installer-launcher
 StandardInput=tty
 StandardOutput=journal+console
 StandardError=journal+console

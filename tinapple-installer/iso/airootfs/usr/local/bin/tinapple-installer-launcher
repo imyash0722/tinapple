@@ -1,0 +1,143 @@
+#!/usr/bin/env bash
+# tinapple-installer-launcher — Direct TUI installer entrypoint with initial nmtui network setup
+set -e
+
+# Ensure NetworkManager service is active
+if command -v systemctl >/dev/null 2>&1; then
+    systemctl start NetworkManager 2>/dev/null || true
+fi
+
+# Visual styling
+BOLD='\033[1m'
+CYAN='\033[36m'
+GREEN='\033[32m'
+YELLOW='\033[33m'
+BLUE='\033[34m'
+NC='\033[0m'
+
+show_banner() {
+    clear
+    echo -e "${CYAN}${BOLD}"
+    echo "  ╭────────────────────────────────────────────────────────────────────────────╮"
+    echo "  │  ◈  TINAPPLE SERVER OS  ▪  HOMELAB APPLIANCE  ▪  INSTALLER SETUP ◈        │"
+    echo "  ╰────────────────────────────────────────────────────────────────────────────╯"
+    echo -e "${NC}"
+}
+
+# Network setup loop
+while true; do
+    show_banner
+    echo -e "  ${BOLD}Step 1: Network Configuration${NC}"
+    echo -e "  ─────────────────────────────"
+    echo -e "  Opening NetworkManager TUI (${CYAN}nmtui${NC}) to configure Ethernet or Wi-Fi..."
+    echo -e "  Connect to your network, then select ${BOLD}<Quit>${NC} or ${BOLD}<Back>${NC} to continue."
+    echo ""
+    echo -e "  ${YELLOW}Launching nmtui in 1 second...${NC}"
+    sleep 1
+
+    # Launch nmtui (connect menu first, fallback to general nmtui)
+    if command -v nmtui >/dev/null 2>&1; then
+        nmtui connect || nmtui || true
+    else
+        echo -e "  ${YELLOW}nmtui not found. Skipping interactive network setup.${NC}"
+        sleep 1
+    fi
+
+    show_banner
+    echo -e "  ${BOLD}Checking Network Connectivity...${NC}"
+    echo ""
+
+    # Gather active interfaces and IP addresses
+    ACTIVE_IPS=$(ip -4 -br addr show 2>/dev/null | grep -v '^[[:space:]]*lo' || true)
+
+    # Test internet reachability
+    ONLINE=false
+    if ping -c 1 -W 2 1.1.1.1 >/dev/null 2>&1 || ping -c 1 -W 2 8.8.8.8 >/dev/null 2>&1 || curl -s -m 3 -I https://archlinux.org >/dev/null 2>&1; then
+        ONLINE=true
+    fi
+
+    if [[ "$ONLINE" == "true" ]]; then
+        echo -e "  ${GREEN}[✔] Network connected successfully!${NC}"
+        echo ""
+        if [[ -n "$ACTIVE_IPS" ]]; then
+            echo -e "  ${BOLD}Active Network Interfaces:${NC}"
+            while IFS= read -r line; do
+                if [[ -n "$line" ]]; then
+                    echo -e "    ${GREEN}•${NC} $line"
+                fi
+            done <<< "$ACTIVE_IPS"
+        fi
+        echo ""
+        echo -e "  Ready to proceed with Tinapple Server OS installation."
+        echo ""
+        read -r -p "  Continue to Tinapple Installer TUI? [Y/n/reconfigure]: " choice
+        choice="${choice:-y}"
+        case "${choice,,}" in
+            r|reconfigure|rec)
+                continue
+                ;;
+            n|no)
+                echo ""
+                echo -e "  ${CYAN}Dropping to shell. Run 'tinapple-install' when you are ready to continue.${NC}"
+                exit 0
+                ;;
+            *)
+                # Default Yes / Enter
+                break
+                ;;
+        esac
+    else
+        echo -e "  ${YELLOW}[⚠] Warning: No active internet connection detected.${NC}"
+        if [[ -n "$ACTIVE_IPS" ]]; then
+            echo ""
+            echo -e "  ${BOLD}Assigned Local IP(s):${NC}"
+            while IFS= read -r line; do
+                if [[ -n "$line" ]]; then
+                    echo -e "    • $line"
+                fi
+            done <<< "$ACTIVE_IPS"
+        fi
+        echo ""
+        echo "  Please choose an option:"
+        echo "    [1] Re-open Network Setup (nmtui)"
+        echo "    [2] Continue to Installer TUI anyway (offline mode)"
+        echo "    [3] Exit to shell"
+        echo ""
+        read -r -p "  Selection [1-3, default 1]: " fail_choice
+        fail_choice="${fail_choice:-1}"
+        case "$fail_choice" in
+            2)
+                echo ""
+                echo -e "  ${YELLOW}Continuing in offline mode...${NC}"
+                sleep 0.5
+                break
+                ;;
+            3)
+                echo ""
+                echo -e "  ${CYAN}Exiting to shell. Run 'tinapple-install' to launch the installer anytime.${NC}"
+                exit 0
+                ;;
+            *)
+                continue
+                ;;
+        esac
+    fi
+done
+
+clear
+echo -e "${GREEN}${BOLD}==> Launching Tinapple Installer TUI...${NC}"
+sleep 0.3
+
+# Execute the Go BubbleTea TUI installer
+if [[ -x /usr/local/bin/tinapple-install ]]; then
+    exec /usr/local/bin/tinapple-install
+elif [[ -x /usr/local/bin/tinapple-tui ]]; then
+    exec /usr/local/bin/tinapple-tui
+elif [[ -x /usr/bin/tinapple-install ]]; then
+    exec /usr/bin/tinapple-install
+elif [[ -x "$(dirname "$0")/tinapple-install" ]]; then
+    exec "$(dirname "$0")/tinapple-install"
+else
+    echo "Error: tinapple-install binary not found." >&2
+    exit 1
+fi

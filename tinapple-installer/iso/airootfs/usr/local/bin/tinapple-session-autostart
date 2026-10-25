@@ -15,11 +15,20 @@ elif command -v waybar >/dev/null 2>&1; then
     waybar >/dev/null 2>&1 &
 fi
 
-# If booted into live ISO media and not yet installed, launch appliance Welcome & Installer
+# If booted into live ISO media and not yet installed, directly launch TUI installer in terminal
 if [[ -d /run/archiso ]] && [[ ! -f /var/lib/tinapple/firstboot-done ]] && [[ ! -f /var/lib/tinapple/installed ]]; then
-    if command -v tinapple-welcome >/dev/null 2>&1; then
-        tinapple-welcome &
-    elif command -v tinapple-gui-installer >/dev/null 2>&1; then
-        tinapple-gui-installer &
+    LAUNCHER="/usr/local/bin/tinapple-installer-launcher"
+    if [[ ! -x "$LAUNCHER" ]]; then
+        LAUNCHER="/usr/local/bin/tinapple-install"
+    fi
+
+    if command -v foot >/dev/null 2>&1; then
+        foot --app-id="tinapple-installer" --title="Tinapple OS Installer" "$LAUNCHER" &
+    elif command -v kitty >/dev/null 2>&1; then
+        kitty --app-id="tinapple-installer" --title="Tinapple OS Installer" "$LAUNCHER" &
+    elif command -v alacritty >/dev/null 2>&1; then
+        alacritty --class="tinapple-installer" --title="Tinapple OS Installer" -e "$LAUNCHER" &
+    else
+        xterm -title "Tinapple OS Installer" -e "$LAUNCHER" &
     fi
 fi

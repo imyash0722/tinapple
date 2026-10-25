@@ -1,23 +1,22 @@
 #!/usr/bin/env bash
-# Tinapple OS - CachyOS-Style Welcome & Installer App
+# Tinapple OS - Installer Launcher
 set -euo pipefail
 
-PORT=3000
-HUB_DIR="/usr/share/tinapple-hub"
-
-if [[ -d "$HUB_DIR/dist" ]]; then
-    if ! pgrep -f "python.*http.server.*$PORT" >/dev/null 2>&1; then
-        (cd "$HUB_DIR/dist" && python3 -m http.server "$PORT" >/dev/null 2>&1 &)
-        sleep 0.4
-    fi
+LAUNCHER="/usr/local/bin/tinapple-installer-launcher"
+if [[ ! -x "$LAUNCHER" ]]; then
+    LAUNCHER="/usr/local/bin/tinapple-install"
 fi
 
-URL="http://localhost:$PORT/?tab=welcome"
-
-if command -v firefox >/dev/null 2>&1; then
-    exec firefox --new-window "$URL"
-elif command -v chromium >/dev/null 2>&1; then
-    exec chromium --app="$URL" --window-size=1280,820
-elif command -v tinapple-gui-installer >/dev/null 2>&1; then
-    exec tinapple-gui-installer
+if [[ -n "${WAYLAND_DISPLAY:-}" || -n "${DISPLAY:-}" ]]; then
+    if command -v foot >/dev/null 2>&1; then
+        exec foot --app-id="tinapple-installer" --title="Tinapple OS Installer" "$LAUNCHER"
+    elif command -v kitty >/dev/null 2>&1; then
+        exec kitty --app-id="tinapple-installer" --title="Tinapple OS Installer" "$LAUNCHER"
+    elif command -v alacritty >/dev/null 2>&1; then
+        exec alacritty --class="tinapple-installer" --title="Tinapple OS Installer" -e "$LAUNCHER"
+    else
+        exec xterm -title "Tinapple OS Installer" -e "$LAUNCHER"
+    fi
+else
+    exec "$LAUNCHER"
 fi
