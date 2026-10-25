@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -523,6 +524,12 @@ func TestLiveEnvironmentAndBootstrap(t *testing.T) {
 	} {
 		unit := isoAirootfs + "/etc/systemd/system/" + name + ".service"
 		data, err := os.ReadFile(unit)
+		if err == nil && !strings.Contains(string(data), "[") && strings.HasSuffix(strings.TrimSpace(string(data)), ".service") {
+			targetData, err2 := os.ReadFile(filepath.Join(filepath.Dir(unit), strings.TrimSpace(string(data))))
+			if err2 == nil {
+				data = targetData
+			}
+		}
 		if err != nil || !strings.Contains(string(data), expected) {
 			t.Errorf("%s must contain %q: %v", unit, expected, err)
 		}
