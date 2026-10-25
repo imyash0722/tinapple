@@ -1,10 +1,21 @@
 #!/usr/bin/env bash
-# Tinapple OS - Installer Launcher
+# Tinapple OS - Welcome & Installer Launcher
 set -euo pipefail
 
 LAUNCHER="/usr/local/bin/tinapple-installer-launcher"
 if [[ ! -x "$LAUNCHER" ]]; then
     LAUNCHER="/usr/local/bin/tinapple-install"
+fi
+
+# Check if browser welcome was requested or default in desktop session
+if [[ "${1:-}" != "--installer" && "${1:-}" != "--tui" ]] && command -v firefox >/dev/null 2>&1; then
+    for ((i=0; i<5; i++)); do
+        curl -fsS http://127.0.0.1:8088/api/v1/system/info >/dev/null 2>&1 && break
+        sleep 0.5
+    done
+    if curl -fsS http://127.0.0.1:8088/api/v1/system/info >/dev/null 2>&1; then
+        exec firefox --new-window 'http://localhost:8088/?tab=welcome'
+    fi
 fi
 
 if [[ -n "${WAYLAND_DISPLAY:-}" || -n "${DISPLAY:-}" ]]; then

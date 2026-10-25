@@ -1,0 +1,16 @@
+[Unit]
+Description=Tinapple live installer on tty2
+ConditionPathExists=/run/archiso
+After=systemd-user-sessions.service
+Conflicts=getty@tty2.service
+[Service]
+ExecStart=/usr/local/bin/tinapple-tui
+StandardInput=tty
+StandardOutput=tty
+StandardError=journal
+TTYPath=/dev/tty2
+TTYReset=yes
+TTYVHangup=yes
+Environment=TERM=linux
+[Install]
+WantedBy=multi-user.target

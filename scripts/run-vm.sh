@@ -7,8 +7,11 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
-ISO_PATH="${ISO_PATH:-$(ls -t "${ROOT_DIR}/out"/tinapple-os-*.iso 2>/dev/null | head -n 1)}"
-DISK_PATH="${ROOT_DIR}/out/tinapple-vm-disk.qcow2"
+ISO_PATH="${ISO_PATH:-$(ls -t "${ROOT_DIR}/out"/tinapple-os-*.iso 2>/dev/null | head -n 1 || true)}"
+DISK_PATH="${DISK_PATH:-${ROOT_DIR}/out/tinapple-vm-disk.qcow2}"
+FIRMWARE=bios
+HUB_PORT=${HUB_PORT:-8088}
+SSH_PORT=${SSH_PORT:-2222}
 DISK_SIZE="30G"
 RAM="4G"
 CPUS="2"
@@ -21,6 +24,10 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --nographic|--cli|-c)
       MODE="nographic"
+      shift
+      ;;
+    --uefi|--bios)
+      FIRMWARE=${1#--}
       shift
       ;;
     --gui|-g)
@@ -37,6 +44,7 @@ while [[ $# -gt 0 ]]; do
       echo "Options:"
       echo "  --gui, -g           Launch QEMU with a graphical window (default)"
       echo "  --nographic, -c     Launch QEMU directly inside your current terminal"
+      echo "  --uefi / --bios     Firmware (default BIOS); HUB_PORT/SSH_PORT override forwarding"
       echo "  --installed         Boot directly from the virtual disk (no ISO)"
       echo "  --help, -h          Show this help message"
       exit 0
@@ -48,7 +56,7 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-if [[ ! -f "$ISO_PATH" ]]; then
+if [[ "$BOOT_DEV" == d && ! -f "$ISO_PATH" ]]; then
   echo "Error: ISO not found at $ISO_PATH" >&2
   exit 1
 fi
@@ -72,9 +80,16 @@ QEMU_ARGS=(
   -m "$RAM"
   -smp "$CPUS"
   -drive "file=${DISK_PATH},if=virtio,format=qcow2"
-  -netdev "user,id=net0,hostfwd=tcp::2222-:22,hostfwd=tcp::8088-:8088"
+  -netdev "user,id=net0,hostfwd=tcp:127.0.0.1:${SSH_PORT}-:22,hostfwd=tcp:127.0.0.1:${HUB_PORT}-:8088"
   -device "virtio-net-pci,netdev=net0"
 )
+
+if [[ "$FIRMWARE" == uefi ]]; then
+  VARS_PATH="${DISK_PATH%.qcow2}-OVMF_VARS.fd"
+  [[ -f "$VARS_PATH" ]] || cp /usr/share/edk2/x64/OVMF_VARS.4m.fd "$VARS_PATH"
+  QEMU_ARGS+=(-drive if=pflash,format=raw,readonly=on,file=/usr/share/edk2/x64/OVMF_CODE.4m.fd
+              -drive "if=pflash,format=raw,file=$VARS_PATH")
+fi
 
 if [[ "$BOOT_DEV" == "d" ]]; then
   QEMU_ARGS+=(
@@ -85,7 +100,7 @@ fi
 
 if [[ "$MODE" == "gui" ]]; then
   echo "Starting tinapple OS VM in GUI mode..."
-  echo "Forwarded ports: SSH -> localhost:2222 | Web Dashboard -> localhost:8088"
+  echo "Forwarded ports: SSH -> localhost:${SSH_PORT} | Web Dashboard -> localhost:${HUB_PORT}"
   exec "${QEMU_ARGS[@]}" -vga virtio -display gtk
 else
   echo "Starting tinapple OS VM in terminal mode (Ctrl+A then X to exit)..."

@@ -511,21 +511,25 @@ func TestLiveEnvironmentAndBootstrap(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to read %s: %v", autoScript, err)
 	}
-	if !strings.Contains(string(content), "/usr/local/bin/tinapple-install") {
-		t.Errorf("%s should reference /usr/local/bin/tinapple-install", autoScript)
-	}
-	if !strings.Contains(string(content), "tty1") {
-		t.Errorf("%s should check for tty1", autoScript)
+	if !strings.Contains(string(content), "tty2") {
+		t.Errorf("%s should direct users to the dedicated installer console", autoScript)
 	}
 
-	// 4. Check systemd services
-	isoService := isoAirootfs + "/etc/systemd/system/tinapple-install.service"
-	isContent, err := os.ReadFile(isoService)
-	if err != nil {
-		t.Fatalf("failed to read %s: %v", isoService, err)
-	}
-	if !strings.Contains(string(isContent), "ExecStart=/usr/local/bin/tinapple-install") {
-		t.Errorf("%s missing ExecStart", isoService)
+	// The graphical session owns tty1; the installer must use a separate VT.
+	for name, expected := range map[string]string{
+		"tinapple-installer":         "TTYPath=/dev/tty2",
+		"tinapple-dash":              "ExecStart=/usr/local/bin/tinapple-dash",
+		"tinapple-session-autostart": "TTYPath=/dev/tty1",
+	} {
+		unit := isoAirootfs + "/etc/systemd/system/" + name + ".service"
+		data, err := os.ReadFile(unit)
+		if err != nil || !strings.Contains(string(data), expected) {
+			t.Errorf("%s must contain %q: %v", unit, expected, err)
+		}
+		link := isoAirootfs + "/etc/systemd/system/multi-user.target.wants/" + name + ".service"
+		if _, err := os.Stat(link); err != nil {
+			t.Errorf("live service must be enabled: %s: %v", link, err)
+		}
 	}
 
 	firstbootService := "../../tinapple-firstboot/systemd/tinapple-install.service"

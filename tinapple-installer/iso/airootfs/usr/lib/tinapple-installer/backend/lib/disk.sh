@@ -221,7 +221,7 @@ tinapple_partition() {
       else
         if (( swap_gib > 0 )); then
           sfdisk --label dos "$disk" <<EOF || die "failed to partition %s with sfdisk" "$disk"
-,${esp_gib}G,c,*
+,${esp_gib}G,83,*
 ,${swap_gib}G,82
 ,,83
 EOF
@@ -230,7 +230,7 @@ EOF
           export TINAPPLE_PART_ROOT="$(part_dev "$disk" 3)"
         else
           sfdisk --label dos "$disk" <<EOF || die "failed to partition %s with sfdisk" "$disk"
-,${esp_gib}G,c,*
+,${esp_gib}G,83,*
 ,,83
 EOF
           export TINAPPLE_PART_ESP="$(part_dev "$disk" 1)"

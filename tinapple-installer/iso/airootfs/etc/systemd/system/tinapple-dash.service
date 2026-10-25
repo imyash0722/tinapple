@@ -1,0 +1,11 @@
+[Unit]
+Description=Tinapple Live Web Hub
+After=network.target
+[Service]
+ExecStart=/usr/local/bin/tinapple-dash
+WorkingDirectory=/usr/share/tinapple-dash
+Environment=PORT=8088
+Restart=on-failure
+RestartSec=3
+[Install]
+WantedBy=multi-user.target

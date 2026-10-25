@@ -10,11 +10,15 @@ WORK_DIR="${WORK_DIR:-/var/tmp/tinapple-iso-build-$$}"
 BUILD_DATE=$(date -u +%Y%m%d)
 GPG_KEY_ID="${GPG_KEY_ID:-0D97CDA2E0E3F18B8CDE9674ADB704C6BBCC650A}"
 
-cleanup() {
-    echo "Cleaning up work directory ${WORK_DIR}..."
-    rm -rf "$WORK_DIR"
-}
-trap cleanup EXIT
+# Preserve failed build trees for diagnosis; never remove an arbitrary WORK_DIR.
+[[ $EUID -eq 0 ]] || { echo "Run with sudo" >&2; exit 1; }
+if [[ ${STAGE_ARTIFACTS:-1} == 1 ]]; then
+    if [[ -n ${SUDO_USER:-} ]]; then
+        runuser -u "$SUDO_USER" -- "$PROFILE_DIR/../../scripts/stage-live-artifacts.sh"
+    else
+        "$PROFILE_DIR/../../scripts/stage-live-artifacts.sh"
+    fi
+fi
 
 mkdir -p "$OUT_DIR" "$PROJECT_OUT" "$WORK_DIR"
 
@@ -25,7 +29,16 @@ echo "Output directory:  $OUT_DIR"
 
 echo "Staging build profile in ${WORK_DIR}/profile..."
 BUILD_PROFILE="${WORK_DIR}/profile"
-cp -a "$PROFILE_DIR" "$BUILD_PROFILE"
+mkdir -p "$BUILD_PROFILE"
+rsync -a --exclude /out/ "$PROFILE_DIR/" "$BUILD_PROFILE/"
+# Re-index a private repository copy: checked-in databases may describe older
+# builds with the same package version but different archive sizes/checksums.
+REPO_SOURCE="$(realpath "$PROFILE_DIR/../../tinapple-repo/repo")"
+REPO_DIR="$WORK_DIR/repo"
+mkdir -p "$REPO_DIR/x86_64"
+cp "$REPO_SOURCE/x86_64/"*.pkg.tar.zst "$REPO_DIR/x86_64/"
+(cd "$REPO_DIR/x86_64" && repo-add -q tinapple.db.tar.zst ./*.pkg.tar.zst)
+sed -i "s|@TINAPPLE_REPO@|$REPO_DIR|g" "$BUILD_PROFILE/pacman.conf"
 
 # Embed offline core packages into ISO local repository
 OFFLINE_REPO="${BUILD_PROFILE}/airootfs/opt/tinapple-repo/x86_64"
@@ -56,7 +69,7 @@ if [[ -d "$HOST_CACHE" ]]; then
     # Re-index tinapple.db with embedded packages
     if compgen -G "$OFFLINE_REPO/*.pkg.tar.zst" >/dev/null; then
         echo "Updating offline repository database index (tinapple.db)..."
-        (cd "$OFFLINE_REPO" && repo-add -q -n tinapple.db.tar.zst ./*.pkg.tar.zst 2>/dev/null || true)
+        (cd "$OFFLINE_REPO" && repo-add -q tinapple.db.tar.zst ./*.pkg.tar.zst 2>/dev/null || true)
         cp -f "$OFFLINE_REPO"/tinapple.db.tar.zst "$OFFLINE_REPO"/tinapple.db 2>/dev/null || true
         cp -f "$OFFLINE_REPO"/tinapple.files.tar.zst "$OFFLINE_REPO"/tinapple.files 2>/dev/null || true
         echo "Offline repository indexed: $(ls -1 "$OFFLINE_REPO"/*.pkg.tar.zst | wc -l) packages ($(du -sh "$OFFLINE_REPO" | cut -f1))"

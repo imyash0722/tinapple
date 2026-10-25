@@ -1,4 +1,5 @@
 [Unit]
+ConditionKernelCommandLine=!tinapple.headless
 Description=Tinapple OS Graphical Session
 After=systemd-user-sessions.service plymouth-quit-wait.service systemd-udevd.service seatd.service
 Wants=seatd.service

@@ -73,22 +73,42 @@ tinapple_bootloader_install() {
     return 0
   fi
 
-  # Kernel image naming
+  # Dynamically detect installed kernel if present in $target/boot
+  local installed_vmlinuz=""
+  for vm in "$target/boot"/vmlinuz-*; do
+    if [[ -f "$vm" ]]; then
+      installed_vmlinuz="$(basename "$vm")"
+      break
+    fi
+  done
+
   local kernel_pkg="linux-lts"
   local initrd="initramfs-linux-lts.img"
   local initrd_fallback="initramfs-linux-lts-fallback.img"
-  case "$kernel_profile" in
-    hardened)
-      kernel_pkg="linux-hardened"
-      initrd="initramfs-linux-hardened.img"
-      initrd_fallback="initramfs-linux-hardened-fallback.img"
-      ;;
-    current|linux)
-      kernel_pkg="linux"
-      initrd="initramfs-linux.img"
-      initrd_fallback="initramfs-linux-fallback.img"
-      ;;
-  esac
+
+  if [[ -n "$installed_vmlinuz" ]]; then
+    kernel_pkg="${installed_vmlinuz#vmlinuz-}"
+    initrd="initramfs-${kernel_pkg}.img"
+    initrd_fallback="initramfs-${kernel_pkg}-fallback.img"
+  else
+    case "$kernel_profile" in
+      hardened)
+        kernel_pkg="linux-hardened"
+        initrd="initramfs-linux-hardened.img"
+        initrd_fallback="initramfs-linux-hardened-fallback.img"
+        ;;
+      current|linux)
+        kernel_pkg="linux"
+        initrd="initramfs-linux.img"
+        initrd_fallback="initramfs-linux-fallback.img"
+        ;;
+      cachyos|linux-cachyos)
+        kernel_pkg="linux-cachyos"
+        initrd="initramfs-linux-cachyos.img"
+        initrd_fallback="initramfs-linux-cachyos-fallback.img"
+        ;;
+    esac
+  fi
 
   # Determine root device UUID
   local root_uuid
@@ -205,12 +225,15 @@ EOF
   else
     log_info "installing BIOS bootloader (GRUB)..."
 
+    run_sh "mkdir -p $target/etc/default"
+    run_sh "sed -i 's|^GRUB_CMDLINE_LINUX_DEFAULT=.*|GRUB_CMDLINE_LINUX_DEFAULT=\"$cmdline\"|' $target/etc/default/grub 2>/dev/null || echo 'GRUB_CMDLINE_LINUX_DEFAULT=\"$cmdline\"' >> $target/etc/default/grub"
+
     # 1. BIOS (GRUB): grub-install --target=i386-pc /dev/sdX
     run arch-chroot "$target" grub-install --target=i386-pc "$disk"
 
     # 2. Handle LUKS: GRUB_ENABLE_CRYPTODISK=y
     if (( is_luks == 1 )); then
-      run_sh "mkdir -p $target/etc/default && echo 'GRUB_ENABLE_CRYPTODISK=y' >> $target/etc/default/grub"
+      run_sh "echo 'GRUB_ENABLE_CRYPTODISK=y' >> $target/etc/default/grub"
       run_sh "sed -i 's|^GRUB_CMDLINE_LINUX=.*|GRUB_CMDLINE_LINUX=\"$cmdline\"|' $target/etc/default/grub 2>/dev/null || echo 'GRUB_CMDLINE_LINUX=\"$cmdline\"' >> $target/etc/default/grub"
     fi
 

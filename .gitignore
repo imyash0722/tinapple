@@ -63,3 +63,14 @@ tinapple-dash/web/dist/tsumiru/
 !tinapple-maintenance/bin/tinapple-update-hook
 !tinapple-maintenance/bin/tinapple-rollback
 !tinapple-maintenance/bin/tinapple-snapshot-boot
+
+# Generated live ISO payloads (scripts/stage-live-artifacts.sh).
+tinapple-installer/iso/airootfs/usr/local/bin/tinapple-dash
+tinapple-installer/iso/airootfs/usr/local/bin/tinapple-tui
+tinapple-installer/iso/airootfs/usr/share/tinapple-dash/
+
+tinapple-installer/iso/airootfs/usr/local/bin/chaddy-store
+tinapple-installer/iso/airootfs/usr/local/bin/chaddy-settings
+tinapple-installer/iso/airootfs/usr/share/tinapple/templates/
+tinapple-installer/iso/airootfs/etc/tinapple/chaddy-store.yaml
+tinapple-chadwm/

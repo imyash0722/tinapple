@@ -87,7 +87,7 @@ pipewire-jack
 wireplumber
 
 # Utils
-chaddy-store
+# chaddy-store and chaddy-settings are staged from current source.
 tigervnc
 xrdp
 tmux
@@ -141,10 +141,20 @@ swaybg
 fastfetch
 yyjson
 seatd
-qdirstat
 niri
 waybar
 matugen
 fuzzel
 firefox
 
+
+# Live appliance runtime
+nginx
+smartmontools
+ufw
+jq
+python-yaml
+
+# Tools required by the archiso PXE initramfs hooks.
+nbd
+mkinitcpio-nfs-utils
