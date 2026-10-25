@@ -20,7 +20,6 @@ These task files define the remaining implementation work for tinapple v0.0.1 (e
 | 11 | `11-tinapple-installer-bootstrap.md` | tinapple-installer (Bootstrap) | ✅ Complete | High |
 | 12 | `12-tinapple-installer-iso.md` | tinapple-installer (ISO) | ✅ Complete | High |
 | A-N | `A` through `N` | Installation, Boot, Rebranding, Drivers | ✅ Complete | High |
-| O | `O-chadwm-default.md` | Chadwm Default Window Manager | ✅ Complete | High |
 | Q | `Q-tmux-config.md` | tmux Customization & Preinstalled Apps | ✅ Complete | High |
 | R1 | `R1-chaddy-store-core.md` | Chaddy Store Core (CLI & TUI) | ✅ Complete | High |
 | R2 | `R2-config-manager.md` | Config Manager & Templates | ✅ Complete | High |
@@ -51,14 +50,12 @@ tinapple-repo (depends on all packages)
     ├── tinapple-nginx (task 01)
     ├── tinapple-firstboot (task 07)
     ├── tinapple-maintenance (task 06)
-    ├── tinapple-chadwm (done)
     ├── tinapple-service-media (done)
     ├── tinapple-service-downloads (done)
     ├── tinapple-service-backups (task 09)
     ├── tinapple-service-network (task 02)
     ├── tinapple-service-infrastructure (task 03)
-    ├── tinapple-service-databases (task 04)
-    └── tinapple-chadwm (done)
+    └── tinapple-service-databases (task 04)
 ```
 
 ## Execution Order
