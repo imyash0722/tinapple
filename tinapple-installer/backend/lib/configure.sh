@@ -114,7 +114,7 @@ EOH"
   run_sh "cat << 'EOA' > $target/etc/systemd/system/getty@tty1.service.d/autologin.conf
 [Service]
 ExecStart=
-ExecStart=-/usr/bin/agetty --noreset --noclear --autologin '$username' - \\${TERM}
+ExecStart=-/usr/bin/agetty --noreset --noclear --autologin '$username' %I linux
 EOA"
   run_sh "cat << 'EOZ' >> $target/home/$username/.zlogin
 if [[ \"\$(tty)\" == \"/dev/tty1\" ]]; then
