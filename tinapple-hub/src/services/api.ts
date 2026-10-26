@@ -438,12 +438,16 @@ class ApiService {
     }
   }
 
-  async controlService(name: string, action: 'start' | 'stop' | 'restart' | 'enable' | 'disable'): Promise<boolean> {
+  async controlService(name: string, action: 'start' | 'stop' | 'restart' | 'enable' | 'disable'): Promise<{ ok: boolean; error?: string }> {
     try {
       const res = await fetch(`${API_BASE}/services/${name}/${action}`, { method: 'POST' });
-      return res.ok;
-    } catch {
-      return true;
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        return { ok: false, error: data.error || `HTTP ${res.status}` };
+      }
+      return { ok: true };
+    } catch (err: any) {
+      return { ok: false, error: err.message || 'Service communication failure' };
     }
   }
 

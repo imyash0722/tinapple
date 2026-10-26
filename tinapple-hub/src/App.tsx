@@ -236,10 +236,11 @@ export const App: React.FC = () => {
   const handleControlService = async (
     name: string,
     action: 'start' | 'stop' | 'restart' | 'enable' | 'disable'
-  ) => {
-    await api.controlService(name, action);
+  ): Promise<{ ok: boolean; error?: string }> => {
+    const res = await api.controlService(name, action);
     const updated = await api.getServices();
     setServices(updated);
+    return res;
   };
 
   const handleOpenLogs = async (name: string) => {

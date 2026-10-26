@@ -17,7 +17,7 @@ import { AppBrandIcon } from '../common/AppBrandIcons';
 interface ServicesManagerProps {
   services: ServiceInfo[];
   accentColor: string;
-  onControlService: (name: string, action: 'start' | 'stop' | 'restart' | 'enable' | 'disable') => Promise<void>;
+  onControlService: (name: string, action: 'start' | 'stop' | 'restart' | 'enable' | 'disable') => Promise<{ ok: boolean; error?: string } | void>;
   onOpenLogs: (name: string) => void;
   onOpenTailscale?: () => void;
 }
@@ -33,11 +33,20 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
   const [loadingMap, setLoadingMap] = useState<Record<string, string>>({});
+  const [errorNotice, setErrorNotice] = useState<{ name: string; error: string } | null>(null);
 
   const handleAction = async (name: string, action: 'start' | 'stop' | 'restart') => {
     setLoadingMap((prev) => ({ ...prev, [name]: action }));
+    setErrorNotice(null);
     try {
-      await onControlService(name, action);
+      const res = await onControlService(name, action);
+      if (res && !res.ok) {
+        setErrorNotice({ name, error: res.error || `Failed to ${action} ${name}` });
+        setTimeout(() => setErrorNotice(null), 5000);
+      }
+    } catch (e: any) {
+      setErrorNotice({ name, error: e?.message || `Failed to ${action} ${name}` });
+      setTimeout(() => setErrorNotice(null), 5000);
     } finally {
       setTimeout(() => {
         setLoadingMap((prev) => {
@@ -152,6 +161,21 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({
         </div>
       </div>
 
+      {errorNotice && (
+        <div className="flex items-center justify-between p-3.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-mono">
+          <div className="flex items-center gap-2">
+            <span className="font-bold">Error ({errorNotice.name}):</span>
+            <span>{errorNotice.error}</span>
+          </div>
+          <button
+            onClick={() => setErrorNotice(null)}
+            className="text-tinapple-muted hover:text-white px-2 py-0.5 text-xs font-bold"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       {/* Services Grid View */}
       {viewMode === 'grid' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -248,7 +272,7 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({
                           <span>Stop</span>
                         </button>
                       </>
-                    ) : (
+                    ) : isInstalled ? (
                       <button
                         disabled={isLoading}
                         onClick={() => handleAction(service.name, 'start')}
@@ -257,6 +281,10 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({
                         <Play className="w-3.5 h-3.5 fill-current" />
                         <span>Start</span>
                       </button>
+                    ) : (
+                      <span className="inline-flex items-center px-3 py-1.5 rounded-xl text-xs font-semibold bg-tinapple-dark/60 border border-tinapple-border text-tinapple-muted">
+                        Not Installed
+                      </span>
                     )}
                   </div>
 
@@ -300,7 +328,10 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({
             </thead>
             <tbody className="divide-y divide-tinapple-border/50 text-tinapple-text">
               {filteredServices.map((service) => {
-                const isActive = service.activeState === 'active';
+                const isLoading = Boolean(loadingMap[service.name]);
+                const isActive = service.activeState === 'active' || service.running;
+                const isInstalled = service.installed !== false && service.activeState !== 'not_installed';
+                const isFailed = service.activeState === 'failed';
                 return (
                   <tr key={service.name} className="hover:bg-tinapple-surface/40 transition-colors">
                     <td className="px-4 py-3">
@@ -308,6 +339,10 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({
                         className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] border ${
                           isActive
                             ? 'bg-tinapple-green/10 text-tinapple-green border-tinapple-green/20 font-semibold'
+                            : isFailed
+                            ? 'bg-tinapple-red/10 text-tinapple-red border-tinapple-red/20 font-semibold'
+                            : isInstalled
+                            ? 'bg-amber-400/10 text-amber-400 border-amber-400/20 font-semibold'
                             : 'bg-tinapple-muted/10 text-tinapple-muted border-tinapple-border'
                         }`}
                       >
@@ -316,7 +351,7 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({
                             isActive ? 'bg-tinapple-green animate-pulse' : 'bg-tinapple-muted'
                           }`}
                         />
-                        {service.activeState}
+                        {isActive ? 'Running' : isFailed ? 'Failed' : isInstalled ? 'Stopped' : 'Not Installed'}
                       </span>
                     </td>
                     <td className="px-4 py-3">
@@ -336,12 +371,27 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-1.5">
-                        <button
-                          onClick={() => handleAction(service.name, isActive ? 'stop' : 'start')}
-                          className="px-2.5 py-1 rounded-lg bg-tinapple-dark/90 hover:bg-tinapple-surface border border-tinapple-border text-[11px] font-semibold text-tinapple-text"
-                        >
-                          {isActive ? 'Stop' : 'Start'}
-                        </button>
+                        {isActive ? (
+                          <button
+                            disabled={isLoading}
+                            onClick={() => handleAction(service.name, 'stop')}
+                            className="px-2.5 py-1 rounded-lg bg-tinapple-red/10 hover:bg-tinapple-red/20 border border-tinapple-red/20 text-[11px] font-semibold text-tinapple-red transition-colors disabled:opacity-50"
+                          >
+                            Stop
+                          </button>
+                        ) : isInstalled ? (
+                          <button
+                            disabled={isLoading}
+                            onClick={() => handleAction(service.name, 'start')}
+                            className="px-2.5 py-1 rounded-lg bg-tinapple-green/15 hover:bg-tinapple-green/25 border border-tinapple-green/30 text-[11px] font-semibold text-tinapple-green transition-colors disabled:opacity-50"
+                          >
+                            Start
+                          </button>
+                        ) : (
+                          <span className="text-[10px] text-tinapple-muted px-2 py-0.5">
+                            Not Installed
+                          </span>
+                        )}
                         <button
                           onClick={() => onOpenLogs(service.name)}
                           className="px-2.5 py-1 rounded-lg bg-tinapple-dark/90 hover:bg-tinapple-surface border border-tinapple-border text-[11px] text-tinapple-gold"
