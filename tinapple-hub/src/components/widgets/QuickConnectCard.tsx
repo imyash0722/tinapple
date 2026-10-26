@@ -162,13 +162,14 @@ export const QuickConnectCard: React.FC<QuickConnectCardProps> = ({
 
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
           {quickServices.map((svc) => {
-            const svcStatus = services.find((s) =>
-              s.name.toLowerCase().includes(svc.id) ||
-              s.unit.toLowerCase().includes(svc.id) ||
+            const svcStatus = services.find((s: any) =>
+              (s.name && typeof s.name === 'string' && s.name.toLowerCase().includes(svc.id)) ||
+              (s.unit && typeof s.unit === 'string' && s.unit.toLowerCase().includes(svc.id)) ||
+              (s.displayName && typeof s.displayName === 'string' && s.displayName.toLowerCase().includes(svc.id)) ||
               s.id === svc.id
             );
-            const isRunning = svcStatus ? svcStatus.running || svcStatus.status === 'running' : false;
-            const isInstalled = svcStatus ? svcStatus.installed || svcStatus.status !== 'not_installed' : false;
+            const isRunning = svcStatus ? Boolean(svcStatus.running || svcStatus.activeState === 'active' || svcStatus.status === 'running') : false;
+            const isInstalled = svcStatus ? Boolean(svcStatus.installed || (svcStatus.activeState && svcStatus.activeState !== 'not_installed') || (svcStatus.status && svcStatus.status !== 'not_installed')) : false;
             const statusLabel = isRunning ? 'running' : isInstalled ? 'stopped' : 'not installed';
 
             if (isRunning) {
