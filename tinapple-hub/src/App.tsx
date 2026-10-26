@@ -314,9 +314,9 @@ export const App: React.FC = () => {
       <FullWindowBackground settings={settings} />
       <AppearanceModal isOpen={appearanceOpen} onClose={() => setAppearanceOpen(false)} settings={settings} onUpdate={setSettings} colorStatus={colorStatus} storageStatus={storageStatus} />
 
-      {/* FLOATING TOP COMMAND DOCK */}
-      <header className="fixed top-3 sm:top-4 inset-x-0 z-40 flex justify-center pointer-events-none px-4 sm:px-6">
-        <div className="pointer-events-auto w-full max-w-[1352px] tinapple-glass-card rounded-2xl shadow-2xl shadow-black/40 px-3 sm:px-5 h-14 sm:h-16 flex items-center justify-between gap-2 sm:gap-4 transition-all duration-300">
+      {/* TOP COMMAND HEADER */}
+      <header className="sticky top-0 z-40 w-full bg-[#050a16]/85 backdrop-blur-2xl border-b border-white/[0.08] shadow-lg shadow-black/20">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3 sm:gap-4">
           {/* Left: System identity */}
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             <div className="flex items-center gap-1.5 sm:gap-2">
@@ -423,7 +423,7 @@ export const App: React.FC = () => {
       </header>
 
       {/* MAIN SCREEN-FILLING BENTO DECK */}
-      <main className="max-w-[1400px] mx-auto px-4 sm:px-6 pt-20 sm:pt-24">
+      <main className="max-w-[1400px] mx-auto px-4 sm:px-6 pt-6 pb-14">
         <AnimatePresence mode="wait">
           {activeTab === 'welcome' && (
             <motion.div
