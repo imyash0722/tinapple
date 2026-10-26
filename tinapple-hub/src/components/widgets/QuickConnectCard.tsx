@@ -4,9 +4,10 @@ import { AppBrandIcon } from '../common/AppBrandIcons';
 interface QuickConnectCardProps {
   onOpenTransfers?: () => void;
   onOpenManga?: () => void;
+  onOpenTailscale?: () => void;
 }
 
-export const QuickConnectCard: React.FC<QuickConnectCardProps> = () => {
+export const QuickConnectCard: React.FC<QuickConnectCardProps> = ({ onOpenTransfers, onOpenManga, onOpenTailscale }) => {
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   const copyToClipboard = (text: string, key: string) => {
@@ -106,12 +107,22 @@ export const QuickConnectCard: React.FC<QuickConnectCardProps> = () => {
 
             <div className="pt-3 border-t border-slate-800/60 flex items-center justify-between gap-2">
               <code className="text-xs text-emerald-400 font-mono truncate">{conn.url}</code>
-              <button
-                onClick={() => copyToClipboard(conn.url, conn.id)}
-                className="px-2.5 py-1 text-xs rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono transition-all flex-shrink-0"
-              >
-                {copiedKey === conn.id ? '✓ Copied' : 'Copy'}
-              </button>
+              <div className="flex items-center gap-1.5 shrink-0">
+                {conn.id === 'tailscale' && onOpenTailscale && (
+                  <button
+                    onClick={onOpenTailscale}
+                    className="px-2.5 py-1 text-xs rounded-lg bg-sky-500/20 hover:bg-sky-500/30 border border-sky-500/30 text-sky-300 font-mono font-semibold transition-all"
+                  >
+                    Login / Mesh
+                  </button>
+                )}
+                <button
+                  onClick={() => copyToClipboard(conn.url, conn.id)}
+                  className="px-2.5 py-1 text-xs rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono transition-all flex-shrink-0"
+                >
+                  {copiedKey === conn.id ? '✓ Copied' : 'Copy'}
+                </button>
+              </div>
             </div>
           </div>
         ))}

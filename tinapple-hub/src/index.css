@@ -4,21 +4,21 @@
 
 :root {
   color-scheme: dark;
-  --tinapple-accent: #e5b567;
-  --tinapple-accent-rgb: 229 181 103;
-  --tinapple-accent-glow: rgba(229, 181, 103, 0.35);
-  --tinapple-accent-secondary: #7ec789;
-  --tinapple-secondary-rgb: 126 199 137;
-  --glass-bg: rgba(18, 22, 31, 0.65);
-  --glass-border: rgba(255, 255, 255, 0.08);
+  --tinapple-accent: #38bdf8;
+  --tinapple-accent-rgb: 56 189 248;
+  --tinapple-accent-glow: rgba(56, 189, 248, 0.35);
+  --tinapple-accent-secondary: #3b82f6;
+  --tinapple-secondary-rgb: 59 130 246;
+  --glass-bg: rgba(10, 18, 38, 0.75);
+  --glass-border: rgba(56, 189, 248, 0.12);
   --glass-filter: blur(20px) saturate(180%);
 }
 
 body {
   margin: 0;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  background-color: #0a0b10;
-  color: #c0caf5;
+  background-color: #050814;
+  color: #e2e8f0;
   overflow-x: hidden;
 }
 

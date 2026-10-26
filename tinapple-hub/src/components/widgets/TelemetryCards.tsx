@@ -15,20 +15,22 @@ interface TelemetryCardsProps {
     netIn: number[];
     netOut: number[];
   };
+  onOpenTailscale?: () => void;
 }
 
-export const TelemetryCards: React.FC<TelemetryCardsProps> = ({ telemetry, history, accentColor, secondaryColor }) => {
+export const TelemetryCards: React.FC<TelemetryCardsProps> = ({ telemetry, history, accentColor, secondaryColor, onOpenTailscale }) => {
   const formatBytes = (bytes: number) => {
-    if (bytes >= 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
-    if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-    if (bytes >= 1024) return `${(bytes / 1024).toFixed(0)} KB`;
-    return `${bytes} B`;
+    if (bytes >= 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+    if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+    if (bytes >= 1024) return `${(bytes / 1024).toFixed(2)} KB`;
+    return `${bytes.toFixed(2)} B`;
   };
 
   const formatRate = (bytesSec: number) => {
-    if (bytesSec >= 1024 * 1024) return `${(bytesSec / (1024 * 1024)).toFixed(1)} MB/s`;
-    if (bytesSec >= 1024) return `${(bytesSec / 1024).toFixed(0)} KB/s`;
-    return `${bytesSec} B/s`;
+    if (bytesSec >= 1024 * 1024 * 1024) return `${(bytesSec / (1024 * 1024 * 1024)).toFixed(2)} GB/s`;
+    if (bytesSec >= 1024 * 1024) return `${(bytesSec / (1024 * 1024)).toFixed(2)} MB/s`;
+    if (bytesSec >= 1024) return `${(bytesSec / 1024).toFixed(2)} KB/s`;
+    return `${bytesSec.toFixed(2)} B/s`;
   };
 
   const numCores = telemetry.cpu.cores?.length || 16;
@@ -84,7 +86,7 @@ export const TelemetryCards: React.FC<TelemetryCardsProps> = ({ telemetry, histo
             <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 items-end mb-4">
               <div className="sm:col-span-5">
                 <div className="text-4xl sm:text-5xl font-black text-white tracking-tight font-mono">
-                  <CountUp to={telemetry.cpu.usagePercent || 0} decimals={1} suffix="%" />
+                  <CountUp to={telemetry.cpu.usagePercent || 0} decimals={2} suffix="%" />
                 </div>
                 <div className="flex items-center gap-2 mt-1.5 text-xs font-mono text-tinapple-subtext">
                   <span>Load Avg:</span>
@@ -169,7 +171,7 @@ export const TelemetryCards: React.FC<TelemetryCardsProps> = ({ telemetry, histo
             <div className="flex items-baseline justify-between mb-4">
               <div>
                 <div className="text-4xl sm:text-5xl font-black text-white tracking-tight font-mono">
-                  <CountUp to={telemetry.memory.usagePercent} decimals={1} suffix="%" />
+                  <CountUp to={telemetry.memory.usagePercent} decimals={2} suffix="%" />
                 </div>
                 <p className="text-xs text-tinapple-subtext font-mono mt-1.5">
                   {formatBytes(telemetry.memory.usedBytes)} Active / {formatBytes(telemetry.memory.freeBytes)} Available
@@ -251,7 +253,7 @@ export const TelemetryCards: React.FC<TelemetryCardsProps> = ({ telemetry, histo
           <div className="flex items-baseline justify-between mb-3">
             <div>
               <div className="text-3xl font-black text-white tracking-tight font-mono">
-                <CountUp to={telemetry.disk.usagePercent} decimals={1} suffix="%" />
+                <CountUp to={telemetry.disk.usagePercent} decimals={2} suffix="%" />
               </div>
               <p className="text-xs text-tinapple-subtext font-mono mt-1">
                 {formatBytes(telemetry.disk.usedBytes)} Used / {formatBytes(telemetry.disk.freeBytes)} Available
@@ -308,10 +310,22 @@ export const TelemetryCards: React.FC<TelemetryCardsProps> = ({ telemetry, histo
                 </p>
               </div>
             </div>
-            <span className="text-xs px-2.5 py-1 rounded-xl bg-tinapple-dark/80 text-tinapple-green border border-tinapple-border font-mono font-semibold flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-tinapple-green animate-pulse" />
-              <span>Direct Mesh</span>
-            </span>
+            <div className="flex items-center gap-2">
+              {onOpenTailscale && (
+                <button
+                  onClick={onOpenTailscale}
+                  className="text-xs px-2.5 py-1 rounded-xl bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 border border-sky-500/25 font-mono font-semibold transition-colors flex items-center gap-1.5"
+                  title="Tailscale remote access & login"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-sky-400" />
+                  <span>Tailscale Login</span>
+                </button>
+              )}
+              <span className="text-xs px-2.5 py-1 rounded-xl bg-tinapple-dark/80 text-tinapple-green border border-tinapple-border font-mono font-semibold flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-tinapple-green animate-pulse" />
+                <span>Direct Mesh</span>
+              </span>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4 mb-3">

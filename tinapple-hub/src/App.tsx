@@ -30,6 +30,7 @@ import { ChaddyStore } from './components/widgets/ChaddyStore';
 import { HardwareSensors } from './components/widgets/HardwareSensors';
 import { SettingsManifest } from './components/widgets/SettingsManifest';
 import { LogsModal } from './components/widgets/LogsModal';
+import { TailscaleModal } from './components/widgets/TailscaleModal';
 import { WelcomeInstaller } from './components/installer/WelcomeInstaller';
 import { QuickConnectCard } from './components/widgets/QuickConnectCard';
 import { TransfersWidget } from './components/widgets/TransfersWidget';
@@ -71,7 +72,7 @@ export const App: React.FC = () => {
     root.style.setProperty('--glass-blur', `${blur}px`);
     root.style.setProperty('--glass-opacity', `${alpha.toFixed(2)}`);
     root.style.setProperty('--glass-translucency', `${translucency}%`);
-    root.style.setProperty('--glass-bg', settings.enableGlass ? `rgba(18, 22, 31, ${alpha.toFixed(2)})` : '#12161f');
+    root.style.setProperty('--glass-bg', settings.enableGlass ? `rgba(10, 18, 38, ${alpha.toFixed(2)})` : '#0a1226');
     root.style.setProperty('--glass-filter', settings.enableGlass ? `blur(${blur}px) saturate(180%)` : 'none');
 
     const scale = settings.uiScale || '100%';
@@ -120,6 +121,7 @@ export const App: React.FC = () => {
   const [activeLogService, setActiveLogService] = useState<string | null>(null);
   const [serviceLogs, setServiceLogs] = useState<string[]>([]);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
+  const [tailscaleOpen, setTailscaleOpen] = useState<boolean>(false);
 
   const [isSyncing, setIsSyncing] = useState(false);
   const [clockSynced, setClockSynced] = useState(false);
@@ -371,6 +373,14 @@ export const App: React.FC = () => {
                   : <Monitor className="w-3.5 h-3.5 text-tinapple-gold" />}
                 <span className="capitalize">{systemInfo.sessionMode} Mode</span>
               </div>
+              <button
+                onClick={() => setTailscaleOpen(true)}
+                className={`${statusPillClass} hover:bg-sky-500/15 hover:border-sky-500/40 cursor-pointer transition-all text-sky-400`}
+                title="Tailscale Remote VPN Login & Mesh"
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse" />
+                <span>Tailscale VPN</span>
+              </button>
             </div>
 
             <div className="hidden 2xl:flex items-center gap-1.5 mr-1 text-xs font-mono font-medium text-zinc-300" title="System uptime">
@@ -439,7 +449,7 @@ export const App: React.FC = () => {
               className="space-y-6"
             >
               {/* Quick Connect Portals */}
-              <QuickConnectCard />
+              <QuickConnectCard onOpenTailscale={() => setTailscaleOpen(true)} />
 
               {/* Transfers: qBittorrent & JDownloader Remote Queue */}
               <TransfersWidget />
@@ -451,7 +461,13 @@ export const App: React.FC = () => {
               <TorPrivacyWidget />
 
               {/* Bento Row 1: Processor & Memory & Storage & Network */}
-              <TelemetryCards telemetry={telemetry} history={history} accentColor={settings.accentColor} secondaryColor={settings.secondaryColor} />
+              <TelemetryCards
+                telemetry={telemetry}
+                history={history}
+                accentColor={settings.accentColor}
+                secondaryColor={settings.secondaryColor}
+                onOpenTailscale={() => setTailscaleOpen(true)}
+              />
 
               {/* Bento Row 2: Thermals & Acoustic Fan Curves & Battery Limiter */}
               <ThermalsPowerWidget
@@ -479,10 +495,11 @@ export const App: React.FC = () => {
                   </button>
                 </div>
                 <ServicesManager
-                accentColor={settings.accentColor}
-                  services={services.slice(0, 6)}
+                  accentColor={settings.accentColor}
+                  services={services}
                   onControlService={handleControlService}
                   onOpenLogs={handleOpenLogs}
+                  onOpenTailscale={() => setTailscaleOpen(true)}
                 />
               </div>
             </motion.div>
@@ -512,6 +529,7 @@ export const App: React.FC = () => {
                 services={services}
                 onControlService={handleControlService}
                 onOpenLogs={handleOpenLogs}
+                onOpenTailscale={() => setTailscaleOpen(true)}
               />
             </motion.div>
           )}
@@ -560,6 +578,12 @@ export const App: React.FC = () => {
         serviceName={activeLogService}
         logs={serviceLogs}
         onClose={() => setActiveLogService(null)}
+      />
+
+      {/* TAILSCALE MESH REMOTE VPN MODAL */}
+      <TailscaleModal
+        isOpen={tailscaleOpen}
+        onClose={() => setTailscaleOpen(false)}
       />
     </div>
   );

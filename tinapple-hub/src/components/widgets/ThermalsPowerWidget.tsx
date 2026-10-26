@@ -19,8 +19,8 @@ export const ThermalsPowerWidget: React.FC<ThermalsPowerWidgetProps> = ({
 }) => {
   const thermalProfile = telemetry.thermal?.profile || 'balanced';
   const battery = telemetry.battery;
-  const cpuTemp = telemetry.thermal?.cpuTemp ? telemetry.thermal.cpuTemp.toFixed(1) : '46.0';
-  const gpuTemp = telemetry.thermal?.gpuTemp ? telemetry.thermal.gpuTemp.toFixed(1) : '42.0';
+  const cpuTemp = telemetry.thermal?.cpuTemp ? telemetry.thermal.cpuTemp.toFixed(2) : '46.00';
+  const gpuTemp = telemetry.thermal?.gpuTemp ? telemetry.thermal.gpuTemp.toFixed(2) : '42.00';
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-5">

@@ -133,3 +133,17 @@ export interface ApplianceProfile {
   services: string[];
   accentColor: string;
 }
+
+export interface TailscaleStatus {
+  installed: boolean;
+  running: boolean;
+  backendState: 'NeedsLogin' | 'Running' | 'Stopped' | 'Starting' | 'NoState' | string;
+  authUrl?: string;
+  tailscaleIPs?: string[];
+  dnsName?: string;
+  hostName?: string;
+  tailnet?: string;
+  online: boolean;
+  version?: string;
+}
+

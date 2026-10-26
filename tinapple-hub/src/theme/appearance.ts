@@ -2,13 +2,13 @@ import type { BackgroundSettings } from '../components/reactbits/FullWindowBackg
 
 export const THEME_STORAGE_KEY = 'tinapple_theme_settings';
 export const DEFAULT_SETTINGS: BackgroundSettings = {
-  mode: 'microslats',
-  wallpaperUrl: '/wallpapers/tinapple-orange-wallpaper.png',
+  mode: 'plain',
+  wallpaperUrl: '/wallpapers/blue-night-fishbowl-room.jpg',
   wallpaperDim: 0.5,
-  accentColor: '#e5b567',
-  secondaryColor: '#7ec789',
-  syncWallpaperColors: true,
-  enableParticles: true,
+  accentColor: '#38bdf8',
+  secondaryColor: '#3b82f6',
+  syncWallpaperColors: false,
+  enableParticles: false,
   enableNebula: true,
   enableGlass: true,
   glassBlur: 20,
@@ -17,9 +17,12 @@ export const DEFAULT_SETTINGS: BackgroundSettings = {
 };
 
 export const THEME_PALETTES = [
+  { name: 'Deep Midnight Blue', primary: '#38bdf8', secondary: '#3b82f6' },
+  { name: 'Sapphire Electric', primary: '#60a5fa', secondary: '#2563eb' },
+  { name: 'Cyber Cyan', primary: '#06b6d4', secondary: '#3b82f6' },
+  { name: 'Ice & Indigo', primary: '#7dd3fc', secondary: '#6366f1' },
   { name: 'Pineapple Gold', primary: '#e5b567', secondary: '#7ec789' },
   { name: 'Emerald Palm', primary: '#10b981', secondary: '#34d399' },
-  { name: 'Cyber Cyan', primary: '#06b6d4', secondary: '#3b82f6' },
   { name: 'Amethyst Purple', primary: '#a855f7', secondary: '#ec4899' },
   { name: 'Sunset Amber', primary: '#f97316', secondary: '#eab308' },
   { name: 'Rose Quartz', primary: '#f43f5e', secondary: '#fb7185' },
@@ -57,7 +60,7 @@ export function normalizeSettings(value: unknown): BackgroundSettings {
   const settings = { ...DEFAULT_SETTINGS };
   if (!value || typeof value !== 'object') return settings;
   const saved = value as Record<string, unknown>;
-  if (['microslats', 'waves', 'wallpaper', 'none'].includes(saved.mode as string)) settings.mode = saved.mode as BackgroundSettings['mode'];
+  if (['plain', 'microslats', 'waves', 'wallpaper', 'none'].includes(saved.mode as string)) settings.mode = saved.mode as BackgroundSettings['mode'];
   if (isWallpaperUrl(saved.wallpaperUrl)) settings.wallpaperUrl = saved.wallpaperUrl;
   if (typeof saved.wallpaperDim === 'number' && Number.isFinite(saved.wallpaperDim)) settings.wallpaperDim = Math.min(0.8, Math.max(0.2, saved.wallpaperDim));
   for (const key of ['accentColor', 'secondaryColor'] as const) {
@@ -97,8 +100,26 @@ export function normalizeSettings(value: unknown): BackgroundSettings {
 }
 
 export function loadSettings(): BackgroundSettings {
-  try { return normalizeSettings(JSON.parse(localStorage.getItem(THEME_STORAGE_KEY) || 'null')); }
-  catch { return { ...DEFAULT_SETTINGS }; }
+  try {
+    const raw = localStorage.getItem(THEME_STORAGE_KEY);
+    if (!raw) return { ...DEFAULT_SETTINGS };
+    const parsed = JSON.parse(raw);
+    if (parsed) {
+      if (parsed.accentColor === '#e5b567' || !parsed.accentColor) {
+        parsed.accentColor = DEFAULT_SETTINGS.accentColor;
+        parsed.secondaryColor = DEFAULT_SETTINGS.secondaryColor;
+        if (parsed.wallpaperUrl === '/wallpapers/tinapple-orange-wallpaper.png') {
+          parsed.wallpaperUrl = DEFAULT_SETTINGS.wallpaperUrl;
+        }
+      }
+      if (parsed.mode === 'microslats' || !parsed.mode) {
+        parsed.mode = 'plain';
+      }
+    }
+    return normalizeSettings(parsed);
+  } catch {
+    return { ...DEFAULT_SETTINGS };
+  }
 }
 
 // Quantize a small image sample; favor colorful midtones over black backgrounds.

@@ -14,8 +14,11 @@ interface AppearanceModalProps {
 }
 
 const modes: { id: BackgroundMode; label: string }[] = [
-  { id: 'microslats', label: 'Micro Slats' }, { id: 'waves', label: 'WebGL Waves' },
-  { id: 'wallpaper', label: 'Wallpaper' }, { id: 'none', label: 'Solid Void' },
+  { id: 'plain', label: 'Plainer Graphic' },
+  { id: 'waves', label: 'WebGL Waves' },
+  { id: 'microslats', label: 'Micro Slats' },
+  { id: 'wallpaper', label: 'Wallpaper' },
+  { id: 'none', label: 'Solid Void' },
 ];
 const fieldClass = 'w-full min-w-0 rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-zinc-200 focus:outline-none focus:ring-2 focus:ring-tinapple-gold';
 

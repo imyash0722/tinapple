@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Play,
   Square,
@@ -7,6 +7,7 @@ import {
   Search,
   LayoutGrid,
   List,
+  ShieldCheck,
 } from 'lucide-react';
 import { SpotlightCard } from '../reactbits/SpotlightCard';
 import HoldButton from '../reactbits/HoldButton';
@@ -18,6 +19,7 @@ interface ServicesManagerProps {
   accentColor: string;
   onControlService: (name: string, action: 'start' | 'stop' | 'restart' | 'enable' | 'disable') => Promise<void>;
   onOpenLogs: (name: string) => void;
+  onOpenTailscale?: () => void;
 }
 
 export const ServicesManager: React.FC<ServicesManagerProps> = ({
@@ -25,6 +27,7 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({
   accentColor,
   onControlService,
   onOpenLogs,
+  onOpenTailscale,
 }) => {
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -54,7 +57,13 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({
     return matchesCategory && matchesSearch;
   });
 
-  const categories = ['all', 'core', 'media', 'database', 'network', 'desktop'];
+  const categories = useMemo(() => {
+    const cats = new Set<string>(['all']);
+    services.forEach((s) => {
+      if (s.category) cats.add(s.category);
+    });
+    return Array.from(cats);
+  }, [services]);
 
   return (
     <div className="space-y-4">
@@ -209,7 +218,7 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({
                       </span>
                     )}
                     {service.memoryBytes && (
-                      <span>RAM: {(service.memoryBytes / (1024 * 1024)).toFixed(0)} MB</span>
+                      <span>RAM: {(service.memoryBytes / (1024 * 1024)).toFixed(2)} MB</span>
                     )}
                     <span className="capitalize text-tinapple-green font-medium">{service.category}</span>
                   </div>
@@ -251,13 +260,25 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({
                     )}
                   </div>
 
-                  <button
-                    onClick={() => onOpenLogs(service.name)}
-                    className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-mono font-medium bg-tinapple-dark/80 hover:bg-tinapple-surface border border-tinapple-border text-tinapple-subtext hover:text-white transition-colors"
-                  >
-                    <Terminal className="w-3.5 h-3.5 text-tinapple-gold" />
-                    <span>Logs</span>
-                  </button>
+                  <div className="flex items-center gap-1.5">
+                    {(service.name === 'tailscale' || service.name === 'tailscaled') && onOpenTailscale && (
+                      <button
+                        onClick={onOpenTailscale}
+                        className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-sky-500/20 hover:bg-sky-500/30 border border-sky-500/30 text-sky-300 transition-colors"
+                        title="Tailscale Auth & Mesh Login"
+                      >
+                        <ShieldCheck className="w-3.5 h-3.5" />
+                        <span>Mesh</span>
+                      </button>
+                    )}
+                    <button
+                      onClick={() => onOpenLogs(service.name)}
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-mono font-medium bg-tinapple-dark/80 hover:bg-tinapple-surface border border-tinapple-border text-tinapple-subtext hover:text-white transition-colors"
+                    >
+                      <Terminal className="w-3.5 h-3.5 text-tinapple-gold" />
+                      <span>Logs</span>
+                    </button>
+                  </div>
                 </div>
               </SpotlightCard>
             );
@@ -310,7 +331,7 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({
                     </td>
                     <td className="px-4 py-3 text-tinapple-subtext">
                       {service.memoryBytes
-                        ? `${(service.memoryBytes / (1024 * 1024)).toFixed(0)} MB`
+                        ? `${(service.memoryBytes / (1024 * 1024)).toFixed(2)} MB`
                         : '—'}
                     </td>
                     <td className="px-4 py-3 text-right">

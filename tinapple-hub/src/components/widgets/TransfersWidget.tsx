@@ -113,11 +113,11 @@ export const TransfersWidget: React.FC = () => {
   };
 
   const formatSpeed = (bytesPerSec?: number) => {
-    if (!bytesPerSec || bytesPerSec === 0) return '0.0 kB/s';
+    if (!bytesPerSec || bytesPerSec === 0) return '0.00 kB/s';
     if (bytesPerSec > 1024 * 1024) {
-      return (bytesPerSec / (1024 * 1024)).toFixed(1) + ' MB/s';
+      return (bytesPerSec / (1024 * 1024)).toFixed(2) + ' MB/s';
     }
-    return (bytesPerSec / 1024).toFixed(0) + ' kB/s';
+    return (bytesPerSec / 1024).toFixed(2) + ' kB/s';
   };
 
   return (

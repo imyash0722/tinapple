@@ -9,24 +9,24 @@ export default {
     extend: {
       colors: {
         tinapple: {
-          dark: '#060709',       // Deepest OLED obsidian black
-          base: '#0a0c0f',       // Foundation void
-          surface: '#111419',    // Raised panel
-          card: '#15181f',       // Glass card surface
-          cardhover: '#1a1f28',  // Card active hover
-          border: 'rgba(255, 255, 255, 0.06)',
-          'border-hover': 'rgba(229, 181, 103, 0.32)',
-          'border-green': 'rgba(126, 199, 137, 0.32)',
-          gold: 'rgb(var(--tinapple-accent-rgb, 229 181 103) / <alpha-value>)',       // Pineapple core amber / gold
-          amber: '#f59e0b',
-          green: 'rgb(var(--tinapple-secondary-rgb, 126 199 137) / <alpha-value>)',      // Fresh palm / crown green
-          sage: '#98c379',
-          emerald: '#10b981',
-          teal: '#2dd4bf',
+          dark: '#050a16',       // Deepest OLED midnight navy
+          base: '#070f22',       // Foundation deep navy
+          surface: '#0d1835',    // Raised dark blue panel
+          card: '#101f42',       // Glass dark blue card surface
+          cardhover: '#152854',  // Card active hover
+          border: 'rgba(56, 189, 248, 0.08)',
+          'border-hover': 'rgba(56, 189, 248, 0.35)',
+          'border-green': 'rgba(59, 130, 246, 0.35)',
+          gold: 'rgb(var(--tinapple-accent-rgb, 56 189 248) / <alpha-value>)',
+          amber: '#38bdf8',
+          green: 'rgb(var(--tinapple-secondary-rgb, 59 130 246) / <alpha-value>)',
+          sage: '#60a5fa',
+          emerald: '#38bdf8',
+          teal: '#0ea5e9',
           red: '#f87171',
-          text: '#f3f4f6',       // High-contrast clean white
-          subtext: '#9ca3af',    // Clean legible slate
-          muted: '#4b5563',      // Subdued metadata
+          text: '#f1f5f9',       // High-contrast clean white
+          subtext: '#94a3b8',    // Clean legible slate blue
+          muted: '#475569',      // Subdued metadata
         }
       },
       fontFamily: {

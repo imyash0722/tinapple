@@ -1,4 +1,4 @@
-import { SystemInfo, TelemetrySnapshot, ServiceInfo, HardwareInfo, SessionMode, AppInfo } from '../types/api';
+import { SystemInfo, TelemetrySnapshot, ServiceInfo, HardwareInfo, SessionMode, AppInfo, TailscaleStatus } from '../types/api';
 
 const API_BASE = '/api/v1';
 
@@ -616,6 +616,58 @@ class ApiService {
   async resetPlayit(): Promise<boolean> {
     try {
       const res = await fetch(`${API_BASE}/playit/reset`, { method: 'POST' });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  async getTailscaleStatus(): Promise<TailscaleStatus> {
+    try {
+      const res = await fetch(`${API_BASE}/tailscale/status`);
+      if (res.ok) return await res.json();
+    } catch {}
+    return {
+      installed: true,
+      running: true,
+      backendState: 'NeedsLogin',
+      online: false,
+    };
+  }
+
+  async loginTailscale(authKey?: string): Promise<{ authUrl?: string }> {
+    try {
+      const res = await fetch(`${API_BASE}/tailscale/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ authKey: authKey || '' }),
+      });
+      if (res.ok) return await res.json();
+    } catch {}
+    return {};
+  }
+
+  async logoutTailscale(): Promise<boolean> {
+    try {
+      const res = await fetch(`${API_BASE}/tailscale/logout`, { method: 'POST' });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  async upTailscale(): Promise<boolean> {
+    try {
+      const res = await fetch(`${API_BASE}/tailscale/up`, { method: 'POST' });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  async downTailscale(): Promise<boolean> {
+    try {
+      const res = await fetch(`${API_BASE}/tailscale/down`, { method: 'POST' });
       return res.ok;
     } catch {
       return false;

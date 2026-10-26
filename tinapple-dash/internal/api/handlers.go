@@ -25,6 +25,7 @@ type Handler struct {
 	svcMgr         *services.SystemdManager
 	appMgr         *services.AppManager
 	playitMgr      *services.PlayitManager
+	tailscaleMgr   *services.TailscaleManager
 	telemetry      *telemetry.Collector
 	wsUpgrader     websocket.Upgrader
 	wsClients      map[*websocket.Conn]bool
@@ -32,12 +33,13 @@ type Handler struct {
 
 func NewHandler(cfg *config.Manifest, svcMgr *services.SystemdManager, tel *telemetry.Collector) *Handler {
 	return &Handler{
-		cfg:        cfg,
-		svcMgr:     svcMgr,
-		appMgr:     services.NewAppManager(),
-		playitMgr:  services.NewPlayitManager(),
-		telemetry:  tel,
-		wsClients:  make(map[*websocket.Conn]bool),
+		cfg:          cfg,
+		svcMgr:       svcMgr,
+		appMgr:       services.NewAppManager(),
+		playitMgr:    services.NewPlayitManager(),
+		tailscaleMgr: services.NewTailscaleManager(),
+		telemetry:    tel,
+		wsClients:    make(map[*websocket.Conn]bool),
 		wsUpgrader: websocket.Upgrader{
 			CheckOrigin: func(r *http.Request) bool { return true },
 		},
@@ -107,6 +109,13 @@ func SetupRoutes(r *gin.Engine, cfg *config.Manifest, svcMgr *services.SystemdMa
 		v1.POST("/playit/start", h.StartPlayit)
 		v1.POST("/playit/stop", h.StopPlayit)
 		v1.POST("/playit/reset", h.ResetPlayit)
+
+		// Tailscale Mesh VPN
+		v1.GET("/tailscale/status", h.GetTailscaleStatus)
+		v1.POST("/tailscale/login", h.LoginTailscale)
+		v1.POST("/tailscale/logout", h.LogoutTailscale)
+		v1.POST("/tailscale/up", h.UpTailscale)
+		v1.POST("/tailscale/down", h.DownTailscale)
 
 		// WebSocket
 		v1.GET("/ws", h.WebSocketHandler)
@@ -1232,4 +1241,53 @@ func (h *Handler) BeeperStatus(c *gin.Context) {
 		"whoami":  "Self-hosted Matrix Bridges",
 	})
 }
+
+type TailscaleLoginRequest struct {
+	AuthKey string `json:"authKey"`
+}
+
+func (h *Handler) GetTailscaleStatus(c *gin.Context) {
+	status, err := h.tailscaleMgr.GetStatus(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, status)
+}
+
+func (h *Handler) LoginTailscale(c *gin.Context) {
+	var req TailscaleLoginRequest
+	_ = c.ShouldBindJSON(&req)
+	authUrl, err := h.tailscaleMgr.Login(c.Request.Context(), req.AuthKey)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"authUrl": authUrl})
+}
+
+func (h *Handler) LogoutTailscale(c *gin.Context) {
+	if err := h.tailscaleMgr.Logout(c.Request.Context()); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"status": "ok", "message": "Logged out of Tailscale"})
+}
+
+func (h *Handler) UpTailscale(c *gin.Context) {
+	if err := h.tailscaleMgr.Up(c.Request.Context()); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"status": "ok", "message": "Tailscale started"})
+}
+
+func (h *Handler) DownTailscale(c *gin.Context) {
+	if err := h.tailscaleMgr.Down(c.Request.Context()); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"status": "ok", "message": "Tailscale stopped"})
+}
+
 
