@@ -418,6 +418,14 @@ func (h *Handler) GetService(c *gin.Context) {
 // StartService starts a service
 func (h *Handler) StartService(c *gin.Context) {
 	name := c.Param("name")
+	if app, err := h.appMgr.GetApp(name); err == nil && app.Unit != "" {
+		if err := h.appMgr.Start(name); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"status": "started"})
+		return
+	}
 	if err := h.svcMgr.Start(name); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -428,6 +436,14 @@ func (h *Handler) StartService(c *gin.Context) {
 // StopService stops a service
 func (h *Handler) StopService(c *gin.Context) {
 	name := c.Param("name")
+	if app, err := h.appMgr.GetApp(name); err == nil && app.Unit != "" {
+		if err := h.appMgr.Stop(name); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"status": "stopped"})
+		return
+	}
 	if err := h.svcMgr.Stop(name); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -438,6 +454,14 @@ func (h *Handler) StopService(c *gin.Context) {
 // RestartService restarts a service
 func (h *Handler) RestartService(c *gin.Context) {
 	name := c.Param("name")
+	if app, err := h.appMgr.GetApp(name); err == nil && app.Unit != "" {
+		if err := h.appMgr.Restart(name); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"status": "restarted"})
+		return
+	}
 	if err := h.svcMgr.Restart(name); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -448,7 +472,11 @@ func (h *Handler) RestartService(c *gin.Context) {
 // EnableService enables a service
 func (h *Handler) EnableService(c *gin.Context) {
 	name := c.Param("name")
-	if err := h.svcMgr.Enable(name); err != nil {
+	targetUnit := name
+	if app, err := h.appMgr.GetApp(name); err == nil && app.Unit != "" {
+		targetUnit = app.Unit
+	}
+	if err := h.svcMgr.Enable(targetUnit); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -458,7 +486,11 @@ func (h *Handler) EnableService(c *gin.Context) {
 // DisableService disables a service
 func (h *Handler) DisableService(c *gin.Context) {
 	name := c.Param("name")
-	if err := h.svcMgr.Disable(name); err != nil {
+	targetUnit := name
+	if app, err := h.appMgr.GetApp(name); err == nil && app.Unit != "" {
+		targetUnit = app.Unit
+	}
+	if err := h.svcMgr.Disable(targetUnit); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -468,8 +500,12 @@ func (h *Handler) DisableService(c *gin.Context) {
 // ServiceLogs returns recent logs for a service
 func (h *Handler) ServiceLogs(c *gin.Context) {
 	name := c.Param("name")
+	targetUnit := name
+	if app, err := h.appMgr.GetApp(name); err == nil && app.Unit != "" {
+		targetUnit = app.Unit
+	}
 	lines := c.DefaultQuery("lines", "100")
-	logs, err := h.svcMgr.Logs(name, lines)
+	logs, err := h.svcMgr.Logs(targetUnit, lines)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

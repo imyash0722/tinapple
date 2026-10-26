@@ -8,12 +8,30 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"os/user"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 )
+
+func getSystemPrimaryUser() (string, string) {
+	if u, err := user.LookupId("1000"); err == nil && u.Username != "" {
+		return u.Username, u.HomeDir
+	}
+	if entries, err := os.ReadDir("/home"); err == nil {
+		for _, e := range entries {
+			if e.IsDir() && e.Name() != "lost+found" {
+				return e.Name(), filepath.Join("/home", e.Name())
+			}
+		}
+	}
+	if _, err := user.Lookup("pineapple"); err == nil {
+		return "pineapple", "/home/pineapple"
+	}
+	return "tinapple", "/home/tinapple"
+}
 
 type AppDefinition struct {
 	ID           string `json:"id"`
@@ -55,6 +73,8 @@ type AppManager struct {
 }
 
 func NewAppManager() *AppManager {
+	primaryUser, primaryHome := getSystemPrimaryUser()
+
 	mgr := &AppManager{
 		apps:     make(map[string]AppDefinition),
 		appOrder: make([]string, 0),
@@ -116,7 +136,7 @@ func NewAppManager() *AppManager {
 			Port:         4567,
 			Icon:         "suwayomi",
 			AccentColor:  "#F43F5E",
-			ConfigPath:   "/home/tinapple/.local/share/Tachidesk/server.conf",
+			ConfigPath:   filepath.Join(primaryHome, ".local/share/Tachidesk/server.conf"),
 			WebURL:       "http://{host}:4567",
 			ClientAppURL: "/tsumiru/",
 		},
@@ -155,12 +175,12 @@ func NewAppManager() *AppManager {
 			Tagline:     "Continuous peer-to-peer folder replication",
 			Category:    "backups",
 			Package:     "syncthing",
-			Unit:        "syncthing@tinapple.service",
+			Unit:        fmt.Sprintf("syncthing@%s.service", primaryUser),
 			Binary:      "syncthing",
 			Port:        8384,
 			Icon:        "syncthing",
 			AccentColor: "#148FD2",
-			ConfigPath:  "/home/tinapple/.local/state/syncthing/config.xml",
+			ConfigPath:  filepath.Join(primaryHome, ".local/state/syncthing/config.xml"),
 		},
 		{
 			ID:          "adguard",
@@ -244,7 +264,7 @@ func NewAppManager() *AppManager {
 			Port:        0,
 			Icon:        "niri",
 			AccentColor: "#268BD2",
-			ConfigPath:  "/home/tinapple/.config/niri/config.kdl",
+			ConfigPath:  filepath.Join(primaryHome, ".config/niri/config.kdl"),
 		},
 		{
 			ID:          "filebrowser",
@@ -394,12 +414,12 @@ func NewAppManager() *AppManager {
 			Tagline:     "Self-hosted multi-network Matrix chat bridges",
 			Category:    "network",
 			Package:     "bbctl",
-			Unit:        "bbctl@tinapple.service",
+			Unit:        fmt.Sprintf("bbctl@%s.service", primaryUser),
 			Binary:      "bbctl",
 			Port:        0,
 			Icon:        "beeper",
 			AccentColor: "#F43F5E",
-			ConfigPath:  "/home/tinapple/.config/beeper/config.yaml",
+			ConfigPath:  filepath.Join(primaryHome, ".config/beeper/config.yaml"),
 		},
 	}
 
