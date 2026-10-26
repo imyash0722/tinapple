@@ -1225,12 +1225,56 @@ func (h *Handler) WidgetJDownloader(c *gin.Context) {
 }
 
 func (h *Handler) WidgetManga(c *gin.Context) {
+	client := http.Client{Timeout: 2 * time.Second}
+	// Try Suwayomi REST manga library
+	resp, err := client.Get("http://127.0.0.1:4567/api/v1/manga")
+	if err == nil && resp.StatusCode == http.StatusOK {
+		defer resp.Body.Close()
+		var mangaList []map[string]interface{}
+		if json.NewDecoder(resp.Body).Decode(&mangaList) == nil {
+			c.JSON(http.StatusOK, gin.H{
+				"online":  true,
+				"mangas":  mangaList,
+				"history": []interface{}{},
+				"updates": []interface{}{},
+				"library": mangaList,
+			})
+			return
+		}
+	}
+
+	// Try Suwayomi GraphQL
+	query := `{"query":"{ mangas(inLibrary: true) { nodes { id title thumbnailUrl unreadCount source { name } } } }"}`
+	req, _ := http.NewRequestWithContext(c.Request.Context(), "POST", "http://127.0.0.1:4567/api/v1/graphql", strings.NewReader(query))
+	req.Header.Set("Content-Type", "application/json")
+	if gqlResp, err := client.Do(req); err == nil && gqlResp.StatusCode == http.StatusOK {
+		defer gqlResp.Body.Close()
+		var gqlData struct {
+			Data struct {
+				Mangas struct {
+					Nodes []map[string]interface{} `json:"nodes"`
+				} `json:"mangas"`
+			} `json:"data"`
+		}
+		if json.NewDecoder(gqlResp.Body).Decode(&gqlData) == nil && len(gqlData.Data.Mangas.Nodes) > 0 {
+			c.JSON(http.StatusOK, gin.H{
+				"online":  true,
+				"mangas":  gqlData.Data.Mangas.Nodes,
+				"history": []interface{}{},
+				"updates": []interface{}{},
+				"library": gqlData.Data.Mangas.Nodes,
+			})
+			return
+		}
+	}
+
+	// Real status: offline or empty library
 	c.JSON(http.StatusOK, gin.H{
 		"online":  false,
-		"history": []string{},
-		"updates": []string{},
-		"library": []string{},
-		"mangas":  []string{},
+		"history": []interface{}{},
+		"updates": []interface{}{},
+		"library": []interface{}{},
+		"mangas":  []interface{}{},
 	})
 }
 
