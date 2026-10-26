@@ -1,0 +1,46 @@
+# Clean Minimal Zsh Config
+[[ $- != *i* ]] && return
+
+# History
+HISTFILE=~/.zsh_history
+HISTSIZE=10000
+SAVEHIST=10000
+setopt APPEND_HISTORY
+setopt SHARE_HISTORY
+setopt HIST_IGNORE_ALL_DUPS
+setopt HIST_IGNORE_SPACE
+setopt HIST_REDUCE_BLANKS
+
+# Auto-completion
+autoload -Uz compinit
+compinit -d ~/.cache/zcompdump
+zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}'
+zstyle ':completion:*' list-colors "${(s.:.)LS_COLORS}"
+zstyle ':completion:*' menu select
+
+# Keybindings
+bindkey -e
+bindkey "^[[H" beginning-of-line
+bindkey "^[[F" end-of-line
+bindkey "^[[3~" delete-char
+
+# Aliases
+alias ls='ls --color=auto -F'
+alias ll='ls -lh --color=auto'
+alias la='ls -lah --color=auto'
+alias grep='grep --color=auto'
+alias ip='ip -c'
+alias update='sudo pacman -Syu'
+alias wifi-scan='nmcli dev wifi list'
+alias wifi-connect='nmcli dev wifi connect'
+
+# Starship Prompt (Fast, clean, cross-shell)
+if command -v starship >/dev/null 2>&1; then
+    eval "$(starship init zsh)"
+else
+    PS1='%B%F{cyan}%~%f%b %# '
+fi
+
+# Plugins
+[[ -f /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh ]] && source /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
+[[ -f /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]] && source /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh

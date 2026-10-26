@@ -1,0 +1,13 @@
+[Unit]
+Description=Tinapple Realtek Wi-Fi Hotspot & DHCP Service
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/tinapple-hotspot-start.sh
+ExecStop=/usr/bin/killall -q hostapd-rtl dnsmasq
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
