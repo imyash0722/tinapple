@@ -513,12 +513,15 @@ export const ChaddyStore: React.FC = () => {
   const selectedApp = filteredApps[selectedIndex] || filteredApps[0] || apps[0];
 
   const carouselItems: CircularCarouselItem[] = useMemo(() => {
-    return filteredApps.map((a) => ({
-      src: a.icon ? `/icons/${a.icon}.${a.id === 'suwayomi' || a.id === 'navidrome' ? 'png' : 'svg'}` : '/icons/archlinux.svg',
-      title: a.name,
-      subtitle: a.tagline,
-      alt: a.name,
-    }));
+    return filteredApps.map((a) => {
+      const ext = ['suwayomi', 'navidrome', 'filebrowser'].includes(a.id) ? 'png' : 'svg';
+      return {
+        src: a.icon ? `/icons/${a.icon}.${ext}` : '/icons/archlinux.svg',
+        title: a.name,
+        subtitle: a.tagline,
+        alt: a.name,
+      };
+    });
   }, [filteredApps]);
 
   const renderStatusBadge = (app: AppInfo) => {
@@ -626,12 +629,14 @@ export const ChaddyStore: React.FC = () => {
       {/* VIEW 1: 3D RADIAL CAROUSEL VIEW */}
       {viewMode === 'carousel' && selectedApp && (
         <div className="space-y-6">
-          <div className="relative rounded-2xl bg-tinapple-card/60 border border-tinapple-border/80 backdrop-blur-xl p-4 overflow-hidden flex items-center justify-center min-h-[380px]">
+          <div className="relative rounded-2xl bg-tinapple-card/60 border border-tinapple-border/80 backdrop-blur-xl p-4 overflow-hidden h-[420px] w-full flex items-center justify-center">
             <CircularCarousel
+              className="w-full h-full"
               items={carouselItems}
-              cardWidth={170}
-              aspectRatio={170 / 210}
-              curve={220}
+              cardWidth={180}
+              aspectRatio={180 / 220}
+              curve={200}
+              preset="orbit"
               onChange={(idx) => setSelectedIndex(idx)}
               onItemClick={(_item, idx) => setSelectedIndex(idx)}
             />

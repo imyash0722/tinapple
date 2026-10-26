@@ -1,19 +1,37 @@
 import React, { useState } from 'react';
 import { AppBrandIcon } from '../common/AppBrandIcons';
+import { ServiceStatus } from '../../types/api';
 
 interface QuickConnectCardProps {
+  services?: ServiceStatus[];
   onOpenTransfers?: () => void;
   onOpenManga?: () => void;
   onOpenTailscale?: () => void;
+  onSelectTab?: (tab: string) => void;
 }
 
-export const QuickConnectCard: React.FC<QuickConnectCardProps> = ({ onOpenTransfers, onOpenManga, onOpenTailscale }) => {
+export const QuickConnectCard: React.FC<QuickConnectCardProps> = ({
+  services = [],
+  onOpenTransfers,
+  onOpenManga,
+  onOpenTailscale,
+  onSelectTab,
+}) => {
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
   const copyToClipboard = (text: string, key: string) => {
     navigator.clipboard.writeText(text);
     setCopiedKey(key);
     setTimeout(() => setCopiedKey(null), 2000);
+  };
+
+  const showServiceNotice = (name: string, status: string) => {
+    setNotice(`${name} is currently ${status}. Manage it in the Services tab.`);
+    setTimeout(() => setNotice(null), 4000);
+    if (onSelectTab) {
+      setTimeout(() => onSelectTab('services'), 700);
+    }
   };
 
   const currentHost = typeof window !== 'undefined' ? window.location.hostname : '127.0.0.1';
@@ -39,7 +57,7 @@ export const QuickConnectCard: React.FC<QuickConnectCardProps> = ({ onOpenTransf
       type: '1 Gbps Ultra-Low Latency',
       url: 'http://192.168.99.1:8088',
       desc: 'Direct peer-to-peer patch cable connection between PC and server.',
-      badge: currentHost === '192.168.99.1' ? 'Current Host' : 'Auto-Negotiating',
+      badge: currentHost === '192.168.99.1' || currentHost === '192.168.99.62' ? 'Active' : 'Auto-Negotiating',
       color: 'text-blue-400 border-blue-500/30 bg-blue-500/10',
       icon: (
         <svg className="w-5 h-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -51,7 +69,7 @@ export const QuickConnectCard: React.FC<QuickConnectCardProps> = ({ onOpenTransf
       id: 'tailscale',
       name: 'Tailscale Mesh',
       type: 'Encrypted WireGuard VPN',
-      url: currentHost.startsWith('100.') ? `http://${currentHost}:8088` : 'http://tinapple-server:8088',
+      url: currentHost.startsWith('100.') ? `http://${currentHost}:8088` : 'http://100.108.215.120:8088',
       desc: 'Zero-config secure mesh access across all your devices anywhere in the world.',
       badge: currentHost.startsWith('100.') ? 'Active Link' : 'Tailnet Ready',
       color: 'text-purple-400 border-purple-500/30 bg-purple-500/10',
@@ -129,27 +147,71 @@ export const QuickConnectCard: React.FC<QuickConnectCardProps> = ({ onOpenTransf
       </div>
 
       {/* Direct Service Jump Grid */}
-      <div className="tinapple-glass-card rounded-xl bg-slate-900/40 border border-slate-800/60 p-5 backdrop-blur-md">
-        <h4 className="text-xs font-mono uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-2">
-          <span>⚡ Live Server Portals</span>
-          <span className="text-[10px] text-slate-500 font-normal">(Direct 1-Click Launch)</span>
-        </h4>
+      <div className="tinapple-glass-card rounded-xl bg-slate-900/40 border border-slate-800/60 p-5 backdrop-blur-md relative">
+        <div className="flex items-center justify-between mb-3">
+          <h4 className="text-xs font-mono uppercase tracking-wider text-slate-400 flex items-center gap-2">
+            <span>⚡ Live Server Portals</span>
+            <span className="text-[10px] text-slate-500 font-normal">(Verified Port Links)</span>
+          </h4>
+          {notice && (
+            <span className="text-xs font-mono text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded-lg border border-amber-500/30 animate-pulse">
+              {notice}
+            </span>
+          )}
+        </div>
+
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
-          {quickServices.map((svc) => (
-            <a
-              key={svc.name}
-              href={svc.path}
-              target="_blank"
-              rel="noreferrer"
-              className="flex flex-col items-center justify-center p-3.5 rounded-xl bg-slate-800/40 hover:bg-slate-800/80 border border-slate-700/40 hover:border-emerald-500/40 transition-all group text-center"
-            >
-              <AppBrandIcon id={svc.id} size={32} showBadge className="mb-2 group-hover:scale-110 transition-transform" />
-              <span className="text-xs font-medium text-slate-200 group-hover:text-emerald-300">{svc.name}</span>
-              <span className="text-[11px] font-mono text-slate-500">:{svc.port}</span>
-            </a>
-          ))}
+          {quickServices.map((svc) => {
+            const svcStatus = services.find((s) =>
+              s.name.toLowerCase().includes(svc.id) ||
+              s.unit.toLowerCase().includes(svc.id) ||
+              s.id === svc.id
+            );
+            const isRunning = svcStatus ? svcStatus.running || svcStatus.status === 'running' : false;
+            const isInstalled = svcStatus ? svcStatus.installed || svcStatus.status !== 'not_installed' : false;
+            const statusLabel = isRunning ? 'running' : isInstalled ? 'stopped' : 'not installed';
+
+            if (isRunning) {
+              return (
+                <a
+                  key={svc.name}
+                  href={svc.path}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex flex-col items-center justify-center p-3.5 rounded-xl bg-slate-800/40 hover:bg-slate-800/80 border border-slate-700/40 hover:border-emerald-500/40 transition-all group text-center relative"
+                >
+                  <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-emerald-400 animate-pulse" title="Active • Online" />
+                  <AppBrandIcon id={svc.id} size={32} showBadge className="mb-2 group-hover:scale-110 transition-transform" />
+                  <span className="text-xs font-medium text-slate-200 group-hover:text-emerald-300">{svc.name}</span>
+                  <span className="text-[11px] font-mono text-emerald-400">:{svc.port}</span>
+                </a>
+              );
+            }
+
+            return (
+              <button
+                key={svc.name}
+                type="button"
+                onClick={() => showServiceNotice(svc.name, statusLabel)}
+                className="flex flex-col items-center justify-center p-3.5 rounded-xl bg-slate-900/30 hover:bg-slate-800/50 border border-slate-800/50 hover:border-slate-700 transition-all group text-center relative opacity-75 hover:opacity-100"
+                title={`${svc.name}: ${statusLabel}. Click to manage.`}
+              >
+                <span
+                  className={`absolute top-2 right-2 w-1.5 h-1.5 rounded-full ${
+                    isInstalled ? 'bg-amber-400' : 'bg-slate-600'
+                  }`}
+                />
+                <AppBrandIcon id={svc.id} size={32} showBadge className="mb-2 grayscale contrast-75 group-hover:grayscale-0 transition-all" />
+                <span className="text-xs font-medium text-slate-400 group-hover:text-slate-200">{svc.name}</span>
+                <span className="text-[10px] font-mono text-slate-500">
+                  {isInstalled ? 'Stopped' : 'Store'}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </div>
     </div>
   );
 };
+export default QuickConnectCard;

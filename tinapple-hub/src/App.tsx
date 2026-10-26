@@ -24,7 +24,6 @@ import { BUNDLED_WALLPAPERS, THEME_STORAGE_KEY, colorChannels, extractWallpaperC
 import { DockItem } from './components/reactbits/Dock';
 
 import { TelemetryCards } from './components/widgets/TelemetryCards';
-import { ThermalsPowerWidget } from './components/widgets/ThermalsPowerWidget';
 import { ServicesManager } from './components/widgets/ServicesManager';
 import { ChaddyStore } from './components/widgets/ChaddyStore';
 import { HardwareSensors } from './components/widgets/HardwareSensors';
@@ -449,7 +448,11 @@ export const App: React.FC = () => {
               className="space-y-6"
             >
               {/* Quick Connect Portals */}
-              <QuickConnectCard onOpenTailscale={() => setTailscaleOpen(true)} />
+              <QuickConnectCard
+                services={services}
+                onSelectTab={(tab) => setActiveTab(tab as any)}
+                onOpenTailscale={() => setTailscaleOpen(true)}
+              />
 
               {/* Transfers: qBittorrent & JDownloader Remote Queue */}
               <TransfersWidget />
@@ -467,14 +470,6 @@ export const App: React.FC = () => {
                 accentColor={settings.accentColor}
                 secondaryColor={settings.secondaryColor}
                 onOpenTailscale={() => setTailscaleOpen(true)}
-              />
-
-              {/* Bento Row 2: Thermals & Acoustic Fan Curves & Battery Limiter */}
-              <ThermalsPowerWidget
-                telemetry={telemetry}
-                onSetThermalProfile={api.setThermalProfile}
-                onSetPowerProfile={api.setPowerProfile}
-                onSetChargeLimit={api.setBatteryChargeLimit}
               />
 
               {/* Bento Row 3: Essential Daemon Matrix Preview */}
@@ -554,7 +549,13 @@ export const App: React.FC = () => {
               exit={{ opacity: 0, y: -14 }}
               transition={{ duration: 0.25, ease: 'easeOut' }}
             >
-              <HardwareSensors hardware={hardware} />
+              <HardwareSensors
+                hardware={hardware}
+                telemetry={telemetry}
+                onSetThermalProfile={api.setThermalProfile}
+                onSetPowerProfile={api.setPowerProfile}
+                onSetChargeLimit={api.setBatteryChargeLimit}
+              />
             </motion.div>
           )}
 

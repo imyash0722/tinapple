@@ -512,7 +512,7 @@ const CircularCarousel = ({
         image.onerror = () => resolve();
         image.src = src;
       });
-    const timeout = new Promise<void>(resolve => setTimeout(resolve, 2400));
+    const timeout = new Promise<void>(resolve => setTimeout(resolve, 600));
     Promise.race([Promise.all(sources.map(load)), timeout]).then(() => {
       if (cancelled) return;
       const state = stateRef.current;
@@ -527,6 +527,7 @@ const CircularCarousel = ({
           }));
         }
         setList(next);
+        setReady(true);
         wakeRef.current();
         return;
       }
@@ -1023,27 +1024,49 @@ const CircularCarousel = ({
         aria-hidden="true"
       >
         <div
-          className="absolute left-0 top-0 w-full overflow-hidden"
+          className="absolute left-0 top-0 w-full overflow-hidden bg-[#070e1f] border border-sky-500/30 shadow-2xl rounded-2xl"
           style={{ height: axis === 'x' ? size : cardH, borderRadius: frameRadius }}
         >
-          <img
-            className="pointer-events-none absolute block max-w-none select-none object-cover [-webkit-user-drag:none]"
-            src={item.src}
-            alt=""
-            draggable={false}
-            decoding="async"
+          <div
+            className="pointer-events-none absolute block select-none flex flex-col items-center justify-center p-3 text-center"
             style={photoStyle}
-          />
+          >
+            <div className="w-14 h-14 rounded-2xl bg-sky-500/10 border border-sky-500/25 p-2.5 flex items-center justify-center mb-2.5 shadow-md shadow-sky-950/40">
+              <img
+                src={item.src}
+                alt=""
+                draggable={false}
+                className="w-full h-full object-contain filter drop-shadow"
+              />
+            </div>
+            <div className="w-full px-2">
+              <h4 className="text-xs font-bold text-white truncate tracking-tight">{item.title}</h4>
+              {item.subtitle && (
+                <p className="text-[10px] text-sky-400 font-mono truncate mt-0.5">{item.subtitle}</p>
+              )}
+            </div>
+          </div>
           {gone && (
-            <img
+            <div
               key={`leaving-${leaving.id}`}
-              className="pointer-events-none absolute block max-w-none select-none object-cover [-webkit-user-drag:none] animate-[circular-carousel-leave_700ms_cubic-bezier(0.33,1,0.68,1)_both]"
-              src={gone.src}
-              alt=""
-              draggable={false}
-              decoding="async"
+              className="pointer-events-none absolute block select-none flex flex-col items-center justify-center p-3 text-center animate-[circular-carousel-leave_700ms_cubic-bezier(0.33,1,0.68,1)_both]"
               style={{ ...photoStyle, animationDelay: `${Math.round(leaving.delays[index])}ms` }}
-            />
+            >
+              <div className="w-14 h-14 rounded-2xl bg-sky-500/10 border border-sky-500/25 p-2.5 flex items-center justify-center mb-2.5">
+                <img
+                  src={gone.src}
+                  alt=""
+                  draggable={false}
+                  className="w-full h-full object-contain filter drop-shadow"
+                />
+              </div>
+              <div className="w-full px-2">
+                <h4 className="text-xs font-bold text-white truncate tracking-tight">{gone.title}</h4>
+                {gone.subtitle && (
+                  <p className="text-[10px] text-sky-400 font-mono truncate mt-0.5">{gone.subtitle}</p>
+                )}
+              </div>
+            </div>
           )}
           {back && <div className="pointer-events-none absolute inset-0 bg-black opacity-[var(--cc-inner)]" />}
           <div className="pointer-events-none absolute inset-0 bg-[var(--cc-fade)] opacity-[var(--cc-depth,0)]" />
@@ -1058,6 +1081,7 @@ const CircularCarousel = ({
       className={`group/cc relative h-full w-full touch-pan-y select-none overflow-hidden outline-none [-webkit-tap-highlight-color:transparent] focus-visible:shadow-[inset_0_0_0_2px_rgba(128,128,140,0.55)] data-[axis=x]:touch-pan-x data-[draggable]:cursor-grab data-[dragging]:cursor-grabbing ${className}`.trim()}
       style={
         {
+          minHeight: '380px',
           ...style,
           '--cc-fade': fadeColor,
           '--cc-radius': `${Math.max(0, cornerRadius)}px`,
@@ -1088,7 +1112,7 @@ const CircularCarousel = ({
       >
         <div
           ref={stageRef}
-          className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-[450ms] ease-[ease] group-data-[ready]/cc:opacity-100 motion-reduce:transition-none"
+          className={`absolute inset-0 flex items-center justify-center transition-opacity duration-300 ease-[ease] motion-reduce:transition-none ${ready ? 'opacity-100' : 'opacity-90'}`}
         >
           <div ref={cameraRef} className="relative h-0 w-0 [transform-style:preserve-3d]">
             <div ref={ringRef} className="absolute left-0 top-0 h-0 w-0 [transform-style:preserve-3d]">

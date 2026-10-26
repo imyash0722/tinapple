@@ -68,15 +68,15 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({
   return (
     <div className="space-y-4">
       {/* Search and Filter Controls */}
-      <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between p-3.5 rounded-2xl bg-tinapple-card/80 border border-tinapple-border backdrop-blur-2xl">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center justify-between p-3.5 rounded-2xl bg-tinapple-card/80 border border-tinapple-border backdrop-blur-2xl">
+        <div className="flex-1 min-w-0 overflow-hidden">
           {/* Category Tabs */}
-          <div className="flex items-center p-1 rounded-xl bg-tinapple-dark/90 border border-tinapple-border overflow-x-auto">
+          <div className="flex items-center p-1 rounded-xl bg-tinapple-dark/90 border border-tinapple-border overflow-x-auto scrollbar-none gap-1">
             {categories.map((c) => (
               <button
                 key={c}
                 onClick={() => setFilterCategory(c)}
-                className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold capitalize font-mono transition-all whitespace-nowrap ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold capitalize font-mono transition-all whitespace-nowrap shrink-0 ${
                   filterCategory === c
                     ? 'bg-tinapple-gold text-tinapple-dark shadow-sm'
                     : 'text-tinapple-subtext hover:text-white'
@@ -88,9 +88,9 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({
           </div>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5 shrink-0">
           {/* Search Box */}
-          <div className="relative flex-1 md:w-64">
+          <div className="relative flex-1 sm:w-56 md:w-64">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-tinapple-muted" />
             <input
               type="text"
@@ -102,7 +102,7 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({
           </div>
 
           {/* Quick Action HoldButton & View Toggle */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             <HoldButton
               size="sm"
               holdTime={1400}
