@@ -1,0 +1,16 @@
+[Unit]
+Description=Tinapple Headless Server Display Sleep & Inactivity Daemon
+Documentation=https://github.com/imyash0722/tinapple
+After=multi-user.target
+
+[Service]
+Type=simple
+Environment="DISPLAY_SLEEP_TIMEOUT=60"
+ExecStart=/usr/local/bin/tinapple-display-sleep
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

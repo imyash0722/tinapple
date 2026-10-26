@@ -33,6 +33,15 @@ alias ip='ip -c'
 alias update='sudo pacman -Syu'
 alias wifi-scan='nmcli dev wifi list'
 alias wifi-connect='nmcli dev wifi connect'
+alias screen-off='screen-off'
+alias screen-on='screen-on'
+alias screen-toggle='screen-toggle'
+alias screen-status='tinapple-display-sleep status'
+
+# Ensure 1-minute console blanking on physical TTY
+if [[ "$TERM" == "linux" && -t 0 ]]; then
+    setterm --term linux --blank 1 --powersave powerdown --powerdown 1 2>/dev/null || true
+fi
 
 # Starship Prompt (Fast, clean, cross-shell)
 if command -v starship >/dev/null 2>&1; then
