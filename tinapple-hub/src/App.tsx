@@ -315,8 +315,8 @@ export const App: React.FC = () => {
       <AppearanceModal isOpen={appearanceOpen} onClose={() => setAppearanceOpen(false)} settings={settings} onUpdate={setSettings} colorStatus={colorStatus} storageStatus={storageStatus} />
 
       {/* FLOATING TOP COMMAND DOCK */}
-      <header className="fixed top-3 sm:top-4 inset-x-0 z-40 flex justify-center pointer-events-none px-3 sm:px-6">
-        <div className="pointer-events-auto w-full max-w-[1440px] tinapple-glass-card rounded-2xl shadow-2xl shadow-black/40 px-3 sm:px-5 h-14 sm:h-16 flex items-center justify-between gap-2 sm:gap-4 transition-all duration-300">
+      <header className="fixed top-3 sm:top-4 inset-x-0 z-40 flex justify-center pointer-events-none px-4 sm:px-6">
+        <div className="pointer-events-auto w-full max-w-[1352px] tinapple-glass-card rounded-2xl shadow-2xl shadow-black/40 px-3 sm:px-5 h-14 sm:h-16 flex items-center justify-between gap-2 sm:gap-4 transition-all duration-300">
           {/* Left: System identity */}
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             <div className="flex items-center gap-1.5 sm:gap-2">
