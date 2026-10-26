@@ -1,0 +1,17 @@
+[Unit]
+Description=PESU WiFi Continuous Keepalive & Auto-Login Daemon
+After=network.target NetworkManager.service
+Wants=network.target
+
+[Service]
+Type=simple
+User=root
+Environment="HOME=/root"
+WorkingDirectory=/root
+ExecStart=/usr/local/bin/pesu-wifi start -f
+Restart=always
+RestartSec=5
+KillMode=process
+
+[Install]
+WantedBy=multi-user.target
