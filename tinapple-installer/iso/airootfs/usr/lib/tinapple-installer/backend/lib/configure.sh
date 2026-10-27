@@ -114,11 +114,12 @@ EOH"
   run_sh "cat << 'EOA' > $target/etc/systemd/system/getty@tty1.service.d/autologin.conf
 [Service]
 ExecStart=
-ExecStart=-/usr/bin/agetty --noreset --noclear --autologin '$username' - \\${TERM}
+ExecStart=-/usr/bin/agetty --noreset --noclear --autologin '$username' %I linux
 EOA"
-  run_sh "cat << 'EOZ' >> $target/home/$username/.zlogin
-if [[ \"\$(tty)\" == \"/dev/tty1\" ]]; then
+  run_sh "cat << 'EOZ' > $target/home/$username/.zprofile
+if [[ \"\$(tty)\" == \"/dev/tty1\" ]] && [[ -z \"\${NIRI_STARTING:-}\" ]]; then
     if [[ -z \"\${WAYLAND_DISPLAY:-}\" ]] && ! pgrep -x niri >/dev/null; then
+        export NIRI_STARTING=1
         export XDG_CURRENT_DESKTOP=\"niri\"
         export XDG_SESSION_DESKTOP=\"niri\"
         export XDG_SESSION_TYPE=\"wayland\"
@@ -126,10 +127,12 @@ if [[ \"\$(tty)\" == \"/dev/tty1\" ]]; then
         export QT_QPA_PLATFORM=\"wayland;xcb\"
         export GDK_BACKEND=\"wayland,x11\"
         export SDL_VIDEODRIVER=\"wayland\"
-        exec niri-session
+        exec niri-session -l
     fi
 fi
 EOZ"
+  run_sh "cp $target/home/$username/.zprofile $target/home/$username/.zlogin"
+  run_sh "mkdir -p $target/etc/skel && cp $target/home/$username/.zprofile $target/etc/skel/.zprofile && cp $target/home/$username/.zprofile $target/etc/skel/.zlogin"
   run_sh "cat << 'EOB' >> $target/home/$username/.bash_profile
 if [[ \"\$(tty)\" == \"/dev/tty1\" ]]; then
     if [[ -z \"\${WAYLAND_DISPLAY:-}\" ]] && ! pgrep -x niri >/dev/null; then
