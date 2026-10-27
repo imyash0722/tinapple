@@ -38,7 +38,7 @@ tinapple_cachyos_repo() {
 
   # 1. Import and trust CachyOS key
   log_info "importing and signing CachyOS repository key..."
-  run_sh "pacman-key --recv-keys F3B607488DB35A47 --keyserver keyserver.ubuntu.com && pacman-key --lsign-key F3B607488DB35A47"
+  run_sh "pacman-key --recv-keys F3B607488DB35A47 --keyserver keyserver.ubuntu.com 2>/dev/null && pacman-key --lsign-key F3B607488DB35A47 || true"
 
   # If target is mounted and has pacman-key, initialize in target chroot too
   if [[ -d "$target/etc/pacman.d" && "$target" != "/" ]]; then
@@ -48,7 +48,7 @@ tinapple_cachyos_repo() {
   # 2. Install cachyos-keyring and cachyos-mirrorlist if needed
   log_info "ensuring cachyos-keyring and cachyos-mirrorlist are installed..."
   if ! pacman -Q cachyos-keyring cachyos-mirrorlist >/dev/null 2>&1; then
-    run pacman -Sy --noconfirm --needed cachyos-keyring cachyos-mirrorlist
+    run pacman -Sy --noconfirm --needed cachyos-keyring cachyos-mirrorlist || true
   fi
 
   # 3. Add CachyOS repos to /etc/pacman.conf and set Architecture
@@ -75,7 +75,7 @@ Include = /etc/pacman.d/cachyos-v4-mirrorlist
 [cachyos]
 Include = /etc/pacman.d/cachyos-mirrorlist"
       ;;
-    v3|*)
+    v3)
       arch_str="x86_64_v3"
       repo_block="[cachyos-v3]
 Include = /etc/pacman.d/cachyos-v3-mirrorlist
@@ -87,6 +87,11 @@ Include = /etc/pacman.d/cachyos-v3-mirrorlist
 Include = /etc/pacman.d/cachyos-v3-mirrorlist
 
 [cachyos]
+Include = /etc/pacman.d/cachyos-mirrorlist"
+      ;;
+    *)
+      arch_str="x86_64"
+      repo_block="[cachyos]
 Include = /etc/pacman.d/cachyos-mirrorlist"
       ;;
   esac

@@ -64,9 +64,8 @@ tinapple_format_root() {
 
   [[ -n "$dev" ]] || die "no root device specified for formatting"
 
-  # Ensure root dev and /mnt are not currently mounted
-  umount -R -l "$dev" 2>/dev/null || true
-  umount -R -l /mnt 2>/dev/null || true
+  # Ensure root dev and /mnt are not currently mounted in any namespace
+  tinapple_cleanup_mounts "$dev"
 
   log "formatting root partition %s as %s..." "$dev" "$fs"
 

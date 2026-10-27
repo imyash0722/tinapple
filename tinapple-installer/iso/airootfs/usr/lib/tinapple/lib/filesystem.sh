@@ -18,6 +18,18 @@ tinapple_format_esp() {
   local part=${1:-$TINAPPLE_PART_ESP}
   [[ -n "$part" && "$part" != "none" ]] || return 0
 
+  if [[ "${TINAPPLE_FIRMWARE:-}" == "bios" ]] || [[ ! -d /sys/firmware/efi ]]; then
+    log "formatting BIOS boot partition %s as ext4..." "$part"
+    if [[ -n ${TINAPPLE_DRYRUN:-} ]]; then
+      log_info "DRYRUN: mkfs.ext4 -F -L tinapple-boot %s" "$part"
+      return 0
+    fi
+    umount -l "$part" 2>/dev/null || true
+    mkfs.ext4 -F -L "tinapple-boot" "$part" || die "failed to format boot on %s" "$part"
+    log_ok "BIOS boot formatted as ext4 on %s" "$part"
+    return 0
+  fi
+
   log "formatting ESP partition %s as FAT32..." "$part"
   if [[ -n ${TINAPPLE_DRYRUN:-} ]]; then
     log_info "DRYRUN: mkfs.vfat -F32 -n ESP %s" "$part"
@@ -52,9 +64,8 @@ tinapple_format_root() {
 
   [[ -n "$dev" ]] || die "no root device specified for formatting"
 
-  # Ensure root dev and /mnt are not currently mounted
-  umount -R -l "$dev" 2>/dev/null || true
-  umount -R -l /mnt 2>/dev/null || true
+  # Ensure root dev and /mnt are not currently mounted in any namespace
+  tinapple_cleanup_mounts "$dev"
 
   log "formatting root partition %s as %s..." "$dev" "$fs"
 

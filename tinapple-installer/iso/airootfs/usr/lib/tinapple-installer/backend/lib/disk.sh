@@ -34,12 +34,7 @@ tinapple_disk_wipe() {
     return 0
   fi
   # Safely unmount any mounts and deactivate swap on target disk
-  swapoff -a 2>/dev/null || true
-  umount -R -l /mnt 2>/dev/null || true
-  while read -r part; do
-    [[ -n "$part" && "$part" != "$disk" ]] || continue
-    umount -l "$part" 2>/dev/null || true
-  done < <(lsblk -ln -o PATH "$disk" 2>/dev/null || true)
+  tinapple_cleanup_mounts "$disk"
 
   wipefs -af "$disk" || true
   sgdisk -Z "$disk" || true

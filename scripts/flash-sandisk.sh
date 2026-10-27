@@ -7,7 +7,27 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
-ISO_PATH="${1:-$(ls -t "${ROOT_DIR}/out"/tinapple-os-*.iso 2>/dev/null | head -n 1)}"
+AUTO_CONFIRM=false
+ISO_PATH=""
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -y|--yes)
+      AUTO_CONFIRM=true
+      shift
+      ;;
+    *)
+      if [[ -z "$ISO_PATH" ]]; then
+        ISO_PATH="$1"
+      fi
+      shift
+      ;;
+  esac
+done
+
+if [[ -z "$ISO_PATH" ]]; then
+  ISO_PATH="$(ls -t "${ROOT_DIR}/out"/tinapple-os-*.iso 2>/dev/null | head -n 1)"
+fi
 
 if [[ -z "$ISO_PATH" || ! -f "$ISO_PATH" ]]; then
   echo "Error: No ISO image found in ${ROOT_DIR}/out/" >&2
@@ -80,10 +100,14 @@ fi
 
 echo ""
 echo "⚠️  WARNING: ALL DATA ON $TARGET_DEV WILL BE PERMANENTLY ERASED!"
-read -rp "Are you sure you want to write $(basename "$ISO_PATH") to $TARGET_DEV? [y/N]: " confirm
-if [[ "$confirm" != [yY] && "$confirm" != [yY][eE][sS] ]]; then
-  echo "Flashing aborted by user."
-  exit 0
+if [[ "$AUTO_CONFIRM" != "true" ]]; then
+  read -rp "Are you sure you want to write $(basename "$ISO_PATH") to $TARGET_DEV? [y/N]: " confirm
+  if [[ "$confirm" != [yY] && "$confirm" != [yY][eE][sS] ]]; then
+    echo "Flashing aborted by user."
+    exit 0
+  fi
+else
+  echo "Auto-confirm enabled (--yes). Proceeding with flash."
 fi
 
 echo ""

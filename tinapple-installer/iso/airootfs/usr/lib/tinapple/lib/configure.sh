@@ -88,7 +88,7 @@ EOH"
   # Deploy Niri & Waybar modern Wayland Rice Configurations
   log_info "deploying Niri Wayland rice configuration for %s..." "$username"
   run_sh "mkdir -p $target/home/$username/.config/niri $target/home/$username/.config/waybar $target/home/$username/.config/foot $target/home/$username/.config/fuzzel"
-  
+
   # Copy niri configuration from repo/bundled path
   for src_dir in "/usr/lib/tinapple-installer/backend/configs/niri" "/mnt/shared/projects/tinapple/configs/niri" "/usr/lib/tinapple/configs/niri" "/etc/tinapple/configs/niri"; do
     if [[ -d "$src_dir" ]]; then

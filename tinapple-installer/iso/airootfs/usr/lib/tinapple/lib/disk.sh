@@ -34,12 +34,7 @@ tinapple_disk_wipe() {
     return 0
   fi
   # Safely unmount any mounts and deactivate swap on target disk
-  swapoff -a 2>/dev/null || true
-  umount -R -l /mnt 2>/dev/null || true
-  while read -r part; do
-    [[ -n "$part" && "$part" != "$disk" ]] || continue
-    umount -l "$part" 2>/dev/null || true
-  done < <(lsblk -ln -o PATH "$disk" 2>/dev/null || true)
+  tinapple_cleanup_mounts "$disk"
 
   wipefs -af "$disk" || true
   sgdisk -Z "$disk" || true
@@ -221,7 +216,7 @@ tinapple_partition() {
       else
         if (( swap_gib > 0 )); then
           sfdisk --label dos "$disk" <<EOF || die "failed to partition %s with sfdisk" "$disk"
-,${esp_gib}G,c,*
+,${esp_gib}G,83,*
 ,${swap_gib}G,82
 ,,83
 EOF
@@ -230,7 +225,7 @@ EOF
           export TINAPPLE_PART_ROOT="$(part_dev "$disk" 3)"
         else
           sfdisk --label dos "$disk" <<EOF || die "failed to partition %s with sfdisk" "$disk"
-,${esp_gib}G,c,*
+,${esp_gib}G,83,*
 ,,83
 EOF
           export TINAPPLE_PART_ESP="$(part_dev "$disk" 1)"

@@ -193,6 +193,31 @@ load_stage_env() {
   done
 }
 
+# Clean up any mounts, swap, or private namespace holds on target devices / /mnt
+tinapple_cleanup_mounts() {
+  local dev="${1:-}"
+  swapoff -a 2>/dev/null || true
+  umount -R -l /mnt 2>/dev/null || true
+  if [[ -n "$dev" ]]; then
+    umount -R -l "$dev" 2>/dev/null || true
+    for p in $(lsblk -ln -o PATH "$dev" 2>/dev/null | grep -v "^${dev}$" || true); do
+      umount -l "$p" 2>/dev/null || true
+    done
+  fi
+
+  # Clear private mount namespaces holding /mnt or target disk
+  local pattern="/mnt"
+  if [[ -n "$dev" ]]; then
+    pattern="(${dev##*/}|/mnt)"
+  fi
+  for pid in $(grep -sE "$pattern" /proc/*/mountinfo 2>/dev/null | cut -d/ -f3 | sort -u); do
+    [[ "$pid" =~ ^[0-9]+$ ]] || continue
+    nsenter -t "$pid" -m umount -R /mnt 2>/dev/null || true
+    nsenter -t "$pid" -m umount -l /mnt 2>/dev/null || true
+  done
+  udevadm settle 2>/dev/null || true
+}
+
 # Persist environment variables for subsequent stages
 save_stage_env() {
   local vars=("$@")

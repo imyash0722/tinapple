@@ -51,6 +51,14 @@ DNS=1.1.1.1 9.9.9.9
 EON
   fi
 
+  # Transfer live NetworkManager Wi-Fi profiles
+  if ls /etc/NetworkManager/system-connections/*.nmconnection >/dev/null 2>&1; then
+    mkdir -p "$target/etc/NetworkManager/system-connections"
+    cp -f /etc/NetworkManager/system-connections/*.nmconnection "$target/etc/NetworkManager/system-connections/"
+    chmod 600 "$target/etc/NetworkManager/system-connections/"*
+    log_ok "transferred active Wi-Fi connection profiles to target"
+  fi
+
   # Enable services
   tinapple_chroot "$target" systemctl enable systemd-networkd systemd-resolved NetworkManager 2>/dev/null || true
   log_ok "networking configuration generated"
