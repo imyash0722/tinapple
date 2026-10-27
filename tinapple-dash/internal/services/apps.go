@@ -868,15 +868,101 @@ WantedBy=multi-user.target
 	return nil
 }
 
+func installRadarr() error {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+	defer cancel()
+
+	cleanStalePacmanLock()
+	_ = exec.CommandContext(ctx, "pacman", "-S", "--noconfirm", "--needed", "sqlite").Run()
+
+	tmpTar := "/tmp/radarr.tar.gz"
+	cmd := exec.CommandContext(ctx, "curl", "--http1.1", "-fsSL", "https://radarr.servarr.com/v1/update/master/updatefile?os=linux&arch=x64&runtime=netcore", "-o", tmpTar)
+	if out, err := cmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("failed to download radarr: %s (%w)", string(out), err)
+	}
+	defer os.Remove(tmpTar)
+
+	_ = os.MkdirAll("/opt", 0755)
+	cmdExtract := exec.CommandContext(ctx, "tar", "-xzf", tmpTar, "-C", "/opt")
+	if out, err := cmdExtract.CombinedOutput(); err != nil {
+		return fmt.Errorf("failed to extract radarr: %s (%w)", string(out), err)
+	}
+
+	_ = os.Remove("/usr/local/bin/radarr")
+	_ = os.Symlink("/opt/Radarr/Radarr", "/usr/local/bin/radarr")
+	_ = os.MkdirAll("/var/lib/radarr", 0755)
+
+	serviceContent := `[Unit]
+Description=Radarr Movie Automator
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/opt/Radarr/Radarr -nobrowser -data=/var/lib/radarr/
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+`
+	if err := os.WriteFile("/etc/systemd/system/radarr.service", []byte(serviceContent), 0644); err != nil {
+		return fmt.Errorf("failed to create radarr.service: %w", err)
+	}
+	return nil
+}
+
+func installSonarr() error {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+	defer cancel()
+
+	cleanStalePacmanLock()
+	_ = exec.CommandContext(ctx, "pacman", "-S", "--noconfirm", "--needed", "sqlite").Run()
+
+	tmpTar := "/tmp/sonarr.tar.gz"
+	cmd := exec.CommandContext(ctx, "curl", "--http1.1", "-fsSL", "https://services.sonarr.tv/v1/download/main/latest?version=4&os=linux&arch=x64", "-o", tmpTar)
+	if out, err := cmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("failed to download sonarr: %s (%w)", string(out), err)
+	}
+	defer os.Remove(tmpTar)
+
+	_ = os.MkdirAll("/opt", 0755)
+	cmdExtract := exec.CommandContext(ctx, "tar", "-xzf", tmpTar, "-C", "/opt")
+	if out, err := cmdExtract.CombinedOutput(); err != nil {
+		return fmt.Errorf("failed to extract sonarr: %s (%w)", string(out), err)
+	}
+
+	_ = os.Remove("/usr/local/bin/sonarr")
+	_ = os.Symlink("/opt/Sonarr/Sonarr", "/usr/local/bin/sonarr")
+	_ = os.MkdirAll("/var/lib/sonarr", 0755)
+
+	serviceContent := `[Unit]
+Description=Sonarr TV Series Automator
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/opt/Sonarr/Sonarr -nobrowser -data=/var/lib/sonarr/
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+`
+	if err := os.WriteFile("/etc/systemd/system/sonarr.service", []byte(serviceContent), 0644); err != nil {
+		return fmt.Errorf("failed to create sonarr.service: %w", err)
+	}
+	return nil
+}
+
 func installProwlarr() error {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 	defer cancel()
 
 	cleanStalePacmanLock()
 	_ = exec.CommandContext(ctx, "pacman", "-S", "--noconfirm", "--needed", "sqlite").Run()
 
 	tmpTar := "/tmp/prowlarr.tar.gz"
-	cmd := exec.CommandContext(ctx, "curl", "-fsSL", "https://prowlarr.servarr.com/v1/update/master/updatefile?os=linux&arch=x64&runtime=netcore", "-o", tmpTar)
+	cmd := exec.CommandContext(ctx, "curl", "--http1.1", "-fsSL", "https://prowlarr.servarr.com/v1/update/master/updatefile?os=linux&arch=x64&runtime=netcore", "-o", tmpTar)
 	if out, err := cmd.CombinedOutput(); err != nil {
 		return fmt.Errorf("failed to download prowlarr: %s (%w)", string(out), err)
 	}
@@ -888,6 +974,8 @@ func installProwlarr() error {
 		return fmt.Errorf("failed to extract prowlarr: %s (%w)", string(out), err)
 	}
 
+	_ = os.Remove("/usr/local/bin/prowlarr")
+	_ = os.Symlink("/opt/Prowlarr/Prowlarr", "/usr/local/bin/prowlarr")
 	_ = os.MkdirAll("/var/lib/prowlarr", 0755)
 
 	serviceContent := `[Unit]
@@ -965,6 +1053,10 @@ func (m *AppManager) Install(id string) error {
 		installErr = installMinecraftServer()
 	case "prowlarr":
 		installErr = installProwlarr()
+	case "radarr":
+		installErr = installRadarr()
+	case "sonarr":
+		installErr = installSonarr()
 	default:
 		if app.Package != "" {
 			cleanStalePacmanLock()
@@ -1043,7 +1135,16 @@ func (m *AppManager) Uninstall(id string) error {
 		_ = os.Remove("/etc/systemd/system/minecraft-server.service")
 	case "prowlarr":
 		_ = os.RemoveAll("/opt/Prowlarr")
+		_ = os.Remove("/usr/local/bin/prowlarr")
 		_ = os.Remove("/etc/systemd/system/prowlarr.service")
+	case "radarr":
+		_ = os.RemoveAll("/opt/Radarr")
+		_ = os.Remove("/usr/local/bin/radarr")
+		_ = os.Remove("/etc/systemd/system/radarr.service")
+	case "sonarr":
+		_ = os.RemoveAll("/opt/Sonarr")
+		_ = os.Remove("/usr/local/bin/sonarr")
+		_ = os.Remove("/etc/systemd/system/sonarr.service")
 	case "metube":
 		_ = os.Remove("/etc/systemd/system/metube.service")
 	default:
