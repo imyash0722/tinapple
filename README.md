@@ -393,31 +393,96 @@ The pipeline is fully automated via `/usr/local/bin/tinapple-configure-seerr` (s
 
 ## 11. System Updates, Pacman Hooks, and Hot-Deployment
 
-### The Automated Update Engine (`tinapple-update`)
-Tinapple ensures all features, package dependencies, directories, and service links are kept up-to-date through a unified updater engine located at `/usr/local/bin/tinapple-update` (source: [`scripts/tinapple-update`](scripts/tinapple-update)):
+### The Tinapple Pacman Repository Architecture (`[tinapple]`)
 
-1. **Pacman & Paru Integration**:
-   Updating via standard package tools automatically executes the feature synchronizer:
-   ```bash
-   # From any terminal or SSH session:
-   sudo pacman -Syu
-   # or with AUR helper:
-   paru -Syu
-   # or using the dedicated alias:
-   update
-   ```
-2. **Post-Transaction Pacman Hook (`95-tinapple-feature-sync.hook`)**:
-   Installed in `/etc/pacman.d/hooks/`, this hook automatically fires at the conclusion of every package transaction (`Operation = Upgrade / Install`). It ensures:
-   - `paru` AUR helper is installed and operational.
-   - `/srv/media` hierarchy exists with group `media` and `2775` (`g+s`) sticky permissions.
-   - Appliance daemons (`jellyfin`, `qbt`, `pineapple`, `navidrome`, `suwayomi`) belong to group `media`.
-   - `bbctl` (Beeper Matrix Chat Bridges manager) is downloaded and verified.
-   - If Servarr stack daemons are active, executes `tinapple-configure-seerr` to re-synchronize API keys and root folders.
-   - Reloads systemd daemon and triggers reverse proxy refresh.
-   - Ensures `tinapple-dash` daemon is running and healthy.
+Tinapple OS features an official GPG-signed Pacman package repository containing custom appliance daemons, CLI utilities, hardware detection engines, and desktop integration components.
 
-3. **Dashboard 1-Click Web Update**:
-   Clicking the **"System Update"** button in the dashboard top navigation bar initiates `POST /api/v1/system/update`, streaming the entire pacman/paru upgrade process live into the web console.
+#### 1. Repository Configuration (`/etc/pacman.conf`)
+To enable the repository on any Arch-based client or server:
+
+```ini
+# /etc/pacman.conf
+
+[tinapple]
+SigLevel = Required DatabaseOptional
+Include = /etc/pacman.d/tinapple-mirrorlist
+```
+
+#### 2. Mirrorlist Definition (`/etc/pacman.d/tinapple-mirrorlist`)
+The mirrorlist provides multi-tier redundant endpoints (GitHub CDN & GitHub Pages):
+
+```ini
+# /etc/pacman.d/tinapple-mirrorlist
+Server = https://raw.githubusercontent.com/imyash0722/tinapple/main/tinapple-repo/repo/$arch
+Server = https://imyash0722.github.io/tinapple/$arch
+```
+
+#### 3. GPG Keyring & Trust Initialization
+The repository is secured with detached GPG signatures verified via pacman:
+```bash
+# Import and sign the Tinapple release key (ID: 1995D6808AD165B0E86A08D2911A6E2B2CEA57EA)
+curl -fsSL https://raw.githubusercontent.com/imyash0722/tinapple/main/tinapple-repo/repo/x86_64/tinapple.gpg | pacman-key --add -
+pacman-key --lsign-key 1995D6808AD165B0E86A08D2911A6E2B2CEA57EA
+```
+
+#### 4. Available Repository Packages (`pacman -Sl tinapple`)
+| Package | Version | Description |
+| :--- | :--- | :--- |
+| `tinapple-dash` | `0.0.1-1` | Go web control plane, REST API, & WebSocket telemetry daemon |
+| `chaddy-store` | `0.0.1-1` | Zero-touch appliance marketplace CLI & package manager |
+| `tinapple-base` | `0.0.1-1` | System base meta-package, preset rules & ACPI clamshell inhibitors |
+| `tinapple-hw` | `0.0.1-2` | Hardware sensors, battery charge limits (80%), & thermal governor |
+| `tinapple-maintenance` | `0.0.1-1` | Snapper Btrfs rollbacks, ALPM pacman hooks & health check daemons |
+| `tinapple-mirrorlist` | `20260928-1` | Mirrorlist configuration for `/etc/pacman.d/tinapple-mirrorlist` |
+| `tinapple-keyring` | `20260928-1` | GPG keyring for automated pacman trust database population |
+| `tinapple-firstboot` | `0.0.1-1` | Interactive TTY1 first-boot provisioning engine |
+| `tinapple-nginx` | `0.0.1-1` | Automated Caddy reverse proxy core module & dynamic route refresh |
+| `tpm` | `3.1.0-1` | Tmux Plugin Manager package |
+| `xrdp` | `0.10.6.1-1` | High-performance remote desktop RDP daemon |
+
+---
+
+### Universal Update Compatibility (`pacman -Syu` & `paru -Syu`)
+
+Tinapple is designed so that standard Arch Linux update commands (`pacman -Syu` or `paru -Syu`) automatically upgrade all core system packages, CachyOS compiler-optimized kernels, Tinapple repository packages, and AUR appliances.
+
+```bash
+# Universal update from any terminal or SSH session:
+sudo pacman -Syu
+
+# Or with AUR helper (updates both repo and AUR packages):
+paru -Syu
+
+# Or using the built-in system alias:
+update
+```
+
+### Automated ALPM Transaction Hook (`95-tinapple-feature-sync.hook`)
+Installed in `/usr/share/libalpm/hooks/` and `/etc/pacman.d/hooks/`, this hook automatically fires at the conclusion of every pacman transaction (`Operation = Upgrade / Install`):
+
+```ini
+[Trigger]
+Operation = Upgrade
+Operation = Install
+Type = Package
+Target = *
+
+[Action]
+Description = Synchronizing Tinapple appliance features, permissions, and stack links...
+When = PostTransaction
+Exec = /usr/local/bin/tinapple-update --post-transaction
+```
+
+Whenever packages are upgraded or installed via `pacman` or `paru`, the hook executes `/usr/local/bin/tinapple-update --post-transaction`, which:
+1. **Ensures `paru` AUR helper** is active (or automatically bootstraps `paru-bin` for AUR packages).
+2. **Synchronizes `/srv/media` Hierarchy**: Verifies `movies`, `shows`, `music`, `downloads`, `youtube`, and `manga` folders with `2775` permissions and validates that daemon users (`jellyfin`, `qbt`, `navidrome`, `suwayomi`) belong to the `media` group.
+3. **Ensures `bbctl`** (Beeper Matrix Chat Bridges manager) is downloaded and executable at `/usr/local/bin/bbctl`.
+4. **Executes `tinapple-configure-seerr`**: Automatically links Radarr, Sonarr, Prowlarr, Bazarr, and Jellyseerr without manual API key entry.
+5. **Synchronizes Wallpaper Gallery**: Synchronizes native wallpapers from `imyash0722/Wallpapers` to `/usr/share/tinapple-dash/wallpapers`.
+6. **Daemon & Proxy Health**: Reloads systemd daemon and verifies `tinapple-dash.service` is healthy on port 8088.
+
+### Dashboard 1-Click Web Update
+Clicking the **"Update OS"** button in the dashboard top navigation bar (or mobile bottom bar) initiates `POST /api/v1/system/update`, which executes `/usr/local/bin/tinapple-update` in full mode and streams live terminal logs directly into the web console.
 
 ### Hot-Deployment Tool (`deploy-server.sh`)
 

@@ -1,8 +1,8 @@
 #
-# Tinapple repository mirrorlist
-# Generated for tinapple OS
+# Tinapple official repository mirrorlist
+# Multi-tier redundant endpoints for tinapple OS
 #
 
+Server = https://raw.githubusercontent.com/imyash0722/tinapple/main/tinapple-repo/repo/$arch
+Server = https://imyash0722.github.io/tinapple/$arch
 Server = https://repo.tinapple.org/$arch
-Server = https://tinapple.github.io/tinapple-repo/$arch
-Server = https://packages.tinapple.org/$arch
