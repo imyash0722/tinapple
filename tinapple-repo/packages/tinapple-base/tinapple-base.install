@@ -27,8 +27,16 @@ EOPAC
   # Enable firstboot service
   systemctl enable tinapple-firstboot.service >/dev/null 2>&1 || true
 
-  # Enable nginx (Caddy reverse proxy)
+  # Enable nginx (Caddy reverse proxy) and tinapple-dash
   systemctl enable tinapple-nginx.service >/dev/null 2>&1 || true
+  systemctl enable tinapple-dash.service >/dev/null 2>&1 || true
+
+  # Ensure media group and /srv/media directory tree
+  groupadd -r media 2>/dev/null || true
+  install -d -m 0775 -o root -g media /srv/media 2>/dev/null || true
+  for d in movies shows music downloads youtube youtube-music manga; do
+    install -d -m 2775 -o root -g media "/srv/media/$d" 2>/dev/null || true
+  done
 
   # Enable fstrim timer
   systemctl enable fstrim.timer >/dev/null 2>&1 || true

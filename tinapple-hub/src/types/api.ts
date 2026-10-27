@@ -170,3 +170,25 @@ export interface TailscaleStatus {
   version?: string;
 }
 
+export interface AppliancePack {
+  id: string;
+  name: string;
+  tagline: string;
+  description: string;
+  badge: string;
+  accentColor: string;
+  icon: string;
+  apps: string[];
+  features: string[];
+}
+
+export interface AppliancePackStatus extends AppliancePack {
+  installedCount: number;
+  runningCount: number;
+  totalCount: number;
+  allInstalled: boolean;
+  allRunning: boolean;
+  appsStatus?: AppInfo[];
+}
+
+

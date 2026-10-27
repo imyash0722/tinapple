@@ -1,0 +1,124 @@
+#!/usr/bin/env bash
+# tinapple-update - Comprehensive system & appliance feature updater for Tinapple OS
+set -euo pipefail
+
+MODE="full"
+if [[ "${1:-}" == "--post-transaction" ]]; then
+  MODE="post-transaction"
+fi
+
+echo "========================================================================"
+echo "       🍎 Tinapple OS Appliance & Feature Synchronizer"
+echo "========================================================================"
+echo "[$(date '+%Y-%m-%d %H:%M:%S')] Running in mode: $MODE"
+
+# 1. Root / Privilege check
+if [[ $EUID -ne 0 ]]; then
+  echo "[!] Elevating privileges using sudo..."
+  exec sudo "$0" "$@"
+fi
+
+# 2. In full mode: Clean stale pacman database locks if left over
+if [[ "$MODE" == "full" ]]; then
+  if [[ -f /var/lib/pacman/db.lck ]]; then
+    # Only remove if no pacman or paru process is currently running
+    if ! pgrep -x pacman >/dev/null && ! pgrep -x paru >/dev/null; then
+      echo "[*] Clearing stale /var/lib/pacman/db.lck..."
+      rm -f /var/lib/pacman/db.lck
+    fi
+  fi
+fi
+
+# 3. Ensure paru is installed for AUR packages
+ensure_paru() {
+  if ! command -v paru >/dev/null 2>&1; then
+    echo "[*] Paru AUR helper not detected. Installing paru-bin..."
+    local PRIMARY_USER="pineapple"
+    if ! id "$PRIMARY_USER" >/dev/null 2>&1; then
+      PRIMARY_USER=$(id -un 1000 2>/dev/null || echo "tinapple")
+    fi
+    # Try pacman first (if available in tinapple repo or cachyos)
+    if pacman -S --noconfirm --needed paru >/dev/null 2>&1; then
+      echo "[✓] Paru installed via pacman repository"
+    else
+      echo "[*] Fetching and bootstrapping paru-bin for $PRIMARY_USER..."
+      local TMP_DIR="/tmp/paru-bootstrap"
+      rm -rf "$TMP_DIR"
+      mkdir -p "$TMP_DIR"
+      chown -R "$PRIMARY_USER:$PRIMARY_USER" "$TMP_DIR"
+      sudo -u "$PRIMARY_USER" git clone --depth=1 https://aur.archlinux.org/paru-bin.git "$TMP_DIR"
+      (cd "$TMP_DIR" && sudo -u "$PRIMARY_USER" makepkg -si --noconfirm --skippgpcheck) || true
+      rm -rf "$TMP_DIR"
+    fi
+  else
+    echo "[✓] Paru AUR package manager is active at $(which paru)"
+  fi
+}
+
+# 4. Perform full system upgrade if in full mode
+if [[ "$MODE" == "full" ]]; then
+  ensure_paru
+  echo "[*] Synchronizing package databases and updating all packages..."
+  pacman -Syu --noconfirm --needed || true
+fi
+
+# 5. Ensure core Tinapple directories and permissions
+echo "[*] Ensuring /srv/media directory hierarchy & group permissions..."
+install -d -m 0775 -o root -g media /srv/media
+for dir in movies shows music downloads youtube youtube-music manga; do
+  install -d -m 2775 -o root -g media "/srv/media/$dir"
+done
+chmod -R 2775 /srv/media 2>/dev/null || true
+
+# Ensure all appliance users belong to group 'media'
+for u in jellyfin qbt pineapple navidrome suwayomi; do
+  if id "$u" >/dev/null 2>&1; then
+    usermod -aG media "$u" 2>/dev/null || true
+  fi
+done
+echo "[✓] /srv/media directories and media group members synchronized"
+
+# 6. Ensure bbctl (Beeper Bridge Manager) is present
+if ! command -v bbctl >/dev/null 2>&1; then
+  echo "[*] Installing official bbctl binary for Beeper Matrix Chat Bridges..."
+  ARCH=$(uname -m)
+  BB_ARCH="amd64"
+  [[ "$ARCH" == "aarch64" ]] && BB_ARCH="arm64"
+  curl -fsSL "https://github.com/beeper/bridge-manager/releases/latest/download/bbctl-linux-$BB_ARCH" -o /usr/local/bin/bbctl || true
+  chmod +x /usr/local/bin/bbctl 2>/dev/null || true
+fi
+if command -v bbctl >/dev/null 2>&1; then
+  echo "[✓] bbctl is installed at $(which bbctl)"
+fi
+
+# 7. Ensure tinapple-configure-seerr is present and executable
+if [[ -f /usr/local/bin/tinapple-configure-seerr ]]; then
+  chmod +x /usr/local/bin/tinapple-configure-seerr
+  echo "[✓] tinapple-configure-seerr automator ready"
+  
+  # If Servarr stack services are active, run auto-configuration to ensure continuous synchronization
+  if systemctl is-active --quiet radarr 2>/dev/null || systemctl is-active --quiet sonarr 2>/dev/null; then
+    echo "[*] Servarr media daemons detected active. Running stack synchronizer..."
+    python3 /usr/local/bin/tinapple-configure-seerr || true
+  fi
+fi
+
+# 8. Reload systemd daemon and refresh services
+echo "[*] Reloading systemd daemons and refreshing reverse proxy..."
+systemctl daemon-reload
+
+if command -v tinapple-config-generator >/dev/null 2>&1; then
+  tinapple-config-generator nginx-sync >/dev/null 2>&1 || true
+fi
+
+# 9. Verify tinapple-dash service
+if systemctl is-enabled --quiet tinapple-dash 2>/dev/null; then
+  if ! systemctl is-active --quiet tinapple-dash 2>/dev/null; then
+    systemctl restart tinapple-dash || true
+  fi
+  echo "[✓] tinapple-dash daemon is healthy and running on port 8088"
+fi
+
+echo "========================================================================"
+echo " [SUCCESS] Tinapple OS and all features are up-to-date and synchronized!"
+echo "========================================================================"

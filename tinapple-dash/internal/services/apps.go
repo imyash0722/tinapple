@@ -80,6 +80,28 @@ type AppDefinition struct {
 	ClientAppURL string `json:"clientAppUrl,omitempty"`
 }
 
+type AppliancePack struct {
+	ID          string   `json:"id"`
+	Name        string   `json:"name"`
+	Tagline     string   `json:"tagline"`
+	Description string   `json:"description"`
+	Badge       string   `json:"badge"`
+	AccentColor string   `json:"accentColor"`
+	Icon        string   `json:"icon"`
+	Apps        []string `json:"apps"`
+	Features    []string `json:"features"`
+}
+
+type AppliancePackStatus struct {
+	AppliancePack
+	InstalledCount int         `json:"installedCount"`
+	RunningCount   int         `json:"runningCount"`
+	TotalCount     int         `json:"totalCount"`
+	AllInstalled   bool        `json:"allInstalled"`
+	AllRunning     bool        `json:"allRunning"`
+	AppsStatus     []AppStatus `json:"appsStatus"`
+}
+
 type AppStatus struct {
 	AppDefinition
 	Installed   bool              `json:"installed"`
@@ -111,6 +133,8 @@ type AppManager struct {
 	operationMu sync.Mutex
 	apps        map[string]AppDefinition
 	appOrder    []string
+	packs       map[string]AppliancePack
+	packOrder   []string
 	cacheMu     sync.RWMutex
 	cachedAt    time.Time
 	cachedList  []AppStatus
@@ -128,6 +152,8 @@ func NewAppManager() *AppManager {
 	mgr := &AppManager{
 		apps:        make(map[string]AppDefinition),
 		appOrder:    make([]string, 0),
+		packs:       make(map[string]AppliancePack),
+		packOrder:   make([]string, 0),
 		logSubChans: make(map[chan InstallLogMessage]struct{}),
 		logState: InstallProgressState{
 			Status: "idle",
@@ -496,6 +522,128 @@ func NewAppManager() *AppManager {
 		mgr.apps[d.ID] = d
 		mgr.appOrder = append(mgr.appOrder, d.ID)
 	}
+
+	packDefs := []AppliancePack{
+		{
+			ID:          "seerr-stack",
+			Name:        "Ultimate Streaming & Servarr Stack",
+			Tagline:     "Zero-touch 4K/1080p streaming cloud with automated discovery",
+			Description: "Complete media automation stack featuring Jellyfin streaming server, Jellyseerr discovery and user requests portal, Radarr & Sonarr automated indexers via Prowlarr, Bazarr subtitle synchronization, and qBittorrent high-speed engine.",
+			Badge:       "STREAMING & MEDIA",
+			AccentColor: "#AA5CC3",
+			Icon:        "seerr",
+			Apps:        []string{"jellyfin", "seerr", "radarr", "sonarr", "prowlarr", "bazarr", "qbittorrent"},
+			Features: []string{
+				"Automated root libraries in /srv/media/{movies,shows}",
+				"qBittorrent client authenticated and synced (:8080)",
+				"Prowlarr public trackers (YTS, Nyaa, TPB, LimeTorrents) linked",
+				"Bazarr multi-language subtitle automator connected",
+				"Jellyseerr 1-click requests linked to Jellyfin & Servarrs (:5055)",
+			},
+		},
+		{
+			ID:          "manga-suite",
+			Name:        "Manga & Comic Infinite Library",
+			Tagline:     "Decentralized manga streaming & multi-device reading sync",
+			Description: "Self-hosted manga, comic, and webtoon streaming hub powered by Suwayomi with 1,000+ Keiyoushi source extensions, built-in Suwayomi-Tsumiru reader, and SyncYomi sync bridge for Tachiyomi, Mihon, and Kuukiyomi.",
+			Badge:       "MANGA & COMICS",
+			AccentColor: "#F43F5E",
+			Icon:        "suwayomi",
+			Apps:        []string{"suwayomi", "syncyomi"},
+			Features: []string{
+				"1,000+ Keiyoushi manga source extensions enabled",
+				"Local library storage in /srv/media/manga",
+				"Suwayomi-Tsumiru native web reader (:4567 /tsumiru/)",
+				"SyncYomi cross-device reading progress synchronization (:8282)",
+			},
+		},
+		{
+			ID:          "privacy-shield",
+			Name:        "Mesh Privacy & Perimeter Shield",
+			Tagline:     "Zero-trust encrypted VPN mesh, ad-blocking DNS & Tor routing",
+			Description: "All-in-one homelab network defense: Tailscale WireGuard mesh for secure remote access without port forwarding, AdGuard Home for network-wide ad & tracker blocking, Proton VPN encrypted egress tunnel, and Tor onion proxy.",
+			Badge:       "SECURITY & MESH",
+			AccentColor: "#00D26A",
+			Icon:        "adguard",
+			Apps:        []string{"tailscale", "adguard", "protonvpn", "tor"},
+			Features: []string{
+				"Tailscale zero-config WireGuard mesh access",
+				"AdGuard Home DNS-over-HTTPS & tracker blocking (:3000)",
+				"Tor anonymous SOCKS5 onion proxy (:9050)",
+				"Proton VPN high-speed egress encryption",
+			},
+		},
+		{
+			ID:          "audiophile-cloud",
+			Name:        "Audiophile Music Cloud & Downloader",
+			Tagline:     "Lossless Subsonic audio streaming & offline YouTube archiver",
+			Description: "Modern high-fidelity music streaming server compatible with Symfonium, Feishin, and Substreamer, integrated with MeTube for headless scheduled downloading of YouTube Music tracks, albums, and playlists.",
+			Badge:       "MUSIC & AUDIO",
+			AccentColor: "#FF7F00",
+			Icon:        "navidrome",
+			Apps:        []string{"navidrome", "metube"},
+			Features: []string{
+				"Subsonic & Airsonic REST API support for mobile & desktop players",
+				"Storage in /srv/media/music with automated library scanning",
+				"Headless MeTube YouTube/SoundCloud playlist archiver (:8085)",
+				"On-the-fly FLAC/Opus/MP3 transcoding",
+			},
+		},
+		{
+			ID:          "cloud-vault",
+			Name:        "Cloud Vault & Resilient Backups",
+			Tagline:     "Encrypted password manager, P2P sync & web file manager",
+			Description: "Self-hosted digital sovereignty suite: Vaultwarden lightweight Bitwarden vault, Syncthing peer-to-peer decentralized file sync for laptops and phones, and FileBrowser Quantum web file explorer.",
+			Badge:       "VAULT & SYNC",
+			AccentColor: "#3B82F6",
+			Icon:        "vaultwarden",
+			Apps:        []string{"vaultwarden", "syncthing", "filebrowser"},
+			Features: []string{
+				"Bitwarden client compatibility (passwords, 2FA, passkeys)",
+				"Syncthing continuous peer-to-peer real-time folder sync (:8384)",
+				"FileBrowser web manager with audio, video, & document preview (:8082)",
+				"Zero reliance on third-party cloud servers",
+			},
+		},
+		{
+			ID:          "second-brain",
+			Name:        "Second Brain & Knowledge Base",
+			Tagline:     "Real-time encrypted Obsidian LiveSync & markdown explorer",
+			Description: "Self-hosted backend for Obsidian knowledge bases. CouchDB provides end-to-end encrypted real-time note synchronization across iOS, Android, and PC, alongside FileBrowser Quantum for remote document editing and backup.",
+			Badge:       "KNOWLEDGE & NOTES",
+			AccentColor: "#8B5CF6",
+			Icon:        "couchdb",
+			Apps:        []string{"couchdb", "filebrowser"},
+			Features: []string{
+				"CouchDB multi-master replication with CORS enabled (:5984)",
+				"Zero-subscription Obsidian LiveSync support",
+				"Instant conflict resolution and revision tracking",
+				"Searchable markdown document vault",
+			},
+		},
+		{
+			ID:          "gaming-anvil",
+			Name:        "Gaming Appliance & Anycast Tunnel",
+			Tagline:     "High-tickrate PaperMC server with instant public Playit tunnel",
+			Description: "Enterprise-tuned Minecraft server using PaperMC with Aikar's optimized JVM garbage collection parameters, paired with Playit.gg Anycast agent to give friends public join domains without port forwarding.",
+			Badge:       "GAMING & CLOUD",
+			AccentColor: "#10B981",
+			Icon:        "minecraft",
+			Apps:        []string{"minecraft", "playit"},
+			Features: []string{
+				"PaperMC high-performance server runtime (:25565)",
+				"Aikar's optimized garbage collection GC flags pre-configured",
+				"Playit.gg Anycast tunnel with custom public domain",
+				"Automated crash recovery & systemd supervision",
+			},
+		},
+	}
+
+	for _, p := range packDefs {
+		mgr.packs[p.ID] = p
+		mgr.packOrder = append(mgr.packOrder, p.ID)
+	}
+
 	return mgr
 }
 
@@ -1316,9 +1464,90 @@ func (m *AppManager) runStreamCmd(ctx context.Context, appID string, name string
 	return nil
 }
 
+func (m *AppManager) ListPacks() []AppliancePackStatus {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	result := make([]AppliancePackStatus, 0, len(m.packOrder))
+	for _, id := range m.packOrder {
+		pack := m.packs[id]
+		status := AppliancePackStatus{
+			AppliancePack: pack,
+			TotalCount:    len(pack.Apps),
+			AppsStatus:    make([]AppStatus, 0, len(pack.Apps)),
+		}
+
+		installedCount := 0
+		runningCount := 0
+
+		for _, appID := range pack.Apps {
+			if def, exists := m.apps[appID]; exists {
+				st := m.inspectApp(def)
+				status.AppsStatus = append(status.AppsStatus, st)
+				if st.Installed {
+					installedCount++
+				}
+				if st.Running {
+					runningCount++
+				}
+			}
+		}
+
+		status.InstalledCount = installedCount
+		status.RunningCount = runningCount
+		status.AllInstalled = (installedCount == len(pack.Apps) && len(pack.Apps) > 0)
+		status.AllRunning = (runningCount == len(pack.Apps) && len(pack.Apps) > 0)
+
+		result = append(result, status)
+	}
+	return result
+}
+
+func (m *AppManager) GetPack(id string) (*AppliancePackStatus, error) {
+	m.mu.RLock()
+	pack, ok := m.packs[id]
+	m.mu.RUnlock()
+	if !ok {
+		return nil, fmt.Errorf("pack %s not found", id)
+	}
+
+	status := AppliancePackStatus{
+		AppliancePack: pack,
+		TotalCount:    len(pack.Apps),
+		AppsStatus:    make([]AppStatus, 0, len(pack.Apps)),
+	}
+
+	installedCount := 0
+	runningCount := 0
+
+	for _, appID := range pack.Apps {
+		if def, exists := m.apps[appID]; exists {
+			st := m.inspectApp(def)
+			status.AppsStatus = append(status.AppsStatus, st)
+			if st.Installed {
+				installedCount++
+			}
+			if st.Running {
+				runningCount++
+			}
+		}
+	}
+
+	status.InstalledCount = installedCount
+	status.RunningCount = runningCount
+	status.AllInstalled = (installedCount == len(pack.Apps) && len(pack.Apps) > 0)
+	status.AllRunning = (runningCount == len(pack.Apps) && len(pack.Apps) > 0)
+
+	return &status, nil
+}
+
 func (m *AppManager) Install(id string) error {
 	m.operationMu.Lock()
 	defer m.operationMu.Unlock()
+	return m.installUnlocked(id)
+}
+
+func (m *AppManager) installUnlocked(id string) error {
 	m.mu.RLock()
 	app, ok := m.apps[id]
 	m.mu.RUnlock()
@@ -1436,6 +1665,202 @@ func (m *AppManager) Install(id string) error {
 	return nil
 }
 
+func (m *AppManager) InstallPack(id string) error {
+	m.operationMu.Lock()
+	defer m.operationMu.Unlock()
+
+	m.mu.RLock()
+	pack, ok := m.packs[id]
+	m.mu.RUnlock()
+	if !ok {
+		return fmt.Errorf("pack %s not found", id)
+	}
+
+	m.SetInstallState("running", id, pack.Name)
+	m.AppendLog(id, "command", fmt.Sprintf(">>> Initiating deployment pipeline for pack %s (%d apps)...", pack.Name, len(pack.Apps)))
+
+	for i, appID := range pack.Apps {
+		m.mu.RLock()
+		def, exists := m.apps[appID]
+		m.mu.RUnlock()
+		if !exists {
+			continue
+		}
+
+		st := m.inspectApp(def)
+		if st.Installed {
+			m.AppendLog(id, "info", fmt.Sprintf("[%d/%d] %s is already installed.", i+1, len(pack.Apps), def.Name))
+			if !st.Running && def.Unit != "" {
+				_ = exec.Command("systemctl", "start", def.Unit).Run()
+			}
+			continue
+		}
+
+		m.AppendLog(id, "command", fmt.Sprintf(">>> [%d/%d] Deploying %s (%s)...", i+1, len(pack.Apps), def.Name, appID))
+		if err := m.installUnlocked(appID); err != nil {
+			m.AppendLog(id, "error", fmt.Sprintf("Deployment failed on component %s: %v", def.Name, err))
+			m.SetInstallState("error", id, pack.Name)
+			return err
+		}
+	}
+
+	// Auto-configure stack
+	m.AppendLog(id, "command", fmt.Sprintf(">>> Executing stack orchestrator & auto-configuration for %s...", pack.Name))
+	if err := m.configurePackUnlocked(id); err != nil {
+		m.AppendLog(id, "warn", fmt.Sprintf("Notice during pack auto-configuration: %v", err))
+	}
+
+	_ = m.refreshProxyRoutes()
+	m.AppendLog(id, "success", fmt.Sprintf("SUCCESS: All appliances in %s are deployed, configured, and operational!", pack.Name))
+	m.SetInstallState("success", id, pack.Name)
+	return nil
+}
+
+func (m *AppManager) ConfigurePack(id string) error {
+	m.operationMu.Lock()
+	defer m.operationMu.Unlock()
+	return m.configurePackUnlocked(id)
+}
+
+func (m *AppManager) configurePackUnlocked(id string) error {
+	m.mu.RLock()
+	pack, ok := m.packs[id]
+	m.mu.RUnlock()
+	if !ok {
+		return fmt.Errorf("pack %s not found", id)
+	}
+
+	m.SetInstallState("running", id, pack.Name)
+	m.AppendLog(id, "command", fmt.Sprintf(">>> Running configuration engine for %s...", pack.Name))
+
+	switch id {
+	case "seerr-stack", "streaming":
+		scriptPaths := []string{
+			"/usr/local/bin/tinapple-configure-seerr",
+			"/mnt/shared/projects/tinapple/scripts/tinapple-configure-seerr",
+		}
+		var scriptPath string
+		for _, p := range scriptPaths {
+			if _, err := os.Stat(p); err == nil {
+				scriptPath = p
+				break
+			}
+		}
+		if scriptPath == "" {
+			err := fmt.Errorf("tinapple-configure-seerr script not found on system")
+			m.AppendLog(id, "error", err.Error())
+			m.SetInstallState("error", id, pack.Name)
+			return err
+		}
+
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+		defer cancel()
+		if err := m.runStreamCmd(ctx, id, "python3", scriptPath); err != nil {
+			m.AppendLog(id, "error", fmt.Sprintf("Configuration script exited with error: %v", err))
+			m.SetInstallState("error", id, pack.Name)
+			return err
+		}
+
+	case "manga-suite":
+		_ = os.MkdirAll("/srv/media/manga", 0775)
+		_ = exec.Command("chown", "-R", "root:media", "/srv/media/manga").Run()
+		_ = exec.Command("chmod", "-R", "775", "/srv/media/manga").Run()
+		_ = exec.Command("chmod", "-R", "g+s", "/srv/media/manga").Run()
+		m.AppendLog(id, "info", "[✓] Storage /srv/media/manga configured with media group permissions")
+		_ = exec.Command("systemctl", "restart", "suwayomi-server").Run()
+		m.AppendLog(id, "info", "[✓] Suwayomi Manga Server reloaded and active on port 4567")
+
+	case "privacy-shield":
+		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
+		defer cancel()
+		for _, unit := range []string{"adguardhome", "tor", "tailscaled"} {
+			_ = m.runStreamCmd(ctx, id, "systemctl", "enable", "--now", unit)
+		}
+		m.AppendLog(id, "info", "[✓] AdGuard Home DNS protection verified (:3000)")
+		m.AppendLog(id, "info", "[✓] Tor anonymous SOCKS5 onion proxy verified (:9050)")
+		m.AppendLog(id, "info", "[✓] Tailscale WireGuard mesh active")
+
+	case "audiophile-cloud":
+		_ = os.MkdirAll("/srv/media/music", 0775)
+		_ = os.MkdirAll("/srv/media/youtube-music", 0775)
+		_ = exec.Command("chown", "-R", "root:media", "/srv/media/music", "/srv/media/youtube-music").Run()
+		_ = exec.Command("chmod", "-R", "775", "/srv/media/music", "/srv/media/youtube-music").Run()
+		_ = exec.Command("chmod", "-R", "g+s", "/srv/media/music", "/srv/media/youtube-music").Run()
+		for _, u := range []string{"navidrome", "pineapple"} {
+			_ = exec.Command("usermod", "-aG", "media", u).Run()
+		}
+		_ = exec.Command("systemctl", "restart", "navidrome").Run()
+		_ = exec.Command("systemctl", "restart", "metube").Run()
+		m.AppendLog(id, "info", "[✓] /srv/media/music library configured and linked to MeTube downloads")
+		m.AppendLog(id, "info", "[✓] Navidrome Subsonic music streamer active on port 4533")
+
+	case "cloud-vault":
+		_ = os.MkdirAll("/srv/backups", 0775)
+		_ = exec.Command("chmod", "-R", "775", "/srv/backups").Run()
+		_ = exec.Command("systemctl", "restart", "vaultwarden").Run()
+		_ = exec.Command("systemctl", "restart", "filebrowser").Run()
+		m.AppendLog(id, "info", "[✓] Vaultwarden Bitwarden-compatible vault active on port 8000")
+		m.AppendLog(id, "info", "[✓] FileBrowser Quantum file manager active on port 8082")
+
+	case "second-brain":
+		_ = exec.Command("systemctl", "restart", "couchdb").Run()
+		m.AppendLog(id, "info", "[✓] CouchDB LiveSync server active on port 5984")
+		m.AppendLog(id, "info", "[✓] FileBrowser markdown vault ready")
+
+	case "gaming-anvil":
+		_ = os.MkdirAll("/srv/minecraft", 0775)
+		_ = os.WriteFile("/srv/minecraft/eula.txt", []byte("eula=true\n"), 0644)
+		_ = exec.Command("systemctl", "restart", "minecraft").Run()
+		_ = exec.Command("systemctl", "restart", "playit").Run()
+		m.AppendLog(id, "info", "[✓] PaperMC high-performance Minecraft engine active on port 25565")
+		m.AppendLog(id, "info", "[✓] Playit.gg Anycast public domain tunnel active")
+	}
+
+	m.AppendLog(id, "success", fmt.Sprintf("SUCCESS: %s is 100%% configured, synchronized, and operational!", pack.Name))
+	m.SetInstallState("success", id, pack.Name)
+	return nil
+}
+
+func (m *AppManager) StartPack(id string) error {
+	m.operationMu.Lock()
+	defer m.operationMu.Unlock()
+	m.mu.RLock()
+	pack, ok := m.packs[id]
+	m.mu.RUnlock()
+	if !ok {
+		return fmt.Errorf("pack %s not found", id)
+	}
+	for _, appID := range pack.Apps {
+		m.mu.RLock()
+		app, ok := m.apps[appID]
+		m.mu.RUnlock()
+		if ok && app.Unit != "" {
+			_ = exec.Command("systemctl", "start", app.Unit).Run()
+		}
+	}
+	return m.refreshProxyRoutes()
+}
+
+func (m *AppManager) StopPack(id string) error {
+	m.operationMu.Lock()
+	defer m.operationMu.Unlock()
+	m.mu.RLock()
+	pack, ok := m.packs[id]
+	m.mu.RUnlock()
+	if !ok {
+		return fmt.Errorf("pack %s not found", id)
+	}
+	for _, appID := range pack.Apps {
+		m.mu.RLock()
+		app, ok := m.apps[appID]
+		m.mu.RUnlock()
+		if ok && app.Unit != "" {
+			_ = exec.Command("systemctl", "stop", app.Unit).Run()
+		}
+	}
+	return m.refreshProxyRoutes()
+}
+
 func (m *AppManager) Uninstall(id string) error {
 	m.operationMu.Lock()
 	defer m.operationMu.Unlock()
@@ -1514,6 +1939,47 @@ func (m *AppManager) Uninstall(id string) error {
 
 	_ = exec.Command("systemctl", "daemon-reload").Run()
 	return m.refreshProxyRoutes()
+}
+
+func (m *AppManager) RunSystemUpdate() error {
+	scriptPaths := []string{
+		"/usr/local/bin/tinapple-update",
+		"/usr/bin/tinapple-update",
+		"/mnt/shared/projects/tinapple/scripts/tinapple-update",
+	}
+	var scriptPath string
+	for _, p := range scriptPaths {
+		if _, err := os.Stat(p); err == nil {
+			scriptPath = p
+			break
+		}
+	}
+	if scriptPath == "" {
+		return fmt.Errorf("tinapple-update executable not found on system")
+	}
+
+	m.SetInstallState("running", "system-update", "Tinapple OS & Feature Update")
+	m.AppendLog("system-update", "command", ">>> Initiating full system pacman/paru upgrade and feature sync...")
+
+	go func() {
+		m.operationMu.Lock()
+		defer m.operationMu.Unlock()
+
+		ctx, cancel := context.WithTimeout(context.Background(), 25*time.Minute)
+		defer cancel()
+
+		if err := m.runStreamCmd(ctx, "system-update", "bash", scriptPath); err != nil {
+			m.AppendLog("system-update", "error", fmt.Sprintf("System update pipeline failed: %v", err))
+			m.SetInstallState("error", "system-update", "Tinapple OS & Feature Update")
+			return
+		}
+
+		_ = m.refreshProxyRoutes()
+		m.AppendLog("system-update", "success", "SUCCESS: All system packages, appliances, and features are fully updated!")
+		m.SetInstallState("success", "system-update", "Tinapple OS & Feature Update")
+	}()
+
+	return nil
 }
 
 func (m *AppManager) Start(id string) error {

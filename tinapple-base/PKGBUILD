@@ -12,7 +12,8 @@ depends=(
   'networkmanager' 'polkit' 'sudo' 'vim' 'zsh' 'git' 'curl' 'wget' 'paru'
   'tinapple-keyring' 'tinapple-mirrorlist'
   'tinapple-hw' 'tinapple-firstboot'
-  'tinapple-nginx'
+  'tinapple-nginx' 'tinapple-dash'
+  'tinapple-config-generator' 'tinapple-maintenance'
 )
 optdepends=(
   'niri: scrollable-tiling Wayland compositor'

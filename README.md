@@ -10,17 +10,18 @@ Turnkey homelab operating system and appliance platform engineered for bare-meta
 2. [Key Capabilities](#2-key-capabilities)
 3. [System Architecture and Subsystems](#3-system-architecture-and-subsystems)
 4. [Integrated Homelab Services and Port Matrix](#4-integrated-homelab-services-and-port-matrix)
-5. [Hardware Specifications and Power Abstraction](#5-hardware-specifications-and-power-abstraction)
-6. [Installation and First-Boot Provisioning](#6-installation-and-first-boot-provisioning)
-7. [Networking, Remote Access, and HTTPS Configuration](#7-networking-remote-access-and-https-configuration)
-8. [Storage Layout and Multi-User Setup](#8-storage-layout-and-multi-user-setup)
-9. [Suwayomi Manga Server Integration](#9-suwayomi-manga-server-integration)
-10. [Hot-Deployment and System Update Architecture](#10-hot-deployment-and-system-update-architecture)
-11. [Android Companion Client Application](#11-android-companion-client-application)
-12. [Service Management and Command Reference](#12-service-management-and-command-reference)
-13. [Troubleshooting and Diagnostic Runbook](#13-troubleshooting-and-diagnostic-runbook)
-14. [Repository Directory Structure](#14-repository-directory-structure)
-15. [License](#15-license)
+5. [Appliance Packs & Stacks System](#5-appliance-packs--stacks-system)
+6. [Hardware Specifications and Power Abstraction](#6-hardware-specifications-and-power-abstraction)
+7. [Installation and First-Boot Provisioning](#7-installation-and-first-boot-provisioning)
+8. [Networking, Remote Access, and MagicDNS](#8-networking-remote-access-and-magicdns)
+9. [Storage Layout and Multi-User Setup](#9-storage-layout-and-multi-user-setup)
+10. [Media Automation & Seerr Stack Orchestrator](#10-media-automation--seerr-stack-orchestrator)
+11. [System Updates, Pacman Hooks, and Hot-Deployment](#11-system-updates-pacman-hooks-and-hot-deployment)
+12. [Native Client Applications (Plezy, Tsumiru, Android)](#12-native-client-applications-plezy-tsumiru-android)
+13. [Service Management and Command Reference](#13-service-management-and-command-reference)
+14. [Troubleshooting and Diagnostic Runbook](#14-troubleshooting-and-diagnostic-runbook)
+15. [Repository Directory Structure](#15-repository-directory-structure)
+16. [License](#16-license)
 
 ---
 
@@ -118,10 +119,34 @@ tinapple packages and manages a comprehensive suite of homelab services. Below i
 | Bazarr | `bazarr` | `bazarr.service` | 6767 | `http://<server>:6767/` | Automated subtitle downloader for Sonarr/Radarr |
 | Jellyseerr | `seerr` | `seerr.service` | 5055 | `http://<server>:5055/` | Request management and media discovery portal |
 | CouchDB | `couchdb` | `couchdb.service` | 5984 | `http://<server>:5984/` | Database backend for Obsidian LiveSync notes |
+| SyncYomi | `syncyomi` | `syncyomi.service` | 8282 | `http://<server>:8282/` | Manga reading progress synchronization bridge |
+| Minecraft PaperMC | `minecraft` | `minecraft.service` | 25565 | `<server>:25565` | High-tickrate gaming appliance with Aikar GC |
+| Playit Anycast | `playit` | `playit.service` | Dynamic | Global Anycast Tunnel | Public domain tunnel for servers without port forwarding |
+| Proton VPN Client | `proton-vpn-cli` | `proton.VPN.service` | Dynamic | Egress VPN Tunnel | Headless Swiss WireGuard egress tunnel |
+| Beeper Matrix Bridges | `bbctl` | `bbctl.service` | Dynamic | Matrix Bridges | Self-hosted bridges for WhatsApp, Signal, Discord, etc. |
 
 ---
 
-## 5. Hardware Specifications and Power Abstraction
+## 5. Appliance Packs & Stacks System
+
+Tinapple delivers cohesive homelab experiences through pre-configured **Appliance Packs**. Instead of manually configuring complex inter-service dependencies, ports, and API tokens across disparate projects, each pack provides 1-click batch installation and automated orchestrator linking:
+
+| Pack Name | Included Daemons | Badge | Core Highlights |
+|-----------|------------------|-------|-----------------|
+| **Ultimate Streaming & Servarr Stack** | `jellyfin`, `seerr`, `radarr`, `sonarr`, `prowlarr`, `bazarr`, `qbittorrent` | `STREAMING & MEDIA` | Zero-touch 4K/1080p media cloud: automated root libraries in `/srv/media`, qBittorrent authenticated API linking, Prowlarr trackers auto-synced, Bazarr multi-language subtitle fetching, and Jellyseerr discovery connected to Jellyfin server. |
+| **Manga & Comic Infinite Library** | `suwayomi`, `syncyomi` | `MANGA & COMICS` | 1,000+ Keiyoushi source extensions enabled, local storage in `/srv/media/manga`, Suwayomi-Tsumiru native Web and mobile reader, and cross-device reading progress synchronization via SyncYomi (:8282). |
+| **Mesh Privacy & Perimeter Shield** | `tailscale`, `adguard`, `protonvpn`, `tor` | `SECURITY & MESH` | Zero-trust WireGuard mesh networking, AdGuard Home DNS-over-HTTPS & ad/tracker blocking (:3000), Tor anonymous SOCKS5 onion proxy (:9050), and Proton VPN high-speed egress encryption. |
+| **Audiophile Music Cloud & Downloader** | `navidrome`, `metube` | `MUSIC & AUDIO` | Lossless Subsonic/Airsonic streaming server for Symfonium, Feishin, and Substreamer, paired with MeTube for headless automated downloading of YouTube/SoundCloud playlists directly into `/srv/media/music`. |
+| **Cloud Vault & Resilient Backups** | `vaultwarden`, `syncthing`, `filebrowser` | `VAULT & SYNC` | Bitwarden-compatible password vault with Web Crypto API, Syncthing peer-to-peer real-time file synchronization across mobile and desktop devices, and FileBrowser Quantum web file explorer. |
+| **Second Brain & Knowledge Base** | `couchdb`, `filebrowser` | `KNOWLEDGE & NOTES` | Real-time end-to-end encrypted database sync for Obsidian LiveSync across iOS, Android, and PC with CORS enabled (:5984), paired with FileBrowser for markdown search and document storage. |
+| **Gaming Appliance & Anycast Tunnel** | `minecraft`, `playit` | `GAMING & CLOUD` | PaperMC high-performance Minecraft server (:25565) with Aikar's tuned JVM GC memory optimization flags, paired with Playit.gg Anycast agent providing public player join domains without port forwarding. |
+
+### 1-Click Pack Installation & Auto-Configuration
+In the Tinapple Web Hub Store tab, toggle **"Packs & Stacks"** to view live cards. Clicking **"Install Full Pack"** or **"Auto-Configure Stack"** triggers the backend deployment pipeline with live output streamed directly to the built-in terminal.
+
+---
+
+## 6. Hardware Specifications and Power Abstraction
 
 ### Minimum Requirements
 
@@ -347,11 +372,56 @@ To install manga source extensions in Suwayomi:
 
 ---
 
-## 10. Hot-Deployment and System Update Architecture
+## 10. Media Automation & Seerr Stack Orchestrator
 
-tinapple includes an automated hot-deployment tool located at [`scripts/deploy-server.sh`](scripts/deploy-server.sh). It compiles and updates the appliance without requiring an operating system reinstall, without wiping user data, and without system reboots.
+Tinapple integrates a headless zero-touch media automation pipeline linking Jellyfin, Jellyseerr, Radarr, Sonarr, Prowlarr, Bazarr, and qBittorrent.
 
-### How Updates Work
+### Automated Orchestration Script (`tinapple-configure-seerr`)
+The pipeline is fully automated via `/usr/local/bin/tinapple-configure-seerr` (source: [`scripts/tinapple-configure-seerr`](scripts/tinapple-configure-seerr)):
+1. **Filesystem Hierarchy**: Pre-provisions `/srv/media/{movies,shows,music,downloads,youtube,youtube-music,manga}` with group `media` and `2775` (`g+s`) sticky permissions.
+2. **qBittorrent WebUI**: Sets permanent credentials (`admin` / `adminadmin`) and opens authenticated REST API access on port 8080.
+3. **Radarr & Sonarr Root Folders & Clients**:
+   - Configures `/srv/media/movies` in Radarr and links qBittorrent download client.
+   - Configures `/srv/media/shows` in Sonarr and links qBittorrent download client.
+4. **Prowlarr Tracker Sync**:
+   - Links Radarr and Sonarr applications into Prowlarr.
+   - Automatically adds public indexers (YTS, Nyaa.si, The Pirate Bay, LimeTorrents) and syncs Torznab indexers into Radarr & Sonarr.
+5. **Bazarr Subtitles**: Links Radarr and Sonarr API keys in `/var/lib/bazarr/config/config.yaml` for multi-language subtitle fetching.
+6. **Jellyseerr Discovery**: Configures `/var/lib/seerr/settings.json` with Jellyfin server `pineapple` (`:8096`), linking Radarr & Sonarr discovery profiles.
+
+---
+
+## 11. System Updates, Pacman Hooks, and Hot-Deployment
+
+### The Automated Update Engine (`tinapple-update`)
+Tinapple ensures all features, package dependencies, directories, and service links are kept up-to-date through a unified updater engine located at `/usr/local/bin/tinapple-update` (source: [`scripts/tinapple-update`](scripts/tinapple-update)):
+
+1. **Pacman & Paru Integration**:
+   Updating via standard package tools automatically executes the feature synchronizer:
+   ```bash
+   # From any terminal or SSH session:
+   sudo pacman -Syu
+   # or with AUR helper:
+   paru -Syu
+   # or using the dedicated alias:
+   update
+   ```
+2. **Post-Transaction Pacman Hook (`95-tinapple-feature-sync.hook`)**:
+   Installed in `/etc/pacman.d/hooks/`, this hook automatically fires at the conclusion of every package transaction (`Operation = Upgrade / Install`). It ensures:
+   - `paru` AUR helper is installed and operational.
+   - `/srv/media` hierarchy exists with group `media` and `2775` (`g+s`) sticky permissions.
+   - Appliance daemons (`jellyfin`, `qbt`, `pineapple`, `navidrome`, `suwayomi`) belong to group `media`.
+   - `bbctl` (Beeper Matrix Chat Bridges manager) is downloaded and verified.
+   - If Servarr stack daemons are active, executes `tinapple-configure-seerr` to re-synchronize API keys and root folders.
+   - Reloads systemd daemon and triggers reverse proxy refresh.
+   - Ensures `tinapple-dash` daemon is running and healthy.
+
+3. **Dashboard 1-Click Web Update**:
+   Clicking the **"System Update"** button in the dashboard top navigation bar initiates `POST /api/v1/system/update`, streaming the entire pacman/paru upgrade process live into the web console.
+
+### Hot-Deployment Tool (`deploy-server.sh`)
+
+For live development workstations, tinapple includes an automated hot-deployment tool located at [`scripts/deploy-server.sh`](scripts/deploy-server.sh). It compiles and updates the appliance without requiring an operating system reinstall, without wiping user data, and without system reboots:
 
 ```
 Developer Workstation                                    tinapple Server
@@ -370,53 +440,38 @@ Developer Workstation                                    tinapple Server
 +------------------------------------+                +-------------------------+
 ```
 
-### Running the Deployment Tool
-
-From the root of the repository:
-
 ```bash
-./scripts/deploy-server.sh 192.168.1.17
+./scripts/deploy-server.sh 100.108.215.120
 ```
-
-You can customize the target username and host via environment variables:
-
-```bash
-TARGET_USER=tinapple ./scripts/deploy-server.sh tinapple-server.tail3dee69.ts.net
-```
-
-The script executes five stages:
-1. **Connectivity Verification**: Tests SSH connectivity with key authentication.
-2. **Frontend Compilation**: Builds production assets for `tinapple-hub` via Vite.
-3. **Backend Cross-Compilation**: Compiles the Go binary with optimizations (`-ldflags="-s -w"`).
-4. **Asset Streaming**: Stops `tinapple-dash.service`, updates `/usr/bin/tinapple-dash`, extracts web assets directly into `/usr/share/tinapple-dash/web/dist`, and restarts the service.
-5. **Health Verification**: Performs an automated HTTP health check against `/api/v1/system/info`.
 
 ---
 
-## 11. Android Companion Client Application
+## 12. Native Client Applications (Plezy, Tsumiru, Android)
 
-The Android companion client (`tinapple-client.apk`) provides remote server monitoring, widget access, and direct links to all homelab web portals on mobile devices.
+Tinapple provides dedicated client applications and guides across desktop, mobile, and web:
 
-### Compilation Prerequisites
+### 1. Plezy Desktop Client (Jellyfin Streaming)
+- **Local Binary**: Pre-installed on client desktops at `~/.local/bin/plezy` (`v2.25.0`).
+- **Features**: Embeds `libmpv` for 100% DirectPlay of HEVC/H.265, AV1, 10-bit HDR tone mapping, and complex SSA/ASS stylized anime subtitles with zero server transcoding load.
+- **Connection**: Connect via permanent Tailscale MagicDNS:
+  ```
+  http://pineapple-server:8096
+  # or
+  http://pineapple-server.taildb42a2.ts.net:8096
+  ```
 
-- OpenJDK 17 (`JAVA_HOME=/usr/lib/jvm/java-17-openjdk` or `~/.jdks/jdk-17.0.20.1+1`).
-  *Note: Android D8 build tools cannot parse class bytecode compiled with Java 21 or newer.*
-- Android SDK Command-line Tools and Build-Tools version `34.0.0`.
-- Android Platform SDK `android-34` (`platforms/android-34/android.jar`).
+### 2. Suwayomi-Tsumiru Native Client (Manga Streaming)
+- **Web App**: Hosted locally at `/tsumiru/` with Keiyoushi manga source extensions and continuous chapter caching.
+- **Android APK**: Available for direct download from the Web Hub at `/download/tsumiru`.
 
-### Building the APK
-
-Run the automated compilation script inside the `tinapple-android` directory:
-
-```bash
-cd tinapple-android
-./build-apk.sh
-```
-
-The script performs resource compilation with AAPT2, Java source compilation, bytecode desugaring and dexing with D8, archive alignment with zipalign, and signing with apksigner. The completed APK is generated at:
-```
-out/tinapple-client.apk
-```
+### 3. Android Companion Client (`tinapple-client.apk`)
+- **Location**: [`tinapple-android/out/tinapple-client.apk`](tinapple-android/out/tinapple-client.apk)
+- **Features**: Remote server telemetry, battery charge threshold control, and 1-tap launcher shortcuts.
+- **Compilation**:
+  ```bash
+  cd tinapple-android
+  ./build-apk.sh
+  ```
 
 ### Installing via USB Debugging (ADB)
 

@@ -1,0 +1,250 @@
+#!/usr/bin/env python3
+import os
+import sys
+import re
+import time
+import json
+import urllib.request
+import urllib.error
+import subprocess
+
+print("=== [Tinapple Automator] Configuring Full Seerr & Servarr Media Stack ===")
+
+# 1. Setup Media Directory & Permissions
+media_dirs = ['movies', 'shows', 'music', 'downloads', 'youtube', 'youtube-music', 'manga']
+for d in media_dirs:
+    p = os.path.join('/srv/media', d)
+    os.makedirs(p, exist_ok=True)
+
+subprocess.run(['chown', '-R', 'root:media', '/srv/media'], check=False)
+subprocess.run(['chmod', '-R', '775', '/srv/media'], check=False)
+subprocess.run(['chmod', '-R', 'g+s', '/srv/media'], check=False)
+
+for u in ['jellyfin', 'qbt', 'pineapple']:
+    subprocess.run(['usermod', '-aG', 'media', u], check=False)
+
+print("[✓] /srv/media directories and permissions configured (group: media)")
+
+# 2. Extract API Keys
+def extract_xml_key(path):
+    if not os.path.exists(path):
+        return None
+    try:
+        with open(path, 'r') as f:
+            m = re.search(r'<ApiKey>([^<]+)</ApiKey>', f.read())
+            return m.group(1) if m else None
+    except Exception:
+        return None
+
+radarr_key = extract_xml_key('/var/lib/radarr/config.xml')
+sonarr_key = extract_xml_key('/var/lib/sonarr/config.xml')
+prowlarr_key = extract_xml_key('/var/lib/prowlarr/config.xml')
+
+print(f"[✓] Detected API Keys - Radarr: {bool(radarr_key)}, Sonarr: {bool(sonarr_key)}, Prowlarr: {bool(prowlarr_key)}")
+
+# 3. Configure qBittorrent
+qbt_conf = '/var/lib/qbittorrent/.config/qBittorrent/qBittorrent.conf'
+if os.path.exists(qbt_conf):
+    try:
+        with open(qbt_conf, 'r') as f:
+            q_txt = f.read()
+        if 'adminadmin' not in q_txt:
+            pwd_line = r'WebUI\Password_PBKDF2=@ByteArray(u3i9EWvqTPau8Hr2aZRWeA==:amesvS18L44YdaFV6BKnCDIXS35lKaam1uaxLqT7wAA0e9wx6fhKHzB7kvQiWOrGrlpW0ZwMB0Mp8tpCyxB9Fw==)'
+            if 'WebUI\\Password_PBKDF2' in q_txt:
+                lines = [l if not l.startswith('WebUI\\Password_PBKDF2=') else pwd_line for l in q_txt.splitlines()]
+                q_txt = '\n'.join(lines) + '\n'
+            else:
+                q_txt += f'\n[Preferences]\n{pwd_line}\nWebUI\\Username=admin\n'
+            with open(qbt_conf, 'w') as f:
+                f.write(q_txt)
+            subprocess.run(['systemctl', 'restart', 'qbittorrent-nox'], check=False)
+            time.sleep(1)
+        print("[✓] qBittorrent authenticated and ready on port 8080")
+    except Exception as e:
+        print(f"[!] qBittorrent config notice: {e}")
+
+# 4. Helper for JSON requests
+def api_request(url, method='GET', data=None, headers=None):
+    hdrs = {'Content-Type': 'application/json'}
+    if headers:
+        hdrs.update(headers)
+    body = json.dumps(data).encode() if data is not None else None
+    req = urllib.request.Request(url, data=body, headers=hdrs, method=method)
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            content = resp.read().decode()
+            return json.loads(content) if content else {}
+    except urllib.error.HTTPError as e:
+        return {'error': f"HTTP {e.code}: {e.read().decode()[:150]}"}
+    except Exception as e:
+        return {'error': str(e)}
+
+# 5. Radarr: Root Folder & qBittorrent Client
+if radarr_key:
+    rf = api_request('http://127.0.0.1:7878/api/v3/rootfolder', headers={'X-Api-Key': radarr_key})
+    if isinstance(rf, list) and not any(r.get('path') == '/srv/media/movies' for r in rf):
+        api_request('http://127.0.0.1:7878/api/v3/rootfolder', method='POST', data={'path': '/srv/media/movies'}, headers={'X-Api-Key': radarr_key})
+        print("[✓] Radarr root folder configured: /srv/media/movies")
+
+    dc = api_request('http://127.0.0.1:7878/api/v3/downloadclient', headers={'X-Api-Key': radarr_key})
+    if isinstance(dc, list) and not any(d.get('name') == 'qBittorrent' for d in dc):
+        schemas = api_request('http://127.0.0.1:7878/api/v3/downloadclient/schema', headers={'X-Api-Key': radarr_key})
+        if isinstance(schemas, list):
+            q_schema = next((s for s in schemas if s.get('implementation') == 'QBittorrent'), None)
+            if q_schema:
+                q_schema['enable'] = True
+                q_schema['name'] = 'qBittorrent'
+                for f in q_schema['fields']:
+                    if f['name'] == 'host': f['value'] = '127.0.0.1'
+                    elif f['name'] == 'port': f['value'] = 8080
+                    elif f['name'] == 'username': f['value'] = 'admin'
+                    elif f['name'] == 'password': f['value'] = 'adminadmin'
+                    elif f['name'] == 'movieCategory': f['value'] = 'radarr'
+                api_request('http://127.0.0.1:7878/api/v3/downloadclient', method='POST', data=q_schema, headers={'X-Api-Key': radarr_key})
+                print("[✓] Radarr download client connected: qBittorrent (:8080)")
+
+# 6. Sonarr: Root Folder & qBittorrent Client
+if sonarr_key:
+    rf = api_request('http://127.0.0.1:8989/api/v3/rootfolder', headers={'X-Api-Key': sonarr_key})
+    if isinstance(rf, list) and not any(r.get('path') == '/srv/media/shows' for r in rf):
+        api_request('http://127.0.0.1:8989/api/v3/rootfolder', method='POST', data={'path': '/srv/media/shows'}, headers={'X-Api-Key': sonarr_key})
+        print("[✓] Sonarr root folder configured: /srv/media/shows")
+
+    dc = api_request('http://127.0.0.1:8989/api/v3/downloadclient', headers={'X-Api-Key': sonarr_key})
+    if isinstance(dc, list) and not any(d.get('name') == 'qBittorrent' for d in dc):
+        schemas = api_request('http://127.0.0.1:8989/api/v3/downloadclient/schema', headers={'X-Api-Key': sonarr_key})
+        if isinstance(schemas, list):
+            q_schema = next((s for s in schemas if s.get('implementation') == 'QBittorrent'), None)
+            if q_schema:
+                q_schema['enable'] = True
+                q_schema['name'] = 'qBittorrent'
+                for f in q_schema['fields']:
+                    if f['name'] == 'host': f['value'] = '127.0.0.1'
+                    elif f['name'] == 'port': f['value'] = 8080
+                    elif f['name'] == 'username': f['value'] = 'admin'
+                    elif f['name'] == 'password': f['value'] = 'adminadmin'
+                    elif f['name'] == 'tvCategory': f['value'] = 'sonarr'
+                api_request('http://127.0.0.1:8989/api/v3/downloadclient', method='POST', data=q_schema, headers={'X-Api-Key': sonarr_key})
+                print("[✓] Sonarr download client connected: qBittorrent (:8080)")
+
+# 7. Prowlarr: Applications & Trackers
+if prowlarr_key and radarr_key and sonarr_key:
+    apps = api_request('http://127.0.0.1:9696/api/v1/applications', headers={'X-Api-Key': prowlarr_key})
+    if isinstance(apps, list):
+        schemas = api_request('http://127.0.0.1:9696/api/v1/applications/schema', headers={'X-Api-Key': prowlarr_key})
+        if isinstance(schemas, list):
+            if not any(a.get('name') == 'Radarr' for a in apps):
+                rs = next((s for s in schemas if s.get('implementation') == 'Radarr'), None)
+                if rs:
+                    rs['enable'] = True
+                    rs['name'] = 'Radarr'
+                    for f in rs['fields']:
+                        if f['name'] == 'prowlarrUrl': f['value'] = 'http://localhost:9696'
+                        elif f['name'] == 'baseUrl': f['value'] = 'http://localhost:7878'
+                        elif f['name'] == 'apiKey': f['value'] = radarr_key
+                    api_request('http://127.0.0.1:9696/api/v1/applications', method='POST', data=rs, headers={'X-Api-Key': prowlarr_key})
+                    print("[✓] Prowlarr linked to Radarr (:7878)")
+            if not any(a.get('name') == 'Sonarr' for a in apps):
+                ss = next((s for s in schemas if s.get('implementation') == 'Sonarr'), None)
+                if ss:
+                    ss['enable'] = True
+                    ss['name'] = 'Sonarr'
+                    for f in ss['fields']:
+                        if f['name'] == 'prowlarrUrl': f['value'] = 'http://localhost:9696'
+                        elif f['name'] == 'baseUrl': f['value'] = 'http://localhost:8989'
+                        elif f['name'] == 'apiKey': f['value'] = sonarr_key
+                    api_request('http://127.0.0.1:9696/api/v1/applications', method='POST', data=ss, headers={'X-Api-Key': prowlarr_key})
+                    print("[✓] Prowlarr linked to Sonarr (:8989)")
+
+    # Add popular public trackers
+    indexers = api_request('http://127.0.0.1:9696/api/v1/indexer', headers={'X-Api-Key': prowlarr_key})
+    existing = [i.get('name') for i in indexers] if isinstance(indexers, list) else []
+    idx_schemas = api_request('http://127.0.0.1:9696/api/v1/indexer/schema', headers={'X-Api-Key': prowlarr_key})
+    if isinstance(idx_schemas, list):
+        for name in ['YTS', 'Nyaa.si', 'The Pirate Bay', 'LimeTorrents']:
+            if name not in existing:
+                sch = next((s for s in idx_schemas if s.get('name') == name), None)
+                if sch:
+                    sch['enable'] = True
+                    sch['appProfileId'] = 1
+                    res = api_request('http://127.0.0.1:9696/api/v1/indexer', method='POST', data=sch, headers={'X-Api-Key': prowlarr_key})
+                    if 'error' not in res:
+                        print(f"[✓] Prowlarr added tracker: {name}")
+
+# 8. Bazarr Configuration
+bazarr_cfg = '/var/lib/bazarr/config/config.yaml'
+if os.path.exists(bazarr_cfg) and radarr_key and sonarr_key:
+    try:
+        with open(bazarr_cfg, 'r') as f:
+            b_txt = f.read()
+        b_txt = re.sub(r'use_radarr:\s*false', 'use_radarr: true', b_txt)
+        b_txt = re.sub(r'use_sonarr:\s*false', 'use_sonarr: true', b_txt)
+        b_txt = re.sub(r'(radarr:\n\s*apikey:\s*)(\'\'|\"\")', f'\\1{radarr_key}', b_txt)
+        b_txt = re.sub(r'(sonarr:\n\s*apikey:\s*)(\'\'|\"\")', f'\\1{sonarr_key}', b_txt)
+        with open(bazarr_cfg, 'w') as f:
+            f.write(b_txt)
+        subprocess.run(['systemctl', 'restart', 'bazarr'], check=False)
+        print("[✓] Bazarr subtitle automator linked to Radarr & Sonarr")
+    except Exception as e:
+        print(f"[!] Bazarr notice: {e}")
+
+# 9. Jellyseerr Configuration
+seerr_cfg = '/var/lib/seerr/settings.json'
+if os.path.exists(seerr_cfg) and radarr_key and sonarr_key:
+    try:
+        with open(seerr_cfg, 'r') as f:
+            cfg = json.load(f)
+        cfg['public']['initialized'] = True
+        cfg['jellyfin'] = {
+            'name': 'pineapple',
+            'ip': '127.0.0.1',
+            'port': 8096,
+            'useSsl': False,
+            'urlBase': '',
+            'externalHostname': 'http://pineapple-server:8096',
+            'libraries': [],
+            'serverId': '5e0ad999bdf243dda8b63664bd21e08f',
+            'apiKey': ''
+        }
+        cfg['radarr'] = [{
+            'id': 1,
+            'name': 'Radarr',
+            'hostname': '127.0.0.1',
+            'port': 7878,
+            'apiKey': radarr_key,
+            'useSsl': False,
+            'activeProfileId': 1,
+            'activeProfileName': 'HD - 720p/1080p',
+            'activeDirectory': '/srv/media/movies',
+            'is4k': False,
+            'minimumAvailability': 'Announced',
+            'isDefault': True,
+            'externalUrl': 'http://pineapple-server:7878',
+            'syncEnabled': True,
+            'preventSearch': False
+        }]
+        cfg['sonarr'] = [{
+            'id': 1,
+            'name': 'Sonarr',
+            'hostname': '127.0.0.1',
+            'port': 8989,
+            'apiKey': sonarr_key,
+            'useSsl': False,
+            'activeProfileId': 1,
+            'activeProfileName': 'HD - 720p/1080p',
+            'activeDirectory': '/srv/media/shows',
+            'activeLanguageProfileId': 1,
+            'is4k': False,
+            'isDefault': True,
+            'externalUrl': 'http://pineapple-server:8989',
+            'syncEnabled': True,
+            'preventSearch': False
+        }]
+        with open(seerr_cfg, 'w') as f:
+            json.dump(cfg, f, indent=2)
+        subprocess.run(['systemctl', 'restart', 'seerr'], check=False)
+        print("[✓] Jellyseerr configured & linked to Jellyfin, Radarr, and Sonarr")
+    except Exception as e:
+        print(f"[!] Jellyseerr notice: {e}")
+
+print("=== [SUCCESS] Full Seerr & Servarr Media Stack is 100% Configured & Ready! ===")

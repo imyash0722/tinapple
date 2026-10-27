@@ -23,6 +23,7 @@ import {
   EyeOff,
   RotateCcw,
   BookOpen,
+  ArrowUpCircle,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -318,6 +319,26 @@ export const App: React.FC = () => {
     }
   };
 
+  const [isUpdatingSystem, setIsUpdatingSystem] = useState<boolean>(false);
+
+  const handleRunSystemUpdate = async () => {
+    setIsUpdatingSystem(true);
+    setActionMessage('Initiating full system & appliance update...');
+    try {
+      const res = await api.runSystemUpdate();
+      if (res.ok) {
+        setActionMessage('System update running. Inspecting live console.');
+        setActiveTab('store');
+      } else {
+        setActionMessage(res.error || 'System update failed to initiate.');
+      }
+    } catch {
+      setActionMessage('Failed to trigger update pipeline.');
+    } finally {
+      setIsUpdatingSystem(false);
+    }
+  };
+
   const handleReboot = async () => {
     if (Date.now() >= rebootDeadline) {
       setRebootDeadline(Date.now() + 3000);
@@ -528,6 +549,15 @@ export const App: React.FC = () => {
             </button>
             <button onClick={handleSyncClock} disabled={isSyncing} className={actionButtonClass} title="Sync Clock (NTP)" aria-label="Sync Clock (NTP)" aria-busy={isSyncing}>
               {clockSynced ? <Check className="w-4 h-4 text-tinapple-green" /> : <Clock className={`w-4 h-4 ${isSyncing ? 'animate-spin text-tinapple-gold' : ''}`} />}
+            </button>
+            <button
+              onClick={handleRunSystemUpdate}
+              disabled={isUpdatingSystem}
+              className={`${actionButtonClass} hover:!border-emerald-500/50 hover:!text-emerald-300`}
+              title="Full System & Appliance Update (paru/pacman -Syu)"
+              aria-label="Full System & Appliance Update"
+            >
+              <ArrowUpCircle className={`w-4 h-4 text-emerald-400 ${isUpdatingSystem ? 'animate-spin text-tinapple-gold' : ''}`} />
             </button>
             <div className="relative">
               <button

@@ -1,0 +1,10 @@
+[Trigger]
+Operation = Upgrade
+Operation = Install
+Type = Package
+Target = *
+
+[Action]
+Description = Synchronizing Tinapple appliance features, permissions, and stack links...
+When = PostTransaction
+Exec = /usr/local/bin/tinapple-update --post-transaction

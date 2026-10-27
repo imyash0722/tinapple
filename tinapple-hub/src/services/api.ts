@@ -1,4 +1,4 @@
-import { SystemInfo, TelemetrySnapshot, ServiceInfo, HardwareInfo, SessionMode, AppInfo, AppActionResult, InstallProgressState, InstallLogMessage, TailscaleStatus } from '../types/api';
+import { SystemInfo, TelemetrySnapshot, ServiceInfo, HardwareInfo, SessionMode, AppInfo, AppActionResult, InstallProgressState, InstallLogMessage, TailscaleStatus, AppliancePackStatus } from '../types/api';
 
 const API_BASE = '/api/v1';
 
@@ -487,6 +487,78 @@ class ApiService {
     }
   }
 
+  async getPacks(): Promise<AppliancePackStatus[]> {
+    try {
+      const res = await fetch(`${API_BASE}/packs`);
+      if (!res.ok) return [];
+      return await res.json();
+    } catch {
+      return [];
+    }
+  }
+
+  async getPack(id: string): Promise<AppliancePackStatus | null> {
+    try {
+      const res = await fetch(`${API_BASE}/packs/${id}`);
+      if (!res.ok) return null;
+      return await res.json();
+    } catch {
+      return null;
+    }
+  }
+
+  async installPack(id: string): Promise<AppActionResult> {
+    try {
+      const res = await fetch(`${API_BASE}/packs/${id}/install`, { method: 'POST' });
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        return { ok: false, error: body?.error || `Pack install failed (HTTP ${res.status})` };
+      }
+      return { ok: true };
+    } catch (e: any) {
+      return { ok: false, error: e?.message || 'Network request failed' };
+    }
+  }
+
+  async configurePack(id: string): Promise<AppActionResult> {
+    try {
+      const res = await fetch(`${API_BASE}/packs/${id}/configure`, { method: 'POST' });
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        return { ok: false, error: body?.error || `Pack auto-configure failed (HTTP ${res.status})` };
+      }
+      return { ok: true };
+    } catch (e: any) {
+      return { ok: false, error: e?.message || 'Network request failed' };
+    }
+  }
+
+  async startPack(id: string): Promise<AppActionResult> {
+    try {
+      const res = await fetch(`${API_BASE}/packs/${id}/start`, { method: 'POST' });
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        return { ok: false, error: body?.error || `Pack start failed (HTTP ${res.status})` };
+      }
+      return { ok: true };
+    } catch (e: any) {
+      return { ok: false, error: e?.message || 'Network request failed' };
+    }
+  }
+
+  async stopPack(id: string): Promise<AppActionResult> {
+    try {
+      const res = await fetch(`${API_BASE}/packs/${id}/stop`, { method: 'POST' });
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        return { ok: false, error: body?.error || `Pack stop failed (HTTP ${res.status})` };
+      }
+      return { ok: true };
+    } catch (e: any) {
+      return { ok: false, error: e?.message || 'Network request failed' };
+    }
+  }
+
   async controlService(name: string, action: 'start' | 'stop' | 'restart' | 'enable' | 'disable'): Promise<{ ok: boolean; error?: string }> {
     try {
       const res = await fetch(`${API_BASE}/services/${name}/${action}`, { method: 'POST' });
@@ -599,6 +671,19 @@ class ApiService {
       return res.ok;
     } catch {
       return true;
+    }
+  }
+
+  async runSystemUpdate(): Promise<{ ok: boolean; message?: string; error?: string }> {
+    try {
+      const res = await fetch(`${API_BASE}/system/update`, { method: 'POST' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        return { ok: false, error: data?.error || `HTTP ${res.status}` };
+      }
+      return { ok: true, message: data?.message };
+    } catch (e: any) {
+      return { ok: false, error: e?.message || 'Network request failed' };
     }
   }
 

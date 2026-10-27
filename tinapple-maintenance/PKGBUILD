@@ -12,7 +12,7 @@ source=()
 sha256sums=()
 package() {
   cd "$startdir"
-  for script in tinapple-health-check tinapple-update-hook tinapple-rollback tinapple-snapshot-boot; do
+  for script in tinapple-health-check tinapple-update-hook tinapple-update tinapple-rollback tinapple-snapshot-boot; do
     install -Dm755 "bin/$script" "$pkgdir/usr/bin/$script"
   done
   install -Dm644 lib/init-snapper.sh "$pkgdir/usr/lib/tinapple-maintenance/init-snapper.sh"

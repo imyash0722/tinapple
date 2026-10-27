@@ -100,6 +100,7 @@ func SetupRoutes(r *gin.Engine, cfg *config.Manifest, svcMgr *services.SystemdMa
 		v1.POST("/system/manifest", h.UpdateManifest)
 		v1.POST("/system/install", h.RunInstall)
 		v1.GET("/system/install/status", h.InstallStatus)
+		v1.POST("/system/update", h.RunSystemUpdate)
 
 		// Apps (Comprehensive Application & Config Management)
 		v1.GET("/apps", h.ListApps)
@@ -114,6 +115,14 @@ func SetupRoutes(r *gin.Engine, cfg *config.Manifest, svcMgr *services.SystemdMa
 		v1.POST("/apps/:name/restart", h.RestartApp)
 		v1.GET("/apps/:name/config", h.GetAppConfig)
 		v1.POST("/apps/:name/config", h.UpdateAppConfig)
+
+		// Appliance Packs & Stacks
+		v1.GET("/packs", h.ListPacks)
+		v1.GET("/packs/:name", h.GetPack)
+		v1.POST("/packs/:name/install", h.InstallPack)
+		v1.POST("/packs/:name/configure", h.ConfigurePack)
+		v1.POST("/packs/:name/start", h.StartPack)
+		v1.POST("/packs/:name/stop", h.StopPack)
 
 		// Services
 		v1.GET("/services", h.ListServices)
@@ -302,6 +311,15 @@ func (h *Handler) SystemDisks(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"disks": disks,
 	})
+}
+
+// RunSystemUpdate initiates a system-wide upgrade and feature synchronization
+func (h *Handler) RunSystemUpdate(c *gin.Context) {
+	if err := h.appMgr.RunSystemUpdate(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"status": "initiated", "message": "System update pipeline running in background"})
 }
 
 // TelemetrySnapshot returns current telemetry data
@@ -526,6 +544,67 @@ func (h *Handler) UpdateAppConfig(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"status": "updated"})
+}
+
+// ListPacks returns all curated appliance packs with live status
+func (h *Handler) ListPacks(c *gin.Context) {
+	packs := h.appMgr.ListPacks()
+	c.JSON(http.StatusOK, packs)
+}
+
+// GetPack returns a specific pack with its live status
+func (h *Handler) GetPack(c *gin.Context) {
+	name := c.Param("name")
+	pack, err := h.appMgr.GetPack(name)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, pack)
+}
+
+// InstallPack triggers batch installation of all apps in the pack
+func (h *Handler) InstallPack(c *gin.Context) {
+	name := c.Param("name")
+	if err := h.appMgr.InstallPack(name); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	pack, _ := h.appMgr.GetPack(name)
+	c.JSON(http.StatusOK, gin.H{"status": "installed", "pack": pack})
+}
+
+// ConfigurePack executes stack orchestrator & auto-configuration
+func (h *Handler) ConfigurePack(c *gin.Context) {
+	name := c.Param("name")
+	if err := h.appMgr.ConfigurePack(name); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	pack, _ := h.appMgr.GetPack(name)
+	c.JSON(http.StatusOK, gin.H{"status": "configured", "pack": pack})
+}
+
+// StartPack starts all apps in the pack
+func (h *Handler) StartPack(c *gin.Context) {
+	name := c.Param("name")
+	if err := h.appMgr.StartPack(name); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	pack, _ := h.appMgr.GetPack(name)
+	c.JSON(http.StatusOK, gin.H{"status": "started", "pack": pack})
+}
+
+// StopPack stops all apps in the pack
+func (h *Handler) StopPack(c *gin.Context) {
+	name := c.Param("name")
+	if err := h.appMgr.StopPack(name); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	pack, _ := h.appMgr.GetPack(name)
+	c.JSON(http.StatusOK, gin.H{"status": "stopped", "pack": pack})
 }
 
 // ListServices returns all services with real on-disk and live systemd status

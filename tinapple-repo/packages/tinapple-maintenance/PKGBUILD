@@ -1,21 +1,23 @@
-# Maintainer: tinapple Project <https://github.com/tinapple/tinapple-arch>
+# Maintainer: tinapple Project
 pkgname=tinapple-maintenance
 pkgver=0.0.1
-pkgrel=1
-pkgdesc="System health checks, update hooks, and rollback for tinapple"
+pkgrel=2
+pkgdesc="System health checks and bootable Btrfs recovery for tinapple"
 arch=(any)
-url="https://github.com/tinapple/tinapple-arch"
 license=(MIT)
-depends=('snapper' 'pacman-contrib' 'smartmontools' 'openssl' 'limine')
+depends=('snapper' 'btrfs-progs' 'smartmontools' 'jq' 'python' 'util-linux' 'coreutils')
+optdepends=('limine: Limine recovery entries' 'grub: GRUB recovery entries')
 install=tinapple-maintenance.install
 source=()
 sha256sums=()
-
 package() {
   cd "$startdir"
-  install -Dm755 bin/tinapple-health-check "$pkgdir/usr/bin/tinapple-health-check"
-  install -Dm755 bin/tinapple-update-hook "$pkgdir/usr/bin/tinapple-update-hook"
-  install -Dm755 bin/tinapple-rollback "$pkgdir/usr/bin/tinapple-rollback"
-  install -Dm644 hooks/90-tinapple-update.hook "$pkgdir/usr/share/libalpm/hooks/90-tinapple-update.hook"
-  install -Dm644 hooks/91-tinapple-update.hook "$pkgdir/usr/share/libalpm/hooks/91-tinapple-update.hook"
+  for script in tinapple-health-check tinapple-update-hook tinapple-update tinapple-rollback tinapple-snapshot-boot; do
+    install -Dm755 "bin/$script" "$pkgdir/usr/bin/$script"
+  done
+  install -Dm644 lib/init-snapper.sh "$pkgdir/usr/lib/tinapple-maintenance/init-snapper.sh"
+  install -Dm644 lib/common.sh "$pkgdir/usr/lib/tinapple-maintenance/common.sh"
+  install -Dm644 lib/boot-menu.py "$pkgdir/usr/lib/tinapple-maintenance/boot-menu.py"
+  for hook in hooks/*.hook; do install -Dm644 "$hook" "$pkgdir/usr/share/libalpm/hooks/${hook##*/}"; done
+  for unit in systemd/*; do install -Dm644 "$unit" "$pkgdir/usr/lib/systemd/system/${unit##*/}"; done
 }

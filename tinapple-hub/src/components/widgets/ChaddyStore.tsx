@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   Sparkles,
+  Zap,
   Layers,
   LayoutGrid,
   Play,
@@ -24,7 +25,7 @@ import { SpotlightCard } from '../reactbits/SpotlightCard';
 import CircularCarousel, { CircularCarouselItem } from '../reactbits/CircularCarousel';
 import { AppBrandIcon } from '../common/AppBrandIcons';
 import { api } from '../../services/api';
-import { AppInfo } from '../../types/api';
+import { AppInfo, AppliancePackStatus } from '../../types/api';
 import { StoreTerminal } from './StoreTerminal';
 
 const FALLBACK_APPS: AppInfo[] = [
@@ -430,13 +431,166 @@ const FALLBACK_APPS: AppInfo[] = [
   },
 ];
 
+const FALLBACK_PACKS: AppliancePackStatus[] = [
+  {
+    id: 'seerr-stack',
+    name: 'Ultimate Streaming & Servarr Stack',
+    tagline: 'Zero-touch 4K/1080p streaming cloud with automated discovery',
+    description: 'Complete media automation stack featuring Jellyfin streaming server, Jellyseerr discovery and user requests portal, Radarr & Sonarr automated indexers via Prowlarr, Bazarr subtitle synchronization, and qBittorrent high-speed engine.',
+    badge: 'STREAMING & MEDIA',
+    accentColor: '#AA5CC3',
+    icon: 'seerr',
+    apps: ['jellyfin', 'seerr', 'radarr', 'sonarr', 'prowlarr', 'bazarr', 'qbittorrent'],
+    features: [
+      'Automated root libraries in /srv/media/{movies,shows}',
+      'qBittorrent client authenticated and synced (:8080)',
+      'Prowlarr public trackers (YTS, Nyaa, TPB, LimeTorrents) linked',
+      'Bazarr multi-language subtitle automator connected',
+      'Jellyseerr 1-click requests linked to Jellyfin & Servarrs (:5055)',
+    ],
+    installedCount: 0,
+    runningCount: 0,
+    totalCount: 7,
+    allInstalled: false,
+    allRunning: false,
+  },
+  {
+    id: 'manga-suite',
+    name: 'Manga & Comic Infinite Library',
+    tagline: 'Decentralized manga streaming & multi-device reading sync',
+    description: 'Self-hosted manga, comic, and webtoon streaming hub powered by Suwayomi with 1,000+ Keiyoushi source extensions, built-in Suwayomi-Tsumiru reader, and SyncYomi sync bridge for Tachiyomi, Mihon, and Kuukiyomi.',
+    badge: 'MANGA & COMICS',
+    accentColor: '#F43F5E',
+    icon: 'suwayomi',
+    apps: ['suwayomi', 'syncyomi'],
+    features: [
+      '1,000+ Keiyoushi manga source extensions enabled',
+      'Local library storage in /srv/media/manga',
+      'Suwayomi-Tsumiru native web reader (:4567 /tsumiru/)',
+      'SyncYomi cross-device reading progress synchronization (:8282)',
+    ],
+    installedCount: 0,
+    runningCount: 0,
+    totalCount: 2,
+    allInstalled: false,
+    allRunning: false,
+  },
+  {
+    id: 'privacy-shield',
+    name: 'Mesh Privacy & Perimeter Shield',
+    tagline: 'Zero-trust encrypted VPN mesh, ad-blocking DNS & Tor routing',
+    description: 'All-in-one homelab network defense: Tailscale WireGuard mesh for secure remote access without port forwarding, AdGuard Home for network-wide ad & tracker blocking, Proton VPN encrypted egress tunnel, and Tor onion proxy.',
+    badge: 'SECURITY & MESH',
+    accentColor: '#00D26A',
+    icon: 'adguard',
+    apps: ['tailscale', 'adguard', 'protonvpn', 'tor'],
+    features: [
+      'Tailscale zero-config WireGuard mesh access',
+      'AdGuard Home DNS-over-HTTPS & tracker blocking (:3000)',
+      'Tor anonymous SOCKS5 onion proxy (:9050)',
+      'Proton VPN high-speed egress encryption',
+    ],
+    installedCount: 0,
+    runningCount: 0,
+    totalCount: 4,
+    allInstalled: false,
+    allRunning: false,
+  },
+  {
+    id: 'audiophile-cloud',
+    name: 'Audiophile Music Cloud & Downloader',
+    tagline: 'Lossless Subsonic audio streaming & offline YouTube archiver',
+    description: 'Modern high-fidelity music streaming server compatible with Symfonium, Feishin, and Substreamer, integrated with MeTube for headless scheduled downloading of YouTube Music tracks, albums, and playlists.',
+    badge: 'MUSIC & AUDIO',
+    accentColor: '#FF7F00',
+    icon: 'navidrome',
+    apps: ['navidrome', 'metube'],
+    features: [
+      'Subsonic & Airsonic REST API support for mobile & desktop players',
+      'Storage in /srv/media/music with automated library scanning',
+      'Headless MeTube YouTube/SoundCloud playlist archiver (:8085)',
+      'On-the-fly FLAC/Opus/MP3 transcoding',
+    ],
+    installedCount: 0,
+    runningCount: 0,
+    totalCount: 2,
+    allInstalled: false,
+    allRunning: false,
+  },
+  {
+    id: 'cloud-vault',
+    name: 'Cloud Vault & Resilient Backups',
+    tagline: 'Encrypted password manager, P2P sync & web file manager',
+    description: 'Self-hosted digital sovereignty suite: Vaultwarden lightweight Bitwarden vault, Syncthing peer-to-peer decentralized file sync for laptops and phones, and FileBrowser Quantum web file explorer.',
+    badge: 'VAULT & SYNC',
+    accentColor: '#3B82F6',
+    icon: 'vaultwarden',
+    apps: ['vaultwarden', 'syncthing', 'filebrowser'],
+    features: [
+      'Bitwarden client compatibility (passwords, 2FA, passkeys)',
+      'Syncthing continuous peer-to-peer real-time folder sync (:8384)',
+      'FileBrowser web manager with audio, video, & document preview (:8082)',
+      'Zero reliance on third-party cloud servers',
+    ],
+    installedCount: 0,
+    runningCount: 0,
+    totalCount: 3,
+    allInstalled: false,
+    allRunning: false,
+  },
+  {
+    id: 'second-brain',
+    name: 'Second Brain & Knowledge Base',
+    tagline: 'Real-time encrypted Obsidian LiveSync & markdown explorer',
+    description: 'Self-hosted backend for Obsidian knowledge bases. CouchDB provides end-to-end encrypted real-time note synchronization across iOS, Android, and PC, alongside FileBrowser Quantum for remote document editing and backup.',
+    badge: 'KNOWLEDGE & NOTES',
+    accentColor: '#8B5CF6',
+    icon: 'couchdb',
+    apps: ['couchdb', 'filebrowser'],
+    features: [
+      'CouchDB multi-master replication with CORS enabled (:5984)',
+      'Zero-subscription Obsidian LiveSync support',
+      'Instant conflict resolution and revision tracking',
+      'Searchable markdown document vault',
+    ],
+    installedCount: 0,
+    runningCount: 0,
+    totalCount: 2,
+    allInstalled: false,
+    allRunning: false,
+  },
+  {
+    id: 'gaming-anvil',
+    name: 'Gaming Appliance & Anycast Tunnel',
+    tagline: 'High-tickrate PaperMC server with instant public Playit tunnel',
+    description: 'Enterprise-tuned Minecraft server using PaperMC with Aikar\'s optimized JVM garbage collection parameters, paired with Playit.gg Anycast agent to give friends public join domains without port forwarding.',
+    badge: 'GAMING & CLOUD',
+    accentColor: '#10B981',
+    icon: 'minecraft',
+    apps: ['minecraft', 'playit'],
+    features: [
+      'PaperMC high-performance server runtime (:25565)',
+      'Aikar\'s optimized garbage collection GC flags pre-configured',
+      'Playit.gg Anycast tunnel with custom public domain',
+      'Automated crash recovery & systemd supervision',
+    ],
+    installedCount: 0,
+    runningCount: 0,
+    totalCount: 2,
+    allInstalled: false,
+    allRunning: false,
+  },
+];
+
 interface ChaddyStoreProps {
   onOpenGuide?: (guideId: string) => void;
   isAdmin?: boolean;
 }
 
 export const ChaddyStore: React.FC<ChaddyStoreProps> = ({ onOpenGuide, isAdmin = true }) => {
+  const [storeTab, setStoreTab] = useState<'packs' | 'apps'>('packs');
   const [apps, setApps] = useState<AppInfo[]>(FALLBACK_APPS);
+  const [packs, setPacks] = useState<AppliancePackStatus[]>(FALLBACK_PACKS);
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
   const [viewMode, setViewMode] = useState<'carousel' | 'grid'>('grid');
   const [loadingAction, setLoadingAction] = useState<Record<string, string>>({});
@@ -456,11 +610,94 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({ onOpenGuide, isAdmin =
     }
   }, []);
 
+  const fetchPacks = useCallback(async () => {
+    const list = await api.getPacks();
+    if (list && list.length > 0) {
+      setPacks(list);
+    }
+  }, []);
+
   useEffect(() => {
     fetchApps();
-    const timer = setInterval(fetchApps, 4000);
+    fetchPacks();
+    const timer = setInterval(() => {
+      fetchApps();
+      fetchPacks();
+    }, 4000);
     return () => clearInterval(timer);
-  }, [fetchApps]);
+  }, [fetchApps, fetchPacks]);
+
+  const computedPacks = useMemo(() => {
+    return packs.map((pack) => {
+      const packApps = pack.apps.map((appId) => apps.find((a) => a.id === appId)).filter(Boolean) as AppInfo[];
+      const installedCount = packApps.filter((a) => a.installed).length;
+      const runningCount = packApps.filter((a) => a.status === 'running').length;
+      const totalCount = pack.apps.length;
+      return {
+        ...pack,
+        installedCount,
+        runningCount,
+        totalCount,
+        allInstalled: installedCount === totalCount && totalCount > 0,
+        allRunning: runningCount === totalCount && totalCount > 0,
+        appsStatus: packApps,
+      };
+    });
+  }, [packs, apps]);
+
+  const handlePackAction = async (packId: string, action: 'install' | 'configure' | 'start' | 'stop') => {
+    setActionError(null);
+    setLoadingAction((prev) => ({ ...prev, [packId]: action }));
+    try {
+      let res: { ok: boolean; error?: string } = { ok: false };
+      if (action === 'install') {
+        res = await api.installPack(packId);
+        if (res.ok) {
+          confetti({
+            particleCount: 80,
+            spread: 70,
+            origin: { y: 0.6 },
+            colors: ['#AA5CC3', '#3B82F6', '#10B981', '#F59E0B'],
+          });
+        }
+      } else if (action === 'configure') {
+        res = await api.configurePack(packId);
+        if (res.ok) {
+          confetti({
+            particleCount: 80,
+            spread: 70,
+            origin: { y: 0.6 },
+            colors: ['#AA5CC3', '#00D26A', '#FF7F00', '#FFFFFF'],
+          });
+        }
+      } else if (action === 'start') {
+        res = await api.startPack(packId);
+      } else if (action === 'stop') {
+        res = await api.stopPack(packId);
+      }
+
+      if (!res.ok) {
+        const packObj = packs.find((p) => p.id === packId);
+        setActionError({
+          id: packId,
+          name: packObj ? packObj.name : packId,
+          message: res.error || `Failed to ${action} pack ${packId}.`,
+        });
+      }
+      await Promise.all([fetchApps(), fetchPacks()]);
+    } catch (err: any) {
+      setActionError({
+        id: packId,
+        message: err?.message || `Failed to ${action} pack ${packId}.`,
+      });
+    } finally {
+      setLoadingAction((prev) => {
+        const next = { ...prev };
+        delete next[packId];
+        return next;
+      });
+    }
+  };
 
   const currentHost = typeof window !== 'undefined' ? window.location.hostname : '127.0.0.1';
   const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
@@ -627,51 +864,80 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({ onOpenGuide, isAdmin =
           </p>
         </div>
 
-        {/* View Switcher & Category Filter */}
+        {/* Main Store Tab Switcher & View Mode */}
         <div className="relative z-10 flex flex-wrap items-center gap-3">
-          <div className="flex items-center p-1 rounded-xl bg-tinapple-dark/90 border border-tinapple-border overflow-x-auto">
-            {categories.map((c) => (
-              <button
-                key={c}
-                onClick={() => {
-                  setFilterCategory(c);
-                  setSelectedIndex(0);
-                }}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold capitalize font-mono transition-all ${
-                  filterCategory === c
-                    ? 'bg-tinapple-gold text-tinapple-dark shadow-sm'
-                    : 'text-tinapple-subtext hover:text-white'
-                }`}
-              >
-                {c}
-              </button>
-            ))}
+          <div className="flex items-center p-1 rounded-xl bg-tinapple-dark/90 border border-tinapple-border shadow-inner">
+            <button
+              onClick={() => setStoreTab('packs')}
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-mono font-bold transition-all ${
+                storeTab === 'packs'
+                  ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-md'
+                  : 'text-tinapple-subtext hover:text-white'
+              }`}
+            >
+              <Zap className="w-3.5 h-3.5 fill-current" />
+              <span>Packs & Stacks ({computedPacks.length})</span>
+            </button>
+            <button
+              onClick={() => setStoreTab('apps')}
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-mono font-bold transition-all ${
+                storeTab === 'apps'
+                  ? 'bg-tinapple-gold text-tinapple-dark shadow-md'
+                  : 'text-tinapple-subtext hover:text-white'
+              }`}
+            >
+              <Layers className="w-3.5 h-3.5" />
+              <span>All Apps ({apps.length})</span>
+            </button>
           </div>
 
-          <div className="flex items-center p-1 rounded-xl bg-tinapple-dark/90 border border-tinapple-border">
-            <button
-              onClick={() => setViewMode('grid')}
-              className={`p-2 rounded-lg transition-all ${
-                viewMode === 'grid'
-                  ? 'bg-tinapple-gold text-tinapple-dark shadow-sm'
-                  : 'text-tinapple-subtext hover:text-white'
-              }`}
-              title="Bento Grid View"
-            >
-              <LayoutGrid className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => setViewMode('carousel')}
-              className={`p-2 rounded-lg transition-all ${
-                viewMode === 'carousel'
-                  ? 'bg-tinapple-gold text-tinapple-dark shadow-sm'
-                  : 'text-tinapple-subtext hover:text-white'
-              }`}
-              title="3D Radial View"
-            >
-              <Layers className="w-4 h-4" />
-            </button>
-          </div>
+          {storeTab === 'apps' && (
+            <>
+              <div className="flex items-center p-1 rounded-xl bg-tinapple-dark/90 border border-tinapple-border overflow-x-auto">
+                {categories.map((c) => (
+                  <button
+                    key={c}
+                    onClick={() => {
+                      setFilterCategory(c);
+                      setSelectedIndex(0);
+                    }}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold capitalize font-mono transition-all ${
+                      filterCategory === c
+                        ? 'bg-tinapple-gold text-tinapple-dark shadow-sm'
+                        : 'text-tinapple-subtext hover:text-white'
+                    }`}
+                  >
+                    {c}
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex items-center p-1 rounded-xl bg-tinapple-dark/90 border border-tinapple-border">
+                <button
+                  onClick={() => setViewMode('grid')}
+                  className={`p-2 rounded-lg transition-all ${
+                    viewMode === 'grid'
+                      ? 'bg-tinapple-gold text-tinapple-dark shadow-sm'
+                      : 'text-tinapple-subtext hover:text-white'
+                  }`}
+                  title="Bento Grid View"
+                >
+                  <LayoutGrid className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setViewMode('carousel')}
+                  className={`p-2 rounded-lg transition-all ${
+                    viewMode === 'carousel'
+                      ? 'bg-tinapple-gold text-tinapple-dark shadow-sm'
+                      : 'text-tinapple-subtext hover:text-white'
+                  }`}
+                  title="3D Radial View"
+                >
+                  <Layers className="w-4 h-4" />
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
@@ -699,8 +965,319 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({ onOpenGuide, isAdmin =
         </div>
       )}
 
-      {/* VIEW 1: 3D RADIAL CAROUSEL VIEW */}
-      {viewMode === 'carousel' && selectedApp && (
+      {/* SECTION 1: APPLIANCE PACKS & STACKS */}
+      {storeTab === 'packs' && (
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+          {computedPacks.map((pack) => {
+            const isLoading = Boolean(loadingAction[pack.id]);
+            return (
+              <SpotlightCard
+                key={pack.id}
+                className="p-6 md:p-7 flex flex-col justify-between border-tinapple-border hover:border-tinapple-gold/40 transition-all duration-300 relative group overflow-hidden"
+              >
+                {/* Top Glow & Accent Line */}
+                <div
+                  className="absolute top-0 left-0 right-0 h-1 opacity-70 group-hover:opacity-100 transition-opacity"
+                  style={{ backgroundColor: pack.accentColor }}
+                />
+
+                <div>
+                  {/* Card Header: Badge & Status */}
+                  <div className="flex items-center justify-between gap-3 mb-4">
+                    <div
+                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-mono font-bold uppercase tracking-wider border shadow-sm"
+                      style={{
+                        backgroundColor: `${pack.accentColor}18`,
+                        color: pack.accentColor,
+                        borderColor: `${pack.accentColor}40`,
+                      }}
+                    >
+                      <Zap className="w-3 h-3 fill-current" />
+                      {pack.badge}
+                    </div>
+
+                    {/* Pack State Badge */}
+                    {pack.allRunning ? (
+                      <span className="px-2.5 py-1 text-[11px] font-mono font-bold rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5 shadow-sm">
+                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                        ACTIVE • ALL RUNNING
+                      </span>
+                    ) : pack.allInstalled ? (
+                      <span className="px-2.5 py-1 text-[11px] font-mono font-bold rounded-full bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 flex items-center gap-1.5 shadow-sm">
+                        <span className="w-2 h-2 rounded-full bg-cyan-400" />
+                        CONFIGURED • {pack.runningCount}/{pack.totalCount} RUNNING
+                      </span>
+                    ) : pack.installedCount > 0 ? (
+                      <span className="px-2.5 py-1 text-[11px] font-mono font-semibold rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 flex items-center gap-1.5 shadow-sm">
+                        <span className="w-2 h-2 rounded-full bg-amber-400" />
+                        PARTIAL • {pack.installedCount}/{pack.totalCount} READY
+                      </span>
+                    ) : (
+                      <span className="px-2.5 py-1 text-[11px] font-mono font-medium rounded-full bg-slate-800/80 text-slate-400 border border-slate-700/60 flex items-center gap-1.5 shadow-sm">
+                        <span className="w-2 h-2 rounded-full bg-slate-500" />
+                        NOT INSTALLED ({pack.totalCount} APPS)
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Pack Title & Tagline */}
+                  <div className="flex items-start gap-3.5 mb-2">
+                    <AppBrandIcon id={pack.icon} size={46} showBadge />
+                    <div>
+                      <h3 className="text-xl font-black text-white tracking-tight flex items-center gap-2">
+                        {pack.name}
+                      </h3>
+                      <p className="text-xs font-semibold text-tinapple-gold font-mono mt-0.5">
+                        {pack.tagline}
+                      </p>
+                    </div>
+                  </div>
+
+                  <p className="text-xs text-tinapple-subtext leading-relaxed mt-3">
+                    {pack.description}
+                  </p>
+
+                  {/* Included Appliances Strip */}
+                  <div className="mt-5 pt-4 border-t border-tinapple-border/70">
+                    <div className="text-[11px] font-mono font-bold text-slate-300 mb-2.5 flex items-center justify-between">
+                      <span className="flex items-center gap-1.5">
+                        <Layers className="w-3.5 h-3.5 text-tinapple-gold" />
+                        Included Appliances ({pack.apps.length}):
+                      </span>
+                      <span className="text-xs font-normal text-tinapple-muted">
+                        {pack.installedCount}/{pack.totalCount} Installed
+                      </span>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                      {pack.apps.map((appId) => {
+                        const app = apps.find((a) => a.id === appId);
+                        const isAppRunning = app?.status === 'running';
+                        const isAppInstalled = app?.installed;
+                        return (
+                          <div
+                            key={appId}
+                            className={`inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg border text-xs font-mono transition-all ${
+                              isAppRunning
+                                ? 'bg-slate-900/80 border-emerald-500/40 text-slate-200'
+                                : isAppInstalled
+                                ? 'bg-slate-900/60 border-amber-500/30 text-slate-300'
+                                : 'bg-slate-900/40 border-slate-800 text-slate-500'
+                            }`}
+                          >
+                            <AppBrandIcon id={appId} size={18} />
+                            <span className="font-semibold">{app?.name.split(' ')[0] || appId}</span>
+                            {app && app.port > 0 && (
+                              <span className="text-[10px] text-tinapple-muted">:{app.port}</span>
+                            )}
+                            {isAppRunning ? (
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" title="Running" />
+                            ) : isAppInstalled ? (
+                              <span className="w-1.5 h-1.5 rounded-full bg-amber-400" title="Stopped" />
+                            ) : (
+                              <span className="w-1.5 h-1.5 rounded-full bg-slate-600" title="Not Installed" />
+                            )}
+                            {isAppRunning && app && app.port > 0 && (
+                              <a
+                                href={getAppUrl(app.port)}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="hover:text-emerald-300 transition-colors ml-0.5"
+                                title={`Open ${app.name} WebUI`}
+                              >
+                                <ExternalLink className="w-3 h-3" />
+                              </a>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Pre-Configured Integration Highlights */}
+                  <div className="mt-4 pt-3 border-t border-tinapple-border/50">
+                    <div className="text-[11px] font-mono font-bold text-slate-300 mb-2 flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+                      Zero-Touch Automation Highlights:
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                      {pack.features.map((feat, idx) => (
+                        <div key={idx} className="flex items-start gap-1.5 text-[11px] text-slate-300 font-mono">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0 mt-0.5" />
+                          <span className="leading-tight">{feat}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Card Action Bar */}
+                <div className="mt-6 pt-4 border-t border-tinapple-border/70 flex flex-wrap items-center justify-between gap-3">
+                  {/* Left: Primary Deploy or Configure Button */}
+                  <div className="flex flex-wrap items-center gap-2">
+                    {!pack.allInstalled ? (
+                      <button
+                        onClick={() => handlePackAction(pack.id, 'install')}
+                        disabled={Boolean(loadingAction[pack.id])}
+                        className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold font-mono text-xs shadow-lg shadow-amber-500/20 active:scale-[0.98] transition-all disabled:opacity-50"
+                      >
+                        {loadingAction[pack.id] === 'install' ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Download className="w-4 h-4" />
+                        )}
+                        <span>Install Full Pack ({pack.totalCount - pack.installedCount} Remaining)</span>
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handlePackAction(pack.id, 'configure')}
+                        disabled={Boolean(loadingAction[pack.id])}
+                        className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-500 via-indigo-600 to-blue-600 hover:from-purple-400 hover:to-blue-500 text-white font-bold font-mono text-xs shadow-lg shadow-purple-500/25 active:scale-[0.98] transition-all disabled:opacity-50"
+                      >
+                        {loadingAction[pack.id] === 'configure' ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Sparkles className="w-4 h-4 text-tinapple-gold" />
+                        )}
+                        <span>{pack.id === 'seerr-stack' ? 'Auto-Configure Stack' : 'Sync & Auto-Configure'}</span>
+                      </button>
+                    )}
+
+                    {/* Start / Stop Stack Controls */}
+                    {pack.installedCount > 0 && (
+                      <>
+                        {!pack.allRunning ? (
+                          <button
+                            onClick={() => handlePackAction(pack.id, 'start')}
+                            disabled={Boolean(loadingAction[pack.id])}
+                            className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 font-mono text-xs font-semibold transition-all disabled:opacity-50"
+                            title="Start all stopped services in this pack"
+                          >
+                            <Play className="w-3.5 h-3.5 fill-current" />
+                            <span>Start All</span>
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => handlePackAction(pack.id, 'stop')}
+                            disabled={Boolean(loadingAction[pack.id])}
+                            className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 font-mono text-xs font-semibold transition-all disabled:opacity-50"
+                            title="Stop all services in this pack"
+                          >
+                            <Square className="w-3.5 h-3.5" />
+                            <span>Stop All</span>
+                          </button>
+                        )}
+                      </>
+                    )}
+                  </div>
+
+                  {/* Right: Quick Links to Key Stack Services */}
+                  {pack.installedCount > 0 && (
+                    <div className="flex items-center gap-2">
+                      {pack.id === 'seerr-stack' && (
+                        <>
+                          <a
+                            href={getAppUrl(5055)}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="flex items-center gap-1 px-3 py-2 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-200 border border-purple-500/40 text-xs font-mono font-bold transition-all shadow-sm"
+                            title="Open Jellyseerr Requests WebUI"
+                          >
+                            <ExternalLink className="w-3 h-3" />
+                            Jellyseerr (:5055)
+                          </a>
+                          <a
+                            href={getAppUrl(8096)}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="flex items-center gap-1 px-3 py-2 rounded-xl bg-blue-500/20 hover:bg-blue-500/30 text-blue-200 border border-blue-500/40 text-xs font-mono font-bold transition-all shadow-sm"
+                            title="Open Jellyfin Streamer WebUI"
+                          >
+                            <ExternalLink className="w-3 h-3" />
+                            Jellyfin (:8096)
+                          </a>
+                        </>
+                      )}
+                      {pack.id === 'manga-suite' && (
+                        <>
+                          <a
+                            href={getAppUrl(4567)}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="flex items-center gap-1 px-3 py-2 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-200 border border-rose-500/40 text-xs font-mono font-bold transition-all shadow-sm"
+                          >
+                            <ExternalLink className="w-3 h-3" />
+                            Suwayomi (:4567)
+                          </a>
+                          <a
+                            href="/tsumiru/"
+                            target="_blank"
+                            rel="noreferrer"
+                            className="flex items-center gap-1 px-3 py-2 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-200 border border-purple-500/40 text-xs font-mono font-bold transition-all shadow-sm"
+                          >
+                            <ExternalLink className="w-3 h-3" />
+                            Tsumiru Web
+                          </a>
+                        </>
+                      )}
+                      {pack.id === 'privacy-shield' && (
+                        <a
+                          href={getAppUrl(3000)}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="flex items-center gap-1 px-3 py-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 border border-emerald-500/40 text-xs font-mono font-bold transition-all shadow-sm"
+                        >
+                          <ExternalLink className="w-3 h-3" />
+                          AdGuard Home (:3000)
+                        </a>
+                      )}
+                      {pack.id === 'audiophile-cloud' && (
+                        <a
+                          href={getAppUrl(4533)}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="flex items-center gap-1 px-3 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 border border-amber-500/40 text-xs font-mono font-bold transition-all shadow-sm"
+                        >
+                          <ExternalLink className="w-3 h-3" />
+                          Navidrome (:4533)
+                        </a>
+                      )}
+                      {pack.id === 'cloud-vault' && (
+                        <a
+                          href={getAppUrl(8000)}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="flex items-center gap-1 px-3 py-2 rounded-xl bg-blue-500/20 hover:bg-blue-500/30 text-blue-200 border border-blue-500/40 text-xs font-mono font-bold transition-all shadow-sm"
+                        >
+                          <ExternalLink className="w-3 h-3" />
+                          Vaultwarden (:8000)
+                        </a>
+                      )}
+                      {pack.id === 'second-brain' && (
+                        <a
+                          href={getAppUrl(8082)}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="flex items-center gap-1 px-3 py-2 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-200 border border-purple-500/40 text-xs font-mono font-bold transition-all shadow-sm"
+                        >
+                          <ExternalLink className="w-3 h-3" />
+                          FileBrowser (:8082)
+                        </a>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </SpotlightCard>
+            );
+          })}
+        </div>
+      )}
+
+      {/* SECTION 2: INDIVIDUAL APPLIANCES */}
+      {storeTab === 'apps' && (
+        <>
+          {/* VIEW 1: 3D RADIAL CAROUSEL VIEW */}
+          {viewMode === 'carousel' && selectedApp && (
         <div className="space-y-6">
           <div className="relative rounded-2xl bg-tinapple-card/60 border border-tinapple-border/80 backdrop-blur-xl p-4 overflow-hidden h-[420px] w-full flex items-center justify-center">
             <CircularCarousel
@@ -1036,6 +1613,8 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({ onOpenGuide, isAdmin =
           })}
         </div>
       )}
+      </>
+    )}
 
       {/* CONFIG MANAGEMENT MODAL */}
       {configModalApp && (
