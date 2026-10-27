@@ -456,7 +456,13 @@ class ApiService {
       const res = await fetch(`${API_BASE}/services/${name}/logs?lines=${lines}`);
       if (!res.ok) throw new Error('Logs error');
       const data = await res.json();
-      return data.logs || [];
+      if (Array.isArray(data.logs)) {
+        return data.logs;
+      }
+      if (typeof data.logs === 'string') {
+        return data.logs.split('\n').filter((l: string) => l.trim().length > 0);
+      }
+      return [];
     } catch {
       return [
         `[systemd] Started ${name}.service - Tinapple Appliance Service.`,

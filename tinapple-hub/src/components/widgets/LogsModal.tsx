@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 interface LogsModalProps {
   serviceName: string | null;
-  logs: string[];
+  logs: string[] | string;
   onClose: () => void;
 }
 
@@ -12,9 +12,15 @@ export const LogsModal: React.FC<LogsModalProps> = ({ serviceName, logs, onClose
   const [copied, setCopied] = React.useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
+  const logLines = React.useMemo(() => {
+    if (Array.isArray(logs)) return logs;
+    if (typeof logs === 'string') return logs.split('\n').filter((l) => l.trim().length > 0);
+    return [];
+  }, [logs]);
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [logs]);
+  }, [logLines]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -27,7 +33,7 @@ export const LogsModal: React.FC<LogsModalProps> = ({ serviceName, logs, onClose
   if (!serviceName) return null;
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(logs.join('\n'));
+    navigator.clipboard.writeText(logLines.join('\n'));
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -77,8 +83,8 @@ export const LogsModal: React.FC<LogsModalProps> = ({ serviceName, logs, onClose
 
           {/* Terminal log output */}
           <div className="p-4 overflow-y-auto flex-1 font-mono text-xs leading-relaxed space-y-1 bg-tinapple-dark/90 text-tinapple-text selection:bg-tinapple-blue/30">
-            {logs.length > 0 ? (
-              logs.map((line, idx) => (
+            {logLines.length > 0 ? (
+              logLines.map((line, idx) => (
                 <div key={idx} className="hover:bg-white/5 px-2 py-0.5 rounded transition-colors break-all">
                   <span className="text-tinapple-muted select-none mr-2">{String(idx + 1).padStart(2, '0')}</span>
                   <span
