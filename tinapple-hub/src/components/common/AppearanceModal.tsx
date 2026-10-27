@@ -35,7 +35,8 @@ interface AppearanceModalProps {
 }
 
 const modes: { id: BackgroundMode; label: string }[] = [
-  { id: 'plain', label: 'Plainer Graphic' },
+  { id: 'plain', label: 'Graphic Minimal' },
+  { id: 'aurora', label: 'Aurora Mesh (ReactBits)' },
   { id: 'waves', label: 'WebGL Waves' },
   { id: 'microslats', label: 'Micro Slats' },
   { id: 'wallpaper', label: 'Wallpaper Gallery' },

@@ -2,9 +2,10 @@ import React, { useMemo, useState, useEffect } from 'react';
 import Waves from './Waves';
 import Particles from './Particles';
 import MicroSlats from './MicroSlats';
+import { Aurora } from './Aurora';
 import { getCachedWallpaperBlob, cacheWallpaperUrl } from '../../theme/appearance';
 
-export type BackgroundMode = 'plain' | 'microslats' | 'waves' | 'wallpaper' | 'none';
+export type BackgroundMode = 'plain' | 'aurora' | 'microslats' | 'waves' | 'wallpaper' | 'none';
 export interface BackgroundSettings {
   mode: BackgroundMode;
   wallpaperUrl: string;
@@ -70,16 +71,25 @@ export const FullWindowBackground: React.FC<{ settings: BackgroundSettings }> = 
             }}
           />
           <div
-            className="absolute inset-0 opacity-[0.14]"
+            className="absolute inset-0 opacity-[0.06]"
             style={{
-              backgroundImage: `linear-gradient(to right, ${accentColor}25 1px, transparent 1px), linear-gradient(to bottom, ${accentColor}25 1px, transparent 1px)`,
-              backgroundSize: '40px 40px',
-              maskImage: 'radial-gradient(ellipse 85% 75% at 50% 45%, black 40%, transparent 95%)',
-              WebkitMaskImage: 'radial-gradient(ellipse 85% 75% at 50% 45%, black 40%, transparent 95%)',
+              backgroundImage: `linear-gradient(to right, ${accentColor}20 1px, transparent 1px), linear-gradient(to bottom, ${accentColor}20 1px, transparent 1px)`,
+              backgroundSize: '48px 48px',
+              maskImage: 'radial-gradient(ellipse 80% 70% at 50% 50%, black 30%, transparent 90%)',
+              WebkitMaskImage: 'radial-gradient(ellipse 80% 70% at 50% 50%, black 30%, transparent 90%)',
             }}
           />
-          <div className="absolute left-1/2 top-1/3 -translate-x-1/2 -translate-y-1/2 w-[720px] h-[720px] rounded-full border border-sky-400/[0.035] pointer-events-none" />
-          <div className="absolute left-1/2 top-1/3 -translate-x-1/2 -translate-y-1/2 w-[1140px] h-[1140px] rounded-full border border-sky-400/[0.02] pointer-events-none" />
+        </div>
+      )}
+
+      {mode === 'aurora' && (
+        <div className="absolute inset-0 pointer-events-none">
+          <Aurora
+            colorStops={['#040714', '#081026', `${secondaryColor}25`, `${accentColor}40`, `${accentColor}60`]}
+            amplitude={1.2}
+            speed={0.4}
+            opacity={0.45}
+          />
         </div>
       )}
 
@@ -91,9 +101,9 @@ export const FullWindowBackground: React.FC<{ settings: BackgroundSettings }> = 
         </div>
       )}
       {mode === 'waves' && (
-        <div className="absolute inset-0">
-          <Waves lineColor={`${accentColor}22`} accentColor={`${secondaryColor}30`} backgroundColor="#040714"
-            spacing={32} amplitude={30} speed={0.45} mouseInteraction clickRipple opacity={0.7} />
+        <div className="absolute inset-0 opacity-40">
+          <Waves lineColor={`${accentColor}18`} accentColor={`${secondaryColor}20`} backgroundColor="#040714"
+            spacing={44} amplitude={24} speed={0.3} mouseInteraction clickRipple opacity={0.4} />
         </div>
       )}
       {mode === 'wallpaper' && (

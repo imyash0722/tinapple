@@ -22,23 +22,27 @@ body {
   overflow-x: hidden;
 }
 
-/* Custom silky scrollbar */
+/* Hide all scrollbars globally across Chrome, Safari, Edge, Firefox, and Opera while maintaining smooth scrolling */
+*::-webkit-scrollbar,
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
 }
 
-::-webkit-scrollbar-track {
-  background: rgba(10, 11, 16, 0.6);
+* {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
 }
 
-::-webkit-scrollbar-thumb {
-  background: rgba(122, 162, 247, 0.25);
-  border-radius: 9999px;
+.scrollbar-none {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
 }
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(122, 162, 247, 0.45);
+.scrollbar-none::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
 }
 
 /* Opacity variants are generated from the RGB variables in Tailwind. */

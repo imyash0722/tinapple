@@ -22,6 +22,8 @@ import {
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { SpotlightCard } from '../reactbits/SpotlightCard';
+import { ShinyText } from '../reactbits/ShinyText';
+import { StarBorder } from '../reactbits/StarBorder';
 import CircularCarousel, { CircularCarouselItem } from '../reactbits/CircularCarousel';
 import { AppBrandIcon } from '../common/AppBrandIcons';
 import { api } from '../../services/api';
@@ -967,33 +969,34 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({ onOpenGuide, isAdmin =
 
       {/* SECTION 1: APPLIANCE PACKS & STACKS */}
       {storeTab === 'packs' && (
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-5 sm:gap-6">
           {computedPacks.map((pack) => {
             const isLoading = Boolean(loadingAction[pack.id]);
             return (
               <SpotlightCard
                 key={pack.id}
-                className="p-6 md:p-7 flex flex-col justify-between border-tinapple-border hover:border-tinapple-gold/40 transition-all duration-300 relative group overflow-hidden"
+                spotlightColor={`${pack.accentColor}25`}
+                borderColor={`${pack.accentColor}45`}
+                className="p-5 sm:p-7 flex flex-col justify-between border-white/[0.08] hover:border-white/20 transition-all duration-300 relative group overflow-hidden"
               >
-                {/* Top Glow & Accent Line */}
+                {/* Soft ambient corner glow (no harsh lines) */}
                 <div
-                  className="absolute top-0 left-0 right-0 h-1 opacity-70 group-hover:opacity-100 transition-opacity"
+                  className="absolute -top-16 -right-16 w-36 h-36 rounded-full blur-3xl opacity-20 group-hover:opacity-35 transition-opacity pointer-events-none"
                   style={{ backgroundColor: pack.accentColor }}
                 />
 
                 <div>
                   {/* Card Header: Badge & Status */}
-                  <div className="flex items-center justify-between gap-3 mb-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2.5 mb-4">
                     <div
-                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-mono font-bold uppercase tracking-wider border shadow-sm"
+                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-mono font-bold uppercase tracking-wider border shadow-sm backdrop-blur-md"
                       style={{
                         backgroundColor: `${pack.accentColor}18`,
-                        color: pack.accentColor,
                         borderColor: `${pack.accentColor}40`,
                       }}
                     >
-                      <Zap className="w-3 h-3 fill-current" />
-                      {pack.badge}
+                      <Zap className="w-3 h-3 fill-current" style={{ color: pack.accentColor }} />
+                      <ShinyText text={pack.badge} shimmerColor="#ffffff" speed={3.5} className="text-[11px] font-mono font-bold" />
                     </div>
 
                     {/* Pack State Badge */}
@@ -1024,7 +1027,7 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({ onOpenGuide, isAdmin =
                   <div className="flex items-start gap-3.5 mb-2">
                     <AppBrandIcon id={pack.icon} size={46} showBadge />
                     <div>
-                      <h3 className="text-xl font-black text-white tracking-tight flex items-center gap-2">
+                      <h3 className="text-lg sm:text-xl font-black text-white tracking-tight flex items-center gap-2">
                         {pack.name}
                       </h3>
                       <p className="text-xs font-semibold text-tinapple-gold font-mono mt-0.5">
@@ -1033,12 +1036,12 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({ onOpenGuide, isAdmin =
                     </div>
                   </div>
 
-                  <p className="text-xs text-tinapple-subtext leading-relaxed mt-3">
+                  <p className="text-xs text-tinapple-subtext leading-relaxed mt-2.5">
                     {pack.description}
                   </p>
 
-                  {/* Included Appliances Strip */}
-                  <div className="mt-5 pt-4 border-t border-tinapple-border/70">
+                  {/* Included Appliances Container (Clean glass card without harsh separator lines) */}
+                  <div className="mt-4 p-3.5 rounded-xl bg-slate-900/40 border border-white/[0.05] backdrop-blur-sm">
                     <div className="text-[11px] font-mono font-bold text-slate-300 mb-2.5 flex items-center justify-between">
                       <span className="flex items-center gap-1.5">
                         <Layers className="w-3.5 h-3.5 text-tinapple-gold" />
@@ -1049,7 +1052,7 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({ onOpenGuide, isAdmin =
                       </span>
                     </div>
 
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-1.5 sm:gap-2">
                       {pack.apps.map((appId) => {
                         const app = apps.find((a) => a.id === appId);
                         const isAppRunning = app?.status === 'running';
@@ -1057,7 +1060,7 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({ onOpenGuide, isAdmin =
                         return (
                           <div
                             key={appId}
-                            className={`inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg border text-xs font-mono transition-all ${
+                            className={`inline-flex items-center gap-1.5 sm:gap-2 px-2.5 py-1.5 rounded-lg border text-xs font-mono transition-all ${
                               isAppRunning
                                 ? 'bg-slate-900/80 border-emerald-500/40 text-slate-200'
                                 : isAppInstalled
@@ -1095,7 +1098,7 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({ onOpenGuide, isAdmin =
                   </div>
 
                   {/* Pre-Configured Integration Highlights */}
-                  <div className="mt-4 pt-3 border-t border-tinapple-border/50">
+                  <div className="mt-3 p-3 rounded-xl bg-slate-900/30 border border-white/[0.04]">
                     <div className="text-[11px] font-mono font-bold text-slate-300 mb-2 flex items-center gap-1.5">
                       <Sparkles className="w-3.5 h-3.5 text-purple-400" />
                       Zero-Touch Automation Highlights:
@@ -1112,14 +1115,14 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({ onOpenGuide, isAdmin =
                 </div>
 
                 {/* Card Action Bar */}
-                <div className="mt-6 pt-4 border-t border-tinapple-border/70 flex flex-wrap items-center justify-between gap-3">
+                <div className="mt-5 pt-3.5 border-t border-white/[0.06] flex flex-wrap items-center justify-between gap-2.5">
                   {/* Left: Primary Deploy or Configure Button */}
-                  <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
                     {!pack.allInstalled ? (
                       <button
                         onClick={() => handlePackAction(pack.id, 'install')}
                         disabled={Boolean(loadingAction[pack.id])}
-                        className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold font-mono text-xs shadow-lg shadow-amber-500/20 active:scale-[0.98] transition-all disabled:opacity-50"
+                        className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold font-mono text-xs shadow-lg shadow-amber-500/20 active:scale-[0.98] transition-all disabled:opacity-50"
                       >
                         {loadingAction[pack.id] === 'install' ? (
                           <Loader2 className="w-4 h-4 animate-spin" />
@@ -1129,18 +1132,23 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({ onOpenGuide, isAdmin =
                         <span>Install Full Pack ({pack.totalCount - pack.installedCount} Remaining)</span>
                       </button>
                     ) : (
-                      <button
+                      <StarBorder
+                        as="button"
+                        color={pack.accentColor || '#a855f7'}
+                        speed="5s"
                         onClick={() => handlePackAction(pack.id, 'configure')}
                         disabled={Boolean(loadingAction[pack.id])}
-                        className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-500 via-indigo-600 to-blue-600 hover:from-purple-400 hover:to-blue-500 text-white font-bold font-mono text-xs shadow-lg shadow-purple-500/25 active:scale-[0.98] transition-all disabled:opacity-50"
+                        className="flex-1 sm:flex-none"
                       >
-                        {loadingAction[pack.id] === 'configure' ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <Sparkles className="w-4 h-4 text-tinapple-gold" />
-                        )}
-                        <span>{pack.id === 'seerr-stack' ? 'Auto-Configure Stack' : 'Sync & Auto-Configure'}</span>
-                      </button>
+                        <span className="flex items-center gap-2 font-mono text-xs font-bold text-white">
+                          {loadingAction[pack.id] === 'configure' ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Sparkles className="w-4 h-4 text-tinapple-gold" />
+                          )}
+                          <span>{pack.id === 'seerr-stack' ? 'Auto-Configure Stack' : 'Sync & Auto-Configure'}</span>
+                        </span>
+                      </StarBorder>
                     )}
 
                     {/* Start / Stop Stack Controls */}

@@ -24,12 +24,14 @@ import {
   RotateCcw,
   BookOpen,
   ArrowUpCircle,
+  Menu,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import { FullWindowBackground } from './components/reactbits/FullWindowBackground';
 import { AppearanceModal } from './components/common/AppearanceModal';
 import { BookmarkModal } from './components/common/BookmarkModal';
+import { Sidebar } from './components/common/Sidebar';
 import { BUNDLED_WALLPAPERS, THEME_STORAGE_KEY, colorChannels, extractWallpaperColors, loadSettings } from './theme/appearance';
 import { DockItem } from './components/reactbits/Dock';
 
@@ -70,6 +72,8 @@ export const App: React.FC = () => {
     : selectedTab || (systemInfo.installed ? 'dashboard' : 'welcome');
   const [settings, setSettings] = useState(loadSettings);
   const [appearanceOpen, setAppearanceOpen] = useState(false);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [desktopSidebarCollapsed, setDesktopSidebarCollapsed] = useState(false);
   const [colorStatus, setColorStatus] = useState('');
   const [storageStatus, setStorageStatus] = useState('');
 
@@ -441,141 +445,130 @@ export const App: React.FC = () => {
       <FullWindowBackground settings={settings} />
       <AppearanceModal isOpen={appearanceOpen} onClose={() => setAppearanceOpen(false)} settings={settings} onUpdate={setSettings} colorStatus={colorStatus} storageStatus={storageStatus} />
 
-      {/* TOP COMMAND HEADER */}
-      <header className="sticky top-0 z-40 w-full bg-[#050a16]/85 backdrop-blur-2xl border-b border-white/[0.08] shadow-lg shadow-black/20">
-        <div className="max-w-[1400px] mx-auto px-3 sm:px-6 h-16 flex items-center justify-between gap-2 sm:gap-4">
-          {/* Left: System identity */}
-          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
-            <div className="flex items-center gap-1.5 sm:gap-2">
-              <span className="font-mono font-extrabold text-sm sm:text-base tracking-tight text-white">tinapple</span>
-              <span className="hidden sm:inline text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/[0.05] border border-white/10 text-tinapple-gold font-semibold">v0.0.1</span>
+      {/* PERSISTENT COLLAPSIBLE SIDEBAR & MOBILE DRAWER */}
+      <Sidebar
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        mobileOpen={mobileSidebarOpen}
+        setMobileOpen={setMobileSidebarOpen}
+        collapsed={desktopSidebarCollapsed}
+        setCollapsed={setDesktopSidebarCollapsed}
+        displayServices={displayServices}
+        systemInfo={systemInfo}
+        isEditMode={isEditMode}
+        setIsEditMode={setIsEditMode}
+        onOpenGuides={() => handleOpenGuide('jellyfin')}
+        onOpenAppearance={() => setAppearanceOpen(true)}
+        onOpenTailscale={() => setTailscaleOpen(true)}
+        onRunUpdate={handleRunSystemUpdate}
+        isUpdatingSystem={isUpdatingSystem}
+        onSyncClock={handleSyncClock}
+        isSyncing={isSyncing}
+        clockSynced={clockSynced}
+        onReboot={handleReboot}
+        isRebooting={isRebooting}
+        rebootDeadline={rebootDeadline}
+      />
+
+      {/* TOP COMMAND HEADER (CLEAN BREADCRUMB & STATUS BAR) */}
+      <header
+        className={`sticky top-0 z-20 w-full bg-[#050a16]/85 backdrop-blur-2xl border-b border-white/[0.08] shadow-lg shadow-black/20 transition-all duration-300 ${
+          desktopSidebarCollapsed ? 'md:pl-20' : 'md:pl-64'
+        }`}
+      >
+        <div className="w-full px-3 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-3">
+          {/* Left: Mobile Hamburger & Desktop Page Breadcrumb */}
+          <div className="flex items-center gap-2 sm:gap-3.5 min-w-0">
+            {/* Mobile Hamburger Toggle */}
+            <button
+              onClick={() => setMobileSidebarOpen(true)}
+              className="md:hidden p-2 rounded-xl bg-white/[0.05] border border-white/10 text-zinc-300 hover:text-white hover:bg-white/[0.08] transition-all"
+              title="Open Navigation Menu"
+              aria-label="Open Navigation Menu"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+
+            {/* Mobile Brand Icon & Tab Title */}
+            <div className="md:hidden flex items-center gap-2">
+              <span className="text-lg">🍎</span>
+              <span className="font-mono font-bold text-sm text-white capitalize">
+                {activeTab === 'store' ? 'App Store' : activeTab}
+              </span>
             </div>
-            <span className="hidden 2xl:block truncate text-[11px] font-mono text-zinc-400 max-w-[140px]" title={`APPLIANCE OS HUB • ${systemInfo.hostname}`}>
-              • {systemInfo.hostname}
-            </span>
+
+            {/* Desktop Page Title & Breadcrumb */}
+            <div className="hidden md:flex items-center gap-2.5">
+              <span className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500">Node</span>
+              <span className="text-xs text-zinc-600">/</span>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-mono font-black text-white capitalize">
+                  {activeTab === 'store' ? 'App Store & Packs' : activeTab}
+                </span>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/[0.05] border border-white/10 text-tinapple-gold font-bold">
+                  {systemInfo.sessionMode === 'headless' ? 'Headless Server' : 'Niri Desktop'}
+                </span>
+              </div>
+            </div>
           </div>
 
-          {/* Center: Main Navigation (Scrollable on small mobile screens) */}
-          <nav aria-label="Main Navigation" className="flex items-center gap-1 p-1 rounded-2xl bg-black/25 border border-white/[0.06] backdrop-blur-md overflow-x-auto scrollbar-none max-w-[55vw] sm:max-w-none">
-            {dockItems.map((item) => {
-              const isActive = activeTab === item.id;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => setActiveTab(item.id)}
-                  title={item.label}
-                  aria-label={item.label}
-                  className={`relative flex items-center gap-1 sm:gap-2 px-2.5 sm:px-3.5 py-1.5 rounded-xl font-mono text-xs font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tinapple-gold active:scale-95 shrink-0 ${
-                    isActive
-                      ? 'bg-tinapple-surface border border-tinapple-gold/70 text-tinapple-gold shadow-lg shadow-tinapple-gold/15 font-bold'
-                      : 'border border-transparent text-tinapple-subtext hover:bg-white/[0.06] hover:text-white'
-                  }`}
-                >
-                  <span className="shrink-0">{item.icon}</span>
-                  <span className={`whitespace-nowrap ${isActive ? 'inline' : 'hidden md:inline'}`}>
-                    {item.shortLabel || item.label}
-                  </span>
-                  {item.badge !== undefined && (
-                    <span className="px-1.5 min-w-4 h-4 flex items-center justify-center text-[10px] font-mono font-bold rounded-full bg-tinapple-green text-tinapple-dark shadow-sm">
-                      {item.badge}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </nav>
-
-          {/* Right: Actions and Live Status */}
-          <div className="flex items-center justify-end gap-1 sm:gap-2 shrink-0">
-            {/* Live status indicators on large screens */}
-            <div className="hidden xl:flex items-center gap-2 mr-1">
-              <div className={statusPillClass} title="Real-time Server Sent Events connected">
-                <span className="w-1.5 h-1.5 rounded-full bg-tinapple-green animate-pulse" />
-                <Activity className="w-3.5 h-3.5" />
-                <span>SSE Live</span>
-              </div>
-              <div className={statusPillClass} title={`Session mode: ${systemInfo.sessionMode}`}>
-                {systemInfo.sessionMode === 'headless'
-                  ? <Terminal className="w-3.5 h-3.5 text-tinapple-gold" />
-                  : <Monitor className="w-3.5 h-3.5 text-tinapple-gold" />}
-                <span className="capitalize">{systemInfo.sessionMode} Mode</span>
-              </div>
-              <button
-                onClick={() => setTailscaleOpen(true)}
-                className={`${statusPillClass} hover:bg-sky-500/15 hover:border-sky-500/40 cursor-pointer transition-all text-sky-400`}
-                title="Tailscale Remote VPN Login & Mesh"
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse" />
-                <span>Tailscale VPN</span>
-              </button>
+          {/* Right: Live Telemetry Status & Quick Actions */}
+          <div className="flex items-center justify-end gap-1.5 sm:gap-2.5 shrink-0">
+            {/* Live SSE Pulse Chip */}
+            <div className="hidden lg:flex items-center gap-2 px-2.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[11px] font-mono text-emerald-300">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span>SSE Live</span>
             </div>
 
-            <div className="hidden 2xl:flex items-center gap-1.5 mr-1 text-xs font-mono font-medium text-zinc-300" title="System uptime">
-              <Timer className="w-3.5 h-3.5 text-zinc-400" />
-              <span>{formatUptime(systemInfo.uptime)}</span>
-            </div>
+            {/* Tailscale VPN Chip */}
+            <button
+              onClick={() => setTailscaleOpen(true)}
+              className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/20 text-[11px] font-mono text-sky-300 transition-all cursor-pointer"
+              title="Tailscale VPN Mesh Status"
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse" />
+              <span>Tailscale VPN</span>
+            </button>
 
-            {/* Dashboard Edit Mode Toggle Button (Tinarchy Feature) */}
-            {activeTab === 'dashboard' && (
-              <button
-                onClick={() => setIsEditMode((prev) => !prev)}
-                className={`${actionButtonClass} ${
-                  isEditMode
-                    ? '!bg-tinapple-gold/25 !border-tinapple-gold/70 !text-tinapple-gold ring-2 ring-tinapple-gold/30'
-                    : ''
-                }`}
-                title={isEditMode ? 'Exit Dashboard Edit Mode' : 'Customize Dashboard Layout (Tinarchy Edit Mode)'}
-                aria-label="Customize Dashboard"
-              >
-                <Wrench className="w-4 h-4" />
-              </button>
-            )}
+            {/* Full System Update Button */}
+            <button
+              onClick={handleRunSystemUpdate}
+              disabled={isUpdatingSystem}
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 font-mono text-xs font-semibold transition-all shadow-sm active:scale-95 disabled:opacity-50"
+              title="Full System & Appliance Update (paru/pacman -Syu)"
+            >
+              <ArrowUpCircle className={`w-4 h-4 text-emerald-400 ${isUpdatingSystem ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">Update OS</span>
+            </button>
 
+            {/* Interactive Guides Button */}
             <button
               onClick={() => handleOpenGuide('jellyfin')}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 transition-all font-mono text-xs font-semibold shadow-sm active:scale-95"
-              title="Interactive Setup Guides (Plezy, Jellyseerr, Tailscale, SyncYomi, etc.)"
-              aria-label="Service Guides"
+              className="hidden sm:flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl border border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 transition-all font-mono text-xs font-semibold shadow-sm active:scale-95"
+              title="Interactive Setup Guides"
             >
               <BookOpen className="w-4 h-4 text-purple-400" />
-              <span className="hidden sm:inline">Guides</span>
+              <span>Guides</span>
             </button>
+
+            {/* Appearance / Wallpaper Modal Button */}
             <button
               onClick={() => setAppearanceOpen(true)}
               className={actionButtonClass}
               title="Appearance & Theme"
               aria-label="Appearance & Theme"
             >
-              <Palette className="w-4 h-4" />
+              <Palette className="w-4 h-4 text-sky-400" />
             </button>
-            <button onClick={handleSyncClock} disabled={isSyncing} className={actionButtonClass} title="Sync Clock (NTP)" aria-label="Sync Clock (NTP)" aria-busy={isSyncing}>
-              {clockSynced ? <Check className="w-4 h-4 text-tinapple-green" /> : <Clock className={`w-4 h-4 ${isSyncing ? 'animate-spin text-tinapple-gold' : ''}`} />}
-            </button>
+
+            {/* Refresh telemetry */}
             <button
-              onClick={handleRunSystemUpdate}
-              disabled={isUpdatingSystem}
-              className={`${actionButtonClass} hover:!border-emerald-500/50 hover:!text-emerald-300`}
-              title="Full System & Appliance Update (paru/pacman -Syu)"
-              aria-label="Full System & Appliance Update"
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className={actionButtonClass}
+              title="Refresh telemetry"
+              aria-label="Refresh telemetry"
             >
-              <ArrowUpCircle className={`w-4 h-4 text-emerald-400 ${isUpdatingSystem ? 'animate-spin text-tinapple-gold' : ''}`} />
-            </button>
-            <div className="relative">
-              <button
-                onClick={handleReboot}
-                disabled={isRebooting}
-                className={`${actionButtonClass} hover:!bg-red-500/20 hover:!border-red-500/50 hover:!text-red-400 ${rebootDeadline ? '!border-red-500/50 !text-red-400' : ''}`}
-                title={rebootDeadline ? 'Confirm Reboot?' : 'Reboot Node'}
-                aria-label={rebootDeadline ? 'Confirm Reboot?' : 'Reboot Node'}
-                aria-busy={isRebooting}
-              >
-                <Power className={`w-4 h-4 ${isRebooting ? 'animate-pulse' : ''}`} />
-              </button>
-              {rebootDeadline > 0 && (
-                <span className="absolute top-full right-0 mt-2 px-3 py-1.5 rounded-lg bg-zinc-900 border border-red-500/40 text-red-400 text-xs font-mono whitespace-nowrap pointer-events-none">Confirm Reboot?</span>
-              )}
-            </div>
-            <button onClick={handleRefresh} disabled={isRefreshing} className={actionButtonClass} title="Refresh telemetry" aria-label="Refresh telemetry" aria-busy={isRefreshing}>
               <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin text-tinapple-gold' : ''}`} />
             </button>
           </div>
@@ -584,7 +577,11 @@ export const App: React.FC = () => {
       </header>
 
       {/* MAIN SCREEN-FILLING BENTO DECK */}
-      <main className="max-w-[1400px] mx-auto px-4 sm:px-6 pt-6 pb-14">
+      <main
+        className={`w-full max-w-full px-3 sm:px-6 pt-5 pb-24 md:pb-12 transition-all duration-300 ${
+          desktopSidebarCollapsed ? 'md:pl-24' : 'md:pl-72'
+        }`}
+      >
         <AnimatePresence mode="wait">
           {activeTab === 'welcome' && (
             <motion.div

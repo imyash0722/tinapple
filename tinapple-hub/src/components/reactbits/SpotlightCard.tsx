@@ -36,28 +36,23 @@ export const SpotlightCard: React.FC<SpotlightCardProps> = ({
       className={`tinapple-glass-card relative overflow-hidden rounded-2xl border border-tinapple-border bg-tinapple-card/80 backdrop-blur-xl shadow-lg transition-all duration-300 hover:border-tinapple-border-hover hover:shadow-2xl hover:shadow-tinapple-blue/5 ${className}`}
       {...props}
     >
-      {/* Dynamic Radial Spotlight */}
+      {/* Dynamic Radial Spotlight Glow */}
       <div
-        className="pointer-events-none absolute -inset-px transition-opacity duration-300"
+        className="pointer-events-none absolute -inset-px rounded-2xl transition-opacity duration-300 z-0"
         style={{
           opacity,
-          background: `radial-gradient(400px circle at ${position.x}px ${position.y}px, ${spotlightColor}, transparent 70%)`,
+          background: `radial-gradient(500px circle at ${position.x}px ${position.y}px, ${spotlightColor}, transparent 65%)`,
         }}
       />
-      {/* Dynamic Border Glow */}
+      {/* Subtle border highlight follow */}
       <div
-        className="pointer-events-none absolute -inset-px rounded-2xl transition-opacity duration-300"
+        className="pointer-events-none absolute inset-0 rounded-2xl transition-opacity duration-300 z-0 border border-white/10"
         style={{
-          opacity,
-          background: `radial-gradient(250px circle at ${position.x}px ${position.y}px, ${borderColor}, transparent 60%)`,
-          mask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
-          WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
-          maskComposite: 'exclude',
-          WebkitMaskComposite: 'xor',
-          padding: '1px',
+          opacity: opacity * 0.7,
+          borderColor: borderColor,
         }}
       />
-      <div className="relative z-10">{children}</div>
+      <div className="relative z-10 w-full h-full">{children}</div>
     </div>
   );
 };
