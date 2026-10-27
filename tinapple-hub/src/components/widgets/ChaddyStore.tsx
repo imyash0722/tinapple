@@ -457,6 +457,11 @@ export const ChaddyStore: React.FC = () => {
   }, [fetchApps]);
 
   const currentHost = typeof window !== 'undefined' ? window.location.hostname : '127.0.0.1';
+  const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
+  const getAppUrl = (port: number) => {
+    const proto = (port === 8000 && isHttps) ? 'https' : 'http';
+    return `${proto}://${currentHost}:${port}`;
+  };
 
   const handleAction = async (id: string, action: 'install' | 'uninstall' | 'start' | 'stop' | 'restart') => {
     setActionError(null);
@@ -721,7 +726,7 @@ export const ChaddyStore: React.FC = () => {
                 {selectedApp.status === 'running' && selectedApp.port > 0 && (
                   <>
                     <a
-                      href={`http://${currentHost}:${selectedApp.port}`}
+                      href={getAppUrl(selectedApp.port)}
                       target="_blank"
                       rel="noreferrer"
                       className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-xs font-mono font-bold transition-all shadow-sm"
@@ -870,7 +875,7 @@ export const ChaddyStore: React.FC = () => {
                       <>
                         {app.port > 0 && (
                           <a
-                            href={`http://${currentHost}:${app.port}`}
+                            href={getAppUrl(app.port)}
                             target="_blank"
                             rel="noreferrer"
                             className="px-2.5 py-1.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-xs font-mono font-bold flex items-center gap-1"

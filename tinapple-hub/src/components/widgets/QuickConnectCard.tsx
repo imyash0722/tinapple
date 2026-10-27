@@ -45,15 +45,18 @@ export const QuickConnectCard: React.FC<QuickConnectCardProps> = ({
   };
 
   const currentHost = typeof window !== 'undefined' ? window.location.hostname : '127.0.0.1';
+  const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
+  const currentProto = isHttps ? 'https' : 'http';
+  const currentOrigin = typeof window !== 'undefined' ? window.location.origin : 'http://127.0.0.1:8088';
 
   const connectionEndpoints = [
     {
       id: 'current',
       name: 'Active Session',
-      type: 'Direct Link',
-      url: `http://${currentHost}:8088`,
-      desc: 'Active network connection currently serving this management dashboard.',
-      badge: 'Active & Verified',
+      type: isHttps ? 'Encrypted TLS (HTTPS)' : 'Direct Link',
+      url: currentOrigin,
+      desc: isHttps ? 'Secure end-to-end encrypted connection with automatic TLS certificate.' : 'Active network connection currently serving this management dashboard.',
+      badge: isHttps ? 'Encrypted & Secure' : 'Active & Verified',
       color: 'text-emerald-400 border-emerald-500/30 bg-emerald-500/10',
       icon: (
         <svg className="w-5 h-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -65,7 +68,7 @@ export const QuickConnectCard: React.FC<QuickConnectCardProps> = ({
       id: 'ethernet',
       name: 'Direct Ethernet',
       type: '1 Gbps Patch',
-      url: 'http://192.168.99.1:8088',
+      url: `${currentProto}://192.168.99.1${isHttps ? '' : ':8088'}`,
       desc: 'Direct peer-to-peer patch cable connection between PC and server.',
       badge: currentHost === '192.168.99.1' || currentHost === '192.168.99.62' ? 'Active' : 'Auto-Negotiating',
       color: 'text-blue-400 border-blue-500/30 bg-blue-500/10',
@@ -78,10 +81,10 @@ export const QuickConnectCard: React.FC<QuickConnectCardProps> = ({
     {
       id: 'tailscale',
       name: 'Tailscale Mesh',
-      type: 'Encrypted WireGuard',
-      url: currentHost.startsWith('100.') ? `http://${currentHost}:8088` : 'http://100.108.215.120:8088',
-      desc: 'Zero-config secure mesh access across all your devices anywhere.',
-      badge: currentHost.startsWith('100.') ? 'Active Link' : 'Tailnet Ready',
+      type: "Let's Encrypt TLS",
+      url: 'https://tinapple-server.tail3dee69.ts.net',
+      desc: "Zero-config secure mesh access with official Let's Encrypt TLS certificate.",
+      badge: currentHost.includes('tail3dee69.ts.net') || currentHost.startsWith('100.') ? 'Active Link' : 'Tailnet Ready',
       color: 'text-purple-400 border-purple-500/30 bg-purple-500/10',
       icon: (
         <svg className="w-5 h-5 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -99,7 +102,7 @@ export const QuickConnectCard: React.FC<QuickConnectCardProps> = ({
     { id: 'syncthing', name: 'Syncthing Sync', port: '8384', path: `http://${currentHost}:8384` },
     { id: 'navidrome', name: 'Navidrome Music', port: '4533', path: `http://${currentHost}:4533` },
     { id: 'adguard', name: 'AdGuard Home', port: '3000', path: `http://${currentHost}:3000` },
-    { id: 'vaultwarden', name: 'Vaultwarden', port: '8000', path: `http://${currentHost}:8000` },
+    { id: 'vaultwarden', name: 'Vaultwarden', port: '8000', path: isHttps ? `https://${currentHost}:8000` : `http://${currentHost}:8000` },
     { id: 'radarr', name: 'Radarr Movies', port: '7878', path: `http://${currentHost}:7878` },
     { id: 'sonarr', name: 'Sonarr TV', port: '8989', path: `http://${currentHost}:8989` },
     { id: 'prowlarr', name: 'Prowlarr Indexer', port: '9696', path: `http://${currentHost}:9696` },

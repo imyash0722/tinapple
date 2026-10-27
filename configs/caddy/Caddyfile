@@ -1,0 +1,27 @@
+{
+	admin "unix//run/caddy/admin.socket"
+}
+
+tinapple-server.tail3dee69.ts.net {
+	tls {
+		get_certificate tailscale
+	}
+	reverse_proxy localhost:8088
+}
+
+tinapple-server.tail3dee69.ts.net:8000 {
+	tls {
+		get_certificate tailscale
+	}
+	reverse_proxy localhost:8001
+}
+
+192.168.1.17, 100.67.207.60, tinapple-server, localhost {
+	tls internal
+	reverse_proxy localhost:8088
+}
+
+192.168.1.17:8000, 100.67.207.60:8000, tinapple-server:8000, localhost:8000 {
+	tls internal
+	reverse_proxy localhost:8001
+}

@@ -278,33 +278,37 @@ export const TailscaleModal: React.FC<TailscaleModalProps> = ({ isOpen, onClose 
                   </div>
                 )}
 
-                {primaryIP && (
-                  <div className="sm:col-span-2 p-3 rounded-xl bg-sky-500/10 border border-sky-500/25 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Globe className="w-4 h-4 text-sky-400 shrink-0" />
-                      <span className="text-zinc-200">
-                        Remote Dashboard URL:{' '}
-                        <a
-                          href={`http://${primaryIP}:8088`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-sky-300 font-bold hover:underline"
-                        >
-                          http://{primaryIP}:8088
-                        </a>
-                      </span>
+                {primaryIP && (() => {
+                  const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
+                  const remoteDashUrl = isHttps ? 'https://tinapple-server.tail3dee69.ts.net' : `http://${primaryIP}:8088`;
+                  return (
+                    <div className="sm:col-span-2 p-3 rounded-xl bg-sky-500/10 border border-sky-500/25 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Globe className="w-4 h-4 text-sky-400 shrink-0" />
+                        <span className="text-zinc-200">
+                          Remote Dashboard URL:{' '}
+                          <a
+                            href={remoteDashUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-sky-300 font-bold hover:underline"
+                          >
+                            {remoteDashUrl}
+                          </a>
+                        </span>
+                      </div>
+                      <a
+                        href={remoteDashUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center gap-1 text-xs text-sky-400 font-bold hover:underline"
+                      >
+                        <span>Open</span>
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </a>
                     </div>
-                    <a
-                      href={`http://${primaryIP}:8088`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="flex items-center gap-1 text-xs text-sky-400 font-bold hover:underline"
-                    >
-                      <span>Open</span>
-                      <ExternalLink className="w-3.5 h-3.5" />
-                    </a>
-                  </div>
-                )}
+                  );
+                })()}
               </div>
             )}
           </div>

@@ -68,7 +68,8 @@ export const BookmarkModal: React.FC<BookmarkModalProps> = ({
 
     let finalUrl = url.trim();
     if (!/^https?:\/\//i.test(finalUrl)) {
-      finalUrl = `http://${finalUrl}`;
+      const proto = typeof window !== 'undefined' && window.location.protocol === 'https:' ? 'https' : 'http';
+      finalUrl = `${proto}://${finalUrl}`;
     }
 
     onSave(
