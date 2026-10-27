@@ -284,10 +284,14 @@ export const AppBrandIcon: React.FC<IconProps> = ({
     const badgePadding = Math.max(4, Math.round(size * 0.18));
     return (
       <div
-        className={`inline-flex items-center justify-center rounded-xl border transition-all ${className}`}
+        className={`inline-flex items-center justify-center rounded-xl border shrink-0 flex-shrink-0 aspect-square select-none ${className}`}
         style={{
           width: size,
           height: size,
+          minWidth: size,
+          minHeight: size,
+          maxWidth: size,
+          maxHeight: size,
           backgroundColor: `${cfg.accentColor}18`,
           borderColor: `${cfg.accentColor}40`,
           boxShadow: `0 0 12px ${cfg.accentColor}20`,
@@ -299,8 +303,12 @@ export const AppBrandIcon: React.FC<IconProps> = ({
           style={{
             width: size - badgePadding * 2,
             height: size - badgePadding * 2,
+            minWidth: size - badgePadding * 2,
+            minHeight: size - badgePadding * 2,
+            maxWidth: size - badgePadding * 2,
+            maxHeight: size - badgePadding * 2,
           }}
-          className="object-contain filter drop-shadow-sm"
+          className="object-contain filter drop-shadow-sm shrink-0 flex-shrink-0 aspect-square"
           loading="lazy"
         />
       </div>
@@ -313,7 +321,15 @@ export const AppBrandIcon: React.FC<IconProps> = ({
       alt={cfg.name}
       width={size}
       height={size}
-      className={`inline-block object-contain filter drop-shadow-sm ${className}`}
+      style={{
+        width: size,
+        height: size,
+        minWidth: size,
+        minHeight: size,
+        maxWidth: size,
+        maxHeight: size,
+      }}
+      className={`inline-block object-contain filter drop-shadow-sm shrink-0 flex-shrink-0 aspect-square select-none ${className}`}
       loading="lazy"
     />
   );

@@ -61,6 +61,7 @@ tinapple_pacstrap() {
     git
     curl
     wget
+    paru
     openssh
     tmux
     tpm

@@ -194,12 +194,12 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({
               >
                 <div>
                   <div className="flex items-start justify-between gap-3 mb-2.5">
-                    <div className="flex items-start gap-3">
-                      <AppBrandIcon id={service.name} size={32} showBadge />
-                      <div>
+                    <div className="flex items-start gap-3 min-w-0 flex-1">
+                      <AppBrandIcon id={service.name} size={38} showBadge className="shrink-0" />
+                      <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
                           <span
-                            className={`w-2 h-2 rounded-full ${
+                            className={`w-2 h-2 rounded-full shrink-0 ${
                               isActive
                                 ? 'bg-tinapple-green shadow-sm shadow-tinapple-green animate-pulse'
                                 : isFailed
@@ -220,7 +220,7 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({
                     </div>
 
                     <span
-                      className={`text-[10px] font-mono px-2 py-0.5 rounded-full border uppercase whitespace-nowrap ${
+                      className={`text-[10px] font-mono px-2 py-0.5 rounded-full border uppercase whitespace-nowrap shrink-0 ${
                         isActive
                           ? 'bg-tinapple-green/10 text-tinapple-green border-tinapple-green/20 font-bold'
                           : isFailed

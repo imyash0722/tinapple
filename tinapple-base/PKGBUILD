@@ -9,7 +9,7 @@ license=(MIT)
 depends=(
   'base' 'linux-lts' 'linux-lts-headers' 'linux-firmware'
   'systemd' 'systemd-sysvcompat'
-  'networkmanager' 'polkit' 'sudo' 'vim' 'zsh' 'git' 'curl' 'wget'
+  'networkmanager' 'polkit' 'sudo' 'vim' 'zsh' 'git' 'curl' 'wget' 'paru'
   'tinapple-keyring' 'tinapple-mirrorlist'
   'tinapple-hw' 'tinapple-firstboot'
   'tinapple-nginx'
