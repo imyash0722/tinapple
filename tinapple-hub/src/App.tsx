@@ -22,6 +22,7 @@ import {
   Eye,
   EyeOff,
   RotateCcw,
+  BookOpen,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -38,6 +39,7 @@ import { HardwareSensors } from './components/widgets/HardwareSensors';
 import { SettingsManifest } from './components/widgets/SettingsManifest';
 import { LogsModal } from './components/widgets/LogsModal';
 import { TailscaleModal } from './components/widgets/TailscaleModal';
+import { GuidesModal } from './components/widgets/GuidesModal';
 import { WelcomeInstaller } from './components/installer/WelcomeInstaller';
 import { QuickConnectCard } from './components/widgets/QuickConnectCard';
 import { TransfersWidget } from './components/widgets/TransfersWidget';
@@ -136,6 +138,13 @@ export const App: React.FC = () => {
   const [serviceLogs, setServiceLogs] = useState<string[]>([]);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [tailscaleOpen, setTailscaleOpen] = useState<boolean>(false);
+  const [guidesOpen, setGuidesOpen] = useState<boolean>(false);
+  const [selectedGuideId, setSelectedGuideId] = useState<string | null>('jellyfin');
+
+  const handleOpenGuide = (guideId?: string) => {
+    if (guideId) setSelectedGuideId(guideId);
+    setGuidesOpen(true);
+  };
 
   const [isSyncing, setIsSyncing] = useState(false);
   const [clockSynced, setClockSynced] = useState(false);
@@ -494,6 +503,14 @@ export const App: React.FC = () => {
             )}
 
             <button
+              onClick={() => handleOpenGuide('jellyfin')}
+              className={`${actionButtonClass} hover:!border-purple-500/50 hover:!text-purple-300`}
+              title="Client App & Config Guides (Plezy, SyncYomi, etc.)"
+              aria-label="Service Guides"
+            >
+              <BookOpen className="w-4 h-4 text-purple-400" />
+            </button>
+            <button
               onClick={() => setAppearanceOpen(true)}
               className={actionButtonClass}
               title="Appearance & Theme"
@@ -627,6 +644,7 @@ export const App: React.FC = () => {
                             onDeleteBookmark={handleDeleteBookmark}
                             onSelectTab={(tab) => setActiveTab(tab as any)}
                             onOpenTailscale={() => setTailscaleOpen(true)}
+                            onOpenGuide={handleOpenGuide}
                           />
                         );
                       case 'transfers':
@@ -712,6 +730,7 @@ export const App: React.FC = () => {
                 onControlService={handleControlService}
                 onOpenLogs={handleOpenLogs}
                 onOpenTailscale={() => setTailscaleOpen(true)}
+                onOpenGuide={handleOpenGuide}
               />
             </motion.div>
           )}
@@ -724,7 +743,7 @@ export const App: React.FC = () => {
               exit={{ opacity: 0, y: -14 }}
               transition={{ duration: 0.25, ease: 'easeOut' }}
             >
-              <ChaddyStore />
+              <ChaddyStore onOpenGuide={handleOpenGuide} />
             </motion.div>
           )}
 
@@ -784,6 +803,13 @@ export const App: React.FC = () => {
       <TailscaleModal
         isOpen={tailscaleOpen}
         onClose={() => setTailscaleOpen(false)}
+      />
+
+      {/* CLIENT APPS & SERVICE GUIDES MODAL */}
+      <GuidesModal
+        isOpen={guidesOpen}
+        onClose={() => setGuidesOpen(false)}
+        initialGuideId={selectedGuideId}
       />
 
       {/* HOMARR ADD/EDIT BOOKMARK MODAL (TINARCHY FEATURE) */}

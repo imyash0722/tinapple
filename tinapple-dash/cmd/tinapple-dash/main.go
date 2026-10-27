@@ -107,6 +107,9 @@ func main() {
 	if _, err := os.Stat(filepath.Join(distDir, "index.html")); err == nil {
 		r.Static("/assets", filepath.Join(distDir, "assets"))
 		r.Static("/icons", filepath.Join(distDir, "icons"))
+		if _, err := os.Stat(filepath.Join(distDir, "guides")); err == nil {
+			r.Static("/guides", filepath.Join(distDir, "guides"))
+		}
 		if _, err := os.Stat(filepath.Join(distDir, "images")); err == nil {
 			r.Static("/images", filepath.Join(distDir, "images"))
 		}
@@ -124,6 +127,24 @@ func main() {
 			c.Header("Expires", "0")
 			c.File(filepath.Join(distDir, "index.html"))
 		}
+		guideMap := map[string]string{
+			"/guide/plezy":       "/guides/plezy.html",
+			"/guide/jellyfin":    "/guides/plezy.html",
+			"/guide/syncyomi":    "/guides/syncyomi.html",
+			"/guide/beeper":      "/guides/beeper.html",
+			"/guide/vaultwarden": "/guides/vaultwarden.html",
+			"/guide/syncthing":   "/guides/syncthing.html",
+			"/guide/obsidian":    "/guides/obsidian.html",
+			"/guide/ssh":         "/guides/ssh.html",
+			"/guide/tor":         "/guides/tor.html",
+		}
+		for routePath, targetFile := range guideMap {
+			tgt := targetFile
+			r.GET(routePath, func(c *gin.Context) {
+				c.Redirect(http.StatusFound, tgt)
+			})
+		}
+
 		r.GET("/", serveIndex)
 		r.NoRoute(func(c *gin.Context) {
 			path := c.Request.URL.Path

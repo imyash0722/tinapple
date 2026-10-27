@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Edit2, Trash2, ExternalLink, Globe } from 'lucide-react';
+import { Plus, Edit2, Trash2, ExternalLink, Globe, BookOpen } from 'lucide-react';
 import { AppBrandIcon } from '../common/AppBrandIcons';
 import { ServiceStatus } from '../../types/api';
 import { CustomBookmark } from '../../services/dashboardLayout';
@@ -14,6 +14,7 @@ interface QuickConnectCardProps {
   onOpenTransfers?: () => void;
   onOpenManga?: () => void;
   onOpenTailscale?: () => void;
+  onOpenGuide?: (guideId: string) => void;
   onSelectTab?: (tab: string) => void;
 }
 
@@ -25,6 +26,7 @@ export const QuickConnectCard: React.FC<QuickConnectCardProps> = ({
   onEditBookmark,
   onDeleteBookmark,
   onOpenTailscale,
+  onOpenGuide,
   onSelectTab,
 }) => {
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
@@ -172,6 +174,17 @@ export const QuickConnectCard: React.FC<QuickConnectCardProps> = ({
               <span className="text-[11px] font-mono text-amber-400 bg-amber-500/10 px-2.5 py-0.5 rounded-lg border border-amber-500/30 animate-pulse">
                 {notice}
               </span>
+            )}
+            {onOpenGuide && (
+              <button
+                type="button"
+                onClick={() => onOpenGuide('jellyfin')}
+                className="px-2.5 py-1 rounded-lg bg-purple-500/15 hover:bg-purple-500/25 border border-purple-500/30 text-purple-300 text-[11px] font-mono font-bold flex items-center gap-1.5 transition-all"
+                title="View Client App & Setup Guides (Plezy, SyncYomi, etc.)"
+              >
+                <BookOpen className="w-3.5 h-3.5 text-purple-400" />
+                <span>Client Guides</span>
+              </button>
             )}
             {isEditMode && onAddBookmark && (
               <button

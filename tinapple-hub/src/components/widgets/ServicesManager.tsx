@@ -8,6 +8,7 @@ import {
   LayoutGrid,
   List,
   ShieldCheck,
+  BookOpen,
 } from 'lucide-react';
 import { SpotlightCard } from '../reactbits/SpotlightCard';
 import HoldButton from '../reactbits/HoldButton';
@@ -20,6 +21,7 @@ interface ServicesManagerProps {
   onControlService: (name: string, action: 'start' | 'stop' | 'restart' | 'enable' | 'disable') => Promise<{ ok: boolean; error?: string } | void>;
   onOpenLogs: (name: string) => void;
   onOpenTailscale?: () => void;
+  onOpenGuide?: (guideId: string) => void;
 }
 
 export const ServicesManager: React.FC<ServicesManagerProps> = ({
@@ -28,6 +30,7 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({
   onControlService,
   onOpenLogs,
   onOpenTailscale,
+  onOpenGuide,
 }) => {
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -297,6 +300,35 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({
                       >
                         <ShieldCheck className="w-3.5 h-3.5" />
                         <span>Mesh</span>
+                      </button>
+                    )}
+                    {onOpenGuide && (
+                      <button
+                        onClick={() => {
+                          const guideMap: Record<string, string> = {
+                            jellyfin: 'jellyfin',
+                            suwayomi: 'syncyomi',
+                            'suwayomi-server': 'syncyomi',
+                            syncyomi: 'syncyomi',
+                            beeper: 'beeper',
+                            vaultwarden: 'vaultwarden',
+                            syncthing: 'syncthing',
+                            couchdb: 'obsidian',
+                            tailscale: 'tailscale',
+                            tailscaled: 'tailscale',
+                            radarr: 'servarr',
+                            sonarr: 'servarr',
+                            prowlarr: 'servarr',
+                            qbittorrent: 'servarr',
+                          };
+                          const gId = guideMap[service.name] || 'jellyfin';
+                          onOpenGuide(gId);
+                        }}
+                        className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-mono font-medium bg-purple-500/15 hover:bg-purple-500/25 border border-purple-500/30 text-purple-300 transition-colors"
+                        title={`View ${service.displayName || service.name} Client & Setup Guide`}
+                      >
+                        <BookOpen className="w-3.5 h-3.5 text-purple-400" />
+                        <span className="hidden sm:inline">Guide</span>
                       </button>
                     )}
                     <button

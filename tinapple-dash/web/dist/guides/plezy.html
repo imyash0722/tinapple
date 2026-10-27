@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/svg+xml" href="/icons/jellyfin.svg">
+    <link rel="alternate icon" type="image/x-icon" href="/icons/jellyfin.svg">
+    <title>Plezy & Jellyfin Client Setup Guide — Tinapple Homelab</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+        :root {
+            --bg: #090b10;
+            --glass: rgba(14, 18, 26, 0.82);
+            --glass-card: rgba(18, 24, 34, 0.76);
+            --glass-border: rgba(126, 199, 137, 0.22);
+            --primary: #7ec789;
+            --primary-glow: rgba(126, 199, 137, 0.35);
+            --accent: #aa74e8;
+            --text: #e2e8f0;
+            --text-muted: rgba(226, 232, 240, 0.65);
+            --online: #5af78e;
+            --standby: #ffd166;
+            --offline: #ff6b6b;
+            --code-bg: rgba(9, 11, 16, 0.92);
+            --card-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.55);
+            --font-family: 'Inter', -apple-system, system-ui, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: var(--font-family);
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 30px 16px;
+            display: flex;
+            justify-content: center;
+            line-height: 1.6;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            display: flex;
+            flex-direction: column;
+            gap: 22px;
+        }
+
+        .header-card {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 28px;
+            box-shadow: var(--card-shadow);
+            backdrop-blur: 24px;
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            flex-wrap: wrap;
+        }
+
+        .header-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 18px;
+            background: rgba(170, 116, 232, 0.16);
+            border: 1px solid rgba(170, 116, 232, 0.35);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            box-shadow: 0 0 20px rgba(170, 116, 232, 0.25);
+        }
+
+        .header-info {
+            flex: 1;
+            min-width: 260px;
+        }
+
+        .header-info h1 {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: #fff;
+            letter-spacing: -0.02em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header-info p {
+            font-size: 0.92rem;
+            color: var(--text-muted);
+            margin-top: 6px;
+        }
+
+        .header-actions {
+            margin-top: 14px;
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .btn-action {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 18px;
+            border-radius: 12px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            font-family: var(--font-mono);
+            text-decoration: none;
+            transition: all 0.2s ease;
+            background: rgba(126, 199, 137, 0.15);
+            color: var(--primary);
+            border: 1px solid rgba(126, 199, 137, 0.35);
+        }
+
+        .btn-action:hover {
+            background: rgba(126, 199, 137, 0.28);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 16px var(--primary-glow);
+        }
+
+        .meta-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 14px;
+        }
+
+        .meta-box {
+            background: var(--glass-card);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 16px 18px;
+            backdrop-blur: 16px;
+        }
+
+        .meta-label {
+            font-size: 0.72rem;
+            font-family: var(--font-mono);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+        }
+
+        .meta-val {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #fff;
+            margin-top: 4px;
+            font-family: var(--font-mono);
+        }
+
+        .card {
+            background: var(--glass-card);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 26px;
+            box-shadow: var(--card-shadow);
+            backdrop-blur: 20px;
+        }
+
+        .card h2 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .sec-num {
+            display: inline-flex;
+            width: 26px;
+            height: 26px;
+            border-radius: 8px;
+            background: rgba(126, 199, 137, 0.2);
+            color: var(--primary);
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+        }
+
+        .step-list {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            margin-top: 14px;
+        }
+
+        .step-item {
+            display: flex;
+            gap: 16px;
+            align-items: flex-start;
+        }
+
+        .step-circle {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: rgba(170, 116, 232, 0.2);
+            color: var(--accent);
+            border: 1px solid rgba(170, 116, 232, 0.35);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: 800;
+            font-family: var(--font-mono);
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .step-content {
+            flex: 1;
+            font-size: 0.9rem;
+        }
+
+        .code-container {
+            background: var(--code-bg);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-top: 8px;
+            font-family: var(--font-mono);
+            font-size: 0.82rem;
+            color: #7dd3fc;
+            overflow-x: auto;
+        }
+
+        .copy-btn {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: var(--text);
+            padding: 5px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.72rem;
+            font-family: var(--font-mono);
+            font-weight: 600;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .copy-btn:hover {
+            background: var(--primary);
+            color: #000;
+            border-color: var(--primary);
+        }
+
+        .badge-tag {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 0.72rem;
+            font-family: var(--font-mono);
+            font-weight: 700;
+            background: rgba(126, 199, 137, 0.18);
+            color: var(--primary);
+            border: 1px solid rgba(126, 199, 137, 0.3);
+        }
+
+        .grid-features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 14px;
+            margin-top: 14px;
+        }
+
+        .feature-box {
+            background: rgba(9, 12, 18, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 14px;
+            padding: 14px;
+        }
+
+        .feature-box h4 {
+            font-size: 0.88rem;
+            color: #fff;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .feature-box p {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            line-height: 1.45;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header-card">
+            <div class="header-icon">
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none">
+                    <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="#aa74e8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M2 17L12 22L22 17" stroke="#aa74e8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M2 12L12 17L22 12" stroke="#aa74e8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+            <div class="header-info">
+                <h1>Plezy & Jellyfin Client Guide <span class="badge-tag">v2.25.0</span></h1>
+                <p>Hardware-accelerated libmpv streaming, HDR tone-mapping, SSA/ASS anime subtitles, and zero-transcode DirectPlay for your Jellyfin homelab server.</p>
+                <div class="header-actions">
+                    <a href="http://100.108.215.120:8096" target="_blank" class="btn-action">
+                        <span>Open Jellyfin Web (:8096) ↗</span>
+                    </a>
+                    <a href="https://github.com/edde746/plezy/releases/latest" target="_blank" class="btn-action">
+                        <span>Plezy Releases ↗</span>
+                    </a>
+                </div>
+            </div>
+        </header>
+
+        <!-- Metadata Grid -->
+        <div class="meta-grid">
+            <div class="meta-box">
+                <div class="meta-label">Tailscale Server URL</div>
+                <div class="meta-val">http://100.108.215.120:8096</div>
+            </div>
+            <div class="meta-box">
+                <div class="meta-label">Local LAN URL</div>
+                <div class="meta-val">http://10.3.2.105:8096</div>
+            </div>
+            <div class="meta-box">
+                <div class="meta-label">Playback Engine</div>
+                <div class="meta-val">libmpv (DirectPlay)</div>
+            </div>
+            <div class="meta-box">
+                <div class="meta-label">Local PC Status</div>
+                <div class="meta-val" style="color:var(--online);">Installed (~/.local/bin)</div>
+            </div>
+        </div>
+
+        <!-- Section 1: Running Plezy on This PC -->
+        <div class="card">
+            <h2><span class="sec-num">1</span> Launching Plezy on This PC</h2>
+            <p>Plezy v2.25.0 is pre-installed on this machine with full desktop environment integration:</p>
+            
+            <div class="step-list">
+                <div class="step-item">
+                    <div class="step-circle">1</div>
+                    <div class="step-content">
+                        <strong>Desktop Application Menu:</strong>
+                        <p>Search for <strong>"Plezy"</strong> in your application launcher (Niri, Rofi, Wofi, GNOME, or KDE) or click the Plezy icon in your app dock.</p>
+                    </div>
+                </div>
+
+                <div class="step-item">
+                    <div class="step-circle">2</div>
+                    <div class="step-content">
+                        <strong>Command Line Launcher:</strong>
+                        <p>You can also launch Plezy directly from any terminal session:</p>
+                        <div class="code-container">
+                            <code id="cmdPlezy">plezy</code>
+                            <button class="copy-btn" onclick="copyCode('cmdPlezy')">Copy</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="step-item">
+                    <div class="step-circle">3</div>
+                    <div class="step-content">
+                        <strong>Connect to Your Jellyfin Server:</strong>
+                        <p>When Plezy starts, select <strong>Jellyfin</strong> as the server type and enter the connection endpoint:</p>
+                        <div class="code-container">
+                            <code id="cmdJellyUrl">http://100.108.215.120:8096</code>
+                            <button class="copy-btn" onclick="copyCode('cmdJellyUrl')">Copy</button>
+                        </div>
+                        <p style="margin-top:6px; font-size:0.82rem; color:var(--text-muted);">
+                            <em>(If connecting locally over home Wi-Fi without Tailscale, use: <code style="color:var(--primary);">http://10.3.2.105:8096</code>)</em>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 2: Why Plezy is Superior -->
+        <div class="card">
+            <h2><span class="sec-num">2</span> Why Plezy vs. Web Player</h2>
+            <p>Browsers (Chrome/Firefox) cannot play HEVC 10-bit, AV1, or TrueHD/DTS-HD audio without forcing your server CPU to transcode. Plezy uses <strong>libmpv</strong> directly on your client machine:</p>
+            
+            <div class="grid-features">
+                <div class="feature-box">
+                    <h4>⚡ 100% DirectPlay</h4>
+                    <p>Plays 4K HDR, H.265/HEVC, and AV1 video directly without transcoding load or thermal throttling on the server.</p>
+                </div>
+                <div class="feature-box">
+                    <h4>🎨 Anime ASS/SSA Subtitles</h4>
+                    <p>Renders complex styling, typography, karaoke, and typesetting natively via libass without burning in.</p>
+                </div>
+                <div class="feature-box">
+                    <h4>⏩ Smart Skip Intro / Credits</h4>
+                    <p>Integrates with Jellyfin intro markers to skip openings and end credits seamlessly with one click.</p>
+                </div>
+                <div class="feature-box">
+                    <h4>🎧 Bitstream Audio Passthrough</h4>
+                    <p>Passes FLAC, Dolby Atmos, and DTS-HD Master Audio bitstreams directly to external DACs and soundbars.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 3: Plezy Recommended Client Settings -->
+        <div class="card">
+            <h2><span class="sec-num">3</span> Recommended Plezy Client Configurations</h2>
+            <p>Fine-tune Plezy for maximum fidelity and buttery smooth playback:</p>
+
+            <div class="step-list">
+                <div class="step-item">
+                    <div class="step-circle">A</div>
+                    <div class="step-content">
+                        <strong>Hardware Acceleration:</strong>
+                        <p>In Plezy ➔ <strong>Settings</strong> ➔ <strong>Player</strong> ➔ set <strong>Hardware Decoding</strong> to <code style="color:var(--primary);">auto-safe</code> or <code style="color:var(--primary);">vaapi</code> (Intel/AMD) / <code style="color:var(--primary);">nvdec</code> (NVIDIA).</p>
+                    </div>
+                </div>
+
+                <div class="step-item">
+                    <div class="step-circle">B</div>
+                    <div class="step-content">
+                        <strong>Subtitles Tuning:</strong>
+                        <p>Set Subtitle Engine to <strong>libass</strong>. Under Subtitle Styling, configure your preferred fallback font (e.g. <em>Noto Sans</em>) for non-embedded subtitles.</p>
+                    </div>
+                </div>
+
+                <div class="step-item">
+                    <div class="step-circle">C</div>
+                    <div class="step-content">
+                        <strong>HDR Tone-Mapping:</strong>
+                        <p>If watching HDR content on an SDR display, set <strong>Tone-Mapping Algorithm</strong> to <code style="color:var(--primary);">spline</code> or <code style="color:var(--primary);">mobius</code> for vibrant, non-washed-out colors.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 4: Downloads for Other Devices -->
+        <div class="card">
+            <h2><span class="sec-num">4</span> Plezy on Mobile, Tablets & Smart TVs</h2>
+            <p>Access your Jellyfin library with the same unified Plezy interface on all your screens:</p>
+
+            <div class="grid-features">
+                <div class="feature-box">
+                    <h4>📱 Android Phone & Tablet</h4>
+                    <p>Download the official APK directly from GitHub Releases (<code style="color:#7dd3fc;">plezy-android-arm64-v8a.tar.gz</code>).</p>
+                </div>
+                <div class="feature-box">
+                    <h4>📺 Android TV & Fire OS</h4>
+                    <p>Install via ADB or sideload on Chromecast, Sony TV, Nvidia Shield, or Fire TV Stick.</p>
+                </div>
+                <div class="feature-box">
+                    <h4>🍎 iOS & Apple TV</h4>
+                    <p>Install via the Apple App Store or TestFlight beta releases.</p>
+                </div>
+                <div class="feature-box">
+                    <h4>💻 Windows & macOS</h4>
+                    <p>Portable 7z packages and macOS DMG installers available for instant deployment.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function copyCode(id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            navigator.clipboard.writeText(el.innerText || el.textContent);
+            const btn = el.parentElement.querySelector('.copy-btn');
+            if (btn) {
+                const orig = btn.innerText;
+                btn.innerText = 'Copied!';
+                btn.style.background = 'var(--primary)';
+                btn.style.color = '#000';
+                setTimeout(() => {
+                    btn.innerText = orig;
+                    btn.style.background = '';
+                    btn.style.color = '';
+                }, 2000);
+            }
+        }
+    </script>
+</body>
+</html>

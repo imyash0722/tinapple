@@ -17,6 +17,7 @@ import {
   X,
   Save,
   Loader2,
+  BookOpen,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { SpotlightCard } from '../reactbits/SpotlightCard';
@@ -429,7 +430,11 @@ const FALLBACK_APPS: AppInfo[] = [
   },
 ];
 
-export const ChaddyStore: React.FC = () => {
+interface ChaddyStoreProps {
+  onOpenGuide?: (guideId: string) => void;
+}
+
+export const ChaddyStore: React.FC<ChaddyStoreProps> = ({ onOpenGuide }) => {
   const [apps, setApps] = useState<AppInfo[]>(FALLBACK_APPS);
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
   const [viewMode, setViewMode] = useState<'carousel' | 'grid'>('grid');
@@ -806,6 +811,34 @@ export const ChaddyStore: React.FC = () => {
                   </button>
                 )}
 
+                {onOpenGuide && (
+                  <button
+                    onClick={() => {
+                      const guideMap: Record<string, string> = {
+                        jellyfin: 'jellyfin',
+                        suwayomi: 'syncyomi',
+                        'suwayomi-server': 'syncyomi',
+                        beeper: 'beeper',
+                        vaultwarden: 'vaultwarden',
+                        syncthing: 'syncthing',
+                        couchdb: 'obsidian',
+                        radarr: 'servarr',
+                        sonarr: 'servarr',
+                        prowlarr: 'servarr',
+                        qbittorrent: 'servarr',
+                        playit: 'tailscale',
+                        protonvpn: 'tailscale',
+                      };
+                      onOpenGuide(guideMap[selectedApp.id] || 'jellyfin');
+                    }}
+                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-purple-500/15 hover:bg-purple-500/25 border border-purple-500/30 text-purple-300 text-xs font-mono transition-all"
+                    title="View Client App & Setup Guide"
+                  >
+                    <BookOpen className="w-3.5 h-3.5 text-purple-400" />
+                    Guide
+                  </button>
+                )}
+
                 {selectedApp.installed && (
                   <>
                     <button
@@ -944,25 +977,54 @@ export const ChaddyStore: React.FC = () => {
                   </div>
 
                   {/* Right Tools (Configure & Uninstall) */}
-                  {app.installed && (
-                    <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1.5">
+                    {onOpenGuide && (
                       <button
-                        onClick={() => handleOpenConfig(app)}
-                        className="p-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 border border-slate-700/60 text-xs transition-colors"
-                        title="Configure settings & port"
+                        onClick={() => {
+                          const guideMap: Record<string, string> = {
+                            jellyfin: 'jellyfin',
+                            suwayomi: 'syncyomi',
+                            'suwayomi-server': 'syncyomi',
+                            beeper: 'beeper',
+                            vaultwarden: 'vaultwarden',
+                            syncthing: 'syncthing',
+                            couchdb: 'obsidian',
+                            radarr: 'servarr',
+                            sonarr: 'servarr',
+                            prowlarr: 'servarr',
+                            qbittorrent: 'servarr',
+                            playit: 'tailscale',
+                            protonvpn: 'tailscale',
+                          };
+                          onOpenGuide(guideMap[app.id] || 'jellyfin');
+                        }}
+                        className="p-1.5 rounded-lg bg-purple-500/15 hover:bg-purple-500/25 text-purple-300 border border-purple-500/30 text-xs transition-colors flex items-center gap-1"
+                        title={`View ${app.name} Client & Setup Guide`}
                       >
-                        <Settings className="w-3.5 h-3.5" />
+                        <BookOpen className="w-3.5 h-3.5 text-purple-400" />
+                        <span className="hidden sm:inline">Guide</span>
                       </button>
-                      <button
-                        onClick={() => handleAction(app.id, 'uninstall')}
-                        disabled={isLoading}
-                        className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 text-xs transition-colors"
-                        title="Uninstall package"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  )}
+                    )}
+                    {app.installed && (
+                      <>
+                        <button
+                          onClick={() => handleOpenConfig(app)}
+                          className="p-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 border border-slate-700/60 text-xs transition-colors"
+                          title="Configure settings & port"
+                        >
+                          <Settings className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => handleAction(app.id, 'uninstall')}
+                          disabled={isLoading}
+                          className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 text-xs transition-colors"
+                          title="Uninstall package"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </div>
               </SpotlightCard>
             );
