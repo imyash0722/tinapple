@@ -1212,6 +1212,14 @@ func (m *AppManager) Install(id string) error {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 		defer cancel()
 		installErr = m.runStreamCmd(ctx, id, "pacman", "-S", "--noconfirm", "--needed", app.Package)
+		if installErr == nil {
+			_ = os.MkdirAll("/opt/JDownloader/cfg", 0755)
+			cfgFile := "/opt/JDownloader/cfg/org.jdownloader.api.myjdownloader.MyJDownloaderSettings.json"
+			if _, err := os.Stat(cfgFile); os.IsNotExist(err) {
+				_ = os.WriteFile(cfgFile, []byte("{\n  \"email\": \"user@example.com\",\n  \"password\": \"changeme\"\n}\n"), 0644)
+				_ = exec.Command("chown", "-R", "jdownloader:jdownloader", "/opt/JDownloader").Run()
+			}
+		}
 	default:
 		if app.Package != "" {
 			cleanStalePacmanLock()
