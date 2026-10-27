@@ -2,6 +2,7 @@
 	admin "unix//run/caddy/admin.socket"
 }
 
+# Tailscale HTTPS domain (Automatic Let's Encrypt Certificate)
 tinapple-server.tail3dee69.ts.net {
 	tls {
 		get_certificate tailscale
@@ -9,6 +10,7 @@ tinapple-server.tail3dee69.ts.net {
 	reverse_proxy localhost:8088
 }
 
+# Vaultwarden Tailscale HTTPS endpoint
 tinapple-server.tail3dee69.ts.net:8000 {
 	tls {
 		get_certificate tailscale
@@ -16,12 +18,17 @@ tinapple-server.tail3dee69.ts.net:8000 {
 	reverse_proxy localhost:8001
 }
 
-192.168.1.17, 100.67.207.60, tinapple-server, localhost {
-	tls internal
+# Plain HTTP for Tailscale IP and LAN IP (no SSL warning, direct fast access)
+http://100.67.207.60, http://192.168.1.17, http://localhost, http://tinapple-server {
 	reverse_proxy localhost:8088
 }
 
-192.168.1.17:8000, 100.67.207.60:8000, tinapple-server:8000, localhost:8000 {
-	tls internal
+http://100.67.207.60:8000, http://192.168.1.17:8000, http://localhost:8000 {
 	reverse_proxy localhost:8001
+}
+
+# Internal TLS fallback if HTTPS is explicitly requested on IP
+https://100.67.207.60, https://192.168.1.17, https://localhost, https://tinapple-server {
+	tls internal
+	reverse_proxy localhost:8088
 }
