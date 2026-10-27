@@ -352,17 +352,17 @@ func NewAppManager() *AppManager {
 		},
 		{
 			ID:          "seerr",
-			Name:        "Seerr / Jellyseerr Media Discovery",
+			Name:        "Seerr Media Request & Discovery",
 			Description: "Clean media request and discovery portal for Jellyfin with integrated user management.",
 			Tagline:     "Media request & discovery platform for Jellyfin",
 			Category:    "media",
-			Package:     "jellyseerr",
-			Unit:        "jellyseerr.service",
-			Binary:      "jellyseerr",
+			Package:     "seerr",
+			Unit:        "seerr.service",
+			Binary:      "seerr",
 			Port:        5055,
 			Icon:        "seerr",
 			AccentColor: "#6366F1",
-			ConfigPath:  "/var/lib/jellyseerr/settings.json",
+			ConfigPath:  "/var/lib/seerr/settings.json",
 		},
 		{
 			ID:          "jdownloader",
@@ -747,6 +747,202 @@ func checkPacmanInstalled(pkg string) bool {
 	return false
 }
 
+func cleanStalePacmanLock() {
+	if _, err := os.Stat("/var/lib/pacman/db.lck"); err == nil {
+		if exec.Command("pgrep", "pacman").Run() != nil {
+			_ = os.Remove("/var/lib/pacman/db.lck")
+		}
+	}
+}
+
+func installPlayit() error {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, "curl", "-fsSL", "https://github.com/playit-cloud/playit-agent/releases/latest/download/playit-linux-amd64", "-o", "/usr/local/bin/playit")
+	if out, err := cmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("failed to download playit binary: %s (%w)", string(out), err)
+	}
+	_ = os.Chmod("/usr/local/bin/playit", 0755)
+
+	_ = os.MkdirAll("/etc/playit", 0755)
+	serviceContent := `[Unit]
+Description=Playit.gg Anycast Tunnel Daemon
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/playit --secret-path /etc/playit/playit.toml
+Restart=always
+RestartSec=5
+WorkingDirectory=/etc/playit
+
+[Install]
+WantedBy=multi-user.target
+`
+	if err := os.WriteFile("/etc/systemd/system/playit.service", []byte(serviceContent), 0644); err != nil {
+		return fmt.Errorf("failed to create playit.service: %w", err)
+	}
+	return nil
+}
+
+func installFilebrowser() error {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
+	defer cancel()
+
+	tmpTar := "/tmp/filebrowser.tar.gz"
+	cmd := exec.CommandContext(ctx, "curl", "-fsSL", "https://github.com/filebrowser/filebrowser/releases/latest/download/linux-amd64-filebrowser.tar.gz", "-o", tmpTar)
+	if out, err := cmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("failed to download filebrowser: %s (%w)", string(out), err)
+	}
+	defer os.Remove(tmpTar)
+
+	cmdExtract := exec.CommandContext(ctx, "tar", "-xzf", tmpTar, "-C", "/usr/local/bin", "filebrowser")
+	if out, err := cmdExtract.CombinedOutput(); err != nil {
+		return fmt.Errorf("failed to extract filebrowser: %s (%w)", string(out), err)
+	}
+	_ = os.Chmod("/usr/local/bin/filebrowser", 0755)
+
+	_ = os.MkdirAll("/etc/filebrowser", 0755)
+	_ = os.MkdirAll("/srv/media", 0775)
+
+	serviceContent := `[Unit]
+Description=FileBrowser Quantum Web File Manager
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/filebrowser -r /srv/media -p 8081 -a 0.0.0.0 -d /etc/filebrowser/filebrowser.db
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+`
+	if err := os.WriteFile("/etc/systemd/system/filebrowser.service", []byte(serviceContent), 0644); err != nil {
+		return fmt.Errorf("failed to create filebrowser.service: %w", err)
+	}
+	return nil
+}
+
+func installMinecraftServer() error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	defer cancel()
+
+	cleanStalePacmanLock()
+	_ = exec.CommandContext(ctx, "pacman", "-S", "--noconfirm", "--needed", "jre17-openjdk-headless").Run()
+
+	_ = os.MkdirAll("/srv/minecraft", 0755)
+	_ = os.WriteFile("/srv/minecraft/eula.txt", []byte("eula=true\n"), 0644)
+
+	if _, err := os.Stat("/srv/minecraft/server.jar"); os.IsNotExist(err) {
+		cmdDl := exec.CommandContext(ctx, "curl", "-fsSL", "-o", "/srv/minecraft/server.jar", "https://api.purpurmc.org/v2/purpur/1.20.4/latest/download")
+		if out, err := cmdDl.CombinedOutput(); err != nil {
+			return fmt.Errorf("failed to download Minecraft server jar: %s (%w)", string(out), err)
+		}
+	}
+
+	launcherScript := `#!/usr/bin/env bash
+cd /srv/minecraft
+exec java -Xms1G -Xmx2G -jar /srv/minecraft/server.jar nogui
+`
+	_ = os.WriteFile("/usr/local/bin/minecraft-server", []byte(launcherScript), 0755)
+
+	serviceContent := `[Unit]
+Description=PaperMC Minecraft Appliance Server
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/srv/minecraft
+ExecStart=/usr/local/bin/minecraft-server
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+`
+	if err := os.WriteFile("/etc/systemd/system/minecraft-server.service", []byte(serviceContent), 0644); err != nil {
+		return fmt.Errorf("failed to create minecraft-server.service: %w", err)
+	}
+	return nil
+}
+
+func installProwlarr() error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	defer cancel()
+
+	cleanStalePacmanLock()
+	_ = exec.CommandContext(ctx, "pacman", "-S", "--noconfirm", "--needed", "sqlite").Run()
+
+	tmpTar := "/tmp/prowlarr.tar.gz"
+	cmd := exec.CommandContext(ctx, "curl", "-fsSL", "https://prowlarr.servarr.com/v1/update/master/updatefile?os=linux&arch=x64&runtime=netcore", "-o", tmpTar)
+	if out, err := cmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("failed to download prowlarr: %s (%w)", string(out), err)
+	}
+	defer os.Remove(tmpTar)
+
+	_ = os.MkdirAll("/opt", 0755)
+	cmdExtract := exec.CommandContext(ctx, "tar", "-xzf", tmpTar, "-C", "/opt")
+	if out, err := cmdExtract.CombinedOutput(); err != nil {
+		return fmt.Errorf("failed to extract prowlarr: %s (%w)", string(out), err)
+	}
+
+	_ = os.MkdirAll("/var/lib/prowlarr", 0755)
+
+	serviceContent := `[Unit]
+Description=Prowlarr Torrent and Usenet Indexer Proxy
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/opt/Prowlarr/Prowlarr -nobrowser -data=/var/lib/prowlarr/
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+`
+	if err := os.WriteFile("/etc/systemd/system/prowlarr.service", []byte(serviceContent), 0644); err != nil {
+		return fmt.Errorf("failed to create prowlarr.service: %w", err)
+	}
+	return nil
+}
+
+func installMetube() error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	defer cancel()
+
+	cleanStalePacmanLock()
+	cmdDeps := exec.CommandContext(ctx, "pacman", "-S", "--noconfirm", "--needed",
+		"python", "python-aiohttp", "python-socketio", "python-watchfiles", "yt-dlp", "ffmpeg", "aria2")
+	_ = cmdDeps.Run()
+
+	_ = os.MkdirAll("/srv/media/youtube", 0775)
+	_ = os.MkdirAll("/srv/media/youtube-music", 0775)
+	_ = os.MkdirAll("/var/lib/metube", 0755)
+	_ = os.MkdirAll("/etc/tinapple", 0755)
+
+	serviceContent := `[Unit]
+Description=MeTube Headless YouTube Downloader
+After=network.target
+
+[Service]
+Type=simple
+EnvironmentFile=-/etc/tinapple/metube.env
+ExecStart=/usr/local/bin/metube
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+`
+	if err := os.WriteFile("/etc/systemd/system/metube.service", []byte(serviceContent), 0644); err != nil {
+		return fmt.Errorf("failed to create metube.service: %w", err)
+	}
+	return nil
+}
+
 func (m *AppManager) Install(id string) error {
 	m.operationMu.Lock()
 	defer m.operationMu.Unlock()
@@ -757,42 +953,58 @@ func (m *AppManager) Install(id string) error {
 		return fmt.Errorf("app %s not found", id)
 	}
 
-	if app.Package != "" {
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
-		defer cancel()
+	var installErr error
+	switch id {
+	case "playit":
+		installErr = installPlayit()
+	case "filebrowser":
+		installErr = installFilebrowser()
+	case "metube":
+		installErr = installMetube()
+	case "minecraft":
+		installErr = installMinecraftServer()
+	case "prowlarr":
+		installErr = installProwlarr()
+	default:
+		if app.Package != "" {
+			cleanStalePacmanLock()
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+			defer cancel()
 
-		// 1. Try pacman first (works for official arch/cachyos packages)
-		cmd := exec.CommandContext(ctx, "pacman", "-S", "--noconfirm", "--needed", app.Package)
-		out, err := cmd.CombinedOutput()
-		if err != nil {
-			primaryUser, _ := getSystemPrimaryUser()
-			// 2. Try paru with --skipreview as unprivileged primary user
-			paruCmd := exec.CommandContext(ctx, "sudo", "-u", primaryUser, "paru", "-S", "--noconfirm", "--needed", "--skipreview", app.Package)
-			paruOut, paruErr := paruCmd.CombinedOutput()
-			if paruErr != nil {
-				// 3. Try with or without -bin suffix
-				fallbackPkg := app.Package + "-bin"
-				if strings.HasSuffix(app.Package, "-bin") {
-					fallbackPkg = strings.TrimSuffix(app.Package, "-bin")
-				}
-				paruFallbackCmd := exec.CommandContext(ctx, "sudo", "-u", primaryUser, "paru", "-S", "--noconfirm", "--needed", "--skipreview", fallbackPkg)
-				paruFallbackOut, paruFallbackErr := paruFallbackCmd.CombinedOutput()
-				if paruFallbackErr != nil {
-					return fmt.Errorf("installation failed for %s:\npacman: %s\nparu: %s\nfallback: %s", app.Package, strings.TrimSpace(string(out)), strings.TrimSpace(string(paruOut)), strings.TrimSpace(string(paruFallbackOut)))
+			// 1. Try pacman first (works for official arch/cachyos packages)
+			cmd := exec.CommandContext(ctx, "pacman", "-S", "--noconfirm", "--needed", app.Package)
+			out, err := cmd.CombinedOutput()
+			if err != nil {
+				primaryUser, _ := getSystemPrimaryUser()
+				// 2. Try paru with --skipreview as unprivileged primary user
+				paruCmd := exec.CommandContext(ctx, "sudo", "-u", primaryUser, "paru", "-S", "--noconfirm", "--needed", "--skipreview", app.Package)
+				paruOut, paruErr := paruCmd.CombinedOutput()
+				if paruErr != nil {
+					// 3. Try with or without -bin suffix
+					fallbackPkg := app.Package + "-bin"
+					if strings.HasSuffix(app.Package, "-bin") {
+						fallbackPkg = strings.TrimSuffix(app.Package, "-bin")
+					}
+					paruFallbackCmd := exec.CommandContext(ctx, "sudo", "-u", primaryUser, "paru", "-S", "--noconfirm", "--needed", "--skipreview", fallbackPkg)
+					paruFallbackOut, paruFallbackErr := paruFallbackCmd.CombinedOutput()
+					if paruFallbackErr != nil {
+						installErr = fmt.Errorf("installation failed for %s:\npacman: %s\nparu: %s\nfallback: %s", app.Package, strings.TrimSpace(string(out)), strings.TrimSpace(string(paruOut)), strings.TrimSpace(string(paruFallbackOut)))
+					}
 				}
 			}
 		}
 	}
+	if installErr != nil {
+		return installErr
+	}
 
 	// Reload systemd daemon
-	if err := exec.Command("systemctl", "daemon-reload").Run(); err != nil {
-		return err
-	}
+	_ = exec.Command("systemctl", "daemon-reload").Run()
 
 	// If unit exists, enable and start it
 	if app.Unit != "" {
 		if out, err := exec.Command("systemctl", "enable", "--now", app.Unit).CombinedOutput(); err != nil {
-			return fmt.Errorf("package installed but service failed to start: %s (%w)", string(out), err)
+			fmt.Fprintf(os.Stderr, "[apps] Warning: enable --now %s: %s (%v)\n", app.Unit, string(out), err)
 		}
 	}
 
@@ -814,20 +1026,40 @@ func (m *AppManager) Uninstall(id string) error {
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
 		if out, err := exec.CommandContext(ctx, "systemctl", "disable", "--now", app.Unit).CombinedOutput(); err != nil {
-			return fmt.Errorf("stop/disable before removal failed: %s (%w)", out, err)
+			fmt.Fprintf(os.Stderr, "[apps] Warning: disable --now %s: %s (%v)\n", app.Unit, string(out), err)
 		}
 	}
 
-	if app.Package != "" {
-		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
-		defer cancel()
-		cmd := exec.CommandContext(ctx, "pacman", "-R", "--noconfirm", app.Package)
-		out, err := cmd.CombinedOutput()
-		if err != nil {
-			return fmt.Errorf("pacman uninstall failed for %s: %s (%w)", app.Package, string(out), err)
+	// Custom cleanup
+	switch id {
+	case "playit":
+		_ = os.Remove("/usr/local/bin/playit")
+		_ = os.Remove("/etc/systemd/system/playit.service")
+	case "filebrowser":
+		_ = os.Remove("/usr/local/bin/filebrowser")
+		_ = os.Remove("/etc/systemd/system/filebrowser.service")
+	case "minecraft":
+		_ = os.Remove("/usr/local/bin/minecraft-server")
+		_ = os.Remove("/etc/systemd/system/minecraft-server.service")
+	case "prowlarr":
+		_ = os.RemoveAll("/opt/Prowlarr")
+		_ = os.Remove("/etc/systemd/system/prowlarr.service")
+	case "metube":
+		_ = os.Remove("/etc/systemd/system/metube.service")
+	default:
+		if app.Package != "" {
+			cleanStalePacmanLock()
+			ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+			defer cancel()
+			cmd := exec.CommandContext(ctx, "pacman", "-R", "--noconfirm", app.Package)
+			out, err := cmd.CombinedOutput()
+			if err != nil {
+				return fmt.Errorf("pacman uninstall failed for %s: %s (%w)", app.Package, string(out), err)
+			}
 		}
 	}
 
+	_ = exec.Command("systemctl", "daemon-reload").Run()
 	return m.refreshProxyRoutes()
 }
 
@@ -988,6 +1220,9 @@ func (m *AppManager) refreshProxyRoutes() error {
 	defer cancel()
 	cmd := exec.CommandContext(ctx, "tinapple-config-generator", "nginx-sync", "--catalog-stdin")
 	cmd.Stdin = bytes.NewReader(data)
-	_ = cmd.Run() // Non-fatal: Caddy handles reverse proxy routing
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "[apps] Warning: proxy refresh failed: %s (%v)\n", string(out), err)
+	}
 	return nil
 }
