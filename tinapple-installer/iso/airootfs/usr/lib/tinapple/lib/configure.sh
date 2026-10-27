@@ -58,8 +58,8 @@ EOH"
   run_sh "echo '$username:$password' | arch-chroot $target chpasswd"
   run_sh "echo 'root:$root_password' | arch-chroot $target chpasswd"
 
-  # Deploy gh0stzk dotfiles, tmux, zsh, and desktop configurations
-  log_info "deploying gh0stzk dotfiles, configs, and fonts to target..."
+  # Deploy Tinapple user configuration
+  log_info "deploying Tinapple user configuration to target..."
   run_sh "mkdir -p $target/etc/skel $target/home/$username $target/root"
   if [[ -d "/etc/skel/.config" ]]; then
     run_sh "cp -rf /etc/skel/. $target/etc/skel/ 2>/dev/null || true"
@@ -68,16 +68,8 @@ EOH"
     run_sh "cp -rf /home/liveuser/. $target/home/$username/ 2>/dev/null || true"
     run_sh "cp -rf /home/liveuser/.config $target/etc/skel/ 2>/dev/null || true"
   fi
-  if [[ -d "/home/liveuser/.local" ]]; then
-    run_sh "cp -rf /home/liveuser/.local $target/home/$username/ 2>/dev/null || true"
-    run_sh "cp -rf /home/liveuser/.local $target/etc/skel/ 2>/dev/null || true"
-  fi
-  if [[ -f "/usr/local/bin/colorscript" ]]; then
-    run_sh "cp -f /usr/local/bin/colorscript $target/usr/local/bin/ 2>/dev/null || true"
-  fi
-  # Deploy rice fonts
-  if [[ -d "/usr/share/fonts/gh0stzk" ]]; then
-    run_sh "mkdir -p $target/usr/share/fonts && cp -rf /usr/share/fonts/gh0stzk $target/usr/share/fonts/ 2>/dev/null || true"
+  if [[ -d "/usr/share/fonts/tinapple" ]]; then
+    run_sh "mkdir -p $target/usr/share/fonts && cp -rf /usr/share/fonts/tinapple $target/usr/share/fonts/ 2>/dev/null || true"
     run_sh "arch-chroot $target fc-cache -f 2>/dev/null || true"
   fi
 

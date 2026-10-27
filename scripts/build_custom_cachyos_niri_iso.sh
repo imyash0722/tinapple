@@ -10,7 +10,7 @@ cd /var/tmp/iso-custom/arch/x86_64
 sha512sum airootfs.sfs | sudo tee airootfs.sha512 >/dev/null
 
 echo "==> Step 3: Packing hybrid bootable ISO..."
-rm -f /var/tmp/cachyos-tinapple-bspwm.iso
+rm -f /var/tmp/cachyos-tinapple-niri.iso
 xorriso -as mkisofs \
   -iso-level 3 \
   -full-iso9660-filenames \
@@ -31,9 +31,9 @@ xorriso -as mkisofs \
   -eltorito-alt-boot \
   -e --interval:appended_partition_2:all:: \
   -no-emul-boot \
-  -o /var/tmp/cachyos-tinapple-bspwm.iso \
+  -o /var/tmp/cachyos-tinapple-niri.iso \
   /var/tmp/iso-custom
 
 mkdir -p /mnt/shared/projects/tinapple/out
-ln -sf /var/tmp/cachyos-tinapple-bspwm.iso /mnt/shared/projects/tinapple/out/tinapple-os-cachyos-bspwm.iso 2>/dev/null || true
-echo "==> Custom ISO built successfully: /var/tmp/cachyos-tinapple-bspwm.iso"
+ln -sf /var/tmp/cachyos-tinapple-niri.iso /mnt/shared/projects/tinapple/out/tinapple-os-cachyos-niri.iso 2>/dev/null || true
+echo "==> Custom ISO built successfully: /var/tmp/cachyos-tinapple-niri.iso"
