@@ -469,12 +469,12 @@ func NewAppManager() *AppManager {
 			Tagline:     "Self-hosted multi-network Matrix chat bridges",
 			Category:    "network",
 			Package:     "bbctl",
-			Unit:        fmt.Sprintf("bbctl@%s.service", primaryUser),
+			Unit:        "bbctl.service",
 			Binary:      "bbctl",
 			Port:        0,
 			Icon:        "beeper",
 			AccentColor: "#F43F5E",
-			ConfigPath:  filepath.Join(primaryHome, ".config/beeper/config.yaml"),
+			ConfigPath:  filepath.Join(primaryHome, ".config/bbctl/config.json"),
 		},
 		{
 			ID:          "protonvpn",
@@ -852,6 +852,86 @@ WantedBy=multi-user.target
 	if err := os.WriteFile("/etc/systemd/system/playit.service", []byte(serviceContent), 0644); err != nil {
 		return fmt.Errorf("failed to create playit.service: %w", err)
 	}
+	return nil
+}
+
+func installBeeper(m *AppManager) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	defer cancel()
+
+	m.AppendLog("beeper", "info", "Fetching official Beeper Bridge Manager (bbctl) release from GitHub...")
+	tmpBin := "/tmp/bbctl-dl"
+	bbArch := "amd64"
+	if out, err := exec.Command("uname", "-m").Output(); err == nil {
+		if strings.TrimSpace(string(out)) == "aarch64" {
+			bbArch = "arm64"
+		}
+	}
+	url := fmt.Sprintf("https://github.com/beeper/bridge-manager/releases/latest/download/bbctl-linux-%s", bbArch)
+
+	if err := m.runStreamCmd(ctx, "beeper", "curl", "-fsSL", "--progress-bar", url, "-o", tmpBin); err != nil {
+		return fmt.Errorf("failed to download bbctl: %w", err)
+	}
+	defer os.Remove(tmpBin)
+
+	if err := m.runStreamCmd(ctx, "beeper", "install", "-m", "755", tmpBin, "/usr/local/bin/bbctl"); err != nil {
+		return fmt.Errorf("failed to install bbctl binary: %w", err)
+	}
+
+	primaryUser, primaryHome := getSystemPrimaryUser()
+	_ = os.MkdirAll(filepath.Join(primaryHome, ".local/bin"), 0755)
+	_ = os.Remove(filepath.Join(primaryHome, ".local/bin/bbctl"))
+	_ = os.Symlink("/usr/local/bin/bbctl", filepath.Join(primaryHome, ".local/bin/bbctl"))
+	_ = os.MkdirAll(filepath.Join(primaryHome, ".config/bbctl"), 0755)
+	_ = exec.Command("chown", "-R", fmt.Sprintf("%s:%s", primaryUser, primaryUser), filepath.Join(primaryHome, ".local"), filepath.Join(primaryHome, ".config/bbctl")).Run()
+
+	m.AppendLog("beeper", "info", "Deploying systemd bridge template bbctl@.service...")
+	templateContent := fmt.Sprintf(`[Unit]
+Description=Beeper Bridge Manager - %%i
+After=network.target network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=%s
+WorkingDirectory=%s
+ExecStart=/usr/local/bin/bbctl run %%i
+Restart=always
+RestartSec=10
+Environment=HOME=%s
+Environment=PATH=%s/.local/bin:/usr/local/bin:/usr/bin
+
+[Install]
+WantedBy=multi-user.target
+`, primaryUser, primaryHome, primaryHome, primaryHome)
+
+	if err := os.WriteFile("/etc/systemd/system/bbctl@.service", []byte(templateContent), 0644); err != nil {
+		return fmt.Errorf("failed to create bbctl@.service: %w", err)
+	}
+
+	masterServiceContent := `[Unit]
+Description=Beeper Bridge Manager Orchestrator
+After=network.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/true
+
+[Install]
+WantedBy=multi-user.target
+`
+	if err := os.WriteFile("/etc/systemd/system/bbctl.service", []byte(masterServiceContent), 0644); err != nil {
+		return fmt.Errorf("failed to create bbctl.service: %w", err)
+	}
+
+	beeperCtlScript := "/mnt/shared/projects/tinapple/tinarchy-src/configs/scripts/beeper-ctl.sh"
+	if _, err := os.Stat(beeperCtlScript); err == nil {
+		_ = exec.Command("install", "-m", "755", beeperCtlScript, "/usr/local/bin/beeper").Run()
+	}
+
+	m.AppendLog("beeper", "command", "$ systemctl daemon-reload")
+	_ = m.runStreamCmd(ctx, "beeper", "systemctl", "daemon-reload")
 	return nil
 }
 
@@ -1272,6 +1352,9 @@ func (m *AppManager) Install(id string) error {
 	case "sonarr":
 		m.AppendLog(id, "info", "Downloading official Sonarr Linux x64 Servarr release...")
 		installErr = installSonarr(m)
+	case "beeper":
+		m.AppendLog(id, "info", "Fetching official Beeper Bridge Manager (bbctl) release from GitHub...")
+		installErr = installBeeper(m)
 	case "protonvpn":
 		cleanStalePacmanLock()
 		m.AppendLog(id, "info", "Installing Proton VPN CLI, split-tunneling daemon & WireGuard tools...")
@@ -1403,6 +1486,19 @@ func (m *AppManager) Uninstall(id string) error {
 		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 		defer cancel()
 		_ = exec.CommandContext(ctx, "pacman", "-R", "--noconfirm", "proton-vpn-cli", "proton-vpn-daemon").Run()
+	case "beeper":
+		_ = exec.Command("systemctl", "disable", "--now", "bbctl.service").Run()
+		out, _ := exec.Command("systemctl", "list-units", "--type=service", "--state=running", "--no-legend", "bbctl@*").CombinedOutput()
+		for _, line := range strings.Split(string(out), "\n") {
+			fields := strings.Fields(line)
+			if len(fields) > 0 && strings.HasPrefix(fields[0], "bbctl@") {
+				_ = exec.Command("systemctl", "stop", fields[0]).Run()
+			}
+		}
+		_ = os.Remove("/usr/local/bin/bbctl")
+		_ = os.Remove("/usr/local/bin/beeper")
+		_ = os.Remove("/etc/systemd/system/bbctl.service")
+		_ = os.Remove("/etc/systemd/system/bbctl@.service")
 	default:
 		if app.Package != "" {
 			cleanStalePacmanLock()

@@ -386,7 +386,7 @@ const FALLBACK_APPS: AppInfo[] = [
     description: 'Self-hosted Matrix chat bridges connecting WhatsApp, Telegram, Signal, Discord, and iMessage.',
     category: 'network',
     package: 'bbctl',
-    unit: 'bbctl@pineapple.service',
+    unit: 'bbctl.service',
     binary: 'bbctl',
     port: 0,
     icon: 'beeper',
