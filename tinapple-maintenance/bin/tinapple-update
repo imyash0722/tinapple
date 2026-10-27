@@ -103,7 +103,21 @@ if [[ -f /usr/local/bin/tinapple-configure-seerr ]]; then
   fi
 fi
 
-# 8. Reload systemd daemon and refresh services
+# 8. Ensure Wallpaper Gallery from imyash0722/Wallpapers is synchronized
+WP_TARGET="/usr/share/tinapple-dash/wallpapers"
+echo "[*] Ensuring wallpaper gallery is synchronized from imyash0722/Wallpapers..."
+install -d -m 0755 "$WP_TARGET"
+if [[ -d "$WP_TARGET/.git" ]]; then
+  git -C "$WP_TARGET" pull --quiet || true
+elif [[ -d /home/pineapple/Pictures/wallpapers && -n "$(ls -A /home/pineapple/Pictures/wallpapers 2>/dev/null)" ]]; then
+  rsync -a --exclude=".git" /home/pineapple/Pictures/wallpapers/ "$WP_TARGET/" || true
+elif [[ ! -d "$WP_TARGET" || -z "$(ls -A "$WP_TARGET" 2>/dev/null)" ]]; then
+  git clone --depth=1 https://github.com/imyash0722/Wallpapers.git "$WP_TARGET" 2>/dev/null || true
+fi
+chmod -R 0755 "$WP_TARGET" 2>/dev/null || true
+echo "[✓] Wallpaper collection ready at $WP_TARGET"
+
+# 9. Reload systemd daemon and refresh services
 echo "[*] Reloading systemd daemons and refreshing reverse proxy..."
 systemctl daemon-reload
 

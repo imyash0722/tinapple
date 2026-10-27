@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/svg+xml" href="/icons/seerr.svg">
+    <title>Jellyseerr & Servarr Media Automation Stack — Tinapple Guide</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+        :root {
+            --bg: #07090e;
+            --glass: rgba(14, 18, 28, 0.85);
+            --glass-card: rgba(18, 24, 38, 0.78);
+            --glass-border: rgba(99, 102, 241, 0.25);
+            --primary: #6366f1;
+            --primary-glow: rgba(99, 102, 241, 0.35);
+            --accent: #aa74e8;
+            --text: #e2e8f0;
+            --text-muted: rgba(226, 232, 240, 0.65);
+            --online: #5af78e;
+            --font-family: 'Inter', -apple-system, system-ui, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: var(--font-family);
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 30px 16px;
+            display: flex;
+            justify-content: center;
+            line-height: 1.6;
+        }
+        .container {
+            width: 100%;
+            max-width: 900px;
+            display: flex;
+            flex-direction: column;
+            gap: 22px;
+        }
+        .header-card {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 28px;
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            backdrop-filter: blur(20px);
+        }
+        .logo-box {
+            width: 72px;
+            height: 72px;
+            border-radius: 18px;
+            background: rgba(99, 102, 241, 0.15);
+            border: 1px solid rgba(99, 102, 241, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .logo-box img { width: 44px; height: 44px; object-fit: contain; }
+        .title-box h1 { font-size: 22px; font-weight: 800; color: #fff; margin-bottom: 4px; }
+        .title-box p { font-size: 13px; color: var(--text-muted); }
+        .badge {
+            display: inline-block;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            padding: 3px 10px;
+            border-radius: 20px;
+            background: rgba(90, 247, 142, 0.15);
+            color: var(--online);
+            border: 1px solid rgba(90, 247, 142, 0.3);
+            margin-top: 6px;
+        }
+        .card {
+            background: var(--glass-card);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 18px;
+            padding: 24px;
+            backdrop-filter: blur(20px);
+        }
+        .card h2 {
+            font-size: 16px;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .pipeline {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 16px 0;
+        }
+        .pipe-node {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 10px 14px;
+            flex: 1;
+            min-width: 140px;
+        }
+        .pipe-node .node-title { font-weight: 700; font-size: 13px; color: #fff; }
+        .pipe-node .node-port { font-family: var(--font-mono); font-size: 11px; color: #a5b4fc; }
+        .pipe-node .node-role { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+        .endpoints { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+        .endpoint-box {
+            background: rgba(0, 0, 0, 0.35);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 12px;
+        }
+        .endpoint-box label { font-size: 11px; font-mono; color: var(--text-muted); display: block; margin-bottom: 4px; }
+        .endpoint-box a { color: #a5b4fc; font-family: var(--font-mono); font-size: 12px; text-decoration: none; word-break: break-all; }
+        .endpoint-box a:hover { text-decoration: underline; color: #fff; }
+        ol.steps { padding-left: 20px; }
+        ol.steps li { margin-bottom: 14px; font-size: 13px; color: #cbd5e1; }
+        ol.steps li strong { color: #fff; }
+        code { font-family: var(--font-mono); background: rgba(0,0,0,0.5); padding: 2px 6px; border-radius: 6px; font-size: 12px; color: #a5b4fc; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header-card">
+            <div class="logo-box">
+                <img src="/icons/seerr.svg" alt="Jellyseerr">
+            </div>
+            <div class="title-box">
+                <h1>Jellyseerr & Servarr Media Automation Stack</h1>
+                <p>Discover, request, download, index, and stream media effortlessly</p>
+                <span class="badge">● Zero-Touch Integrated Stack</span>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>⚡ How the Automation Pipeline Works</h2>
+            <p style="font-size: 13px; color: var(--text-muted);">
+                Your server runs the complete Servarr automation suite. When a user requests any movie or series, the system automatically finds the best release, downloads it through qBittorrent, fetches multilingual subtitles, and publishes it straight to Jellyfin without any manual intervention:
+            </p>
+            <div class="pipeline">
+                <div class="pipe-node">
+                    <div class="node-title">1. Jellyseerr</div>
+                    <div class="node-port">:5055</div>
+                    <div class="node-role">Request Discovery Portal</div>
+                </div>
+                <div class="pipe-node">
+                    <div class="node-title">2. Radarr / Sonarr</div>
+                    <div class="node-port">:7878 / :8989</div>
+                    <div class="node-role">Movie & Show Quality Manager</div>
+                </div>
+                <div class="pipe-node">
+                    <div class="node-title">3. Prowlarr</div>
+                    <div class="node-port">:9696</div>
+                    <div class="node-role">Indexers & Trackers Proxy</div>
+                </div>
+                <div class="pipe-node">
+                    <div class="node-title">4. qBittorrent</div>
+                    <div class="node-port">:8080</div>
+                    <div class="node-role">High-Speed BitTorrent Client</div>
+                </div>
+                <div class="pipe-node">
+                    <div class="node-title">5. Bazarr</div>
+                    <div class="node-port">:6767</div>
+                    <div class="node-role">Subtitle Synchronizer</div>
+                </div>
+                <div class="pipe-node">
+                    <div class="node-title">6. Jellyfin / Plezy</div>
+                    <div class="node-port">:8096</div>
+                    <div class="node-role">Hardware DirectPlay Streaming</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>🔗 Service Dashboard Endpoints</h2>
+            <div class="endpoints">
+                <div class="endpoint-box">
+                    <label>Jellyseerr Request Portal</label>
+                    <a href="http://pineapple-server.taildb42a2.ts.net:5055" target="_blank">http://pineapple-server:5055</a>
+                </div>
+                <div class="endpoint-box">
+                    <label>Radarr Movie Manager</label>
+                    <a href="http://pineapple-server.taildb42a2.ts.net:7878" target="_blank">http://pineapple-server:7878</a>
+                </div>
+                <div class="endpoint-box">
+                    <label>Sonarr TV Manager</label>
+                    <a href="http://pineapple-server.taildb42a2.ts.net:8989" target="_blank">http://pineapple-server:8989</a>
+                </div>
+                <div class="endpoint-box">
+                    <label>Prowlarr Indexer Proxy</label>
+                    <a href="http://pineapple-server.taildb42a2.ts.net:9696" target="_blank">http://pineapple-server:9696</a>
+                </div>
+                <div class="endpoint-box">
+                    <label>qBittorrent WebUI</label>
+                    <a href="http://pineapple-server.taildb42a2.ts.net:8080" target="_blank">http://pineapple-server:8080</a>
+                </div>
+                <div class="endpoint-box">
+                    <label>Bazarr Subtitle Manager</label>
+                    <a href="http://pineapple-server.taildb42a2.ts.net:6767" target="_blank">http://pineapple-server:6767</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>💡 Zero-Storage Duplication with Hardlinks</h2>
+            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 10px;">
+                All media downloads are saved in <code>/srv/media/downloads</code> and instantly hardlinked into <code>/srv/media/movies</code> or <code>/srv/media/shows</code>.
+            </p>
+            <ul style="padding-left: 20px; font-size: 13px; color: #cbd5e1;">
+                <li><strong>No double storage:</strong> Hardlinks point to the same filesystem inode on disk, taking 0 extra bytes.</li>
+                <li><strong>Continuous seeding:</strong> qBittorrent can seed indefinitely while Jellyfin streams the file.</li>
+                <li><strong>Automatic cleanup:</strong> You can delete from either location without corrupting the file.</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

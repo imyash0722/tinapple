@@ -1,4 +1,4 @@
-import { SystemInfo, TelemetrySnapshot, ServiceInfo, HardwareInfo, SessionMode, AppInfo, AppActionResult, InstallProgressState, InstallLogMessage, TailscaleStatus, AppliancePackStatus } from '../types/api';
+import { SystemInfo, TelemetrySnapshot, ServiceInfo, HardwareInfo, SessionMode, AppInfo, AppActionResult, InstallProgressState, InstallLogMessage, TailscaleStatus, AppliancePackStatus, WallpaperItem } from '../types/api';
 
 const API_BASE = '/api/v1';
 
@@ -693,6 +693,62 @@ class ApiService {
       return res.ok;
     } catch {
       return true;
+    }
+  }
+
+  async getWallpapers(): Promise<WallpaperItem[]> {
+    try {
+      const res = await fetch(`${API_BASE}/wallpapers`);
+      if (res.ok) {
+        return await res.json();
+      }
+      const legacyRes = await fetch('/api/wallpapers');
+      if (legacyRes.ok) {
+        return await legacyRes.json();
+      }
+    } catch {}
+    return [];
+  }
+
+  async uploadWallpaper(file: File): Promise<{ ok: boolean; item?: WallpaperItem; error?: string }> {
+    try {
+      const formData = new FormData();
+      formData.append('wallpaper', file);
+      const res = await fetch(`${API_BASE}/wallpapers/upload`, {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        return {
+          ok: true,
+          item: {
+            id: data.filename,
+            name: data.name,
+            file: data.filename,
+            url: data.url,
+            isVideo: data.isVideo,
+            category: data.category,
+            extension: '.' + data.filename.split('.').pop(),
+          },
+        };
+      }
+      return { ok: false, error: data.error || 'Upload failed' };
+    } catch (e: any) {
+      return { ok: false, error: e?.message || 'Upload failed' };
+    }
+  }
+
+  async selectWallpaper(filename: string): Promise<boolean> {
+    try {
+      const res = await fetch(`${API_BASE}/wallpapers/select`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filename }),
+      });
+      return res.ok;
+    } catch {
+      return false;
     }
   }
 

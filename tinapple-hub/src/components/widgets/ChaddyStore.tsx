@@ -1169,6 +1169,28 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({ onOpenGuide, isAdmin =
                         )}
                       </>
                     )}
+
+                    {onOpenGuide && (
+                      <button
+                        onClick={() => {
+                          const packGuideMap: Record<string, string> = {
+                            'seerr-stack': 'seerr',
+                            'manga-suite': 'syncyomi',
+                            'privacy-shield': 'tailscale',
+                            'audiophile-cloud': 'navidrome',
+                            'cloud-vault': 'vaultwarden',
+                            'second-brain': 'obsidian',
+                            'gaming-anvil': 'tailscale',
+                          };
+                          onOpenGuide(packGuideMap[pack.id] || 'jellyfin');
+                        }}
+                        className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-purple-500/15 hover:bg-purple-500/25 border border-purple-500/30 text-purple-300 font-mono text-xs font-semibold transition-all active:scale-95"
+                        title="View Stack & Client Setup Guide"
+                      >
+                        <BookOpen className="w-3.5 h-3.5 text-purple-400" />
+                        <span>Stack Guide</span>
+                      </button>
+                    )}
                   </div>
 
                   {/* Right: Quick Links to Key Stack Services */}

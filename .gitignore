@@ -74,3 +74,5 @@ tinapple-installer/iso/airootfs/usr/local/bin/chaddy-settings
 tinapple-installer/iso/airootfs/usr/share/tinapple/templates/
 tinapple-installer/iso/airootfs/etc/tinapple/chaddy-store.yaml
 tinapple-chadwm/
+# External wallpaper repo: imyash0722/Wallpapers
+/wallpapers/*

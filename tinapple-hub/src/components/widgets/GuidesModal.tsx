@@ -365,6 +365,119 @@ const GUIDES_CATALOG: GuideArticle[] = [
       },
     ],
   },
+  {
+    id: 'seerr',
+    title: 'Jellyseerr & Servarr Media Automation',
+    subtitle: 'Zero-touch movie and series discovery, automated requests, downloading, and indexing',
+    category: 'automation',
+    icon: <Film className="w-5 h-5 text-indigo-400" />,
+    accentColor: '#6366f1',
+    htmlGuidePath: '/guides/seerr.html',
+    endpoints: [
+      { label: 'Jellyseerr Portal', value: 'http://pineapple-server.taildb42a2.ts.net:5055' },
+      { label: 'Radarr Movies', value: 'http://pineapple-server.taildb42a2.ts.net:7878' },
+      { label: 'Sonarr TV Shows', value: 'http://pineapple-server.taildb42a2.ts.net:8989' },
+      { label: 'Prowlarr Indexers', value: 'http://pineapple-server.taildb42a2.ts.net:9696' },
+      { label: 'qBittorrent WebUI', value: 'http://pineapple-server.taildb42a2.ts.net:8080' },
+      { label: 'Bazarr Subtitles', value: 'http://pineapple-server.taildb42a2.ts.net:6767' },
+    ],
+    steps: [
+      {
+        title: 'Open Jellyseerr and Sign In with Jellyfin',
+        description: 'Jellyseerr is unified with your Jellyfin account. Log in with your standard homelab Jellyfin username and password.',
+        code: 'http://100.108.215.120:5055',
+      },
+      {
+        title: 'Search & Request Any Media',
+        description: 'Browse trending movies, top anime, or 4K releases. Click "Request" on any title. The request is instantly routed to Radarr or Sonarr.',
+      },
+      {
+        title: 'Zero-Touch Downloading & Subtitle Sync',
+        description: 'Prowlarr searches top indexers, qBittorrent downloads to /srv/media/downloads, and Bazarr automatically grabs multi-language subtitles.',
+      },
+    ],
+    clientApps: [
+      { name: 'Jellyseerr PWA', platform: 'Web / Mobile', link: 'http://pineapple-server.taildb42a2.ts.net:5055' },
+      { name: 'LunaSea (Homelab Arr Client)', platform: 'iOS / Android', link: 'https://www.lunasea.app' },
+    ],
+    specialConfigs: [
+      {
+        title: 'One-Click Automated Configuration',
+        description: 'The entire stack is auto-linked by Tinapple OS via /usr/local/bin/tinapple-configure-seerr. API keys and paths are continuously maintained.',
+      },
+    ],
+  },
+  {
+    id: 'adguard',
+    title: 'AdGuard Home Network DNS & Privacy Shield',
+    subtitle: 'Network-wide ad-blocking, tracker protection, and encrypted DNS-over-HTTPS',
+    category: 'network',
+    icon: <ShieldCheck className="w-5 h-5 text-emerald-400" />,
+    accentColor: '#10b981',
+    htmlGuidePath: '/guides/adguard.html',
+    endpoints: [
+      { label: 'AdGuard Web Portal', value: 'http://pineapple-server.taildb42a2.ts.net:3000' },
+      { label: 'DNS Port', value: 'Port 53 (UDP/TCP)' },
+      { label: 'Server LAN IP', value: '10.3.2.105' },
+    ],
+    steps: [
+      {
+        title: 'Configure Your Home Router',
+        description: 'In your Wi-Fi router DNS settings, enter this server IP (10.3.2.105) as the primary DNS server. All devices on your Wi-Fi block ads automatically.',
+      },
+      {
+        title: 'Configure Mobile Devices on 4G/5G',
+        description: 'In Android Private DNS settings, or via Tailscale global DNS (100.108.215.120), enjoy ad-blocking everywhere outside home.',
+      },
+    ],
+    clientApps: [
+      { name: 'AdGuard Home Web UI', platform: 'Web Browser', link: 'http://pineapple-server.taildb42a2.ts.net:3000' },
+    ],
+    specialConfigs: [
+      {
+        title: 'Encrypted Upstream DNS',
+        description: 'AdGuard Home is configured with Quad9 and Cloudflare DNS-over-HTTPS (DoH) for maximum encryption and zero ISP tracking.',
+      },
+    ],
+  },
+  {
+    id: 'navidrome',
+    title: 'Navidrome Audiophile Music Cloud & Streamer',
+    subtitle: 'Lightweight, modern music cloud streamer with Subsonic and OpenSubsonic API',
+    category: 'media',
+    icon: <Sparkles className="w-5 h-5 text-sky-400" />,
+    accentColor: '#0ea5e9',
+    htmlGuidePath: '/guides/navidrome.html',
+    endpoints: [
+      { label: 'Navidrome Web Player', value: 'http://pineapple-server.taildb42a2.ts.net:4533' },
+      { label: 'Music Directory', value: '/srv/media/music' },
+    ],
+    steps: [
+      {
+        title: 'Add Music to Your Library',
+        description: 'Drop FLAC, MP3, or AAC albums into /srv/media/music. Navidrome will auto-index artwork, metadata, and lyrics in real time.',
+      },
+      {
+        title: 'Connect Desktop Player (Feishin)',
+        description: 'Download Feishin, enter http://pineapple-server:4533 and your Navidrome credentials for a native high-fidelity player.',
+      },
+      {
+        title: 'Connect Mobile Player (Symfonium / Substreamer)',
+        description: 'Install Symfonium on Android or Substreamer on iOS. Enter your server URL and enjoy offline downloads in your car or on transit.',
+      },
+    ],
+    clientApps: [
+      { name: 'Feishin (Desktop)', platform: 'Linux / macOS / Windows', link: 'https://github.com/jeffvli/feishin' },
+      { name: 'Symfonium (Android)', platform: 'Android', link: 'https://symfonium.app' },
+      { name: 'Substreamer (iOS)', platform: 'iOS / iPhone', link: 'https://substreamerapp.com' },
+    ],
+    specialConfigs: [
+      {
+        title: 'DirectPlay Transcoding Settings',
+        description: 'Navidrome serves lossless audio directly to native clients while gracefully transcoding on-the-fly to Opus for low-bandwidth mobile connections.',
+      },
+    ],
+  },
 ];
 
 interface GuidesModalProps {

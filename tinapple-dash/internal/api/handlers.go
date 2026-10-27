@@ -170,6 +170,11 @@ func SetupRoutes(r *gin.Engine, cfg *config.Manifest, svcMgr *services.SystemdMa
 		v1.GET("/system/tor-exit", h.GetTorStatus)
 		v1.POST("/system/tor-exit", h.ToggleTorStatus)
 
+		// Wallpapers (Tinarchy style with video loops and custom upload)
+		v1.GET("/wallpapers", h.ListWallpapers)
+		v1.POST("/wallpapers/upload", h.UploadWallpaper)
+		v1.POST("/wallpapers/select", h.SelectWallpaper)
+
 		// WebSocket
 		v1.GET("/ws", h.WebSocketHandler)
 	}
@@ -185,6 +190,21 @@ func SetupRoutes(r *gin.Engine, cfg *config.Manifest, svcMgr *services.SystemdMa
 	r.GET("/api/beeper/status", h.BeeperStatus)
 	r.GET("/api/system/tor-exit", h.GetTorStatus)
 	r.POST("/api/system/tor-exit", h.ToggleTorStatus)
+
+	// Wallpaper APIs (compatible with v1 and legacy Tinarchy paths)
+	r.GET("/api/wallpapers", h.ListWallpapers)
+	r.POST("/api/wallpapers/upload", h.UploadWallpaper)
+	r.POST("/api/wallpaper/upload", h.UploadWallpaper)
+	r.POST("/api/wallpapers/select", h.SelectWallpaper)
+	r.POST("/api/wallpaper/select", h.SelectWallpaper)
+	r.GET("/api/pywal", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"colors": gin.H{
+				"primary":   "#38bdf8",
+				"secondary": "#3b82f6",
+			},
+		})
+	})
 }
 
 // SystemInfo returns basic system information

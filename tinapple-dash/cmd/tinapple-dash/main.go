@@ -58,23 +58,21 @@ func main() {
 	// API routes
 	api.SetupRoutes(r, cfg, svcMgr, telemetryCollector)
 
-	// Proxy legacy Tinarchy backend routes (e.g. /api/widgets, /api/wallpapers, etc.) to port 8085
+	// Legacy reports proxy if port 8085 is running
 	tinarchyTarget, err := url.Parse("http://127.0.0.1:8085")
 	if err == nil {
 		proxy := httputil.NewSingleHostReverseProxy(tinarchyTarget)
 		proxyHandler := func(c *gin.Context) {
 			proxy.ServeHTTP(c.Writer, c.Request)
 		}
-
-		r.Any("/api/wallpaper/*path", proxyHandler)
-		r.Any("/api/wallpapers", proxyHandler)
-		r.Any("/api/pywal", proxyHandler)
 		r.Any("/api/reports/*path", proxyHandler)
 	}
 
 	// Web UI static files (check for modern React Hub build in web/dist)
 	distDir := "/usr/share/tinapple-dash/web/dist"
-	if _, err := os.Stat("web/dist"); err == nil {
+	if _, err := os.Stat("tinapple-dash/web/dist"); err == nil {
+		distDir = "tinapple-dash/web/dist"
+	} else if _, err := os.Stat("web/dist"); err == nil {
 		distDir = "web/dist"
 	}
 
@@ -113,13 +111,8 @@ func main() {
 		if _, err := os.Stat(filepath.Join(distDir, "images")); err == nil {
 			r.Static("/images", filepath.Join(distDir, "images"))
 		}
-		if _, err := os.Stat(filepath.Join(distDir, "wallpapers")); err == nil {
-			r.Static("/wallpapers", filepath.Join(distDir, "wallpapers"))
-		} else if _, err := os.Stat("wallpapers"); err == nil {
-			r.Static("/wallpapers", "wallpapers")
-		} else if _, err := os.Stat("../wallpapers"); err == nil {
-			r.Static("/wallpapers", "../wallpapers")
-		}
+		wpDir := api.FindWallpapersDir(distDir)
+		r.Static("/wallpapers", wpDir)
 		r.StaticFile("/favicon.ico", filepath.Join(distDir, "favicon.ico"))
 		serveIndex := func(c *gin.Context) {
 			c.Header("Cache-Control", "no-cache, no-store, must-revalidate, max-age=0")
@@ -130,6 +123,10 @@ func main() {
 		guideMap := map[string]string{
 			"/guide/plezy":       "/guides/plezy.html",
 			"/guide/jellyfin":    "/guides/plezy.html",
+			"/guide/seerr":       "/guides/seerr.html",
+			"/guide/servarr":     "/guides/seerr.html",
+			"/guide/adguard":     "/guides/adguard.html",
+			"/guide/navidrome":   "/guides/navidrome.html",
 			"/guide/syncyomi":    "/guides/syncyomi.html",
 			"/guide/beeper":      "/guides/beeper.html",
 			"/guide/vaultwarden": "/guides/vaultwarden.html",
@@ -167,7 +164,9 @@ func main() {
 			templateGlob = "web/templates/*"
 		}
 		r.Static("/static", staticDir)
-		r.LoadHTMLGlob(templateGlob)
+		if matches, _ := filepath.Glob(templateGlob); len(matches) > 0 {
+			r.LoadHTMLGlob(templateGlob)
+		}
 		r.GET("/", func(c *gin.Context) {
 			c.HTML(http.StatusOK, "index.html", gin.H{
 				"title":   "tinapple Dashboard",
@@ -183,6 +182,12 @@ func main() {
 
 	// Start server
 	port := cfg.Services["dash"].Port
+	if p := os.Getenv("PORT"); p != "" {
+		var customPort int
+		if _, err := fmt.Sscanf(p, "%d", &customPort); err == nil && customPort > 0 {
+			port = customPort
+		}
+	}
 	if port == 0 {
 		port = 8088
 	}

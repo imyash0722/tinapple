@@ -499,7 +499,58 @@ Download and install the APK directly from the browser.
 
 ---
 
-## 12. Service Management and Command Reference
+## 13. Interactive Online Guides & Comprehensive Manual
+
+Tinapple OS features an integrated, interactive Documentation & Client Setup portal accessible directly via the top navigation bar (`Guides` button) or at dedicated `/guide/<service>` endpoints.
+
+Each guide provides zero-jargon instructions, exact connection URLs (with permanent Tailscale MagicDNS addresses), recommended hardware decoding profiles, and direct download links for desktop and mobile clients.
+
+### Available Online Guides
+
+| Service / Topic | Web Endpoint | Topics Covered |
+|-----------------|--------------|----------------|
+| **Plezy & Jellyfin** | `/guide/plezy` | Hardware DirectPlay (libmpv), VAAPI/QSV transcoding, multi-channel audio bitstreaming, desktop & mobile setup |
+| **Jellyseerr & Servarr** | `/guide/seerr` | Zero-touch movie/show request portal, Prowlarr indexer linking, Bazarr subtitle automation, hardlinks |
+| **AdGuard Home** | `/guide/adguard` | Network-wide DNS ad-blocking, home router DHCP configuration, Android Private DNS, Apple profiles |
+| **Navidrome Music** | `/guide/navidrome` | Lossless Subsonic audio streaming, Feishin (desktop), Symfonium (Android), Substreamer (iOS) |
+| **SyncYomi & Suwayomi** | `/guide/syncyomi` | Centralized reading progress, Mihon & Komikku mobile sync, Keiyoushi extensions, Tsumiru reader |
+| **Vaultwarden** | `/guide/vaultwarden` | Zero-knowledge password vault, Bitwarden browser extensions & mobile apps, disabling public signups |
+| **Syncthing** | `/guide/syncthing` | Peer-to-peer folder replication, phone camera auto-backup, staggered versioning protection |
+| **Obsidian LiveSync** | `/guide/obsidian` | End-to-end encrypted markdown notes sync with self-hosted CouchDB database backend |
+| **Beeper Bridges** | `/guide/beeper` | Self-hosted WhatsApp, Signal, Discord Matrix bridges with `bbctl` CLI |
+| **Tor Privacy Routing** | `/guide/tor` | SOCKS5 privacy routing, hidden services, Firefox proxy configuration |
+| **Tailscale Mesh VPN** | `/guide/ssh` | Zero-config WireGuard mesh remote access, Tailscale SSH, subnet router configuration |
+
+---
+
+## 14. Dynamic Wallpaper Gallery & Atmosphere Theming (`imyash0722/Wallpapers`)
+
+Tinapple OS incorporates a dynamic wallpaper switching and theming engine inspired by the Tinarchy architecture, backed by the official [`imyash0722/Wallpapers`](https://github.com/imyash0722/Wallpapers) collection.
+
+### Key Capabilities
+
+1. **Rich Wallpaper Gallery (120+ Curated Themes)**:
+   - **Animated Loops (`.mp4`)**: Smooth, high-efficiency looping video backgrounds with muted hardware decoding.
+   - **Pixel Art**: Retro nostalgic sceneries, lo-fi aesthetic cities, and rain-soaked alleyways.
+   - **Anime & Aesthetic**: Studio Ghibli-style landscapes, cherry blossom shrines, and torii gates.
+   - **Nature & Scenery**: Nachi falls, alpine pagoda cities, aurora borealis, and misty mountains.
+   - **Sci-Fi & Cyberpunk**: Space horizons, planetary orbits, and futuristic battlestations.
+   - **Pineapple Originals**: Golden branded appliance artwork.
+
+2. **Automated Upstream Synchronization**:
+   - `scripts/tinapple-update` automatically verifies and synchronizes `/usr/share/tinapple-dash/wallpapers` from `https://github.com/imyash0722/Wallpapers.git`.
+   - Any new wallpaper added to the GitHub repository is pulled automatically whenever a system update is triggered.
+
+3. **Dynamic Pywal Color Sampling**:
+   - When **"Dynamic Pywal Auto-Color Sampling"** is enabled, selecting any wallpaper samples dominant vibrant midtones using a canvas quantizer and dynamically recolors the portal's primary and secondary accent hues in real time.
+
+4. **1-Click Shuffle & Custom Upload**:
+   - **Shuffle**: Instantaneously rolls a random wallpaper from the collection.
+   - **Custom Upload**: Drag and drop personal `.jpg`, `.png`, `.webp`, or `.mp4` video files to upload directly to the server and apply immediately.
+
+---
+
+## 15. Service Management and Command Reference
 
 ### Service Control Commands
 
@@ -533,7 +584,7 @@ journalctl -u tinapple-hw.service -f
 
 ---
 
-## 13. Troubleshooting and Diagnostic Runbook
+## 16. Troubleshooting and Diagnostic Runbook
 
 ### Issue: Vaultwarden Displays Web Crypto API Error
 
@@ -587,7 +638,7 @@ journalctl -u tinapple-hw.service -f
 
 ---
 
-## 14. Repository Directory Structure
+## 17. Repository Directory Structure
 
 ```
 tinapple/
@@ -630,6 +681,6 @@ tinapple/
 
 ---
 
-## 15. License
+## 18. License
 
 This project is licensed under the GNU General Public License v3.0 (GPLv3). See the LICENSE file for details.

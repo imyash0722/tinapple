@@ -191,4 +191,15 @@ export interface AppliancePackStatus extends AppliancePack {
   appsStatus?: AppInfo[];
 }
 
+export interface WallpaperItem {
+  id: string;
+  name: string;
+  file: string;
+  url: string;
+  isVideo: boolean;
+  category: string;
+  extension: string;
+  size?: number;
+}
+
 

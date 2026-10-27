@@ -533,11 +533,12 @@ export const App: React.FC = () => {
 
             <button
               onClick={() => handleOpenGuide('jellyfin')}
-              className={`${actionButtonClass} hover:!border-purple-500/50 hover:!text-purple-300`}
-              title="Client App & Config Guides (Plezy, SyncYomi, etc.)"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 transition-all font-mono text-xs font-semibold shadow-sm active:scale-95"
+              title="Interactive Setup Guides (Plezy, Jellyseerr, Tailscale, SyncYomi, etc.)"
               aria-label="Service Guides"
             >
               <BookOpen className="w-4 h-4 text-purple-400" />
+              <span className="hidden sm:inline">Guides</span>
             </button>
             <button
               onClick={() => setAppearanceOpen(true)}
