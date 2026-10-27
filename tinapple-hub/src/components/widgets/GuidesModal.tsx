@@ -61,7 +61,8 @@ const GUIDES_CATALOG: GuideArticle[] = [
     accentColor: '#aa74e8',
     htmlGuidePath: '/guides/plezy.html',
     endpoints: [
-      { label: 'Tailscale VPN Host', value: 'http://100.108.215.120:8096' },
+      { label: 'Permanent MagicDNS', value: 'http://pineapple-server.taildb42a2.ts.net:8096' },
+      { label: 'Tailscale IP Host', value: 'http://100.108.215.120:8096' },
       { label: 'Local LAN Host', value: 'http://10.3.2.105:8096' },
       { label: 'Installed Client', value: '~/.local/bin/plezy (v2.25.0)' },
     ],
@@ -298,8 +299,9 @@ const GUIDES_CATALOG: GuideArticle[] = [
     accentColor: '#38bdf8',
     htmlGuidePath: '/guides/ssh.html',
     endpoints: [
+      { label: 'Permanent MagicDNS', value: 'pineapple-server.taildb42a2.ts.net' },
       { label: 'Node Tailscale IP', value: '100.108.215.120' },
-      { label: 'Tailscale SSH', value: 'ssh root@100.108.215.120' },
+      { label: 'Tailscale SSH', value: 'ssh root@pineapple-server' },
     ],
     steps: [
       {

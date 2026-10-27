@@ -329,16 +329,16 @@
         <!-- Metadata Grid -->
         <div class="meta-grid">
             <div class="meta-box">
-                <div class="meta-label">Tailscale Server URL</div>
+                <div class="meta-label">Permanent MagicDNS Link</div>
+                <div class="meta-val">http://pineapple-server.taildb42a2.ts.net:8096</div>
+            </div>
+            <div class="meta-box">
+                <div class="meta-label">Tailscale IP Host</div>
                 <div class="meta-val">http://100.108.215.120:8096</div>
             </div>
             <div class="meta-box">
-                <div class="meta-label">Local LAN URL</div>
+                <div class="meta-label">Local Wi-Fi IP</div>
                 <div class="meta-val">http://10.3.2.105:8096</div>
-            </div>
-            <div class="meta-box">
-                <div class="meta-label">Playback Engine</div>
-                <div class="meta-val">libmpv (DirectPlay)</div>
             </div>
             <div class="meta-box">
                 <div class="meta-label">Local PC Status</div>
@@ -376,13 +376,13 @@
                     <div class="step-circle">3</div>
                     <div class="step-content">
                         <strong>Connect to Your Jellyfin Server:</strong>
-                        <p>When Plezy starts, select <strong>Jellyfin</strong> as the server type and enter the connection endpoint:</p>
+                        <p>When Plezy starts, select <strong>Jellyfin</strong> as the server type and enter the permanent MagicDNS endpoint:</p>
                         <div class="code-container">
-                            <code id="cmdJellyUrl">http://100.108.215.120:8096</code>
+                            <code id="cmdJellyUrl">http://pineapple-server.taildb42a2.ts.net:8096</code>
                             <button class="copy-btn" onclick="copyCode('cmdJellyUrl')">Copy</button>
                         </div>
                         <p style="margin-top:6px; font-size:0.82rem; color:var(--text-muted);">
-                            <em>(If connecting locally over home Wi-Fi without Tailscale, use: <code style="color:var(--primary);">http://10.3.2.105:8096</code>)</em>
+                            <em>(Short tailnet alias: <code style="color:var(--primary);">http://pineapple-server:8096</code> | Tailscale IP: <code style="color:var(--primary);">http://100.108.215.120:8096</code>)</em>
                         </p>
                     </div>
                 </div>

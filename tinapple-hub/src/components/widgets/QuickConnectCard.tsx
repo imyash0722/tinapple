@@ -82,11 +82,11 @@ export const QuickConnectCard: React.FC<QuickConnectCardProps> = ({
     },
     {
       id: 'tailscale',
-      name: 'Tailscale Mesh',
-      type: "Let's Encrypt TLS",
-      url: 'https://tinapple-server.tail3dee69.ts.net',
-      desc: "Zero-config secure mesh access with official Let's Encrypt TLS certificate.",
-      badge: currentHost.includes('tail3dee69.ts.net') || currentHost.startsWith('100.') ? 'Active Link' : 'Tailnet Ready',
+      name: 'Tailscale MagicDNS',
+      type: 'Permanent Mesh Link',
+      url: `${currentProto}://pineapple-server.taildb42a2.ts.net${isHttps ? '' : ':8088'}`,
+      desc: 'Permanent zero-config mesh domain. Never changes across Wi-Fi or networks.',
+      badge: currentHost.includes('taildb42a2.ts.net') || currentHost.startsWith('100.') ? 'Active Link' : 'Tailnet Ready',
       color: 'text-purple-400 border-purple-500/30 bg-purple-500/10',
       icon: (
         <svg className="w-5 h-5 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
