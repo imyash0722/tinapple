@@ -8,6 +8,7 @@ interface QuickConnectCardProps {
   services?: ServiceStatus[];
   customBookmarks?: CustomBookmark[];
   isEditMode?: boolean;
+  isAdmin?: boolean;
   onAddBookmark?: () => void;
   onEditBookmark?: (bookmark: CustomBookmark) => void;
   onDeleteBookmark?: (id: string) => void;
@@ -22,6 +23,7 @@ export const QuickConnectCard: React.FC<QuickConnectCardProps> = ({
   services = [],
   customBookmarks = [],
   isEditMode = false,
+  isAdmin = true,
   onAddBookmark,
   onEditBookmark,
   onDeleteBookmark,
@@ -110,7 +112,7 @@ export const QuickConnectCard: React.FC<QuickConnectCardProps> = ({
     { id: 'prowlarr', name: 'Prowlarr Indexer', port: '9696', path: `http://${currentHost}:9696` },
     { id: 'seerr', name: 'Jellyseerr Requests', port: '5055', path: `http://${currentHost}:5055` },
     { id: 'protonvpn', name: 'Proton VPN', port: '', path: '#' },
-  ];
+  ].filter((s) => isAdmin || (s.id !== 'suwayomi' && s.id !== 'suwayomi-server'));
 
   return (
     <div className="space-y-6">

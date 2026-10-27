@@ -23,12 +23,12 @@ export interface DashboardLayoutState {
   bookmarks: CustomBookmark[];
 }
 
-const STORAGE_KEY = 'tinapple_dashboard_layout_v3';
+const STORAGE_KEY = 'tinapple_dashboard_layout_v4';
 
 export const DEFAULT_WIDGETS: DashboardWidgetConfig[] = [
   { id: 'quickconnect', title: 'Quick Connect Portals', visible: true, order: 0 },
   { id: 'transfers', title: 'Transfers & Downloads', visible: true, order: 1 },
-  { id: 'manga', title: 'Suwayomi Manga Library', visible: false, order: 2 },
+  { id: 'manga', title: 'Suwayomi Manga Library', visible: true, order: 2 },
   { id: 'tor', title: 'Tor Privacy Guard', visible: true, order: 3 },
 ];
 
@@ -54,7 +54,7 @@ export const DEFAULT_BOOKMARKS: CustomBookmark[] = [
 export function loadDashboardLayout(): DashboardLayoutState {
   if (typeof window === 'undefined') {
     return {
-      version: 3,
+      version: 4,
       widgets: [...DEFAULT_WIDGETS],
       bookmarks: [...DEFAULT_BOOKMARKS],
     };
@@ -62,10 +62,9 @@ export function loadDashboardLayout(): DashboardLayoutState {
 
   try {
     let raw = localStorage.getItem(STORAGE_KEY);
-    let isV2 = false;
     if (!raw) {
-      raw = localStorage.getItem('tinapple_dashboard_layout_v2');
-      isV2 = true;
+      // Check legacy storage keys
+      raw = localStorage.getItem('tinapple_dashboard_layout_v3') || localStorage.getItem('tinapple_dashboard_layout_v2');
     }
 
     if (raw) {

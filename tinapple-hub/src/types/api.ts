@@ -9,6 +9,9 @@ export interface SystemInfo {
   osRelease: string;
   sessionMode: SessionMode;
   filesystem?: string;
+  isAdmin?: boolean;
+  clientIp?: string;
+  clientUser?: string;
 }
 
 export interface TelemetrySnapshot {

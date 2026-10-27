@@ -432,9 +432,10 @@ const FALLBACK_APPS: AppInfo[] = [
 
 interface ChaddyStoreProps {
   onOpenGuide?: (guideId: string) => void;
+  isAdmin?: boolean;
 }
 
-export const ChaddyStore: React.FC<ChaddyStoreProps> = ({ onOpenGuide }) => {
+export const ChaddyStore: React.FC<ChaddyStoreProps> = ({ onOpenGuide, isAdmin = true }) => {
   const [apps, setApps] = useState<AppInfo[]>(FALLBACK_APPS);
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
   const [viewMode, setViewMode] = useState<'carousel' | 'grid'>('grid');
@@ -543,18 +544,22 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({ onOpenGuide }) => {
     }
   };
 
+  const visibleApps = useMemo(() => {
+    return apps.filter((a) => isAdmin || (a.id !== 'suwayomi' && a.id !== 'suwayomi-server'));
+  }, [apps, isAdmin]);
+
   const categories = useMemo(() => {
     const set = new Set<string>(['all']);
-    apps.forEach((a) => set.add(a.category));
+    visibleApps.forEach((a) => set.add(a.category));
     return Array.from(set);
-  }, [apps]);
+  }, [visibleApps]);
 
   const filteredApps = useMemo(() => {
-    if (filterCategory === 'all') return apps;
-    return apps.filter((a) => a.category === filterCategory);
-  }, [apps, filterCategory]);
+    if (filterCategory === 'all') return visibleApps;
+    return visibleApps.filter((a) => a.category === filterCategory);
+  }, [visibleApps, filterCategory]);
 
-  const selectedApp = filteredApps[selectedIndex] || filteredApps[0] || apps[0];
+  const selectedApp = filteredApps[selectedIndex] || filteredApps[0] || visibleApps[0] || apps[0];
 
   const carouselItems: CircularCarouselItem[] = useMemo(() => {
     return filteredApps.map((a) => {

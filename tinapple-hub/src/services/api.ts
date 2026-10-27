@@ -10,6 +10,7 @@ export const MOCK_SYSTEM_INFO: SystemInfo = {
   bootTime: Date.now() - 7260 * 1000,
   osRelease: 'Tinapple Appliance OS 0.0.1 (Arch-based)',
   sessionMode: 'interactive',
+  isAdmin: false,
 };
 
 export const MOCK_TELEMETRY: TelemetrySnapshot = {
@@ -308,6 +309,9 @@ class ApiService {
         osRelease: 'Tinapple Appliance OS 0.0.1',
         sessionMode: data.session || 'interactive',
         filesystem: data.filesystem || 'ext4',
+        isAdmin: data.is_admin === true,
+        clientIp: data.client_ip || '',
+        clientUser: data.client_user || '',
       };
     } catch {
       return MOCK_SYSTEM_INFO;

@@ -19,6 +19,7 @@ import { AppBrandIcon } from '../common/AppBrandIcons';
 interface ServicesManagerProps {
   services: ServiceInfo[];
   accentColor: string;
+  isAdmin?: boolean;
   onControlService: (name: string, action: 'start' | 'stop' | 'restart' | 'enable' | 'disable') => Promise<{ ok: boolean; error?: string } | void>;
   onOpenLogs: (name: string) => void;
   onOpenTailscale?: () => void;
@@ -28,6 +29,7 @@ interface ServicesManagerProps {
 export const ServicesManager: React.FC<ServicesManagerProps> = ({
   services,
   accentColor,
+  isAdmin = true,
   onControlService,
   onOpenLogs,
   onOpenTailscale,
@@ -62,21 +64,25 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({
     }
   };
 
-  const filteredServices = services.filter((s) => {
-    const matchesCategory = filterCategory === 'all' || s.category === filterCategory;
-    const matchesSearch =
-      s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      s.description.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
-  });
+  const filteredServices = services
+    .filter((s) => isAdmin || (s.name !== 'suwayomi' && s.name !== 'suwayomi-server' && s.id !== 'suwayomi' && s.id !== 'suwayomi-server'))
+    .filter((s) => {
+      const matchesCategory = filterCategory === 'all' || s.category === filterCategory;
+      const matchesSearch =
+        s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        s.description.toLowerCase().includes(searchQuery.toLowerCase());
+      return matchesCategory && matchesSearch;
+    });
 
   const categories = useMemo(() => {
     const cats = new Set<string>(['all']);
-    services.forEach((s) => {
-      if (s.category) cats.add(s.category);
-    });
+    services
+      .filter((s) => isAdmin || (s.name !== 'suwayomi' && s.name !== 'suwayomi-server' && s.id !== 'suwayomi' && s.id !== 'suwayomi-server'))
+      .forEach((s) => {
+        if (s.category) cats.add(s.category);
+      });
     return Array.from(cats);
-  }, [services]);
+  }, [services, isAdmin]);
 
   const getServiceUrl = (service: ServiceInfo): string | null => {
     const host = typeof window !== 'undefined' ? window.location.hostname : '127.0.0.1';

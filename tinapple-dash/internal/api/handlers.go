@@ -47,12 +47,48 @@ func NewHandler(cfg *config.Manifest, svcMgr *services.SystemdManager, tel *tele
 	}
 }
 
+func (h *Handler) getClientIP(c *gin.Context) string {
+	if xff := c.GetHeader("X-Forwarded-For"); xff != "" {
+		parts := strings.Split(xff, ",")
+		if len(parts) > 0 && strings.TrimSpace(parts[0]) != "" {
+			return strings.TrimSpace(parts[0])
+		}
+	}
+	if xrip := c.GetHeader("X-Real-IP"); xrip != "" {
+		return strings.TrimSpace(xrip)
+	}
+	return c.ClientIP()
+}
+
+func (h *Handler) getClientRole(c *gin.Context) (bool, string) {
+	clientIP := h.getClientIP(c)
+	return h.tailscaleMgr.CheckClientRole(c.Request.Context(), clientIP)
+}
+
+func (h *Handler) UserRole(c *gin.Context) {
+	isOwner, user := h.getClientRole(c)
+	c.JSON(http.StatusOK, gin.H{
+		"isAdmin":    isOwner,
+		"clientIp":   h.getClientIP(c),
+		"clientUser": user,
+	})
+}
+
+func isRestrictedService(name string) bool {
+	n := strings.ToLower(strings.TrimSpace(name))
+	return n == "suwayomi" || n == "suwayomi-server" || n == "suwayomi-server.service"
+}
+
 func SetupRoutes(r *gin.Engine, cfg *config.Manifest, svcMgr *services.SystemdManager, tel *telemetry.Collector) {
 	h := NewHandler(cfg, svcMgr, tel)
 
 	// API v1 group
 	v1 := r.Group("/api/v1")
 	{
+		// Role & Identity
+		v1.GET("/user/role", h.UserRole)
+		v1.GET("/auth/role", h.UserRole)
+
 		// System info
 		v1.GET("/system/info", h.SystemInfo)
 		v1.GET("/system/disks", h.SystemDisks)
@@ -169,6 +205,8 @@ func (h *Handler) SystemInfo(c *gin.Context) {
 		uptimeSec = int(u)
 	}
 
+	isOwner, clientUser := h.getClientRole(c)
+
 	info := map[string]interface{}{
 		"hostname":       h.cfg.Hostname,
 		"kernel":         h.cfg.KernelProfile,
@@ -180,6 +218,9 @@ func (h *Handler) SystemInfo(c *gin.Context) {
 		"installed":      installed,
 		"uptime":         getUptime(),
 		"uptime_seconds": uptimeSec,
+		"is_admin":       isOwner,
+		"client_ip":      h.getClientIP(c),
+		"client_user":    clientUser,
 	}
 	c.JSON(http.StatusOK, info)
 }
@@ -293,13 +334,29 @@ func (h *Handler) TelemetryStream(c *gin.Context) {
 
 // ListApps returns all managed applications with real live statuses
 func (h *Handler) ListApps(c *gin.Context) {
+	isOwner, _ := h.getClientRole(c)
 	apps := h.appMgr.ListApps()
+	if !isOwner {
+		filtered := make([]services.AppStatus, 0, len(apps))
+		for _, a := range apps {
+			if isRestrictedService(a.ID) {
+				continue
+			}
+			filtered = append(filtered, a)
+		}
+		apps = filtered
+	}
 	c.JSON(http.StatusOK, gin.H{"apps": apps})
 }
 
 // GetApp returns detailed status for a single application
 func (h *Handler) GetApp(c *gin.Context) {
 	name := c.Param("name")
+	isOwner, _ := h.getClientRole(c)
+	if !isOwner && isRestrictedService(name) {
+		c.JSON(http.StatusNotFound, gin.H{"error": "app not found"})
+		return
+	}
 	app, err := h.appMgr.GetApp(name)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
@@ -358,6 +415,11 @@ func (h *Handler) ClearInstallLogs(c *gin.Context) {
 // InstallApp triggers package installation and service setup
 func (h *Handler) InstallApp(c *gin.Context) {
 	name := c.Param("name")
+	isOwner, _ := h.getClientRole(c)
+	if !isOwner && isRestrictedService(name) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "permission denied"})
+		return
+	}
 	if err := h.appMgr.Install(name); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -369,6 +431,11 @@ func (h *Handler) InstallApp(c *gin.Context) {
 // UninstallApp stops the unit and uninstalls the package
 func (h *Handler) UninstallApp(c *gin.Context) {
 	name := c.Param("name")
+	isOwner, _ := h.getClientRole(c)
+	if !isOwner && isRestrictedService(name) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "permission denied"})
+		return
+	}
 	if err := h.appMgr.Uninstall(name); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -380,6 +447,11 @@ func (h *Handler) UninstallApp(c *gin.Context) {
 // StartApp starts the app's systemd unit
 func (h *Handler) StartApp(c *gin.Context) {
 	name := c.Param("name")
+	isOwner, _ := h.getClientRole(c)
+	if !isOwner && isRestrictedService(name) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "permission denied"})
+		return
+	}
 	if err := h.appMgr.Start(name); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -391,6 +463,11 @@ func (h *Handler) StartApp(c *gin.Context) {
 // StopApp stops the app's systemd unit
 func (h *Handler) StopApp(c *gin.Context) {
 	name := c.Param("name")
+	isOwner, _ := h.getClientRole(c)
+	if !isOwner && isRestrictedService(name) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "permission denied"})
+		return
+	}
 	if err := h.appMgr.Stop(name); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -402,6 +479,11 @@ func (h *Handler) StopApp(c *gin.Context) {
 // RestartApp restarts the app's systemd unit
 func (h *Handler) RestartApp(c *gin.Context) {
 	name := c.Param("name")
+	isOwner, _ := h.getClientRole(c)
+	if !isOwner && isRestrictedService(name) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "permission denied"})
+		return
+	}
 	if err := h.appMgr.Restart(name); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -413,6 +495,11 @@ func (h *Handler) RestartApp(c *gin.Context) {
 // GetAppConfig retrieves configuration information
 func (h *Handler) GetAppConfig(c *gin.Context) {
 	name := c.Param("name")
+	isOwner, _ := h.getClientRole(c)
+	if !isOwner && isRestrictedService(name) {
+		c.JSON(http.StatusNotFound, gin.H{"error": "app not found"})
+		return
+	}
 	cfg, err := h.appMgr.GetConfig(name)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
@@ -424,6 +511,11 @@ func (h *Handler) GetAppConfig(c *gin.Context) {
 // UpdateAppConfig saves port and environment overrides
 func (h *Handler) UpdateAppConfig(c *gin.Context) {
 	name := c.Param("name")
+	isOwner, _ := h.getClientRole(c)
+	if !isOwner && isRestrictedService(name) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "permission denied"})
+		return
+	}
 	var req services.UpdateConfigRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -438,10 +530,14 @@ func (h *Handler) UpdateAppConfig(c *gin.Context) {
 
 // ListServices returns all services with real on-disk and live systemd status
 func (h *Handler) ListServices(c *gin.Context) {
+	isOwner, _ := h.getClientRole(c)
 	apps := h.appMgr.ListApps()
 	services := make([]map[string]interface{}, 0, len(apps))
 
 	for _, a := range apps {
+		if !isOwner && isRestrictedService(a.ID) {
+			continue
+		}
 		services = append(services, map[string]interface{}{
 			"id":            a.ID,
 			"name":          a.ID,
@@ -468,6 +564,11 @@ func (h *Handler) ListServices(c *gin.Context) {
 // GetService returns detailed service info
 func (h *Handler) GetService(c *gin.Context) {
 	name := c.Param("name")
+	isOwner, _ := h.getClientRole(c)
+	if !isOwner && isRestrictedService(name) {
+		c.JSON(http.StatusNotFound, gin.H{"error": "service not found"})
+		return
+	}
 	svc, ok := h.cfg.Services[name]
 	if !ok {
 		c.JSON(http.StatusNotFound, gin.H{"error": "service not found"})
@@ -486,6 +587,11 @@ func (h *Handler) GetService(c *gin.Context) {
 // StartService starts a service
 func (h *Handler) StartService(c *gin.Context) {
 	name := c.Param("name")
+	isOwner, _ := h.getClientRole(c)
+	if !isOwner && isRestrictedService(name) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "permission denied"})
+		return
+	}
 	if app, err := h.appMgr.GetApp(name); err == nil && app.Unit != "" {
 		if err := h.appMgr.Start(name); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -504,6 +610,11 @@ func (h *Handler) StartService(c *gin.Context) {
 // StopService stops a service
 func (h *Handler) StopService(c *gin.Context) {
 	name := c.Param("name")
+	isOwner, _ := h.getClientRole(c)
+	if !isOwner && isRestrictedService(name) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "permission denied"})
+		return
+	}
 	if app, err := h.appMgr.GetApp(name); err == nil && app.Unit != "" {
 		if err := h.appMgr.Stop(name); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -522,6 +633,11 @@ func (h *Handler) StopService(c *gin.Context) {
 // RestartService restarts a service
 func (h *Handler) RestartService(c *gin.Context) {
 	name := c.Param("name")
+	isOwner, _ := h.getClientRole(c)
+	if !isOwner && isRestrictedService(name) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "permission denied"})
+		return
+	}
 	if app, err := h.appMgr.GetApp(name); err == nil && app.Unit != "" {
 		if err := h.appMgr.Restart(name); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -540,6 +656,11 @@ func (h *Handler) RestartService(c *gin.Context) {
 // EnableService enables a service
 func (h *Handler) EnableService(c *gin.Context) {
 	name := c.Param("name")
+	isOwner, _ := h.getClientRole(c)
+	if !isOwner && isRestrictedService(name) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "permission denied"})
+		return
+	}
 	targetUnit := name
 	if app, err := h.appMgr.GetApp(name); err == nil && app.Unit != "" {
 		targetUnit = app.Unit
@@ -554,6 +675,11 @@ func (h *Handler) EnableService(c *gin.Context) {
 // DisableService disables a service
 func (h *Handler) DisableService(c *gin.Context) {
 	name := c.Param("name")
+	isOwner, _ := h.getClientRole(c)
+	if !isOwner && isRestrictedService(name) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "permission denied"})
+		return
+	}
 	targetUnit := name
 	if app, err := h.appMgr.GetApp(name); err == nil && app.Unit != "" {
 		targetUnit = app.Unit
@@ -568,6 +694,11 @@ func (h *Handler) DisableService(c *gin.Context) {
 // ServiceLogs returns recent logs for a service
 func (h *Handler) ServiceLogs(c *gin.Context) {
 	name := c.Param("name")
+	isOwner, _ := h.getClientRole(c)
+	if !isOwner && isRestrictedService(name) {
+		c.JSON(http.StatusNotFound, gin.H{"error": "service not found"})
+		return
+	}
 	targetUnit := name
 	if app, err := h.appMgr.GetApp(name); err == nil && app.Unit != "" {
 		targetUnit = app.Unit
@@ -1371,6 +1502,19 @@ func (h *Handler) WidgetJDownloader(c *gin.Context) {
 }
 
 func (h *Handler) WidgetManga(c *gin.Context) {
+	isOwner, _ := h.getClientRole(c)
+	if !isOwner {
+		c.JSON(http.StatusOK, gin.H{
+			"online":     false,
+			"totalCount": 0,
+			"history":    []interface{}{},
+			"updates":    []interface{}{},
+			"library":    []interface{}{},
+			"mangas":     []interface{}{},
+		})
+		return
+	}
+
 	client := http.Client{Timeout: 5 * time.Second}
 
 	// Suwayomi GraphQL endpoint is at /api/graphql
@@ -1524,6 +1668,12 @@ func (h *Handler) WidgetManga(c *gin.Context) {
 
 // ProxyMangaThumbnail proxies thumbnail requests to Suwayomi and sets proper image content-type
 func (h *Handler) ProxyMangaThumbnail(c *gin.Context) {
+	isOwner, _ := h.getClientRole(c)
+	if !isOwner {
+		c.Status(http.StatusNotFound)
+		return
+	}
+
 	id := c.Param("id")
 	targetURL := fmt.Sprintf("http://127.0.0.1:4567/api/v1/manga/%s/thumbnail", id)
 	client := &http.Client{Timeout: 5 * time.Second}

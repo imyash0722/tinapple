@@ -1676,6 +1676,7 @@ func (m *AppManager) refreshProxyRoutes() error {
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "[apps] Warning: proxy refresh failed: %s (%v)\n", string(out), err)
+		return fmt.Errorf("proxy refresh failed: %s (%w)", string(out), err)
 	}
 	return nil
 }

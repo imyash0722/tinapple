@@ -134,6 +134,14 @@ export const App: React.FC = () => {
   const [services, setServices] = useState<ServiceInfo[]>(MOCK_SERVICES);
   const [hardware, setHardware] = useState<HardwareInfo>(MOCK_HARDWARE);
 
+  const isOwner = systemInfo.isAdmin === true;
+  const displayServices = useMemo(() => {
+    if (isOwner) return services;
+    return services.filter(
+      (s) => s.id !== 'suwayomi' && s.id !== 'suwayomi-server' && s.name !== 'suwayomi' && s.name !== 'suwayomi-server'
+    );
+  }, [services, isOwner]);
+
   const [activeLogService, setActiveLogService] = useState<string | null>(null);
   const [serviceLogs, setServiceLogs] = useState<string[]>([]);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
@@ -374,7 +382,7 @@ export const App: React.FC = () => {
         label: 'Appliance Daemons',
         shortLabel: 'Services',
         icon: <Layers className="w-4 h-4" />,
-        badge: services.filter((s) => s.activeState === 'active').length,
+        badge: displayServices.filter((s) => s.activeState === 'active').length,
       },
       {
         id: 'store',
@@ -396,7 +404,7 @@ export const App: React.FC = () => {
       },
     );
     return items;
-  }, [systemInfo.installed, forceWelcome, services]);
+  }, [systemInfo.installed, forceWelcome, displayServices]);
 
   const formatUptime = (sec: number) => {
     const days = Math.floor(sec / 86400);
@@ -621,6 +629,7 @@ export const App: React.FC = () => {
 
               {/* Render dynamic widgets according to layout order & visibility */}
               {[...layout.widgets]
+                .filter((w) => isOwner || w.id !== 'manga')
                 .sort((a, b) => a.order - b.order)
                 .map((w, idx, arr) => {
                   if (!w.visible && !isEditMode) return null;
@@ -630,9 +639,10 @@ export const App: React.FC = () => {
                       case 'quickconnect':
                         return (
                           <QuickConnectCard
-                            services={services}
+                            services={displayServices}
                             customBookmarks={layout.bookmarks}
                             isEditMode={isEditMode}
+                            isAdmin={isOwner}
                             onAddBookmark={() => {
                               setEditingBookmark(null);
                               setBookmarkModalOpen(true);
@@ -726,7 +736,8 @@ export const App: React.FC = () => {
               </div>
               <ServicesManager
                 accentColor={settings.accentColor}
-                services={services}
+                services={displayServices}
+                isAdmin={isOwner}
                 onControlService={handleControlService}
                 onOpenLogs={handleOpenLogs}
                 onOpenTailscale={() => setTailscaleOpen(true)}
@@ -743,7 +754,7 @@ export const App: React.FC = () => {
               exit={{ opacity: 0, y: -14 }}
               transition={{ duration: 0.25, ease: 'easeOut' }}
             >
-              <ChaddyStore onOpenGuide={handleOpenGuide} />
+              <ChaddyStore isAdmin={isOwner} onOpenGuide={handleOpenGuide} />
             </motion.div>
           )}
 
