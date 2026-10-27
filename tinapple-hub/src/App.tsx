@@ -218,7 +218,7 @@ export const App: React.FC = () => {
 
   const handleResetLayout = () => {
     const nextState: DashboardLayoutState = {
-      version: 2,
+      version: 3,
       widgets: [...DEFAULT_WIDGETS],
       bookmarks: layout.bookmarks,
     };

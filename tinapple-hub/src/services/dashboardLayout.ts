@@ -23,12 +23,12 @@ export interface DashboardLayoutState {
   bookmarks: CustomBookmark[];
 }
 
-const STORAGE_KEY = 'tinapple_dashboard_layout_v2';
+const STORAGE_KEY = 'tinapple_dashboard_layout_v3';
 
 export const DEFAULT_WIDGETS: DashboardWidgetConfig[] = [
   { id: 'quickconnect', title: 'Quick Connect Portals', visible: true, order: 0 },
   { id: 'transfers', title: 'Transfers & Downloads', visible: true, order: 1 },
-  { id: 'manga', title: 'Suwayomi Manga Library', visible: true, order: 2 },
+  { id: 'manga', title: 'Suwayomi Manga Library', visible: false, order: 2 },
   { id: 'tor', title: 'Tor Privacy Guard', visible: true, order: 3 },
 ];
 
@@ -54,14 +54,20 @@ export const DEFAULT_BOOKMARKS: CustomBookmark[] = [
 export function loadDashboardLayout(): DashboardLayoutState {
   if (typeof window === 'undefined') {
     return {
-      version: 2,
+      version: 3,
       widgets: [...DEFAULT_WIDGETS],
       bookmarks: [...DEFAULT_BOOKMARKS],
     };
   }
 
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    let raw = localStorage.getItem(STORAGE_KEY);
+    let isV2 = false;
+    if (!raw) {
+      raw = localStorage.getItem('tinapple_dashboard_layout_v2');
+      isV2 = true;
+    }
+
     if (raw) {
       const parsed = JSON.parse(raw);
       if (parsed && Array.isArray(parsed.widgets)) {
@@ -73,7 +79,7 @@ export function loadDashboardLayout(): DashboardLayoutState {
             loadedWidgets.push({
               id: def.id,
               title: def.title,
-              visible: typeof found.visible === 'boolean' ? found.visible : true,
+              visible: def.id === 'manga' && isV2 ? false : typeof found.visible === 'boolean' ? found.visible : def.visible,
               order: typeof found.order === 'number' ? found.order : def.order,
             });
           } else {
@@ -82,11 +88,13 @@ export function loadDashboardLayout(): DashboardLayoutState {
         }
         loadedWidgets.sort((a, b) => a.order - b.order);
 
-        return {
-          version: 2,
+        const newState: DashboardLayoutState = {
+          version: 3,
           widgets: loadedWidgets,
           bookmarks: Array.isArray(parsed.bookmarks) ? parsed.bookmarks : [...DEFAULT_BOOKMARKS],
         };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(newState));
+        return newState;
       }
     }
   } catch (err) {
@@ -94,7 +102,7 @@ export function loadDashboardLayout(): DashboardLayoutState {
   }
 
   return {
-    version: 2,
+    version: 3,
     widgets: [...DEFAULT_WIDGETS],
     bookmarks: [...DEFAULT_BOOKMARKS],
   };
