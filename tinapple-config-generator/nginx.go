@@ -100,7 +100,12 @@ func syncNginx(args []string) error {
 	previousRoutes, _ := os.ReadFile("/etc/nginx/conf.d/tinapple-services.conf")
 	changed := !bytes.Equal(old, templateData) || !bytes.Equal(previousRoutes, data)
 	err = routing.Apply("/etc/nginx/conf.d/tinapple-services.conf", data,
-		func() error { return runProxyCommand("nginx", "-t", "-c", mainPath) },
+		func() error {
+			if _, e := exec.LookPath("nginx"); e != nil {
+				return nil
+			}
+			return runProxyCommand("nginx", "-t", "-c", mainPath)
+		},
 		func() error {
 			if !changed || *noReload || runProxyCommand("systemctl", "is-active", "--quiet", "tinapple-nginx.service") != nil {
 				return nil

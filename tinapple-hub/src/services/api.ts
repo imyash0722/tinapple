@@ -1,4 +1,4 @@
-import { SystemInfo, TelemetrySnapshot, ServiceInfo, HardwareInfo, SessionMode, AppInfo, TailscaleStatus } from '../types/api';
+import { SystemInfo, TelemetrySnapshot, ServiceInfo, HardwareInfo, SessionMode, AppInfo, AppActionResult, TailscaleStatus } from '../types/api';
 
 const API_BASE = '/api/v1';
 
@@ -370,48 +370,68 @@ class ApiService {
     }
   }
 
-  async installApp(id: string): Promise<boolean> {
+  async installApp(id: string): Promise<AppActionResult> {
     try {
       const res = await fetch(`${API_BASE}/apps/${id}/install`, { method: 'POST' });
-      return res.ok;
-    } catch {
-      return false;
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        return { ok: false, error: body?.error || `Installation failed (HTTP ${res.status})` };
+      }
+      return { ok: true };
+    } catch (e: any) {
+      return { ok: false, error: e?.message || 'Network request failed' };
     }
   }
 
-  async uninstallApp(id: string): Promise<boolean> {
+  async uninstallApp(id: string): Promise<AppActionResult> {
     try {
       const res = await fetch(`${API_BASE}/apps/${id}/uninstall`, { method: 'POST' });
-      return res.ok;
-    } catch {
-      return false;
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        return { ok: false, error: body?.error || `Uninstall failed (HTTP ${res.status})` };
+      }
+      return { ok: true };
+    } catch (e: any) {
+      return { ok: false, error: e?.message || 'Network request failed' };
     }
   }
 
-  async startApp(id: string): Promise<boolean> {
+  async startApp(id: string): Promise<AppActionResult> {
     try {
       const res = await fetch(`${API_BASE}/apps/${id}/start`, { method: 'POST' });
-      return res.ok;
-    } catch {
-      return false;
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        return { ok: false, error: body?.error || `Start failed (HTTP ${res.status})` };
+      }
+      return { ok: true };
+    } catch (e: any) {
+      return { ok: false, error: e?.message || 'Network request failed' };
     }
   }
 
-  async stopApp(id: string): Promise<boolean> {
+  async stopApp(id: string): Promise<AppActionResult> {
     try {
       const res = await fetch(`${API_BASE}/apps/${id}/stop`, { method: 'POST' });
-      return res.ok;
-    } catch {
-      return false;
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        return { ok: false, error: body?.error || `Stop failed (HTTP ${res.status})` };
+      }
+      return { ok: true };
+    } catch (e: any) {
+      return { ok: false, error: e?.message || 'Network request failed' };
     }
   }
 
-  async restartApp(id: string): Promise<boolean> {
+  async restartApp(id: string): Promise<AppActionResult> {
     try {
       const res = await fetch(`${API_BASE}/apps/${id}/restart`, { method: 'POST' });
-      return res.ok;
-    } catch {
-      return false;
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        return { ok: false, error: body?.error || `Restart failed (HTTP ${res.status})` };
+      }
+      return { ok: true };
+    } catch (e: any) {
+      return { ok: false, error: e?.message || 'Network request failed' };
     }
   }
 

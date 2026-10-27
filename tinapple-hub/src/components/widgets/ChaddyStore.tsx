@@ -129,7 +129,7 @@ const FALLBACK_APPS: AppInfo[] = [
     description: 'Continuous peer-to-peer decentralized file synchronization protecting your photos, documents, and backups.',
     category: 'backups',
     package: 'syncthing',
-    unit: 'syncthing@tinapple.service',
+    unit: 'syncthing@pineapple.service',
     binary: 'syncthing',
     port: 8384,
     icon: 'syncthing',
@@ -332,13 +332,13 @@ const FALLBACK_APPS: AppInfo[] = [
   },
   {
     id: 'seerr',
-    name: 'Seerr / Jellyseerr Media Discovery',
+    name: 'Seerr Media Discovery & Requests',
     tagline: 'Media request & discovery platform for Jellyfin',
     description: 'Clean media request and discovery portal for Jellyfin with integrated user management.',
     category: 'media',
-    package: 'jellyseerr',
-    unit: 'jellyseerr.service',
-    binary: 'jellyseerr',
+    package: 'seerr',
+    unit: 'seerr.service',
+    binary: 'seerr',
     port: 5055,
     icon: 'seerr',
     accentColor: '#6366F1',
@@ -424,6 +424,7 @@ export const ChaddyStore: React.FC = () => {
   const [editPort, setEditPort] = useState<number>(0);
   const [rawConfigPreview, setRawConfigPreview] = useState<string>('');
   const [savingConfig, setSavingConfig] = useState<boolean>(false);
+  const [actionError, setActionError] = useState<{ id: string; name?: string; message: string } | null>(null);
 
   const fetchApps = useCallback(async () => {
     const list = await api.getApps();
@@ -441,11 +442,13 @@ export const ChaddyStore: React.FC = () => {
   const currentHost = typeof window !== 'undefined' ? window.location.hostname : '127.0.0.1';
 
   const handleAction = async (id: string, action: 'install' | 'uninstall' | 'start' | 'stop' | 'restart') => {
+    setActionError(null);
     setLoadingAction((prev) => ({ ...prev, [id]: action }));
     try {
+      let res: { ok: boolean; error?: string } = { ok: false };
       if (action === 'install') {
-        const ok = await api.installApp(id);
-        if (ok) {
+        res = await api.installApp(id);
+        if (res.ok) {
           confetti({
             particleCount: 70,
             spread: 60,
@@ -454,15 +457,29 @@ export const ChaddyStore: React.FC = () => {
           });
         }
       } else if (action === 'uninstall') {
-        await api.uninstallApp(id);
+        res = await api.uninstallApp(id);
       } else if (action === 'start') {
-        await api.startApp(id);
+        res = await api.startApp(id);
       } else if (action === 'stop') {
-        await api.stopApp(id);
+        res = await api.stopApp(id);
       } else if (action === 'restart') {
-        await api.restartApp(id);
+        res = await api.restartApp(id);
+      }
+
+      if (!res.ok) {
+        const appObj = apps.find((a) => a.id === id);
+        setActionError({
+          id,
+          name: appObj ? appObj.name : id,
+          message: res.error || `Failed to ${action} ${id}.`,
+        });
       }
       await fetchApps();
+    } catch (err: any) {
+      setActionError({
+        id,
+        message: err?.message || `Failed to ${action} ${id}.`,
+      });
     } finally {
       setLoadingAction((prev) => {
         const next = { ...prev };
@@ -625,6 +642,30 @@ export const ChaddyStore: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Action Error Alert Banner */}
+      {actionError && (
+        <div className="p-4 rounded-xl bg-rose-500/15 border border-rose-500/40 text-rose-200 flex items-start justify-between gap-3 animate-in fade-in slide-in-from-top-2 shadow-lg">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-rose-400 flex-shrink-0 mt-0.5" />
+            <div>
+              <div className="font-bold text-sm text-white font-mono">
+                Operation Failed: {actionError.name || actionError.id}
+              </div>
+              <div className="text-xs text-rose-300 font-mono mt-0.5 whitespace-pre-wrap">
+                {actionError.message}
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={() => setActionError(null)}
+            className="p-1 hover:bg-rose-500/20 rounded-lg text-rose-400 hover:text-white transition-colors"
+            title="Dismiss error notice"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
 
       {/* VIEW 1: 3D RADIAL CAROUSEL VIEW */}
       {viewMode === 'carousel' && selectedApp && (

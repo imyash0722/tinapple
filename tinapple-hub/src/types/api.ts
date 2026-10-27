@@ -74,6 +74,11 @@ export interface ServiceInfo {
   accentColor?: string;
 }
 
+export interface AppActionResult {
+  ok: boolean;
+  error?: string;
+}
+
 export interface AppInfo {
   id: string;
   name: string;
