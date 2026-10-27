@@ -69,7 +69,6 @@ func main() {
 		r.Any("/api/wallpaper/*path", proxyHandler)
 		r.Any("/api/wallpapers", proxyHandler)
 		r.Any("/api/pywal", proxyHandler)
-		r.Any("/api/system/tor-exit", proxyHandler)
 		r.Any("/api/reports/*path", proxyHandler)
 	}
 

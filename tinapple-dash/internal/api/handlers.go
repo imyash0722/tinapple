@@ -120,6 +120,10 @@ func SetupRoutes(r *gin.Engine, cfg *config.Manifest, svcMgr *services.SystemdMa
 		v1.POST("/tailscale/up", h.UpTailscale)
 		v1.POST("/tailscale/down", h.DownTailscale)
 
+		// Tor Anonymity & Privacy Exit
+		v1.GET("/system/tor-exit", h.GetTorStatus)
+		v1.POST("/system/tor-exit", h.ToggleTorStatus)
+
 		// WebSocket
 		v1.GET("/ws", h.WebSocketHandler)
 	}
@@ -130,6 +134,8 @@ func SetupRoutes(r *gin.Engine, cfg *config.Manifest, svcMgr *services.SystemdMa
 	r.POST("/api/widgets/jdownloader/add", h.WidgetJDownloader)
 	r.GET("/api/widgets/manga", h.WidgetManga)
 	r.GET("/api/beeper/status", h.BeeperStatus)
+	r.GET("/api/system/tor-exit", h.GetTorStatus)
+	r.POST("/api/system/tor-exit", h.ToggleTorStatus)
 }
 
 // SystemInfo returns basic system information
@@ -152,16 +158,24 @@ func (h *Handler) SystemInfo(c *gin.Context) {
 		firmware = "uefi"
 	}
 
+	var uptimeSec int
+	if data, err := os.ReadFile("/proc/uptime"); err == nil {
+		var u float64
+		fmt.Sscanf(string(data), "%f", &u)
+		uptimeSec = int(u)
+	}
+
 	info := map[string]interface{}{
-		"hostname":   h.cfg.Hostname,
-		"kernel":     h.cfg.KernelProfile,
-		"session":    h.cfg.SessionMode,
-		"hardware":   h.cfg.HardwareProfile,
-		"filesystem": h.cfg.Filesystem,
-		"bootloader": h.cfg.Bootloader,
-		"firmware":   firmware,
-		"installed":  installed,
-		"uptime":     getUptime(),
+		"hostname":       h.cfg.Hostname,
+		"kernel":         h.cfg.KernelProfile,
+		"session":        h.cfg.SessionMode,
+		"hardware":       h.cfg.HardwareProfile,
+		"filesystem":     h.cfg.Filesystem,
+		"bootloader":     h.cfg.Bootloader,
+		"firmware":       firmware,
+		"installed":      installed,
+		"uptime":         getUptime(),
+		"uptime_seconds": uptimeSec,
 	}
 	c.JSON(http.StatusOK, info)
 }
@@ -598,6 +612,48 @@ func (h *Handler) SystemAutostart(c *gin.Context) {
 		}
 	}
 	c.JSON(http.StatusOK, gin.H{"status": "ok"})
+}
+
+// GetTorStatus returns whether Tor service / exit is active
+func (h *Handler) GetTorStatus(c *gin.Context) {
+	active := exec.Command("systemctl", "is-active", "--quiet", "tor.service").Run() == nil
+	status := "stopped"
+	if active {
+		status = "running"
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"active": active,
+		"status": status,
+	})
+}
+
+// ToggleTorStatus starts or stops tor.service
+func (h *Handler) ToggleTorStatus(c *gin.Context) {
+	var req struct {
+		Active bool `json:"active"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	var cmd *exec.Cmd
+	if req.Active {
+		cmd = exec.Command("systemctl", "start", "tor.service")
+	} else {
+		cmd = exec.Command("systemctl", "stop", "tor.service")
+	}
+	_ = cmd.Run()
+
+	active := exec.Command("systemctl", "is-active", "--quiet", "tor.service").Run() == nil
+	status := "stopped"
+	if active {
+		status = "running"
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"active": active,
+		"status": status,
+	})
 }
 
 // UpdateManifest updates and persists system manifest settings

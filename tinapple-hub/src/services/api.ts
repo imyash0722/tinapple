@@ -294,14 +294,20 @@ class ApiService {
       const res = await fetch(`${API_BASE}/system/info`);
       if (!res.ok) throw new Error('API offline');
       const data = await res.json();
+      const uptimeSec = typeof data.uptime_seconds === 'number' && data.uptime_seconds > 0
+        ? data.uptime_seconds
+        : typeof data.uptime === 'number'
+          ? data.uptime
+          : 7260;
       return {
         installed: data.installed === true,
         hostname: data.hostname || 'tinapple-server',
         kernel: data.kernel ? `linux-${data.kernel}` : 'linux-cachyos',
-        uptime: typeof data.uptime === 'number' ? data.uptime : 7260,
-        bootTime: Date.now() - 7260 * 1000,
+        uptime: uptimeSec,
+        bootTime: Date.now() - uptimeSec * 1000,
         osRelease: 'Tinapple Appliance OS 0.0.1',
         sessionMode: data.session || 'interactive',
+        filesystem: data.filesystem || 'ext4',
       };
     } catch {
       return MOCK_SYSTEM_INFO;
