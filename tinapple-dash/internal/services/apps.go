@@ -34,6 +34,35 @@ func getSystemPrimaryUser() (string, string) {
 	return "tinapple", "/home/tinapple"
 }
 
+func getActiveSyncthingUnit(fallbackUser string) string {
+	out, err := exec.Command("systemctl", "list-units", "--type=service", "--all", "--no-legend", "syncthing@*.service").CombinedOutput()
+	if err == nil {
+		for _, line := range strings.Split(string(out), "\n") {
+			fields := strings.Fields(line)
+			if len(fields) > 0 && strings.HasPrefix(fields[0], "syncthing@") {
+				return fields[0]
+			}
+		}
+	}
+	return fmt.Sprintf("syncthing@%s.service", fallbackUser)
+}
+
+func ensurePacmanReliability() {
+	pacmanConf := "/etc/pacman.conf"
+	data, err := os.ReadFile(pacmanConf)
+	if err != nil {
+		return
+	}
+	content := string(data)
+	if !strings.Contains(content, "DisableDownloadTimeout") {
+		if idx := strings.Index(content, "[options]"); idx != -1 {
+			insertionPoint := idx + len("[options]\n")
+			newContent := content[:insertionPoint] + "DisableDownloadTimeout\n" + content[insertionPoint:]
+			_ = os.WriteFile(pacmanConf, []byte(newContent), 0644)
+		}
+	}
+}
+
 type AppDefinition struct {
 	ID           string `json:"id"`
 	Name         string `json:"name"`
@@ -93,6 +122,7 @@ type AppManager struct {
 }
 
 func NewAppManager() *AppManager {
+	ensurePacmanReliability()
 	primaryUser, primaryHome := getSystemPrimaryUser()
 
 	mgr := &AppManager{
@@ -200,7 +230,7 @@ func NewAppManager() *AppManager {
 			Tagline:     "Continuous peer-to-peer folder replication",
 			Category:    "backups",
 			Package:     "syncthing",
-			Unit:        fmt.Sprintf("syncthing@%s.service", primaryUser),
+			Unit:        getActiveSyncthingUnit(primaryUser),
 			Binary:      "syncthing",
 			Port:        8384,
 			Icon:        "syncthing",
@@ -445,6 +475,20 @@ func NewAppManager() *AppManager {
 			Icon:        "beeper",
 			AccentColor: "#F43F5E",
 			ConfigPath:  filepath.Join(primaryHome, ".config/beeper/config.yaml"),
+		},
+		{
+			ID:          "protonvpn",
+			Name:        "Proton VPN Headless Client",
+			Description: "High-speed Swiss encrypted WireGuard & OpenVPN tunnel with NetShield tracking/ad-blocker and DNS leak protection.",
+			Tagline:     "High-speed Swiss WireGuard & OpenVPN tunnel",
+			Category:    "network",
+			Package:     "proton-vpn-cli",
+			Unit:        "proton.VPN.service",
+			Binary:      "protonvpn",
+			Port:        0,
+			Icon:        "protonvpn",
+			AccentColor: "#6D4AFF",
+			ConfigPath:  filepath.Join(primaryHome, ".config/protonvpn/user_settings.json"),
 		},
 	}
 
@@ -1228,6 +1272,21 @@ func (m *AppManager) Install(id string) error {
 	case "sonarr":
 		m.AppendLog(id, "info", "Downloading official Sonarr Linux x64 Servarr release...")
 		installErr = installSonarr(m)
+	case "protonvpn":
+		cleanStalePacmanLock()
+		m.AppendLog(id, "info", "Installing Proton VPN CLI, split-tunneling daemon & WireGuard tools...")
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+		defer cancel()
+		installErr = m.runStreamCmd(ctx, id, "pacman", "-S", "--noconfirm", "--needed", "proton-vpn-cli", "proton-vpn-daemon", "wireguard-tools")
+		if installErr != nil {
+			primaryUser, _ := getSystemPrimaryUser()
+			m.AppendLog(id, "warn", "Pacman failed, attempting AUR via paru...")
+			installErr = m.runStreamCmd(ctx, id, "sudo", "-u", primaryUser, "paru", "-S", "--noconfirm", "--needed", "--skipreview", "proton-vpn-cli")
+		}
+		if installErr == nil {
+			_ = m.runStreamCmd(ctx, id, "systemctl", "daemon-reload")
+			_ = m.runStreamCmd(ctx, id, "systemctl", "enable", "--now", "proton.VPN.service")
+		}
 	case "jdownloader":
 		cleanStalePacmanLock()
 		m.AppendLog(id, "info", "Pre-installing Java runtime and fonts for JDownloader2...")
@@ -1338,6 +1397,12 @@ func (m *AppManager) Uninstall(id string) error {
 		_ = os.Remove("/etc/systemd/system/sonarr.service")
 	case "metube":
 		_ = os.Remove("/etc/systemd/system/metube.service")
+	case "protonvpn":
+		_ = exec.Command("systemctl", "disable", "--now", "proton.VPN.service").Run()
+		cleanStalePacmanLock()
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+		defer cancel()
+		_ = exec.CommandContext(ctx, "pacman", "-R", "--noconfirm", "proton-vpn-cli", "proton-vpn-daemon").Run()
 	default:
 		if app.Package != "" {
 			cleanStalePacmanLock()

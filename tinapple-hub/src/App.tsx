@@ -15,11 +15,19 @@ import {
   Timer,
   Check,
   Palette,
+  Wrench,
+  Plus,
+  ArrowUp,
+  ArrowDown,
+  Eye,
+  EyeOff,
+  RotateCcw,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import { FullWindowBackground } from './components/reactbits/FullWindowBackground';
 import { AppearanceModal } from './components/common/AppearanceModal';
+import { BookmarkModal } from './components/common/BookmarkModal';
 import { BUNDLED_WALLPAPERS, THEME_STORAGE_KEY, colorChannels, extractWallpaperColors, loadSettings } from './theme/appearance';
 import { DockItem } from './components/reactbits/Dock';
 
@@ -38,6 +46,13 @@ import { TorPrivacyWidget } from './components/widgets/TorPrivacyWidget';
 
 import { api, MOCK_SYSTEM_INFO, MOCK_TELEMETRY, MOCK_SERVICES, MOCK_HARDWARE } from './services/api';
 import { SystemInfo, TelemetrySnapshot, ServiceInfo, HardwareInfo, SessionMode } from './types/api';
+import {
+  loadDashboardLayout,
+  saveDashboardLayout,
+  CustomBookmark,
+  DashboardLayoutState,
+  DEFAULT_WIDGETS,
+} from './services/dashboardLayout';
 
 export const App: React.FC = () => {
   const [systemInfo, setSystemInfo] = useState<SystemInfo>(MOCK_SYSTEM_INFO);
@@ -127,6 +142,80 @@ export const App: React.FC = () => {
   const [rebootDeadline, setRebootDeadline] = useState(0);
   const [isRebooting, setIsRebooting] = useState(false);
   const [actionMessage, setActionMessage] = useState('');
+
+  // Dashboard Homarr Edit Mode & Custom Bookmarks (Tinarchy Architecture)
+  const [isEditMode, setIsEditMode] = useState<boolean>(false);
+  const [layout, setLayout] = useState<DashboardLayoutState>(loadDashboardLayout);
+  const [bookmarkModalOpen, setBookmarkModalOpen] = useState<boolean>(false);
+  const [editingBookmark, setEditingBookmark] = useState<CustomBookmark | null>(null);
+
+  const handleSaveBookmark = (bookmarkData: Omit<CustomBookmark, 'id'>, existingId?: string) => {
+    setLayout((prev) => {
+      let nextBookmarks: CustomBookmark[];
+      if (existingId) {
+        nextBookmarks = prev.bookmarks.map((b) =>
+          b.id === existingId ? { ...bookmarkData, id: existingId } : b
+        );
+      } else {
+        const newBm: CustomBookmark = {
+          ...bookmarkData,
+          id: `bm-${Date.now()}`,
+        };
+        nextBookmarks = [...prev.bookmarks, newBm];
+      }
+      const nextState = { ...prev, bookmarks: nextBookmarks };
+      saveDashboardLayout(nextState);
+      return nextState;
+    });
+  };
+
+  const handleDeleteBookmark = (id: string) => {
+    setLayout((prev) => {
+      const nextBookmarks = prev.bookmarks.filter((b) => b.id !== id);
+      const nextState = { ...prev, bookmarks: nextBookmarks };
+      saveDashboardLayout(nextState);
+      return nextState;
+    });
+  };
+
+  const handleToggleWidgetVisibility = (id: string) => {
+    setLayout((prev) => {
+      const nextWidgets = prev.widgets.map((w) =>
+        w.id === id ? { ...w, visible: !w.visible } : w
+      );
+      const nextState = { ...prev, widgets: nextWidgets };
+      saveDashboardLayout(nextState);
+      return nextState;
+    });
+  };
+
+  const handleMoveWidget = (id: string, direction: 'up' | 'down') => {
+    setLayout((prev) => {
+      const sorted = [...prev.widgets].sort((a, b) => a.order - b.order);
+      const idx = sorted.findIndex((w) => w.id === id);
+      if (idx === -1) return prev;
+      const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
+      if (targetIdx < 0 || targetIdx >= sorted.length) return prev;
+
+      const tempOrder = sorted[idx].order;
+      sorted[idx].order = sorted[targetIdx].order;
+      sorted[targetIdx].order = tempOrder;
+
+      const nextState = { ...prev, widgets: sorted };
+      saveDashboardLayout(nextState);
+      return nextState;
+    });
+  };
+
+  const handleResetLayout = () => {
+    const nextState: DashboardLayoutState = {
+      version: 2,
+      widgets: [...DEFAULT_WIDGETS],
+      bookmarks: layout.bookmarks,
+    };
+    setLayout(nextState);
+    saveDashboardLayout(nextState);
+  };
 
   useEffect(() => {
     if (!rebootDeadline) return;
@@ -316,20 +405,20 @@ export const App: React.FC = () => {
 
       {/* TOP COMMAND HEADER */}
       <header className="sticky top-0 z-40 w-full bg-[#050a16]/85 backdrop-blur-2xl border-b border-white/[0.08] shadow-lg shadow-black/20">
-        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3 sm:gap-4">
+        <div className="max-w-[1400px] mx-auto px-3 sm:px-6 h-16 flex items-center justify-between gap-2 sm:gap-4">
           {/* Left: System identity */}
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
             <div className="flex items-center gap-1.5 sm:gap-2">
-              <span className="font-mono font-extrabold text-base tracking-tight text-white">tinapple</span>
-              <span className="hidden min-[420px]:inline text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/[0.05] border border-white/10 text-tinapple-gold font-semibold">v0.0.1</span>
+              <span className="font-mono font-extrabold text-sm sm:text-base tracking-tight text-white">tinapple</span>
+              <span className="hidden sm:inline text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/[0.05] border border-white/10 text-tinapple-gold font-semibold">v0.0.1</span>
             </div>
             <span className="hidden 2xl:block truncate text-[11px] font-mono text-zinc-400 max-w-[140px]" title={`APPLIANCE OS HUB • ${systemInfo.hostname}`}>
               • {systemInfo.hostname}
             </span>
           </div>
 
-          {/* Center: Main Navigation (Relocated from bottom dock) */}
-          <nav aria-label="Main Navigation" className="flex items-center gap-1 sm:gap-1.5 p-1 rounded-2xl bg-black/25 border border-white/[0.06] backdrop-blur-md">
+          {/* Center: Main Navigation (Scrollable on small mobile screens) */}
+          <nav aria-label="Main Navigation" className="flex items-center gap-1 p-1 rounded-2xl bg-black/25 border border-white/[0.06] backdrop-blur-md overflow-x-auto scrollbar-none max-w-[55vw] sm:max-w-none">
             {dockItems.map((item) => {
               const isActive = activeTab === item.id;
               return (
@@ -338,14 +427,14 @@ export const App: React.FC = () => {
                   onClick={() => setActiveTab(item.id)}
                   title={item.label}
                   aria-label={item.label}
-                  className={`relative flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1.5 rounded-xl font-mono text-xs font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tinapple-gold active:scale-95 ${
+                  className={`relative flex items-center gap-1 sm:gap-2 px-2.5 sm:px-3.5 py-1.5 rounded-xl font-mono text-xs font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tinapple-gold active:scale-95 shrink-0 ${
                     isActive
-                      ? 'bg-tinapple-surface border border-tinapple-gold/70 text-tinapple-gold shadow-lg shadow-tinapple-gold/15'
+                      ? 'bg-tinapple-surface border border-tinapple-gold/70 text-tinapple-gold shadow-lg shadow-tinapple-gold/15 font-bold'
                       : 'border border-transparent text-tinapple-subtext hover:bg-white/[0.06] hover:text-white'
                   }`}
                 >
                   <span className="shrink-0">{item.icon}</span>
-                  <span className={`whitespace-nowrap ${isActive ? 'hidden sm:inline' : 'hidden lg:inline'}`}>
+                  <span className={`whitespace-nowrap ${isActive ? 'inline' : 'hidden md:inline'}`}>
                     {item.shortLabel || item.label}
                   </span>
                   {item.badge !== undefined && (
@@ -359,7 +448,7 @@ export const App: React.FC = () => {
           </nav>
 
           {/* Right: Actions and Live Status */}
-          <div className="flex items-center justify-end gap-1.5 sm:gap-2 shrink-0">
+          <div className="flex items-center justify-end gap-1 sm:gap-2 shrink-0">
             {/* Live status indicators on large screens */}
             <div className="hidden xl:flex items-center gap-2 mr-1">
               <div className={statusPillClass} title="Real-time Server Sent Events connected">
@@ -387,6 +476,22 @@ export const App: React.FC = () => {
               <Timer className="w-3.5 h-3.5 text-zinc-400" />
               <span>{formatUptime(systemInfo.uptime)}</span>
             </div>
+
+            {/* Dashboard Edit Mode Toggle Button (Tinarchy Feature) */}
+            {activeTab === 'dashboard' && (
+              <button
+                onClick={() => setIsEditMode((prev) => !prev)}
+                className={`${actionButtonClass} ${
+                  isEditMode
+                    ? '!bg-tinapple-gold/25 !border-tinapple-gold/70 !text-tinapple-gold ring-2 ring-tinapple-gold/30'
+                    : ''
+                }`}
+                title={isEditMode ? 'Exit Dashboard Edit Mode' : 'Customize Dashboard Layout (Tinarchy Edit Mode)'}
+                aria-label="Customize Dashboard"
+              >
+                <Wrench className="w-4 h-4" />
+              </button>
+            )}
 
             <button
               onClick={() => setAppearanceOpen(true)}
@@ -448,31 +553,137 @@ export const App: React.FC = () => {
               transition={{ duration: 0.25, ease: 'easeOut' }}
               className="space-y-6"
             >
-              {/* Quick Connect Portals */}
-              <QuickConnectCard
-                services={services}
-                onSelectTab={(tab) => setActiveTab(tab as any)}
-                onOpenTailscale={() => setTailscaleOpen(true)}
-              />
+              {/* Tinarchy Homarr Edit Mode Customizer Banner */}
+              {isEditMode && (
+                <div className="rounded-2xl bg-gradient-to-r from-amber-500/15 via-purple-500/10 to-sky-500/15 border border-tinapple-gold/40 p-4 sm:p-5 backdrop-blur-xl shadow-xl flex flex-wrap items-center justify-between gap-4 font-mono animate-in fade-in">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-tinapple-gold/20 border border-tinapple-gold/40 flex items-center justify-center text-tinapple-gold text-lg shadow-sm">
+                      🛠️
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                        <span>Dashboard Customizer & Edit Mode</span>
+                        <span className="px-2 py-0.5 rounded-full text-[10px] bg-tinapple-gold/20 text-tinapple-gold border border-tinapple-gold/40">
+                          Active
+                        </span>
+                      </h3>
+                      <p className="text-xs text-slate-300 mt-0.5">
+                        Reorder or hide widgets, manage quick-connect links, and add custom homelab bookmarks.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => {
+                        setEditingBookmark(null);
+                        setBookmarkModalOpen(true);
+                      }}
+                      className="px-3.5 py-1.5 rounded-xl bg-tinapple-gold hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 shadow-md transition-all"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Add Bookmark</span>
+                    </button>
+                    <button
+                      onClick={handleResetLayout}
+                      className="px-3 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 text-xs flex items-center gap-1.5 transition-colors"
+                      title="Reset to default layout"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">Reset</span>
+                    </button>
+                    <button
+                      onClick={() => setIsEditMode(false)}
+                      className="px-4 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 font-bold text-xs flex items-center gap-1.5 transition-all"
+                    >
+                      <Check className="w-3.5 h-3.5" />
+                      <span>Done</span>
+                    </button>
+                  </div>
+                </div>
+              )}
 
-              {/* Transfers: qBittorrent & JDownloader Remote Queue */}
-              <TransfersWidget />
+              {/* Render dynamic widgets according to layout order & visibility */}
+              {[...layout.widgets]
+                .sort((a, b) => a.order - b.order)
+                .map((w, idx, arr) => {
+                  if (!w.visible && !isEditMode) return null;
 
-              {/* Suwayomi Manga Shelf: Reading / History / Updates */}
-              <MangaShelfWidget />
+                  const renderWidgetContent = () => {
+                    switch (w.id) {
+                      case 'quickconnect':
+                        return (
+                          <QuickConnectCard
+                            services={services}
+                            customBookmarks={layout.bookmarks}
+                            isEditMode={isEditMode}
+                            onAddBookmark={() => {
+                              setEditingBookmark(null);
+                              setBookmarkModalOpen(true);
+                            }}
+                            onEditBookmark={(bm) => {
+                              setEditingBookmark(bm);
+                              setBookmarkModalOpen(true);
+                            }}
+                            onDeleteBookmark={handleDeleteBookmark}
+                            onSelectTab={(tab) => setActiveTab(tab as any)}
+                            onOpenTailscale={() => setTailscaleOpen(true)}
+                          />
+                        );
+                      case 'transfers':
+                        return <TransfersWidget />;
+                      case 'manga':
+                        return <MangaShelfWidget />;
+                      case 'tor':
+                        return <TorPrivacyWidget />;
+                      default:
+                        return null;
+                    }
+                  };
 
-              {/* Tor Anonymity & Privacy Guard */}
-              <TorPrivacyWidget />
-
-              {/* Bento Row 1: Processor & Memory & Storage & Network */}
-              <TelemetryCards
-                telemetry={telemetry}
-                systemInfo={systemInfo}
-                history={history}
-                accentColor={settings.accentColor}
-                secondaryColor={settings.secondaryColor}
-                onOpenTailscale={() => setTailscaleOpen(true)}
-              />
+                  return (
+                    <div key={w.id} className="relative group/widget">
+                      {isEditMode && (
+                        <div className="flex items-center justify-between px-3 py-1.5 mb-2 rounded-xl bg-slate-900/80 border border-slate-700/80 text-xs font-mono text-slate-300">
+                          <div className="flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-tinapple-gold" />
+                            <span className="font-bold text-white">{w.title}</span>
+                            {!w.visible && (
+                              <span className="px-1.5 py-0.5 text-[10px] bg-rose-500/20 text-rose-300 rounded border border-rose-500/30">
+                                Hidden
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => handleMoveWidget(w.id, 'up')}
+                              disabled={idx === 0}
+                              className="p-1 rounded hover:bg-slate-800 disabled:opacity-30 text-slate-400 hover:text-white"
+                              title="Move section up"
+                            >
+                              <ArrowUp className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => handleMoveWidget(w.id, 'down')}
+                              disabled={idx === arr.length - 1}
+                              className="p-1 rounded hover:bg-slate-800 disabled:opacity-30 text-slate-400 hover:text-white"
+                              title="Move section down"
+                            >
+                              <ArrowDown className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => handleToggleWidgetVisibility(w.id)}
+                              className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-white ml-1"
+                              title={w.visible ? 'Hide widget from dashboard' : 'Show widget on dashboard'}
+                            >
+                              {w.visible ? <Eye className="w-3.5 h-3.5 text-emerald-400" /> : <EyeOff className="w-3.5 h-3.5 text-slate-500" />}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                      {w.visible && renderWidgetContent()}
+                    </div>
+                  );
+                })}
             </motion.div>
           )}
 
@@ -524,7 +735,19 @@ export const App: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -14 }}
               transition={{ duration: 0.25, ease: 'easeOut' }}
+              className="space-y-6"
             >
+              {/* Primary System Telemetry Matrix (Moved from Dashboard to Hardware tab) */}
+              <TelemetryCards
+                telemetry={telemetry}
+                systemInfo={systemInfo}
+                history={history}
+                accentColor={settings.accentColor}
+                secondaryColor={settings.secondaryColor}
+                onOpenTailscale={() => setTailscaleOpen(true)}
+              />
+
+              {/* Hardware Sensors, Thermal Profiles & Battery Management */}
               <HardwareSensors
                 hardware={hardware}
                 telemetry={telemetry}
@@ -561,6 +784,17 @@ export const App: React.FC = () => {
       <TailscaleModal
         isOpen={tailscaleOpen}
         onClose={() => setTailscaleOpen(false)}
+      />
+
+      {/* HOMARR ADD/EDIT BOOKMARK MODAL (TINARCHY FEATURE) */}
+      <BookmarkModal
+        isOpen={bookmarkModalOpen}
+        onClose={() => {
+          setBookmarkModalOpen(false);
+          setEditingBookmark(null);
+        }}
+        onSave={handleSaveBookmark}
+        editingBookmark={editingBookmark}
       />
     </div>
   );

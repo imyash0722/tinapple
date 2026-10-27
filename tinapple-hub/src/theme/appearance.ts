@@ -177,3 +177,61 @@ export function extractWallpaperColors(url: string, signal: AbortSignal): Promis
     else image.src = url;
   });
 }
+
+// ─── IndexedDB Zero-Network Wallpaper Cache (Tinarchy Architecture) ───
+const WP_DB_NAME = 'tinapple_wallpaper_cache';
+const WP_STORE_NAME = 'wallpapers';
+
+function openWallpaperDB(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    if (typeof indexedDB === 'undefined') return reject(new Error('IndexedDB not supported'));
+    const req = indexedDB.open(WP_DB_NAME, 1);
+    req.onupgradeneeded = () => {
+      req.result.createObjectStore(WP_STORE_NAME);
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+export async function getCachedWallpaperBlob(key: string): Promise<Blob | null> {
+  try {
+    const db = await openWallpaperDB();
+    return new Promise((resolve) => {
+      const tx = db.transaction(WP_STORE_NAME, 'readonly');
+      const req = tx.objectStore(WP_STORE_NAME).get(key);
+      req.onsuccess = () => resolve(req.result || null);
+      req.onerror = () => resolve(null);
+    });
+  } catch {
+    return null;
+  }
+}
+
+export async function setCachedWallpaperBlob(key: string, blob: Blob): Promise<void> {
+  try {
+    const db = await openWallpaperDB();
+    const tx = db.transaction(WP_STORE_NAME, 'readwrite');
+    tx.objectStore(WP_STORE_NAME).put(blob, key);
+  } catch {}
+}
+
+export async function cacheWallpaperUrl(url: string): Promise<string> {
+  if (!url || !url.trim()) return url;
+  try {
+    const cached = await getCachedWallpaperBlob(url);
+    if (cached) {
+      return URL.createObjectURL(cached);
+    }
+    const res = await fetch(url);
+    if (res.ok) {
+      const blob = await res.blob();
+      await setCachedWallpaperBlob(url, blob);
+      await setCachedWallpaperBlob('active_wallpaper', blob);
+      return URL.createObjectURL(blob);
+    }
+  } catch (err) {
+    console.debug('Wallpaper caching:', err);
+  }
+  return url;
+}

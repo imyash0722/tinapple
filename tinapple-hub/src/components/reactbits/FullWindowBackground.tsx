@@ -1,7 +1,8 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import Waves from './Waves';
 import Particles from './Particles';
 import MicroSlats from './MicroSlats';
+import { getCachedWallpaperBlob, cacheWallpaperUrl } from '../../theme/appearance';
 
 export type BackgroundMode = 'plain' | 'microslats' | 'waves' | 'wallpaper' | 'none';
 export interface BackgroundSettings {
@@ -22,6 +23,41 @@ export interface BackgroundSettings {
 export const FullWindowBackground: React.FC<{ settings: BackgroundSettings }> = ({ settings }) => {
   const { mode, wallpaperUrl, wallpaperDim, accentColor, secondaryColor, enableParticles, enableNebula } = settings;
   const particleColors = useMemo(() => [accentColor, secondaryColor, '#ffffff'], [accentColor, secondaryColor]);
+  const [cachedUrl, setCachedUrl] = useState<string>(wallpaperUrl);
+
+  const isVideo = useMemo(() => {
+    const target = (cachedUrl || wallpaperUrl || '').toLowerCase();
+    return target.endsWith('.mp4') || target.endsWith('.webm') || target.includes('.mp4?') || target.includes('.webm?');
+  }, [cachedUrl, wallpaperUrl]);
+
+  useEffect(() => {
+    let active = true;
+    let objectUrl: string | null = null;
+
+    async function loadCached() {
+      if (mode !== 'wallpaper' || !wallpaperUrl) return;
+      try {
+        const blob = await getCachedWallpaperBlob(wallpaperUrl) || await getCachedWallpaperBlob('active_wallpaper');
+        if (blob && active) {
+          objectUrl = URL.createObjectURL(blob);
+          setCachedUrl(objectUrl);
+        }
+        const liveUrl = await cacheWallpaperUrl(wallpaperUrl);
+        if (liveUrl && active && liveUrl !== objectUrl) {
+          setCachedUrl(liveUrl);
+        }
+      } catch {
+        if (active) setCachedUrl(wallpaperUrl);
+      }
+    }
+
+    loadCached();
+
+    return () => {
+      active = false;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [mode, wallpaperUrl]);
   return (
     <div aria-hidden="true" className="fixed inset-0 pointer-events-none -z-10 overflow-hidden bg-[#040714]">
       {/* Plainer Graphic Background (Subtle ambient glow, soft grid & watermark) */}
@@ -60,10 +96,26 @@ export const FullWindowBackground: React.FC<{ settings: BackgroundSettings }> = 
             spacing={32} amplitude={30} speed={0.45} mouseInteraction clickRipple opacity={0.7} />
         </div>
       )}
-      {mode === 'wallpaper' && <>
-        <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${JSON.stringify(wallpaperUrl)})` }} />
-        <div className="absolute inset-0" style={{ backgroundColor: `rgba(4, 7, 20, ${wallpaperDim})` }} />
-      </>}
+      {mode === 'wallpaper' && (
+        <>
+          {isVideo ? (
+            <video
+              src={cachedUrl}
+              autoPlay
+              loop
+              muted
+              playsInline
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+          ) : (
+            <div
+              className="absolute inset-0 bg-cover bg-center transition-opacity duration-300"
+              style={{ backgroundImage: `url(${JSON.stringify(cachedUrl)})` }}
+            />
+          )}
+          <div className="absolute inset-0" style={{ backgroundColor: `rgba(4, 7, 20, ${wallpaperDim})` }} />
+        </>
+      )}
       {enableNebula && <>
         <div className="absolute -top-32 -right-32 w-[600px] h-[600px] rounded-full blur-[120px] opacity-20"
           style={{ background: `radial-gradient(circle, ${accentColor} 0%, transparent 70%)` }} />

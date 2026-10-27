@@ -252,6 +252,16 @@ export const APP_BRAND_CONFIG: Record<string, BrandConfig> = {
     iconPath: '/icons/beeper.svg',
     accentColor: '#F43F5E',
   },
+  protonvpn: {
+    name: 'Proton VPN',
+    iconPath: '/icons/protonvpn.svg',
+    accentColor: '#6D4AFF',
+  },
+  'proton-vpn': {
+    name: 'Proton VPN',
+    iconPath: '/icons/protonvpn.svg',
+    accentColor: '#6D4AFF',
+  },
 };
 
 interface IconProps {

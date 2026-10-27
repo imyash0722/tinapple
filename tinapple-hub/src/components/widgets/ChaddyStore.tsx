@@ -411,6 +411,22 @@ const FALLBACK_APPS: AppInfo[] = [
     running: false,
     status: 'not_installed',
   },
+  {
+    id: 'protonvpn',
+    name: 'Proton VPN Headless Client',
+    tagline: 'High-speed Swiss WireGuard & OpenVPN tunnel',
+    description: 'High-speed Swiss encrypted WireGuard & OpenVPN tunnel with NetShield tracking/ad-blocker and DNS leak protection.',
+    category: 'network',
+    package: 'proton-vpn-cli',
+    unit: 'proton-vpn-daemon.service',
+    binary: 'protonvpn-cli',
+    port: 0,
+    icon: 'protonvpn',
+    accentColor: '#6D4AFF',
+    installed: false,
+    running: false,
+    status: 'not_installed',
+  },
 ];
 
 export const ChaddyStore: React.FC = () => {
