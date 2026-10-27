@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"os/exec"
@@ -133,6 +134,9 @@ func SetupRoutes(r *gin.Engine, cfg *config.Manifest, svcMgr *services.SystemdMa
 	r.GET("/api/widgets/jdownloader", h.WidgetJDownloader)
 	r.POST("/api/widgets/jdownloader/add", h.WidgetJDownloader)
 	r.GET("/api/widgets/manga", h.WidgetManga)
+	r.GET("/api/v1/manga/:id/thumbnail", h.ProxyMangaThumbnail)
+	r.HEAD("/api/v1/manga/:id/thumbnail", h.ProxyMangaThumbnail)
+	r.GET("/api/widgets/manga/thumbnail/:id", h.ProxyMangaThumbnail)
 	r.GET("/api/beeper/status", h.BeeperStatus)
 	r.GET("/api/system/tor-exit", h.GetTorStatus)
 	r.POST("/api/system/tor-exit", h.ToggleTorStatus)
@@ -1367,57 +1371,171 @@ func (h *Handler) WidgetJDownloader(c *gin.Context) {
 }
 
 func (h *Handler) WidgetManga(c *gin.Context) {
-	client := http.Client{Timeout: 2 * time.Second}
-	// Try Suwayomi REST manga library
-	resp, err := client.Get("http://127.0.0.1:4567/api/v1/manga")
-	if err == nil && resp.StatusCode == http.StatusOK {
-		defer resp.Body.Close()
-		var mangaList []map[string]interface{}
-		if json.NewDecoder(resp.Body).Decode(&mangaList) == nil {
-			c.JSON(http.StatusOK, gin.H{
-				"online":  true,
-				"mangas":  mangaList,
-				"history": []interface{}{},
-				"updates": []interface{}{},
-				"library": mangaList,
-			})
-			return
+	client := http.Client{Timeout: 4 * time.Second}
+
+	// Suwayomi GraphQL endpoint is at /api/graphql
+	query := `{"query":"{ mangas(condition: { inLibrary: true }, first: 60) { nodes { id title thumbnailUrl unreadCount source { id displayName } } } history: chapters(condition: { isRead: true }, first: 20) { nodes { id name lastReadAt manga { id title thumbnailUrl } } } updates: chapters(condition: { isRead: false }, first: 20) { nodes { id name manga { id title thumbnailUrl } } } }"}`
+	req, err := http.NewRequestWithContext(c.Request.Context(), "POST", "http://127.0.0.1:4567/api/graphql", strings.NewReader(query))
+	if err == nil {
+		req.Header.Set("Content-Type", "application/json")
+		if gqlResp, err := client.Do(req); err == nil && gqlResp.StatusCode == http.StatusOK {
+			defer gqlResp.Body.Close()
+			var gqlData struct {
+				Data struct {
+					Mangas struct {
+						Nodes []struct {
+							ID           int    `json:"id"`
+							Title        string `json:"title"`
+							ThumbnailUrl string `json:"thumbnailUrl"`
+							UnreadCount  int    `json:"unreadCount"`
+							Source       struct {
+								ID          string `json:"id"`
+								DisplayName string `json:"displayName"`
+							} `json:"source"`
+						} `json:"nodes"`
+					} `json:"mangas"`
+					History struct {
+						Nodes []struct {
+							ID         int    `json:"id"`
+							Name       string `json:"name"`
+							LastReadAt string `json:"lastReadAt"`
+							Manga      struct {
+								ID           int    `json:"id"`
+								Title        string `json:"title"`
+								ThumbnailUrl string `json:"thumbnailUrl"`
+							} `json:"manga"`
+						} `json:"nodes"`
+					} `json:"history"`
+					Updates struct {
+						Nodes []struct {
+							ID    int    `json:"id"`
+							Name  string `json:"name"`
+							Manga struct {
+								ID           int    `json:"id"`
+								Title        string `json:"title"`
+								ThumbnailUrl string `json:"thumbnailUrl"`
+							} `json:"manga"`
+						} `json:"nodes"`
+					} `json:"updates"`
+				} `json:"data"`
+			}
+			if json.NewDecoder(gqlResp.Body).Decode(&gqlData) == nil {
+				mangaList := make([]map[string]interface{}, 0, len(gqlData.Data.Mangas.Nodes))
+				for _, m := range gqlData.Data.Mangas.Nodes {
+					thumb := m.ThumbnailUrl
+					if thumb == "" {
+						thumb = fmt.Sprintf("/api/v1/manga/%d/thumbnail", m.ID)
+					}
+					mangaList = append(mangaList, map[string]interface{}{
+						"id":           m.ID,
+						"title":        m.Title,
+						"thumbnailUrl": thumb,
+						"unreadCount":  m.UnreadCount,
+						"source": map[string]string{
+							"name": m.Source.DisplayName,
+						},
+					})
+				}
+
+				historyList := make([]map[string]interface{}, 0, len(gqlData.Data.History.Nodes))
+				for _, hItem := range gqlData.Data.History.Nodes {
+					thumb := hItem.Manga.ThumbnailUrl
+					if thumb == "" {
+						thumb = fmt.Sprintf("/api/v1/manga/%d/thumbnail", hItem.Manga.ID)
+					}
+					historyList = append(historyList, map[string]interface{}{
+						"id":              hItem.Manga.ID,
+						"title":           hItem.Manga.Title,
+						"thumbnailUrl":    thumb,
+						"lastChapterRead": hItem.Name,
+					})
+				}
+
+				updatesList := make([]map[string]interface{}, 0, len(gqlData.Data.Updates.Nodes))
+				for _, uItem := range gqlData.Data.Updates.Nodes {
+					thumb := uItem.Manga.ThumbnailUrl
+					if thumb == "" {
+						thumb = fmt.Sprintf("/api/v1/manga/%d/thumbnail", uItem.Manga.ID)
+					}
+					updatesList = append(updatesList, map[string]interface{}{
+						"id":            uItem.Manga.ID,
+						"title":         uItem.Manga.Title,
+						"thumbnailUrl":  thumb,
+						"latestChapter": uItem.Name,
+					})
+				}
+
+				c.JSON(http.StatusOK, gin.H{
+					"online":  true,
+					"mangas":  mangaList,
+					"library": mangaList,
+					"history": historyList,
+					"updates": updatesList,
+				})
+				return
+			}
 		}
 	}
 
-	// Try Suwayomi GraphQL
-	query := `{"query":"{ mangas(inLibrary: true) { nodes { id title thumbnailUrl unreadCount source { name } } } }"}`
-	req, _ := http.NewRequestWithContext(c.Request.Context(), "POST", "http://127.0.0.1:4567/api/v1/graphql", strings.NewReader(query))
-	req.Header.Set("Content-Type", "application/json")
-	if gqlResp, err := client.Do(req); err == nil && gqlResp.StatusCode == http.StatusOK {
-		defer gqlResp.Body.Close()
-		var gqlData struct {
-			Data struct {
-				Mangas struct {
-					Nodes []map[string]interface{} `json:"nodes"`
-				} `json:"mangas"`
-			} `json:"data"`
-		}
-		if json.NewDecoder(gqlResp.Body).Decode(&gqlData) == nil && len(gqlData.Data.Mangas.Nodes) > 0 {
-			c.JSON(http.StatusOK, gin.H{
-				"online":  true,
-				"mangas":  gqlData.Data.Mangas.Nodes,
-				"history": []interface{}{},
-				"updates": []interface{}{},
-				"library": gqlData.Data.Mangas.Nodes,
-			})
-			return
-		}
+	// Ping Suwayomi directly to check if online even if empty
+	pingResp, err := client.Get("http://127.0.0.1:4567/")
+	online := err == nil && pingResp.StatusCode == http.StatusOK
+	if pingResp != nil {
+		_ = pingResp.Body.Close()
 	}
 
-	// Real status: offline or empty library
 	c.JSON(http.StatusOK, gin.H{
-		"online":  false,
+		"online":  online,
 		"history": []interface{}{},
 		"updates": []interface{}{},
 		"library": []interface{}{},
 		"mangas":  []interface{}{},
 	})
+}
+
+// ProxyMangaThumbnail proxies thumbnail requests to Suwayomi and sets proper image content-type
+func (h *Handler) ProxyMangaThumbnail(c *gin.Context) {
+	id := c.Param("id")
+	targetURL := fmt.Sprintf("http://127.0.0.1:4567/api/v1/manga/%s/thumbnail", id)
+	client := &http.Client{Timeout: 5 * time.Second}
+	req, err := http.NewRequestWithContext(c.Request.Context(), "GET", targetURL, nil)
+	if err != nil {
+		c.Status(http.StatusNotFound)
+		return
+	}
+	if c.Request.URL.RawQuery != "" {
+		req.URL.RawQuery = c.Request.URL.RawQuery
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		c.Status(http.StatusBadGateway)
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		c.Status(resp.StatusCode)
+		return
+	}
+
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil || len(bodyBytes) == 0 {
+		c.Status(http.StatusNotFound)
+		return
+	}
+
+	contentType := resp.Header.Get("Content-Type")
+	if contentType == "" || contentType == "text/plain" {
+		contentType = http.DetectContentType(bodyBytes)
+		if contentType == "text/plain" || contentType == "application/octet-stream" {
+			contentType = "image/webp"
+		}
+	}
+
+	c.Header("Content-Type", contentType)
+	c.Header("Cache-Control", "public, max-age=86400")
+	c.Data(http.StatusOK, contentType, bodyBytes)
 }
 
 func (h *Handler) BeeperStatus(c *gin.Context) {

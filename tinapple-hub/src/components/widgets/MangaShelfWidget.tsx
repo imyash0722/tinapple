@@ -128,7 +128,7 @@ export const MangaShelfWidget: React.FC = () => {
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              History
+              History {historyList.length > 0 && `(${historyList.length})`}
             </button>
             <button
               onClick={() => setActiveTab('updates')}
@@ -138,7 +138,7 @@ export const MangaShelfWidget: React.FC = () => {
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              Updates
+              Updates {updatesList.length > 0 && `(${updatesList.length})`}
             </button>
           </div>
 
@@ -158,7 +158,7 @@ export const MangaShelfWidget: React.FC = () => {
           {currentList.map((manga) => (
             <a
               key={manga.id}
-              href={`http://${currentHost}:4567`}
+              href={`http://${currentHost}:4567/#/manga/${manga.id}`}
               target="_blank"
               rel="noreferrer"
               className="group relative flex-shrink-0 w-36 rounded-xl overflow-hidden bg-slate-950 border border-[#1b2b52] hover:border-orange-500/50 hover:shadow-xl transition-all"
@@ -169,8 +169,7 @@ export const MangaShelfWidget: React.FC = () => {
                   alt={manga.title}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   onError={(e) => {
-                    // Fallback on load error
-                    (e.target as HTMLElement).style.display = 'none';
+                    (e.target as HTMLImageElement).src = '/icons/suwayomi.png';
                   }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent" />
