@@ -1371,10 +1371,13 @@ func (h *Handler) WidgetJDownloader(c *gin.Context) {
 }
 
 func (h *Handler) WidgetManga(c *gin.Context) {
-	client := http.Client{Timeout: 4 * time.Second}
+	client := http.Client{Timeout: 5 * time.Second}
 
 	// Suwayomi GraphQL endpoint is at /api/graphql
-	query := `{"query":"{ mangas(condition: { inLibrary: true }, first: 60) { nodes { id title thumbnailUrl unreadCount source { id displayName } } } history: chapters(condition: { isRead: true }, first: 20) { nodes { id name lastReadAt manga { id title thumbnailUrl } } } updates: chapters(condition: { isRead: false }, first: 20) { nodes { id name manga { id title thumbnailUrl } } } }"}`
+	// Mangas: ordered by newest added (IN_LIBRARY_AT DESC)
+	// History: chapters ordered by newest read (LAST_READ_AT DESC)
+	// Updates: unread chapters ordered by newest upload (UPLOAD_DATE DESC)
+	query := `{"query":"{ mangas(condition: { inLibrary: true }, order: [{by: IN_LIBRARY_AT, byType: DESC_NULLS_LAST}], first: 60) { totalCount nodes { id title thumbnailUrl unreadCount source { id displayName } } } history: chapters(condition: { isRead: true }, order: [{by: LAST_READ_AT, byType: DESC_NULLS_LAST}], first: 100) { nodes { id name lastReadAt manga { id title thumbnailUrl } } } updates: chapters(condition: { isRead: false }, order: [{by: UPLOAD_DATE, byType: DESC_NULLS_LAST}], first: 100) { nodes { id name uploadDate manga { id title thumbnailUrl } } } }"}`
 	req, err := http.NewRequestWithContext(c.Request.Context(), "POST", "http://127.0.0.1:4567/api/graphql", strings.NewReader(query))
 	if err == nil {
 		req.Header.Set("Content-Type", "application/json")
@@ -1383,7 +1386,8 @@ func (h *Handler) WidgetManga(c *gin.Context) {
 			var gqlData struct {
 				Data struct {
 					Mangas struct {
-						Nodes []struct {
+						TotalCount int `json:"totalCount"`
+						Nodes      []struct {
 							ID           int    `json:"id"`
 							Title        string `json:"title"`
 							ThumbnailUrl string `json:"thumbnailUrl"`
@@ -1408,9 +1412,10 @@ func (h *Handler) WidgetManga(c *gin.Context) {
 					} `json:"history"`
 					Updates struct {
 						Nodes []struct {
-							ID    int    `json:"id"`
-							Name  string `json:"name"`
-							Manga struct {
+							ID         int    `json:"id"`
+							Name       string `json:"name"`
+							UploadDate string `json:"uploadDate"`
+							Manga      struct {
 								ID           int    `json:"id"`
 								Title        string `json:"title"`
 								ThumbnailUrl string `json:"thumbnailUrl"`
@@ -1437,40 +1442,63 @@ func (h *Handler) WidgetManga(c *gin.Context) {
 					})
 				}
 
-				historyList := make([]map[string]interface{}, 0, len(gqlData.Data.History.Nodes))
+				// Deduplicate history by manga ID so each series appears at most once showing its latest read chapter
+				seenHistory := make(map[int]bool)
+				historyList := make([]map[string]interface{}, 0, 30)
 				for _, hItem := range gqlData.Data.History.Nodes {
+					mid := hItem.Manga.ID
+					if mid <= 0 || seenHistory[mid] {
+						continue
+					}
+					seenHistory[mid] = true
+
 					thumb := hItem.Manga.ThumbnailUrl
 					if thumb == "" {
-						thumb = fmt.Sprintf("/api/v1/manga/%d/thumbnail", hItem.Manga.ID)
+						thumb = fmt.Sprintf("/api/v1/manga/%d/thumbnail", mid)
 					}
 					historyList = append(historyList, map[string]interface{}{
-						"id":              hItem.Manga.ID,
+						"id":              mid,
 						"title":           hItem.Manga.Title,
 						"thumbnailUrl":    thumb,
 						"lastChapterRead": hItem.Name,
 					})
+					if len(historyList) >= 30 {
+						break
+					}
 				}
 
-				updatesList := make([]map[string]interface{}, 0, len(gqlData.Data.Updates.Nodes))
+				// Deduplicate updates by manga ID so each series appears at most once showing its newest chapter
+				seenUpdates := make(map[int]bool)
+				updatesList := make([]map[string]interface{}, 0, 30)
 				for _, uItem := range gqlData.Data.Updates.Nodes {
+					mid := uItem.Manga.ID
+					if mid <= 0 || seenUpdates[mid] {
+						continue
+					}
+					seenUpdates[mid] = true
+
 					thumb := uItem.Manga.ThumbnailUrl
 					if thumb == "" {
-						thumb = fmt.Sprintf("/api/v1/manga/%d/thumbnail", uItem.Manga.ID)
+						thumb = fmt.Sprintf("/api/v1/manga/%d/thumbnail", mid)
 					}
 					updatesList = append(updatesList, map[string]interface{}{
-						"id":            uItem.Manga.ID,
+						"id":            mid,
 						"title":         uItem.Manga.Title,
 						"thumbnailUrl":  thumb,
 						"latestChapter": uItem.Name,
 					})
+					if len(updatesList) >= 30 {
+						break
+					}
 				}
 
 				c.JSON(http.StatusOK, gin.H{
-					"online":  true,
-					"mangas":  mangaList,
-					"library": mangaList,
-					"history": historyList,
-					"updates": updatesList,
+					"online":     true,
+					"totalCount": gqlData.Data.Mangas.TotalCount,
+					"mangas":     mangaList,
+					"library":    mangaList,
+					"history":    historyList,
+					"updates":    updatesList,
 				})
 				return
 			}
@@ -1485,11 +1513,12 @@ func (h *Handler) WidgetManga(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"online":  online,
-		"history": []interface{}{},
-		"updates": []interface{}{},
-		"library": []interface{}{},
-		"mangas":  []interface{}{},
+		"online":     online,
+		"totalCount": 0,
+		"history":    []interface{}{},
+		"updates":    []interface{}{},
+		"library":    []interface{}{},
+		"mangas":     []interface{}{},
 	})
 }
 

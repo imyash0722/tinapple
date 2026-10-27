@@ -17,6 +17,7 @@ export const MangaShelfWidget: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'reading' | 'history' | 'updates'>('reading');
   const [online, setOnline] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [totalCount, setTotalCount] = useState<number>(0);
 
   // Real manga library items only - zero fake placeholder manhwa
   const [readingList, setReadingList] = useState<MangaItem[]>([]);
@@ -33,6 +34,9 @@ export const MangaShelfWidget: React.FC = () => {
       .then((data) => {
         if (data) {
           setOnline(Boolean(data.online));
+          if (typeof data.totalCount === 'number') {
+            setTotalCount(data.totalCount);
+          }
           const mangas = Array.isArray(data.mangas)
             ? data.mangas
             : Array.isArray(data.library)
@@ -55,13 +59,29 @@ export const MangaShelfWidget: React.FC = () => {
           }
 
           if (Array.isArray(data.history) && data.history.length > 0) {
-            setHistoryList(data.history);
+            const parsedHist: MangaItem[] = data.history.map((h: any, idx: number) => ({
+              id: String(h.id || idx),
+              title: h.title || 'Untitled Manga',
+              thumbnailUrl: h.thumbnailUrl || '/icons/suwayomi.png',
+              unreadCount: typeof h.unreadCount === 'number' ? h.unreadCount : 0,
+              lastChapterRead: h.lastChapterRead || h.lastReadChapter || '',
+              source: h.source?.name || h.source || 'Suwayomi',
+            }));
+            setHistoryList(parsedHist);
           } else {
             setHistoryList([]);
           }
 
           if (Array.isArray(data.updates) && data.updates.length > 0) {
-            setUpdatesList(data.updates);
+            const parsedUpdates: MangaItem[] = data.updates.map((u: any, idx: number) => ({
+              id: String(u.id || idx),
+              title: u.title || 'Untitled Manga',
+              thumbnailUrl: u.thumbnailUrl || '/icons/suwayomi.png',
+              unreadCount: typeof u.unreadCount === 'number' ? u.unreadCount : 0,
+              latestChapter: u.latestChapter || '',
+              source: u.source?.name || u.source || 'Suwayomi',
+            }));
+            setUpdatesList(parsedUpdates);
           } else {
             setUpdatesList([]);
           }
@@ -69,6 +89,7 @@ export const MangaShelfWidget: React.FC = () => {
       })
       .catch(() => {
         setOnline(false);
+        setTotalCount(0);
         setReadingList([]);
         setHistoryList([]);
         setUpdatesList([]);
@@ -118,7 +139,7 @@ export const MangaShelfWidget: React.FC = () => {
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              Library {readingList.length > 0 && `(${readingList.length})`}
+              Library {totalCount > 0 ? `(${totalCount})` : readingList.length > 0 ? `(${readingList.length})` : ''}
             </button>
             <button
               onClick={() => setActiveTab('history')}
@@ -155,50 +176,65 @@ export const MangaShelfWidget: React.FC = () => {
       {/* Content: Shelf or Empty State */}
       {currentList.length > 0 ? (
         <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-slate-800">
-          {currentList.map((manga) => (
-            <a
-              key={manga.id}
-              href={`http://${currentHost}:4567/#/manga/${manga.id}`}
-              target="_blank"
-              rel="noreferrer"
-              className="group relative flex-shrink-0 w-36 rounded-xl overflow-hidden bg-slate-950 border border-[#1b2b52] hover:border-orange-500/50 hover:shadow-xl transition-all"
-            >
-              <div className="aspect-[3/4] w-full overflow-hidden relative bg-slate-900">
-                <img
-                  src={manga.thumbnailUrl}
-                  alt={manga.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = '/icons/suwayomi.png';
-                  }}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent" />
+          {currentList.map((manga, idx) => {
+            let subtitle = manga.source || 'Suwayomi';
+            if (activeTab === 'reading') {
+              if (typeof manga.unreadCount === 'number' && manga.unreadCount > 0) {
+                subtitle = `${manga.unreadCount} unread • ${manga.source || 'Library'}`;
+              } else {
+                subtitle = `Up to date • ${manga.source || 'Library'}`;
+              }
+            } else if (activeTab === 'history') {
+              subtitle = manga.lastChapterRead || manga.source || 'Recently Read';
+            } else if (activeTab === 'updates') {
+              subtitle = manga.latestChapter ? `New: ${manga.latestChapter}` : manga.source || 'Updated';
+            }
 
-                {/* Unread badge */}
-                {manga.unreadCount !== undefined && manga.unreadCount > 0 && (
-                  <span className="absolute top-2 right-2 px-1.5 py-0.5 rounded-md bg-orange-500 text-slate-950 text-[10px] font-bold font-mono shadow-md">
-                    +{manga.unreadCount}
-                  </span>
-                )}
+            return (
+              <a
+                key={`${activeTab}-${manga.id}-${idx}`}
+                href={`http://${currentHost}:4567/#/manga/${manga.id}`}
+                target="_blank"
+                rel="noreferrer"
+                className="group relative flex-shrink-0 w-36 rounded-xl overflow-hidden bg-slate-950 border border-[#1b2b52] hover:border-orange-500/50 hover:shadow-xl transition-all"
+              >
+                <div className="aspect-[3/4] w-full overflow-hidden relative bg-slate-900">
+                  <img
+                    src={manga.thumbnailUrl}
+                    alt={manga.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = '/icons/suwayomi.png';
+                    }}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent" />
 
-                {/* Latest chapter update pill */}
-                {manga.latestChapter && (
-                  <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded-md bg-emerald-500 text-slate-950 text-[10px] font-bold font-mono shadow-md">
-                    {manga.latestChapter}
-                  </span>
-                )}
-              </div>
+                  {/* Unread badge on library tab */}
+                  {activeTab === 'reading' && manga.unreadCount !== undefined && manga.unreadCount > 0 && (
+                    <span className="absolute top-2 right-2 px-1.5 py-0.5 rounded-md bg-orange-500 text-slate-950 text-[10px] font-bold font-mono shadow-md">
+                      +{manga.unreadCount}
+                    </span>
+                  )}
 
-              <div className="p-2.5">
-                <h4 className="text-xs font-bold text-white truncate group-hover:text-orange-400 transition-colors">
-                  {manga.title}
-                </h4>
-                <p className="text-[10px] text-slate-400 font-mono mt-0.5 truncate">
-                  {manga.lastChapterRead || manga.updatedTime || manga.lastReadTime || manga.source}
-                </p>
-              </div>
-            </a>
-          ))}
+                  {/* Latest chapter update pill on updates tab */}
+                  {activeTab === 'updates' && manga.latestChapter && (
+                    <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded-md bg-emerald-500 text-slate-950 text-[10px] font-bold font-mono shadow-md">
+                      Update
+                    </span>
+                  )}
+                </div>
+
+                <div className="p-2.5">
+                  <h4 className="text-xs font-bold text-white truncate group-hover:text-orange-400 transition-colors" title={manga.title}>
+                    {manga.title}
+                  </h4>
+                  <p className="text-[10px] text-slate-400 font-mono mt-0.5 truncate" title={subtitle}>
+                    {subtitle}
+                  </p>
+                </div>
+              </a>
+            );
+          })}
         </div>
       ) : (
         <div className="py-8 px-4 flex flex-col items-center justify-center text-center rounded-xl bg-black/30 border border-[#1b2b52]/60 font-mono">
