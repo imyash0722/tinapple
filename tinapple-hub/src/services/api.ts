@@ -370,12 +370,16 @@ class ApiService {
     }
   }
 
-  async installApp(id: string): Promise<boolean> {
+  async installApp(id: string): Promise<{ ok: boolean; error?: string }> {
     try {
       const res = await fetch(`${API_BASE}/apps/${id}/install`, { method: 'POST' });
-      return res.ok;
-    } catch {
-      return false;
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        return { ok: false, error: data.error || `HTTP ${res.status}` };
+      }
+      return { ok: true };
+    } catch (err: any) {
+      return { ok: false, error: err.message || 'Network communication failure' };
     }
   }
 

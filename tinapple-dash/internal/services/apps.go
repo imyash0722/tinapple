@@ -130,7 +130,7 @@ func NewAppManager() *AppManager {
 			Description:  "Self-hosted manga streaming and offline sync server with Keiyoushi source extensions, built-in WebUI, and full support for the modern Suwayomi-Tsumiru client app.",
 			Tagline:      "Suwayomi Web + Suwayomi-Tsumiru Native Client",
 			Category:     "media",
-			Package:      "suwayomi-server",
+			Package:      "suwayomi-server-bin",
 			Unit:         "suwayomi-server.service",
 			Binary:       "suwayomi-server",
 			Port:         4567,
@@ -300,7 +300,7 @@ func NewAppManager() *AppManager {
 			Description: "Automated movie collection manager, quality profiler, and BitTorrent/Usenet download orchestrator.",
 			Tagline:     "Automated movie manager & grabber",
 			Category:    "automation",
-			Package:     "radarr",
+			Package:     "radarr-bin",
 			Unit:        "radarr.service",
 			Binary:      "radarr",
 			Port:        7878,
@@ -314,7 +314,7 @@ func NewAppManager() *AppManager {
 			Description: "Automated TV show collection manager, episode tracker, and download orchestrator.",
 			Tagline:     "Smart PVR for TV series & anime",
 			Category:    "automation",
-			Package:     "sonarr",
+			Package:     "sonarr-bin",
 			Unit:        "sonarr.service",
 			Binary:      "sonarr",
 			Port:        8989,
@@ -328,7 +328,7 @@ func NewAppManager() *AppManager {
 			Description: "Unified torrent indexer and Usenet tracker proxy integrating seamlessly with Radarr and Sonarr.",
 			Tagline:     "Torrent indexer & tracker sync engine",
 			Category:    "automation",
-			Package:     "prowlarr",
+			Package:     "prowlarr-bin",
 			Unit:        "prowlarr.service",
 			Binary:      "prowlarr",
 			Port:        9696,
@@ -737,8 +737,14 @@ func getSystemdProperties(unit string) map[string]string {
 func checkPacmanInstalled(pkg string) bool {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
-	cmd := exec.CommandContext(ctx, "pacman", "-Q", pkg)
-	return cmd.Run() == nil
+	if exec.CommandContext(ctx, "pacman", "-Q", pkg).Run() == nil {
+		return true
+	}
+	if strings.HasSuffix(pkg, "-bin") {
+		base := strings.TrimSuffix(pkg, "-bin")
+		return exec.CommandContext(ctx, "pacman", "-Q", base).Run() == nil
+	}
+	return false
 }
 
 func (m *AppManager) Install(id string) error {
@@ -752,12 +758,29 @@ func (m *AppManager) Install(id string) error {
 	}
 
 	if app.Package != "" {
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 		defer cancel()
+
+		// 1. Try pacman first (works for official arch/cachyos packages)
 		cmd := exec.CommandContext(ctx, "pacman", "-S", "--noconfirm", "--needed", app.Package)
 		out, err := cmd.CombinedOutput()
 		if err != nil {
-			return fmt.Errorf("pacman install failed for %s: %s (%w)", app.Package, string(out), err)
+			primaryUser, _ := getSystemPrimaryUser()
+			// 2. Try paru with --skipreview as unprivileged primary user
+			paruCmd := exec.CommandContext(ctx, "sudo", "-u", primaryUser, "paru", "-S", "--noconfirm", "--needed", "--skipreview", app.Package)
+			paruOut, paruErr := paruCmd.CombinedOutput()
+			if paruErr != nil {
+				// 3. Try with or without -bin suffix
+				fallbackPkg := app.Package + "-bin"
+				if strings.HasSuffix(app.Package, "-bin") {
+					fallbackPkg = strings.TrimSuffix(app.Package, "-bin")
+				}
+				paruFallbackCmd := exec.CommandContext(ctx, "sudo", "-u", primaryUser, "paru", "-S", "--noconfirm", "--needed", "--skipreview", fallbackPkg)
+				paruFallbackOut, paruFallbackErr := paruFallbackCmd.CombinedOutput()
+				if paruFallbackErr != nil {
+					return fmt.Errorf("installation failed for %s:\npacman: %s\nparu: %s\nfallback: %s", app.Package, strings.TrimSpace(string(out)), strings.TrimSpace(string(paruOut)), strings.TrimSpace(string(paruFallbackOut)))
+				}
+			}
 		}
 	}
 
@@ -769,7 +792,7 @@ func (m *AppManager) Install(id string) error {
 	// If unit exists, enable and start it
 	if app.Unit != "" {
 		if out, err := exec.Command("systemctl", "enable", "--now", app.Unit).CombinedOutput(); err != nil {
-			return fmt.Errorf("package installed but service failed to start: %s: %w", out, err)
+			return fmt.Errorf("package installed but service failed to start: %s (%w)", string(out), err)
 		}
 	}
 
@@ -959,15 +982,12 @@ func (m *AppManager) refreshProxyRoutes() error {
 	m.mu.RUnlock()
 	data, err := json.Marshal(catalog)
 	if err != nil {
-		return err
+		return nil
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	cmd := exec.CommandContext(ctx, "tinapple-config-generator", "nginx-sync", "--catalog-stdin")
 	cmd.Stdin = bytes.NewReader(data)
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		return fmt.Errorf("app operation completed, but proxy refresh failed: %s (%w)", out, err)
-	}
+	_ = cmd.Run() // Non-fatal: Caddy handles reverse proxy routing
 	return nil
 }

@@ -420,6 +420,7 @@ export const ChaddyStore: React.FC = () => {
   const [filterCategory, setFilterCategory] = useState<string>('all');
 
   // Config modal state
+  const [actionError, setActionError] = useState<{ id: string; message: string } | null>(null);
   const [configModalApp, setConfigModalApp] = useState<AppInfo | null>(null);
   const [editPort, setEditPort] = useState<number>(0);
   const [rawConfigPreview, setRawConfigPreview] = useState<string>('');
@@ -442,16 +443,19 @@ export const ChaddyStore: React.FC = () => {
 
   const handleAction = async (id: string, action: 'install' | 'uninstall' | 'start' | 'stop' | 'restart') => {
     setLoadingAction((prev) => ({ ...prev, [id]: action }));
+    setActionError(null);
     try {
       if (action === 'install') {
-        const ok = await api.installApp(id);
-        if (ok) {
+        const res = await api.installApp(id);
+        if (res.ok) {
           confetti({
             particleCount: 70,
             spread: 60,
             origin: { y: 0.6 },
             colors: [getComputedStyle(document.documentElement).getPropertyValue('--tinapple-accent').trim(), getComputedStyle(document.documentElement).getPropertyValue('--tinapple-accent-secondary').trim(), '#ffffff'],
           });
+        } else {
+          setActionError({ id, message: res.error || 'Package installation failed' });
         }
       } else if (action === 'uninstall') {
         await api.uninstallApp(id);
@@ -463,6 +467,8 @@ export const ChaddyStore: React.FC = () => {
         await api.restartApp(id);
       }
       await fetchApps();
+    } catch (err: any) {
+      setActionError({ id, message: err.message || 'Action failed' });
     } finally {
       setLoadingAction((prev) => {
         const next = { ...prev };
@@ -625,6 +631,22 @@ export const ChaddyStore: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Action Error Banner */}
+      {actionError && (
+        <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs font-mono flex items-center justify-between shadow-lg">
+          <div className="flex items-center gap-2">
+            <span className="text-rose-400 font-bold">⚠️ Error:</span>
+            <span>{actionError.message}</span>
+          </div>
+          <button
+            onClick={() => setActionError(null)}
+            className="text-rose-400 hover:text-white font-bold px-2 py-0.5 rounded hover:bg-rose-500/20 transition-colors"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       {/* VIEW 1: 3D RADIAL CAROUSEL VIEW */}
       {viewMode === 'carousel' && selectedApp && (
