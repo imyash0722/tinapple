@@ -8,6 +8,7 @@ export interface SystemInfo {
   bootTime: number;
   osRelease: string;
   sessionMode: SessionMode;
+  filesystem?: string;
 }
 
 export interface TelemetrySnapshot {

@@ -3,10 +3,11 @@ import { Cpu, HardDrive, MemoryStick, Activity, ArrowDownRight, ArrowUpRight, Ga
 import { SpotlightCard } from '../reactbits/SpotlightCard';
 import { CountUp } from '../reactbits/CountUp';
 import { ShinyText } from '../reactbits/ShinyText';
-import { TelemetrySnapshot } from '../../types/api';
+import { TelemetrySnapshot, SystemInfo } from '../../types/api';
 
 interface TelemetryCardsProps {
   telemetry: TelemetrySnapshot;
+  systemInfo?: SystemInfo;
   accentColor: string;
   secondaryColor: string;
   history: {
@@ -18,7 +19,7 @@ interface TelemetryCardsProps {
   onOpenTailscale?: () => void;
 }
 
-export const TelemetryCards: React.FC<TelemetryCardsProps> = ({ telemetry, history, accentColor, secondaryColor, onOpenTailscale }) => {
+export const TelemetryCards: React.FC<TelemetryCardsProps> = ({ telemetry, systemInfo, history, accentColor, secondaryColor, onOpenTailscale }) => {
   const formatBytes = (bytes: number) => {
     if (bytes >= 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
     if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
@@ -223,7 +224,7 @@ export const TelemetryCards: React.FC<TelemetryCardsProps> = ({ telemetry, histo
           </div>
         </SpotlightCard>
 
-        {/* STORAGE POOLS & BTRFS (6 cols) */}
+        {/* STORAGE POOLS & FILESYSTEM (6 cols) */}
         <SpotlightCard
           className="lg:col-span-6 p-6"
           spotlightColor="rgb(var(--tinapple-accent-rgb) / 0.12)"
@@ -237,11 +238,11 @@ export const TelemetryCards: React.FC<TelemetryCardsProps> = ({ telemetry, histo
               <div>
                 <div>
                   <span className="text-xs font-mono font-bold tracking-wider text-tinapple-text uppercase">
-                    BTRFS STORAGE
+                    {(systemInfo?.filesystem || 'ext4').toUpperCase()} STORAGE
                   </span>
                 </div>
                 <p className="text-xs text-tinapple-subtext font-mono">
-                  {telemetry.disk.mountPoint} • btrfs zstd compression
+                  {telemetry.disk.mountPoint || '/'} • {(systemInfo?.filesystem || '').toLowerCase() === 'btrfs' ? 'btrfs zstd compression' : `${systemInfo?.filesystem || 'ext4'} journaling filesystem`}
                 </p>
               </div>
             </div>
@@ -268,24 +269,45 @@ export const TelemetryCards: React.FC<TelemetryCardsProps> = ({ telemetry, histo
             />
           </div>
 
-          <div className="grid grid-cols-4 gap-2 text-center font-mono text-xs">
-            <div className="p-2 rounded-xl bg-tinapple-dark/60 border border-tinapple-border">
-              <span className="text-[10px] text-tinapple-muted block">@root</span>
-              <span className="text-tinapple-text font-semibold">12.4 GB</span>
+          {(systemInfo?.filesystem || '').toLowerCase() === 'btrfs' ? (
+            <div className="grid grid-cols-4 gap-2 text-center font-mono text-xs">
+              <div className="p-2 rounded-xl bg-tinapple-dark/60 border border-tinapple-border">
+                <span className="text-[10px] text-tinapple-muted block">@root</span>
+                <span className="text-tinapple-text font-semibold">12.4 GB</span>
+              </div>
+              <div className="p-2 rounded-xl bg-tinapple-dark/60 border border-tinapple-border">
+                <span className="text-[10px] text-tinapple-muted block">@home</span>
+                <span className="text-tinapple-text font-semibold">48.2 GB</span>
+              </div>
+              <div className="p-2 rounded-xl bg-tinapple-dark/60 border border-tinapple-border">
+                <span className="text-[10px] text-tinapple-muted block">@snapshots</span>
+                <span className="text-tinapple-gold font-semibold">8.6 GB</span>
+              </div>
+              <div className="p-2 rounded-xl bg-tinapple-dark/60 border border-tinapple-border">
+                <span className="text-[10px] text-tinapple-muted block">@var_log</span>
+                <span className="text-tinapple-green font-semibold">1.4 GB</span>
+              </div>
             </div>
-            <div className="p-2 rounded-xl bg-tinapple-dark/60 border border-tinapple-border">
-              <span className="text-[10px] text-tinapple-muted block">@home</span>
-              <span className="text-tinapple-text font-semibold">48.2 GB</span>
+          ) : (
+            <div className="grid grid-cols-4 gap-2 text-center font-mono text-xs">
+              <div className="p-2 rounded-xl bg-tinapple-dark/60 border border-tinapple-border">
+                <span className="text-[10px] text-tinapple-muted block">FILESYSTEM</span>
+                <span className="text-tinapple-text font-semibold uppercase">{systemInfo?.filesystem || 'ext4'}</span>
+              </div>
+              <div className="p-2 rounded-xl bg-tinapple-dark/60 border border-tinapple-border">
+                <span className="text-[10px] text-tinapple-muted block">CAPACITY</span>
+                <span className="text-tinapple-text font-semibold">{formatBytes(telemetry.disk.totalBytes)}</span>
+              </div>
+              <div className="p-2 rounded-xl bg-tinapple-dark/60 border border-tinapple-border">
+                <span className="text-[10px] text-tinapple-gold block">USED</span>
+                <span className="text-tinapple-gold font-semibold">{formatBytes(telemetry.disk.usedBytes)}</span>
+              </div>
+              <div className="p-2 rounded-xl bg-tinapple-dark/60 border border-tinapple-border">
+                <span className="text-[10px] text-tinapple-green block">AVAILABLE</span>
+                <span className="text-tinapple-green font-semibold">{formatBytes(telemetry.disk.freeBytes)}</span>
+              </div>
             </div>
-            <div className="p-2 rounded-xl bg-tinapple-dark/60 border border-tinapple-border">
-              <span className="text-[10px] text-tinapple-muted block">@snapshots</span>
-              <span className="text-tinapple-gold font-semibold">8.6 GB</span>
-            </div>
-            <div className="p-2 rounded-xl bg-tinapple-dark/60 border border-tinapple-border">
-              <span className="text-[10px] text-tinapple-muted block">@var_log</span>
-              <span className="text-tinapple-green font-semibold">1.4 GB</span>
-            </div>
-          </div>
+          )}
         </SpotlightCard>
 
         {/* NETWORK & TAILNET RADAR (6 cols) */}

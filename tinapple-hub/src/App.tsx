@@ -467,6 +467,7 @@ export const App: React.FC = () => {
               {/* Bento Row 1: Processor & Memory & Storage & Network */}
               <TelemetryCards
                 telemetry={telemetry}
+                systemInfo={systemInfo}
                 history={history}
                 accentColor={settings.accentColor}
                 secondaryColor={settings.secondaryColor}
