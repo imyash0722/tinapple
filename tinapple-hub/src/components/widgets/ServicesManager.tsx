@@ -9,6 +9,7 @@ import {
   List,
   ShieldCheck,
   BookOpen,
+  ExternalLink,
 } from 'lucide-react';
 import { SpotlightCard } from '../reactbits/SpotlightCard';
 import HoldButton from '../reactbits/HoldButton';
@@ -76,6 +77,66 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({
     });
     return Array.from(cats);
   }, [services]);
+
+  const getServiceUrl = (service: ServiceInfo): string | null => {
+    const host = typeof window !== 'undefined' ? window.location.hostname : '127.0.0.1';
+    const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
+
+    const knownPorts: Record<string, number> = {
+      jellyfin: 8096,
+      qbittorrent: 8080,
+      metube: 8085,
+      youtube: 8085,
+      suwayomi: 4567,
+      'suwayomi-server': 4567,
+      navidrome: 4533,
+      syncthing: 8384,
+      adguard: 3000,
+      adguardhome: 3000,
+      vaultwarden: 8000,
+      filebrowser: 8081,
+      couchdb: 5984,
+      radarr: 7878,
+      sonarr: 8989,
+      prowlarr: 9696,
+      bazarr: 6767,
+      seerr: 5055,
+      jellyseerr: 5055,
+      syncyomi: 8282,
+    };
+
+    const cleanName = service.name.toLowerCase().replace(/\.service$/, '').replace(/@.*$/, '');
+    const nonWebServices = [
+      'postgresql',
+      'redis',
+      'minecraft',
+      'minecraft-server',
+      'docker',
+      'tor',
+      'wireguard',
+      'niri',
+      'tinapple-session',
+      'snapper',
+      'tailscale',
+      'tailscaled',
+      'proton',
+      'proton-vpn',
+      'protonvpn',
+      'bbctl',
+    ];
+
+    if (nonWebServices.includes(cleanName) && !knownPorts[cleanName]) {
+      return null;
+    }
+
+    const port = service.port || knownPorts[cleanName];
+    if (!port || port <= 0) return null;
+
+    if (cleanName === 'vaultwarden' && isHttps) {
+      return `https://${host}:${port}`;
+    }
+    return `http://${host}:${port}`;
+  };
 
   return (
     <div className="space-y-4">
@@ -187,6 +248,7 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({
             const isActive = service.activeState === 'active' || service.running;
             const isInstalled = service.installed !== false && service.activeState !== 'not_installed';
             const isFailed = service.activeState === 'failed';
+            const serviceUrl = getServiceUrl(service);
 
             return (
               <SpotlightCard
@@ -197,8 +259,8 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({
               >
                 <div>
                   <div className="flex items-start justify-between gap-3 mb-2.5">
-                    <div className="flex items-start gap-3 min-w-0 flex-1">
-                      <AppBrandIcon id={service.name} size={38} showBadge className="shrink-0" />
+                    <div className="flex items-start gap-3.5 min-w-0 flex-1">
+                      <AppBrandIcon id={service.name} size={48} showBadge className="shrink-0" />
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
                           <span
@@ -212,9 +274,22 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({
                                 : 'bg-slate-500'
                             }`}
                           />
-                          <h4 className="text-sm font-bold text-white font-mono truncate">
-                            {service.displayName || service.name}
-                          </h4>
+                          {serviceUrl && isActive ? (
+                            <a
+                              href={serviceUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-sm font-bold text-white hover:text-emerald-300 font-mono truncate transition-colors flex items-center gap-1.5 group/name"
+                              title={`Open ${service.displayName || service.name} Web Dashboard`}
+                            >
+                              <span className="truncate">{service.displayName || service.name}</span>
+                              <ExternalLink className="w-3.5 h-3.5 text-tinapple-muted group-hover/name:text-emerald-300 shrink-0" />
+                            </a>
+                          ) : (
+                            <h4 className="text-sm font-bold text-white font-mono truncate">
+                              {service.displayName || service.name}
+                            </h4>
+                          )}
                         </div>
                         <p className="text-xs text-tinapple-subtext mt-1 line-clamp-2 leading-relaxed">
                           {service.description}
@@ -237,23 +312,61 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({
                     </span>
                   </div>
 
-                  {/* Service Metadata: Port & RAM */}
+                  {/* Service Metadata: Port & RAM with Clickable Link */}
                   <div className="flex items-center gap-3 my-3 text-[11px] font-mono text-tinapple-muted">
-                    {service.port && (
-                      <span className="flex items-center gap-1 text-tinapple-gold font-semibold">
-                        Port :{service.port}
-                      </span>
-                    )}
-                    {service.memoryBytes && (
+                    {service.port ? (
+                      serviceUrl && isActive ? (
+                        <a
+                          href={serviceUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="flex items-center gap-1 text-tinapple-gold hover:text-emerald-400 font-semibold transition-colors"
+                          title={`Open port :${service.port}`}
+                        >
+                          <span>Port :{service.port}</span>
+                          <ExternalLink className="w-3 h-3" />
+                        </a>
+                      ) : (
+                        <span className="flex items-center gap-1 text-tinapple-gold font-semibold">
+                          Port :{service.port}
+                        </span>
+                      )
+                    ) : null}
+                    {service.memoryBytes ? (
                       <span>RAM: {(service.memoryBytes / (1024 * 1024)).toFixed(2)} MB</span>
-                    )}
+                    ) : null}
                     <span className="capitalize text-tinapple-green font-medium">{service.category}</span>
                   </div>
                 </div>
 
                 {/* Control Action Buttons */}
                 <div className="flex items-center justify-between gap-1.5 pt-3 border-t border-tinapple-border/70">
-                  <div className="flex items-center gap-1.5 font-mono">
+                  <div className="flex flex-wrap items-center gap-1.5 font-mono">
+                    {/* Direct Web UI Links */}
+                    {isActive && serviceUrl && (
+                      <a
+                        href={serviceUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 transition-colors shadow-sm active:scale-95"
+                        title={`Open ${service.displayName || service.name} Web UI`}
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                        <span>Open</span>
+                      </a>
+                    )}
+                    {(service.name === 'suwayomi' || service.name === 'suwayomi-server') && isActive && (
+                      <a
+                        href="/tsumiru/"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/40 text-purple-300 transition-colors active:scale-95"
+                        title="Open Suwayomi-Tsumiru Web Reader"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                        <span>Tsumiru</span>
+                      </a>
+                    )}
                     {isActive ? (
                       <>
                         <button
@@ -364,6 +477,8 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({
                 const isActive = service.activeState === 'active' || service.running;
                 const isInstalled = service.installed !== false && service.activeState !== 'not_installed';
                 const isFailed = service.activeState === 'failed';
+                const serviceUrl = getServiceUrl(service);
+
                 return (
                   <tr key={service.name} className="hover:bg-tinapple-surface/40 transition-colors">
                     <td className="px-4 py-3">
@@ -387,14 +502,44 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      <div className="flex items-center gap-2.5">
-                        <AppBrandIcon id={service.name} size={22} showBadge />
-                        <span className="font-bold text-white">{service.displayName || service.name}</span>
+                      <div className="flex items-center gap-3">
+                        <AppBrandIcon id={service.name} size={32} showBadge />
+                        {serviceUrl && isActive ? (
+                          <a
+                            href={serviceUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="font-bold text-white hover:text-emerald-300 transition-colors inline-flex items-center gap-1.5 group/tbl"
+                            title={`Open ${service.displayName || service.name} Web UI`}
+                          >
+                            <span>{service.displayName || service.name}</span>
+                            <ExternalLink className="w-3 h-3 text-tinapple-muted group-hover/tbl:text-emerald-300" />
+                          </a>
+                        ) : (
+                          <span className="font-bold text-white">{service.displayName || service.name}</span>
+                        )}
                       </div>
                     </td>
                     <td className="px-4 py-3 capitalize text-tinapple-green">{service.category}</td>
                     <td className="px-4 py-3 text-tinapple-gold font-semibold">
-                      {service.port ? `:${service.port}` : '—'}
+                      {service.port ? (
+                        serviceUrl && isActive ? (
+                          <a
+                            href={serviceUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-tinapple-gold hover:text-emerald-400 font-semibold inline-flex items-center gap-1 transition-colors"
+                            title={`Open port :${service.port}`}
+                          >
+                            <span>:{service.port}</span>
+                            <ExternalLink className="w-2.5 h-2.5" />
+                          </a>
+                        ) : (
+                          `:${service.port}`
+                        )
+                      ) : (
+                        '—'
+                      )}
                     </td>
                     <td className="px-4 py-3 text-tinapple-subtext">
                       {service.memoryBytes
@@ -403,6 +548,18 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-1.5">
+                        {isActive && serviceUrl && (
+                          <a
+                            href={serviceUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-[11px] font-semibold text-emerald-300 transition-colors inline-flex items-center gap-1"
+                            title="Open Web Dashboard"
+                          >
+                            <ExternalLink className="w-3 h-3" />
+                            <span>Open</span>
+                          </a>
+                        )}
                         {isActive ? (
                           <button
                             disabled={isLoading}

@@ -252,6 +252,11 @@ export const APP_BRAND_CONFIG: Record<string, BrandConfig> = {
     iconPath: '/icons/beeper.svg',
     accentColor: '#F43F5E',
   },
+  bbctl: {
+    name: 'Beeper bbctl',
+    iconPath: '/icons/beeper.svg',
+    accentColor: '#F43F5E',
+  },
   protonvpn: {
     name: 'Proton VPN',
     iconPath: '/icons/protonvpn.svg',
@@ -261,6 +266,26 @@ export const APP_BRAND_CONFIG: Record<string, BrandConfig> = {
     name: 'Proton VPN',
     iconPath: '/icons/protonvpn.svg',
     accentColor: '#6D4AFF',
+  },
+  proton: {
+    name: 'Proton VPN',
+    iconPath: '/icons/protonvpn.svg',
+    accentColor: '#6D4AFF',
+  },
+  tailscaled: {
+    name: 'Tailscale',
+    iconPath: '/icons/tailscale.svg',
+    accentColor: '#4C72B0',
+  },
+  obsidian: {
+    name: 'Obsidian LiveSync',
+    iconPath: '/icons/couchdb.svg',
+    accentColor: '#E03C31',
+  },
+  'tinapple-session': {
+    name: 'Niri',
+    iconPath: '/icons/niri.svg',
+    accentColor: '#268BD2',
   },
 };
 
@@ -273,18 +298,29 @@ interface IconProps {
 
 export const AppBrandIcon: React.FC<IconProps> = ({
   id = 'arch',
-  size = 28,
+  size = 48,
   className = '',
   showBadge = false,
 }) => {
-  const normId = (id || 'arch').toLowerCase().replace(/_/, '-');
-  const cfg = APP_BRAND_CONFIG[normId] || APP_BRAND_CONFIG.arch;
+  const normId = (id || 'arch')
+    .toLowerCase()
+    .replace(/\.service$/, '')
+    .replace(/@.*$/, '')
+    .replace(/[._]/g, '-');
+
+  const cfg =
+    APP_BRAND_CONFIG[normId] ||
+    APP_BRAND_CONFIG[normId.replace(/-server$/, '')] ||
+    APP_BRAND_CONFIG[normId.replace(/-headless$/, '')] ||
+    APP_BRAND_CONFIG[Object.keys(APP_BRAND_CONFIG).find((k) => normId.includes(k)) || 'arch'] ||
+    APP_BRAND_CONFIG.arch;
 
   if (showBadge) {
-    const badgePadding = Math.max(4, Math.round(size * 0.18));
+    const badgePadding = Math.max(3, Math.round(size * 0.12));
+    const roundedClass = size >= 40 ? 'rounded-2xl' : 'rounded-xl';
     return (
       <div
-        className={`inline-flex items-center justify-center rounded-xl border shrink-0 flex-shrink-0 aspect-square select-none ${className}`}
+        className={`inline-flex items-center justify-center ${roundedClass} border shrink-0 flex-shrink-0 aspect-square select-none ${className}`}
         style={{
           width: size,
           height: size,
@@ -294,7 +330,7 @@ export const AppBrandIcon: React.FC<IconProps> = ({
           maxHeight: size,
           backgroundColor: `${cfg.accentColor}18`,
           borderColor: `${cfg.accentColor}40`,
-          boxShadow: `0 0 12px ${cfg.accentColor}20`,
+          boxShadow: `0 0 16px ${cfg.accentColor}25`,
         }}
       >
         <img
