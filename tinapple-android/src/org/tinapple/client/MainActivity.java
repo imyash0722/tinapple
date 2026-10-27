@@ -36,9 +36,9 @@ public class MainActivity extends Activity {
     private static final String KEY_SERVER_URL = "server_url";
 
     // Presets
-    public static final String SERVER_TAILSCALE_HTTP = "http://100.112.193.54:8088";
-    public static final String SERVER_TAILSCALE_HTTPS = "https://pineapple-station.taildb42a2.ts.net";
-    public static final String SERVER_LOCAL_WIFI = "http://10.3.4.31:8088";
+    public static final String SERVER_TAILSCALE_HTTPS = "https://tinapple-server.tail3dee69.ts.net";
+    public static final String SERVER_LOCAL_WIFI = "https://192.168.1.17";
+    public static final String SERVER_TAILSCALE_IP = "https://100.67.207.60";
     public static final String SERVER_DIRECT_ETH = "http://192.168.99.1:8088";
 
     private WebView mWebView;
@@ -57,7 +57,7 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
 
         mPrefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
-        mActiveUrl = mPrefs.getString(KEY_SERVER_URL, SERVER_TAILSCALE_HTTP);
+        mActiveUrl = mPrefs.getString(KEY_SERVER_URL, SERVER_TAILSCALE_HTTPS);
 
         mWebView = findViewById(R.id.webView);
         mProgressBar = findViewById(R.id.progressBar);
@@ -199,9 +199,9 @@ public class MainActivity extends Activity {
 
     private void showServerSelectorDialog() {
         final String[] options = new String[]{
-                "🍍 Tailscale HTTP (100.112.193.54:8088)",
-                "🔒 Tailscale HTTPS (pineapple-station.taildb42a2.ts.net)",
-                "📶 Local Wi-Fi (10.3.4.31:8088)",
+                "🔒 Tailscale HTTPS (tinapple-server.tail3dee69.ts.net)",
+                "📶 Local Wi-Fi (192.168.1.17)",
+                "🍍 Tailscale Direct (100.67.207.60)",
                 "🔌 Direct Ethernet (192.168.99.1:8088)",
                 "✏️ Custom URL..."
         };
@@ -213,13 +213,13 @@ public class MainActivity extends Activity {
             public void onClick(DialogInterface dialog, int which) {
                 switch (which) {
                     case 0:
-                        setNewServerUrl(SERVER_TAILSCALE_HTTP);
-                        break;
-                    case 1:
                         setNewServerUrl(SERVER_TAILSCALE_HTTPS);
                         break;
-                    case 2:
+                    case 1:
                         setNewServerUrl(SERVER_LOCAL_WIFI);
+                        break;
+                    case 2:
+                        setNewServerUrl(SERVER_TAILSCALE_IP);
                         break;
                     case 3:
                         setNewServerUrl(SERVER_DIRECT_ETH);

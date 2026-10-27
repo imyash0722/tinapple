@@ -1,15 +1,16 @@
 #!/bin/bash
 set -e
 
-SDK_DIR="/home/pineapple/Android/Sdk"
+SDK_DIR="${ANDROID_SDK_ROOT:-$HOME/Android/Sdk}"
 BUILD_TOOLS="$SDK_DIR/build-tools/34.0.0"
 PLATFORM="$SDK_DIR/platforms/android-34"
-JAVA_HOME="/home/pineapple/.local/share/mise/installs/java/temurin-17.0.18+8"
+JAVA_HOME="${JAVA_HOME:-/home/tin/.jdks/jdk-17.0.20.1+1}"
 export PATH="$JAVA_HOME/bin:$BUILD_TOOLS:$PATH"
 
-PROJECT_DIR="/mnt/shared/projects/tinapple/tinapple-android"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$SCRIPT_DIR"
 BUILD_DIR="$PROJECT_DIR/build"
-OUT_DIR="/mnt/shared/projects/tinapple/out"
+OUT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)/out"
 
 mkdir -p "$BUILD_DIR/gen" "$BUILD_DIR/obj" "$BUILD_DIR/apk" "$OUT_DIR"
 

@@ -89,18 +89,11 @@ func main() {
 	})
 
 	// Suwayomi-Tsumiru Manga Client APK route
-	r.GET("/tsumiru-client.apk", func(c *gin.Context) {
-		tsumiruApkPath := filepath.Join(distDir, "tsumiru-client.apk")
-		if _, err := os.Stat("tsumiru-client.apk"); err == nil {
-			c.File("tsumiru-client.apk")
-			return
-		}
-		if _, err := os.Stat(tsumiruApkPath); err == nil {
-			c.File(tsumiruApkPath)
-			return
-		}
-		c.Redirect(http.StatusFound, "https://github.com/Suwayomi/Tsumiru/releases/latest")
-	})
+	tsumiruApkPath := filepath.Join(distDir, "tsumiru-client.apk")
+	if _, err := os.Stat("tsumiru-client.apk"); err == nil {
+		tsumiruApkPath = "tsumiru-client.apk"
+	}
+	r.StaticFile("/tsumiru-client.apk", tsumiruApkPath)
 	r.GET("/download/tsumiru", func(c *gin.Context) {
 		c.Redirect(http.StatusFound, "/tsumiru-client.apk")
 	})
