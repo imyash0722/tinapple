@@ -557,8 +557,8 @@ export const GuidesModal: React.FC<GuidesModalProps> = ({
 
         {/* Modal Body: Sidebar + Main Content */}
         <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
-          {/* Left Sidebar: Guide Selection */}
-          <div className="w-full md:w-72 lg:w-80 bg-[#0d1017] border-b md:border-b-0 md:border-r border-tinapple-border flex flex-col shrink-0">
+          {/* Left Sidebar: Guide Selection (constrained max height on phones to leave ample space for reading) */}
+          <div className="w-full md:w-72 lg:w-80 bg-[#0d1017] border-b md:border-b-0 md:border-r border-tinapple-border flex flex-col shrink-0 max-h-44 sm:max-h-56 md:max-h-none">
             {/* Search Input */}
             <div className="p-3 border-b border-tinapple-border/70">
               <div className="relative">

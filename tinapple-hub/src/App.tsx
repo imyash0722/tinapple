@@ -490,9 +490,9 @@ export const App: React.FC = () => {
             </button>
 
             {/* Mobile Brand Icon & Tab Title */}
-            <div className="md:hidden flex items-center gap-2">
-              <span className="text-lg">🍎</span>
-              <span className="font-mono font-bold text-sm text-white capitalize">
+            <div className="md:hidden flex items-center gap-2 min-w-0">
+              <span className="text-lg shrink-0">🍎</span>
+              <span className="font-mono font-bold text-sm text-white capitalize truncate max-w-[120px] sm:max-w-xs">
                 {activeTab === 'store' ? 'App Store' : activeTab}
               </span>
             </div>
@@ -578,7 +578,7 @@ export const App: React.FC = () => {
 
       {/* MAIN SCREEN-FILLING BENTO DECK */}
       <main
-        className={`w-full max-w-full px-3 sm:px-6 pt-5 pb-24 md:pb-12 transition-all duration-300 ${
+        className={`w-full max-w-full px-3 sm:px-6 pt-4 sm:pt-5 pb-[calc(7rem+env(safe-area-inset-bottom,0px))] md:pb-12 transition-all duration-300 ${
           desktopSidebarCollapsed ? 'md:pl-24' : 'md:pl-72'
         }`}
       >

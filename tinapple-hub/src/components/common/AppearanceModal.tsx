@@ -285,7 +285,7 @@ export const AppearanceModal: React.FC<AppearanceModalProps> = ({
           </button>
         </div>
 
-        <div className="space-y-7 p-5 sm:p-6">
+        <div className="space-y-7 p-5 sm:p-6 pb-[calc(2.5rem+env(safe-area-inset-bottom,0px))]">
           {/* Background Mode Selection */}
           <section aria-labelledby="background-heading">
             <h3 id="background-heading" className="mb-3 text-xs font-mono uppercase tracking-wider text-zinc-400">
