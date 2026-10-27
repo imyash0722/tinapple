@@ -125,16 +125,24 @@ func main() {
 			r.Static("/wallpapers", "../wallpapers")
 		}
 		r.StaticFile("/favicon.ico", filepath.Join(distDir, "favicon.ico"))
-		r.GET("/", func(c *gin.Context) {
+		serveIndex := func(c *gin.Context) {
+			c.Header("Cache-Control", "no-cache, no-store, must-revalidate, max-age=0")
+			c.Header("Pragma", "no-cache")
+			c.Header("Expires", "0")
 			c.File(filepath.Join(distDir, "index.html"))
-		})
+		}
+		r.GET("/", serveIndex)
 		r.NoRoute(func(c *gin.Context) {
 			path := c.Request.URL.Path
-			if strings.HasPrefix(path, "/api") {
-				c.JSON(http.StatusNotFound, gin.H{"error": "API route not found"})
+			if strings.HasPrefix(path, "/api") ||
+				strings.HasPrefix(path, "/assets") ||
+				strings.HasPrefix(path, "/icons") ||
+				strings.HasPrefix(path, "/images") ||
+				strings.HasPrefix(path, "/wallpapers") {
+				c.JSON(http.StatusNotFound, gin.H{"error": "Resource not found"})
 				return
 			}
-			c.File(filepath.Join(distDir, "index.html"))
+			serveIndex(c)
 		})
 	} else {
 		// Fallback to legacy templates if dist not present

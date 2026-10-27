@@ -893,24 +893,40 @@ WantedBy=multi-user.target
 	return nil
 }
 
-func installRadarr() error {
+func scanLinesOrCR(data []byte, atEOF bool) (advance int, token []byte, err error) {
+	if atEOF && len(data) == 0 {
+		return 0, nil, nil
+	}
+	for i := 0; i < len(data); i++ {
+		if data[i] == '\n' || data[i] == '\r' {
+			return i + 1, data[:i], nil
+		}
+	}
+	if atEOF {
+		return len(data), data, nil
+	}
+	return 0, nil, nil
+}
+
+func installRadarr(m *AppManager) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 	defer cancel()
 
 	cleanStalePacmanLock()
-	_ = exec.CommandContext(ctx, "pacman", "-S", "--noconfirm", "--needed", "sqlite").Run()
+	m.AppendLog("radarr", "info", "Verifying required database libraries (sqlite)...")
+	_ = m.runStreamCmd(ctx, "radarr", "pacman", "-S", "--noconfirm", "--needed", "sqlite")
 
 	tmpTar := "/tmp/radarr.tar.gz"
-	cmd := exec.CommandContext(ctx, "curl", "--http1.1", "-fsSL", "https://radarr.servarr.com/v1/update/master/updatefile?os=linux&arch=x64&runtime=netcore", "-o", tmpTar)
-	if out, err := cmd.CombinedOutput(); err != nil {
-		return fmt.Errorf("failed to download radarr: %s (%w)", string(out), err)
+	m.AppendLog("radarr", "info", "Streaming official Radarr NetCore Linux x64 release...")
+	if err := m.runStreamCmd(ctx, "radarr", "curl", "--http1.1", "-fL", "--progress-bar", "https://radarr.servarr.com/v1/update/master/updatefile?os=linux&arch=x64&runtime=netcore", "-o", tmpTar); err != nil {
+		return fmt.Errorf("failed to download radarr: %w", err)
 	}
 	defer os.Remove(tmpTar)
 
 	_ = os.MkdirAll("/opt", 0755)
-	cmdExtract := exec.CommandContext(ctx, "tar", "-xzf", tmpTar, "-C", "/opt")
-	if out, err := cmdExtract.CombinedOutput(); err != nil {
-		return fmt.Errorf("failed to extract radarr: %s (%w)", string(out), err)
+	m.AppendLog("radarr", "info", "Extracting Radarr to /opt/Radarr...")
+	if err := m.runStreamCmd(ctx, "radarr", "tar", "-xzf", tmpTar, "-C", "/opt"); err != nil {
+		return fmt.Errorf("failed to extract radarr: %w", err)
 	}
 
 	_ = os.Remove("/usr/local/bin/radarr")
@@ -923,6 +939,7 @@ After=network.target
 
 [Service]
 Type=simple
+User=root
 ExecStart=/opt/Radarr/Radarr -nobrowser -data=/var/lib/radarr/
 Restart=always
 RestartSec=10
@@ -933,27 +950,29 @@ WantedBy=multi-user.target
 	if err := os.WriteFile("/etc/systemd/system/radarr.service", []byte(serviceContent), 0644); err != nil {
 		return fmt.Errorf("failed to create radarr.service: %w", err)
 	}
+	_ = m.runStreamCmd(ctx, "radarr", "systemctl", "daemon-reload")
 	return nil
 }
 
-func installSonarr() error {
+func installSonarr(m *AppManager) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 	defer cancel()
 
 	cleanStalePacmanLock()
-	_ = exec.CommandContext(ctx, "pacman", "-S", "--noconfirm", "--needed", "sqlite").Run()
+	m.AppendLog("sonarr", "info", "Verifying required database libraries (sqlite)...")
+	_ = m.runStreamCmd(ctx, "sonarr", "pacman", "-S", "--noconfirm", "--needed", "sqlite")
 
 	tmpTar := "/tmp/sonarr.tar.gz"
-	cmd := exec.CommandContext(ctx, "curl", "--http1.1", "-fsSL", "https://services.sonarr.tv/v1/download/main/latest?version=4&os=linux&arch=x64", "-o", tmpTar)
-	if out, err := cmd.CombinedOutput(); err != nil {
-		return fmt.Errorf("failed to download sonarr: %s (%w)", string(out), err)
+	m.AppendLog("sonarr", "info", "Streaming official Sonarr v4 Linux x64 release...")
+	if err := m.runStreamCmd(ctx, "sonarr", "curl", "--http1.1", "-fL", "--progress-bar", "https://services.sonarr.tv/v1/download/main/latest?version=4&os=linux&arch=x64", "-o", tmpTar); err != nil {
+		return fmt.Errorf("failed to download sonarr: %w", err)
 	}
 	defer os.Remove(tmpTar)
 
 	_ = os.MkdirAll("/opt", 0755)
-	cmdExtract := exec.CommandContext(ctx, "tar", "-xzf", tmpTar, "-C", "/opt")
-	if out, err := cmdExtract.CombinedOutput(); err != nil {
-		return fmt.Errorf("failed to extract sonarr: %s (%w)", string(out), err)
+	m.AppendLog("sonarr", "info", "Extracting Sonarr to /opt/Sonarr...")
+	if err := m.runStreamCmd(ctx, "sonarr", "tar", "-xzf", tmpTar, "-C", "/opt"); err != nil {
+		return fmt.Errorf("failed to extract sonarr: %w", err)
 	}
 
 	_ = os.Remove("/usr/local/bin/sonarr")
@@ -966,6 +985,7 @@ After=network.target
 
 [Service]
 Type=simple
+User=root
 ExecStart=/opt/Sonarr/Sonarr -nobrowser -data=/var/lib/sonarr/
 Restart=always
 RestartSec=10
@@ -976,27 +996,29 @@ WantedBy=multi-user.target
 	if err := os.WriteFile("/etc/systemd/system/sonarr.service", []byte(serviceContent), 0644); err != nil {
 		return fmt.Errorf("failed to create sonarr.service: %w", err)
 	}
+	_ = m.runStreamCmd(ctx, "sonarr", "systemctl", "daemon-reload")
 	return nil
 }
 
-func installProwlarr() error {
+func installProwlarr(m *AppManager) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 	defer cancel()
 
 	cleanStalePacmanLock()
-	_ = exec.CommandContext(ctx, "pacman", "-S", "--noconfirm", "--needed", "sqlite").Run()
+	m.AppendLog("prowlarr", "info", "Verifying required database libraries (sqlite)...")
+	_ = m.runStreamCmd(ctx, "prowlarr", "pacman", "-S", "--noconfirm", "--needed", "sqlite")
 
 	tmpTar := "/tmp/prowlarr.tar.gz"
-	cmd := exec.CommandContext(ctx, "curl", "--http1.1", "-fsSL", "https://prowlarr.servarr.com/v1/update/master/updatefile?os=linux&arch=x64&runtime=netcore", "-o", tmpTar)
-	if out, err := cmd.CombinedOutput(); err != nil {
-		return fmt.Errorf("failed to download prowlarr: %s (%w)", string(out), err)
+	m.AppendLog("prowlarr", "info", "Streaming official Prowlarr Linux x64 NetCore release...")
+	if err := m.runStreamCmd(ctx, "prowlarr", "curl", "--http1.1", "-fL", "--progress-bar", "https://prowlarr.servarr.com/v1/update/master/updatefile?os=linux&arch=x64&runtime=netcore", "-o", tmpTar); err != nil {
+		return fmt.Errorf("failed to download prowlarr: %w", err)
 	}
 	defer os.Remove(tmpTar)
 
 	_ = os.MkdirAll("/opt", 0755)
-	cmdExtract := exec.CommandContext(ctx, "tar", "-xzf", tmpTar, "-C", "/opt")
-	if out, err := cmdExtract.CombinedOutput(); err != nil {
-		return fmt.Errorf("failed to extract prowlarr: %s (%w)", string(out), err)
+	m.AppendLog("prowlarr", "info", "Extracting Prowlarr to /opt/Prowlarr...")
+	if err := m.runStreamCmd(ctx, "prowlarr", "tar", "-xzf", tmpTar, "-C", "/opt"); err != nil {
+		return fmt.Errorf("failed to extract prowlarr: %w", err)
 	}
 
 	_ = os.Remove("/usr/local/bin/prowlarr")
@@ -1009,6 +1031,7 @@ After=network.target
 
 [Service]
 Type=simple
+User=root
 ExecStart=/opt/Prowlarr/Prowlarr -nobrowser -data=/var/lib/prowlarr/
 Restart=always
 RestartSec=10
@@ -1019,6 +1042,7 @@ WantedBy=multi-user.target
 	if err := os.WriteFile("/etc/systemd/system/prowlarr.service", []byte(serviceContent), 0644); err != nil {
 		return fmt.Errorf("failed to create prowlarr.service: %w", err)
 	}
+	_ = m.runStreamCmd(ctx, "prowlarr", "systemctl", "daemon-reload")
 	return nil
 }
 
@@ -1148,9 +1172,10 @@ func (m *AppManager) runStreamCmd(ctx context.Context, appID string, name string
 	scanPipe := func(r io.Reader, lvl string) {
 		defer wg.Done()
 		scanner := bufio.NewScanner(r)
+		scanner.Split(scanLinesOrCR)
 		for scanner.Scan() {
-			line := scanner.Text()
-			if strings.TrimSpace(line) != "" {
+			line := strings.TrimSpace(scanner.Text())
+			if line != "" {
 				m.AppendLog(appID, lvl, line)
 			}
 		}
@@ -1196,13 +1221,13 @@ func (m *AppManager) Install(id string) error {
 		installErr = installMinecraftServer()
 	case "prowlarr":
 		m.AppendLog(id, "info", "Downloading Prowlarr Linux x64 Servarr tarball...")
-		installErr = installProwlarr()
+		installErr = installProwlarr(m)
 	case "radarr":
 		m.AppendLog(id, "info", "Downloading official Radarr Linux x64 Servarr release...")
-		installErr = installRadarr()
+		installErr = installRadarr(m)
 	case "sonarr":
 		m.AppendLog(id, "info", "Downloading official Sonarr Linux x64 Servarr release...")
-		installErr = installSonarr()
+		installErr = installSonarr(m)
 	case "jdownloader":
 		cleanStalePacmanLock()
 		m.AppendLog(id, "info", "Pre-installing Java runtime and fonts for JDownloader2...")
