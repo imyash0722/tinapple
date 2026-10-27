@@ -74,6 +74,20 @@ export interface ServiceInfo {
   accentColor?: string;
 }
 
+export interface InstallLogMessage {
+  timestamp: string;
+  level: 'info' | 'command' | 'warn' | 'error' | 'success';
+  appId: string;
+  message: string;
+}
+
+export interface InstallProgressState {
+  status: 'idle' | 'running' | 'success' | 'error';
+  activeApp: string;
+  appName?: string;
+  logs: InstallLogMessage[];
+}
+
 export interface AppActionResult {
   ok: boolean;
   error?: string;

@@ -1,4 +1,4 @@
-import { SystemInfo, TelemetrySnapshot, ServiceInfo, HardwareInfo, SessionMode, AppInfo, AppActionResult, TailscaleStatus } from '../types/api';
+import { SystemInfo, TelemetrySnapshot, ServiceInfo, HardwareInfo, SessionMode, AppInfo, AppActionResult, InstallProgressState, InstallLogMessage, TailscaleStatus } from '../types/api';
 
 const API_BASE = '/api/v1';
 
@@ -432,6 +432,25 @@ class ApiService {
       return { ok: true };
     } catch (e: any) {
       return { ok: false, error: e?.message || 'Network request failed' };
+    }
+  }
+
+  async getInstallProgress(): Promise<InstallProgressState | null> {
+    try {
+      const res = await fetch(`${API_BASE}/apps/install/progress`);
+      if (!res.ok) return null;
+      return await res.json();
+    } catch {
+      return null;
+    }
+  }
+
+  async clearInstallLogs(): Promise<boolean> {
+    try {
+      const res = await fetch(`${API_BASE}/apps/install/clear`, { method: 'POST' });
+      return res.ok;
+    } catch {
+      return false;
     }
   }
 

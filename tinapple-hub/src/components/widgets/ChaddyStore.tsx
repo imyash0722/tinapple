@@ -24,6 +24,7 @@ import CircularCarousel, { CircularCarouselItem } from '../reactbits/CircularCar
 import { AppBrandIcon } from '../common/AppBrandIcons';
 import { api } from '../../services/api';
 import { AppInfo } from '../../types/api';
+import { StoreTerminal } from './StoreTerminal';
 
 const FALLBACK_APPS: AppInfo[] = [
   {
@@ -1024,6 +1025,9 @@ export const ChaddyStore: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Real-time Download Progress & Provisioning Terminal */}
+      <StoreTerminal />
     </div>
   );
 };

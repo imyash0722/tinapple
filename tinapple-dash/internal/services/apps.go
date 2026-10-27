@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"os/user"
@@ -62,6 +63,20 @@ type AppStatus struct {
 	Config      map[string]string `json:"config,omitempty"`
 }
 
+type InstallLogMessage struct {
+	Timestamp string `json:"timestamp"`
+	Level     string `json:"level"` // "info", "command", "warn", "error", "success"
+	AppID     string `json:"appId"`
+	Message   string `json:"message"`
+}
+
+type InstallProgressState struct {
+	Status    string              `json:"status"` // "idle", "running", "success", "error"
+	ActiveApp string              `json:"activeApp"`
+	AppName   string              `json:"appName,omitempty"`
+	Logs      []InstallLogMessage `json:"logs"`
+}
+
 type AppManager struct {
 	mu          sync.RWMutex
 	operationMu sync.Mutex
@@ -70,14 +85,24 @@ type AppManager struct {
 	cacheMu     sync.RWMutex
 	cachedAt    time.Time
 	cachedList  []AppStatus
+
+	// Real-time Install Logger & PubSub
+	logMu       sync.RWMutex
+	logState    InstallProgressState
+	logSubChans map[chan InstallLogMessage]struct{}
 }
 
 func NewAppManager() *AppManager {
 	primaryUser, primaryHome := getSystemPrimaryUser()
 
 	mgr := &AppManager{
-		apps:     make(map[string]AppDefinition),
-		appOrder: make([]string, 0),
+		apps:        make(map[string]AppDefinition),
+		appOrder:    make([]string, 0),
+		logSubChans: make(map[chan InstallLogMessage]struct{}),
+		logState: InstallProgressState{
+			Status: "idle",
+			Logs:   make([]InstallLogMessage, 0),
+		},
 	}
 
 	definitions := []AppDefinition{
@@ -1031,6 +1056,117 @@ WantedBy=multi-user.target
 	return nil
 }
 
+func (m *AppManager) AppendLog(appID, level, msg string) {
+	entry := InstallLogMessage{
+		Timestamp: time.Now().Format("15:04:05"),
+		Level:     level,
+		AppID:     appID,
+		Message:   msg,
+	}
+
+	m.logMu.Lock()
+	if len(m.logState.Logs) >= 1000 {
+		m.logState.Logs = m.logState.Logs[1:]
+	}
+	m.logState.Logs = append(m.logState.Logs, entry)
+	for ch := range m.logSubChans {
+		select {
+		case ch <- entry:
+		default:
+		}
+	}
+	m.logMu.Unlock()
+}
+
+func (m *AppManager) SetInstallState(status, appID, appName string) {
+	m.logMu.Lock()
+	m.logState.Status = status
+	m.logState.ActiveApp = appID
+	m.logState.AppName = appName
+	m.logMu.Unlock()
+}
+
+func (m *AppManager) GetInstallProgress() InstallProgressState {
+	m.logMu.RLock()
+	defer m.logMu.RUnlock()
+	logsCopy := make([]InstallLogMessage, len(m.logState.Logs))
+	copy(logsCopy, m.logState.Logs)
+	return InstallProgressState{
+		Status:    m.logState.Status,
+		ActiveApp: m.logState.ActiveApp,
+		AppName:   m.logState.AppName,
+		Logs:      logsCopy,
+	}
+}
+
+func (m *AppManager) ClearInstallLogs() {
+	m.logMu.Lock()
+	m.logState.Logs = make([]InstallLogMessage, 0)
+	if m.logState.Status != "running" {
+		m.logState.Status = "idle"
+		m.logState.ActiveApp = ""
+		m.logState.AppName = ""
+	}
+	m.logMu.Unlock()
+}
+
+func (m *AppManager) SubscribeInstallLogs() (chan InstallLogMessage, func()) {
+	ch := make(chan InstallLogMessage, 100)
+	m.logMu.Lock()
+	m.logSubChans[ch] = struct{}{}
+	m.logMu.Unlock()
+
+	unsubscribe := func() {
+		m.logMu.Lock()
+		delete(m.logSubChans, ch)
+		close(ch)
+		m.logMu.Unlock()
+	}
+	return ch, unsubscribe
+}
+
+func (m *AppManager) runStreamCmd(ctx context.Context, appID string, name string, args ...string) error {
+	cmd := exec.CommandContext(ctx, name, args...)
+	cmdStr := fmt.Sprintf("$ %s %s", name, strings.Join(args, " "))
+	m.AppendLog(appID, "command", cmdStr)
+
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		return err
+	}
+	stderr, err := cmd.StderrPipe()
+	if err != nil {
+		return err
+	}
+
+	if err := cmd.Start(); err != nil {
+		m.AppendLog(appID, "error", fmt.Sprintf("Failed to spawn process: %v", err))
+		return err
+	}
+
+	var wg sync.WaitGroup
+	scanPipe := func(r io.Reader, lvl string) {
+		defer wg.Done()
+		scanner := bufio.NewScanner(r)
+		for scanner.Scan() {
+			line := scanner.Text()
+			if strings.TrimSpace(line) != "" {
+				m.AppendLog(appID, lvl, line)
+			}
+		}
+	}
+
+	wg.Add(2)
+	go scanPipe(stdout, "info")
+	go scanPipe(stderr, "warn")
+	wg.Wait()
+
+	if err := cmd.Wait(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (m *AppManager) Install(id string) error {
 	m.operationMu.Lock()
 	defer m.operationMu.Unlock()
@@ -1041,66 +1177,88 @@ func (m *AppManager) Install(id string) error {
 		return fmt.Errorf("app %s not found", id)
 	}
 
+	m.SetInstallState("running", id, app.Name)
+	m.AppendLog(id, "command", fmt.Sprintf(">>> Initiating deployment pipeline for %s (%s)...", app.Name, id))
+
 	var installErr error
 	switch id {
 	case "playit":
+		m.AppendLog(id, "info", "Fetching latest Playit Anycast binary from GitHub releases...")
 		installErr = installPlayit()
 	case "filebrowser":
+		m.AppendLog(id, "info", "Downloading official FileBrowser Quantum binary release...")
 		installErr = installFilebrowser()
 	case "metube":
+		m.AppendLog(id, "info", "Installing MeTube Python requirements (yt-dlp, ffmpeg, aiohttp)...")
 		installErr = installMetube()
 	case "minecraft":
+		m.AppendLog(id, "info", "Deploying PaperMC / PurpurMC appliance server runtime...")
 		installErr = installMinecraftServer()
 	case "prowlarr":
+		m.AppendLog(id, "info", "Downloading Prowlarr Linux x64 Servarr tarball...")
 		installErr = installProwlarr()
 	case "radarr":
+		m.AppendLog(id, "info", "Downloading official Radarr Linux x64 Servarr release...")
 		installErr = installRadarr()
 	case "sonarr":
+		m.AppendLog(id, "info", "Downloading official Sonarr Linux x64 Servarr release...")
 		installErr = installSonarr()
+	case "jdownloader":
+		cleanStalePacmanLock()
+		m.AppendLog(id, "info", "Pre-installing Java runtime and fonts for JDownloader2...")
+		ctxPre, cancelPre := context.WithTimeout(context.Background(), 5*time.Minute)
+		_ = m.runStreamCmd(ctxPre, id, "pacman", "-S", "--noconfirm", "--needed", "jre-openjdk", "noto-fonts", "libxtst")
+		cancelPre()
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+		defer cancel()
+		installErr = m.runStreamCmd(ctx, id, "pacman", "-S", "--noconfirm", "--needed", app.Package)
 	default:
 		if app.Package != "" {
 			cleanStalePacmanLock()
 			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 			defer cancel()
 
-			// 1. Try pacman first (works for official arch/cachyos packages)
-			cmd := exec.CommandContext(ctx, "pacman", "-S", "--noconfirm", "--needed", app.Package)
-			out, err := cmd.CombinedOutput()
-			if err != nil {
+			// 1. Try pacman first with live streaming logs
+			installErr = m.runStreamCmd(ctx, id, "pacman", "-S", "--noconfirm", "--needed", app.Package)
+			if installErr != nil {
 				primaryUser, _ := getSystemPrimaryUser()
-				// 2. Try paru with --skipreview as unprivileged primary user
-				paruCmd := exec.CommandContext(ctx, "sudo", "-u", primaryUser, "paru", "-S", "--noconfirm", "--needed", "--skipreview", app.Package)
-				paruOut, paruErr := paruCmd.CombinedOutput()
+				m.AppendLog(id, "warn", fmt.Sprintf("Pacman failed, attempting AUR via paru as %s...", primaryUser))
+				paruErr := m.runStreamCmd(ctx, id, "sudo", "-u", primaryUser, "paru", "-S", "--noconfirm", "--needed", "--skipreview", app.Package)
 				if paruErr != nil {
-					// 3. Try with or without -bin suffix
 					fallbackPkg := app.Package + "-bin"
 					if strings.HasSuffix(app.Package, "-bin") {
 						fallbackPkg = strings.TrimSuffix(app.Package, "-bin")
 					}
-					paruFallbackCmd := exec.CommandContext(ctx, "sudo", "-u", primaryUser, "paru", "-S", "--noconfirm", "--needed", "--skipreview", fallbackPkg)
-					paruFallbackOut, paruFallbackErr := paruFallbackCmd.CombinedOutput()
-					if paruFallbackErr != nil {
-						installErr = fmt.Errorf("installation failed for %s:\npacman: %s\nparu: %s\nfallback: %s", app.Package, strings.TrimSpace(string(out)), strings.TrimSpace(string(paruOut)), strings.TrimSpace(string(paruFallbackOut)))
-					}
+					m.AppendLog(id, "warn", fmt.Sprintf("Retrying with AUR package %s...", fallbackPkg))
+					installErr = m.runStreamCmd(ctx, id, "sudo", "-u", primaryUser, "paru", "-S", "--noconfirm", "--needed", "--skipreview", fallbackPkg)
+				} else {
+					installErr = nil
 				}
 			}
 		}
 	}
 	if installErr != nil {
+		m.AppendLog(id, "error", fmt.Sprintf("FAILED: Deployment failed for %s: %v", app.Name, installErr))
+		m.SetInstallState("error", id, app.Name)
 		return installErr
 	}
 
 	// Reload systemd daemon
+	m.AppendLog(id, "command", "$ systemctl daemon-reload")
 	_ = exec.Command("systemctl", "daemon-reload").Run()
 
 	// If unit exists, enable and start it
 	if app.Unit != "" {
+		m.AppendLog(id, "command", fmt.Sprintf("$ systemctl enable --now %s", app.Unit))
 		if out, err := exec.Command("systemctl", "enable", "--now", app.Unit).CombinedOutput(); err != nil {
-			fmt.Fprintf(os.Stderr, "[apps] Warning: enable --now %s: %s (%v)\n", app.Unit, string(out), err)
+			m.AppendLog(id, "warn", fmt.Sprintf("systemctl notice: %s (%v)", string(out), err))
 		}
 	}
 
-	return m.refreshProxyRoutes()
+	_ = m.refreshProxyRoutes()
+	m.AppendLog(id, "success", fmt.Sprintf("SUCCESS: %s is active and ready on port %d!", app.Name, app.Port))
+	m.SetInstallState("success", id, app.Name)
+	return nil
 }
 
 func (m *AppManager) Uninstall(id string) error {

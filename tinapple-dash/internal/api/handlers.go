@@ -66,6 +66,9 @@ func SetupRoutes(r *gin.Engine, cfg *config.Manifest, svcMgr *services.SystemdMa
 
 		// Apps (Comprehensive Application & Config Management)
 		v1.GET("/apps", h.ListApps)
+		v1.GET("/apps/install/progress", h.GetInstallProgress)
+		v1.GET("/apps/install/stream", h.InstallProgressStream)
+		v1.POST("/apps/install/clear", h.ClearInstallLogs)
 		v1.GET("/apps/:name", h.GetApp)
 		v1.POST("/apps/:name/install", h.InstallApp)
 		v1.POST("/apps/:name/uninstall", h.UninstallApp)
@@ -285,6 +288,53 @@ func (h *Handler) GetApp(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, app)
+}
+
+// GetInstallProgress returns the current store download/install terminal state
+func (h *Handler) GetInstallProgress(c *gin.Context) {
+	st := h.appMgr.GetInstallProgress()
+	c.JSON(http.StatusOK, st)
+}
+
+// InstallProgressStream provides an SSE event stream for live store download & provisioning logs
+func (h *Handler) InstallProgressStream(c *gin.Context) {
+	c.Header("Content-Type", "text/event-stream")
+	c.Header("Cache-Control", "no-cache")
+	c.Header("Connection", "keep-alive")
+
+	ch, unsubscribe := h.appMgr.SubscribeInstallLogs()
+	defer unsubscribe()
+
+	clientGone := c.Request.Context().Done()
+
+	// Initial dump of state
+	c.SSEvent("status", h.appMgr.GetInstallProgress())
+	c.Writer.Flush()
+
+	heartbeat := time.NewTicker(15 * time.Second)
+	defer heartbeat.Stop()
+
+	for {
+		select {
+		case <-clientGone:
+			return
+		case <-heartbeat.C:
+			c.SSEvent("ping", "pong")
+			c.Writer.Flush()
+		case logMsg, ok := <-ch:
+			if !ok {
+				return
+			}
+			c.SSEvent("log", logMsg)
+			c.Writer.Flush()
+		}
+	}
+}
+
+// ClearInstallLogs resets the install progress state
+func (h *Handler) ClearInstallLogs(c *gin.Context) {
+	h.appMgr.ClearInstallLogs()
+	c.JSON(http.StatusOK, gin.H{"status": "cleared"})
 }
 
 // InstallApp triggers package installation and service setup

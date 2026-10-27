@@ -473,32 +473,6 @@ export const App: React.FC = () => {
                 secondaryColor={settings.secondaryColor}
                 onOpenTailscale={() => setTailscaleOpen(true)}
               />
-
-              {/* Bento Row 3: Essential Daemon Matrix Preview */}
-              <div>
-                <div className="flex justify-between items-center mb-3">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-tinapple-gold animate-pulse" />
-                    <h3 className="text-sm font-bold text-white uppercase tracking-wider font-mono">
-                      Essential Appliance Daemons
-                    </h3>
-                  </div>
-                  <button
-                    onClick={() => setActiveTab('services')}
-                    className="text-xs font-mono font-semibold text-tinapple-gold hover:underline flex items-center gap-1"
-                  >
-                    <span>View all {services.length} services</span>
-                    <span>→</span>
-                  </button>
-                </div>
-                <ServicesManager
-                  accentColor={settings.accentColor}
-                  services={services}
-                  onControlService={handleControlService}
-                  onOpenLogs={handleOpenLogs}
-                  onOpenTailscale={() => setTailscaleOpen(true)}
-                />
-              </div>
             </motion.div>
           )}
 
