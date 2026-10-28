@@ -52,6 +52,16 @@ body {
   background-color: #050814;
   color: #e2e8f0;
   overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Optimized Tabular Numbers for Metrics, Clocks, Percentages & Data */
+.font-mono,
+.tabular-nums {
+  font-variant-numeric: tabular-nums lining-nums;
+  -webkit-font-feature-settings: "tnum" 1, "lnum" 1;
+  font-feature-settings: "tnum" 1, "lnum" 1;
 }
 
 /* Hide all scrollbars globally across Chrome, Safari, Edge, Firefox, and Opera while maintaining smooth scrolling */

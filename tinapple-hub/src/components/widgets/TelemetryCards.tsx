@@ -86,10 +86,10 @@ export const TelemetryCards: React.FC<TelemetryCardsProps> = ({ telemetry, syste
             {/* Metric Stats & Waveform Row */}
             <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 items-end mb-4">
               <div className="sm:col-span-5">
-                <div className="text-4xl sm:text-5xl font-black text-white tracking-tight font-mono">
-                  <CountUp to={telemetry.cpu.usagePercent || 0} decimals={2} suffix="%" />
+                <div className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight font-mono tabular-nums">
+                  <CountUp to={telemetry.cpu.usagePercent || 0} decimals={1} suffix="%" />
                 </div>
-                <div className="flex items-center gap-2 mt-1.5 text-xs font-mono text-tinapple-subtext">
+                <div className="flex items-center gap-2 mt-1 text-xs font-mono text-tinapple-subtext tabular-nums">
                   <span>Load Avg:</span>
                   <span className="text-tinapple-gold font-semibold">
                     {telemetry.cpu.loadAvg ? telemetry.cpu.loadAvg.map((l) => l.toFixed(2)).join(' ') : '0.42 0.58 0.51'}
@@ -171,10 +171,10 @@ export const TelemetryCards: React.FC<TelemetryCardsProps> = ({ telemetry, syste
 
             <div className="flex items-baseline justify-between mb-4">
               <div>
-                <div className="text-4xl sm:text-5xl font-black text-white tracking-tight font-mono">
-                  <CountUp to={telemetry.memory.usagePercent} decimals={2} suffix="%" />
+                <div className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight font-mono tabular-nums">
+                  <CountUp to={telemetry.memory.usagePercent} decimals={1} suffix="%" />
                 </div>
-                <p className="text-xs text-tinapple-subtext font-mono mt-1.5">
+                <p className="text-xs text-tinapple-subtext font-mono mt-1 tabular-nums">
                   {formatBytes(telemetry.memory.usedBytes)} Active / {formatBytes(telemetry.memory.freeBytes)} Available
                 </p>
               </div>
@@ -253,10 +253,10 @@ export const TelemetryCards: React.FC<TelemetryCardsProps> = ({ telemetry, syste
 
           <div className="flex items-baseline justify-between mb-3">
             <div>
-              <div className="text-3xl font-black text-white tracking-tight font-mono">
-                <CountUp to={telemetry.disk.usagePercent} decimals={2} suffix="%" />
+              <div className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight font-mono tabular-nums">
+                <CountUp to={telemetry.disk.usagePercent} decimals={1} suffix="%" />
               </div>
-              <p className="text-xs text-tinapple-subtext font-mono mt-1">
+              <p className="text-xs text-tinapple-subtext font-mono mt-1 tabular-nums">
                 {formatBytes(telemetry.disk.usedBytes)} Used / {formatBytes(telemetry.disk.freeBytes)} Available
               </p>
             </div>
@@ -357,11 +357,11 @@ export const TelemetryCards: React.FC<TelemetryCardsProps> = ({ telemetry, syste
                   <ArrowDownRight className="w-4 h-4" />
                   <span>INBOUND</span>
                 </div>
-                <div className="text-xl font-extrabold text-white font-mono mt-1">
+                <div className="text-xl font-extrabold text-white font-mono mt-1 tabular-nums">
                   {formatRate(telemetry.network.rateIn)}
                 </div>
               </div>
-              <span className="text-[10px] font-mono text-tinapple-muted">RX Total: {formatBytes(telemetry.network.bytesReceived)}</span>
+              <span className="text-[10px] font-mono text-tinapple-muted tabular-nums">RX Total: {formatBytes(telemetry.network.bytesReceived)}</span>
             </div>
 
             <div className="p-3 rounded-2xl bg-tinapple-dark/70 border border-tinapple-border flex items-center justify-between">
@@ -370,11 +370,11 @@ export const TelemetryCards: React.FC<TelemetryCardsProps> = ({ telemetry, syste
                   <ArrowUpRight className="w-4 h-4" />
                   <span>OUTBOUND</span>
                 </div>
-                <div className="text-xl font-extrabold text-white font-mono mt-1">
+                <div className="text-xl font-extrabold text-white font-mono mt-1 tabular-nums">
                   {formatRate(telemetry.network.rateOut)}
                 </div>
               </div>
-              <span className="text-[10px] font-mono text-tinapple-muted">TX Total: {formatBytes(telemetry.network.bytesSent)}</span>
+              <span className="text-[10px] font-mono text-tinapple-muted tabular-nums">TX Total: {formatBytes(telemetry.network.bytesSent)}</span>
             </div>
           </div>
 

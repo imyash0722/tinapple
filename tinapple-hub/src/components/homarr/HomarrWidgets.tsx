@@ -78,12 +78,12 @@ export const HomarrResourceWidget: React.FC<HomarrResourceWidgetProps> = ({ tele
       <div className="space-y-3.5 font-mono text-xs">
         {/* CPU Meter */}
         <div>
-          <div className="flex justify-between text-zinc-300 mb-1">
+          <div className="flex justify-between items-center text-zinc-300 mb-1">
             <span className="flex items-center gap-1.5">
               <Cpu className="w-3.5 h-3.5 text-sky-400" />
               <span>CPU Load</span>
             </span>
-            <span className="font-bold text-white">{cpuPercent}%</span>
+            <span className="font-extrabold text-sm text-white tabular-nums">{cpuPercent}%</span>
           </div>
           <div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden p-0.5">
             <div
@@ -97,13 +97,13 @@ export const HomarrResourceWidget: React.FC<HomarrResourceWidgetProps> = ({ tele
 
         {/* RAM Meter */}
         <div>
-          <div className="flex justify-between text-zinc-300 mb-1">
+          <div className="flex justify-between items-center text-zinc-300 mb-1">
             <span className="flex items-center gap-1.5">
               <Activity className="w-3.5 h-3.5 text-purple-400" />
               <span>Memory (RAM)</span>
             </span>
-            <span className="font-bold text-white">
-              {formatBytes(telemetry?.memory?.usedBytes)} / {formatBytes(telemetry?.memory?.totalBytes)} ({ramPercent}%)
+            <span className="font-extrabold text-sm text-white tabular-nums">
+              {ramPercent}% <span className="text-[10px] text-zinc-400 font-normal">({formatBytes(telemetry?.memory?.usedBytes)})</span>
             </span>
           </div>
           <div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden p-0.5">
@@ -118,13 +118,13 @@ export const HomarrResourceWidget: React.FC<HomarrResourceWidgetProps> = ({ tele
 
         {/* Disk Meter */}
         <div>
-          <div className="flex justify-between text-zinc-300 mb-1">
+          <div className="flex justify-between items-center text-zinc-300 mb-1">
             <span className="flex items-center gap-1.5">
               <HardDrive className="w-3.5 h-3.5 text-emerald-400" />
               <span>Root Storage</span>
             </span>
-            <span className="font-bold text-white">
-              {formatBytes(telemetry?.disk?.usedBytes)} / {formatBytes(telemetry?.disk?.totalBytes)} ({diskPercent}%)
+            <span className="font-extrabold text-sm text-white tabular-nums">
+              {diskPercent}% <span className="text-[10px] text-zinc-400 font-normal">({formatBytes(telemetry?.disk?.usedBytes)})</span>
             </span>
           </div>
           <div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden p-0.5">
@@ -174,13 +174,13 @@ export const HomarrClockWidget: React.FC<{ systemInfo: SystemInfo }> = ({ system
       </div>
 
       <div className="my-3 text-center sm:text-left">
-        <div className="text-3xl sm:text-4xl font-black text-white tracking-tight">{timeStr}</div>
-        <div className="text-xs text-zinc-400 mt-1">{dateStr}</div>
+        <div className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight tabular-nums">{timeStr}</div>
+        <div className="text-[11px] sm:text-xs text-zinc-400 mt-1">{dateStr}</div>
       </div>
 
       <div className="pt-2.5 border-t border-white/[0.06] flex items-center justify-between text-[11px] text-zinc-400">
         <span>Uptime:</span>
-        <span className="text-emerald-400 font-bold">{formatUptime(systemInfo?.uptime || 0)}</span>
+        <span className="text-emerald-400 font-bold tabular-nums">{formatUptime(systemInfo?.uptime || 0)}</span>
       </div>
     </div>
   );
@@ -254,16 +254,16 @@ export const HomarrDownloadsWidget: React.FC = () => {
 
       <div className="my-3">
         <div className="flex items-baseline gap-2">
-          <span className="text-2xl font-black text-white">{formatSpeed(totalDl)}</span>
+          <span className="text-xl sm:text-2xl font-extrabold text-white tabular-nums">{formatSpeed(totalDl)}</span>
           <span className="text-xs text-emerald-400 font-bold">↓ Down</span>
         </div>
         <div className="flex items-center gap-3 text-xs text-zinc-400 mt-1">
-          <span className="flex items-center gap-1">
+          <span className="flex items-center gap-1 tabular-nums">
             <Upload className="w-3 h-3 text-purple-400" />
             <span>{formatSpeed(data.qbittorrent.upSpeed)} ↑</span>
           </span>
           <span className="text-zinc-600">•</span>
-          <span>{data.qbittorrent.active} active tasks</span>
+          <span className="tabular-nums">{data.qbittorrent.active} active tasks</span>
         </div>
       </div>
 
@@ -551,14 +551,14 @@ export const HomarrHardwareWidget: React.FC<{ telemetry: TelemetrySnapshot }> = 
       <div className="grid grid-cols-2 gap-2 text-xs">
         <div className="p-2.5 rounded-xl bg-slate-800/60 border border-slate-700/60">
           <span className="text-[10px] text-zinc-400 uppercase block mb-1">CPU Temperature</span>
-          <span className={`text-base font-bold ${temp > 75 ? 'text-red-400' : 'text-emerald-400'}`}>
+          <span className={`text-base font-extrabold font-mono tabular-nums ${temp > 75 ? 'text-red-400' : 'text-emerald-400'}`}>
             {temp}°C
           </span>
         </div>
 
         <div className="p-2.5 rounded-xl bg-slate-800/60 border border-slate-700/60">
           <span className="text-[10px] text-zinc-400 uppercase block mb-1">Cooling Fan</span>
-          <span className="text-base font-bold text-sky-400">{fan} RPM</span>
+          <span className="text-base font-extrabold font-mono text-sky-400 tabular-nums">{fan} RPM</span>
         </div>
 
         {bat?.present && (
@@ -567,10 +567,10 @@ export const HomarrHardwareWidget: React.FC<{ telemetry: TelemetrySnapshot }> = 
               <Zap className="w-4 h-4 text-tinapple-gold" />
               <div>
                 <span className="text-white font-bold block">Battery Threshold</span>
-                <span className="text-[10px] text-zinc-400 block">Charge limit {bat.chargeLimit}%</span>
+                <span className="text-[10px] text-zinc-400 block tabular-nums">Charge limit {bat.chargeLimit}%</span>
               </div>
             </div>
-            <span className="text-sm font-bold text-white">{bat.percent}%</span>
+            <span className="text-base font-extrabold font-mono text-white tabular-nums">{bat.percent}%</span>
           </div>
         )}
       </div>

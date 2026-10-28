@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="/icons/navidrome.png">
+    <title>Navidrome Audiophile Music Streaming & Client Apps — Tinapple Guide</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+        :root {
+            --bg: #07090e;
+            --glass: rgba(14, 18, 28, 0.85);
+            --glass-card: rgba(18, 24, 38, 0.78);
+            --glass-border: rgba(0, 134, 214, 0.25);
+            --primary: #0086d6;
+            --text: #e2e8f0;
+            --text-muted: rgba(226, 232, 240, 0.65);
+            --online: #5af78e;
+            --font-family: 'Inter', -apple-system, system-ui, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: var(--font-family);
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 30px 16px;
+            display: flex;
+            justify-content: center;
+            line-height: 1.6;
+        }
+        .container { width: 100%; max-width: 900px; display: flex; flex-direction: column; gap: 22px; }
+        .header-card {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 28px;
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            backdrop-filter: blur(20px);
+        }
+        .logo-box {
+            width: 72px; height: 72px; border-radius: 18px;
+            background: rgba(0, 134, 214, 0.15); border: 1px solid rgba(0, 134, 214, 0.4);
+            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+        }
+        .logo-box img { width: 44px; height: 44px; object-fit: contain; }
+        .title-box h1 { font-size: 22px; font-weight: 800; color: #fff; margin-bottom: 4px; }
+        .title-box p { font-size: 13px; color: var(--text-muted); }
+        .badge {
+            display: inline-block; font-family: var(--font-mono); font-size: 11px;
+            padding: 3px 10px; border-radius: 20px; background: rgba(90, 247, 142, 0.15);
+            color: var(--online); border: 1px solid rgba(90, 247, 142, 0.3); margin-top: 6px;
+        }
+        .card {
+            background: var(--glass-card); border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 18px; padding: 24px; backdrop-filter: blur(20px);
+        }
+        .card h2 { font-size: 16px; font-weight: 700; color: #fff; margin-bottom: 14px; }
+        code { font-family: var(--font-mono); background: rgba(0,0,0,0.5); padding: 2px 6px; border-radius: 6px; font-size: 12px; color: #38bdf8; }
+        ol.steps { padding-left: 20px; }
+        ol.steps li { margin-bottom: 14px; font-size: 13px; color: #cbd5e1; }
+        .apps-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-top: 10px; }
+        .app-item {
+            background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 12px;
+        }
+        .app-item a { color: #38bdf8; font-weight: 700; text-decoration: none; font-size: 13px; }
+        .app-item span { display: block; font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header-card">
+            <div class="logo-box">
+                <img src="/icons/navidrome.png" alt="Navidrome">
+            </div>
+            <div class="title-box">
+                <h1>Navidrome Audiophile Music Cloud & Streamer</h1>
+                <p>Personal high-resolution music cloud with full Subsonic & OpenSubsonic API</p>
+                <span class="badge">● Web UI Port 4533 / Subsonic API Ready</span>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>🎧 Native Client Applications (Desktop & Mobile)</h2>
+            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px;">
+                Connect any Subsonic-compatible player to your server using <code>http://pineapple-server:4533</code>:
+            </p>
+            <div class="apps-grid">
+                <div class="app-item">
+                    <a href="https://github.com/jeffvli/feishin" target="_blank">Feishin (Desktop) ↗</a>
+                    <span>Modern, high-performance desktop music player for Linux, macOS & Windows</span>
+                </div>
+                <div class="app-item">
+                    <a href="https://symfonium.app" target="_blank">Symfonium (Android) ↗</a>
+                    <span>Audiophile Android music player with offline caching, equalizer & Android Auto</span>
+                </div>
+                <div class="app-item">
+                    <a href="https://substreamerapp.com" target="_blank">Substreamer (iOS) ↗</a>
+                    <span>Smooth mobile player for iPhone with gapless playback & CarPlay support</span>
+                </div>
+                <div class="app-item">
+                    <a href="http://pineapple-server.taildb42a2.ts.net:4533" target="_blank">Navidrome Web UI ↗</a>
+                    <span>Browser interface accessible instantly without installing anything</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>📁 Music Directory & File Organization</h2>
+            <p style="font-size: 13px; color: var(--text-muted);">
+                Your music files live in <code>/srv/media/music</code>. Navidrome reads FLAC, MP3, AAC, ALAC, Opus, and Ogg Vorbis with ID3 embedded artwork and lyrics.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

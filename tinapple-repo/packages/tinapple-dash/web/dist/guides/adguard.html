@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/svg+xml" href="/icons/adguard.svg">
+    <title>AdGuard Home Network DNS & Privacy Guide — Tinapple</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+        :root {
+            --bg: #07090e;
+            --glass: rgba(14, 18, 28, 0.85);
+            --glass-card: rgba(18, 24, 38, 0.78);
+            --glass-border: rgba(104, 188, 113, 0.25);
+            --primary: #68bc71;
+            --text: #e2e8f0;
+            --text-muted: rgba(226, 232, 240, 0.65);
+            --online: #5af78e;
+            --font-family: 'Inter', -apple-system, system-ui, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: var(--font-family);
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 30px 16px;
+            display: flex;
+            justify-content: center;
+            line-height: 1.6;
+        }
+        .container { width: 100%; max-width: 900px; display: flex; flex-direction: column; gap: 22px; }
+        .header-card {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 28px;
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            backdrop-filter: blur(20px);
+        }
+        .logo-box {
+            width: 72px; height: 72px; border-radius: 18px;
+            background: rgba(104, 188, 113, 0.15); border: 1px solid rgba(104, 188, 113, 0.4);
+            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+        }
+        .logo-box img { width: 44px; height: 44px; object-fit: contain; }
+        .title-box h1 { font-size: 22px; font-weight: 800; color: #fff; margin-bottom: 4px; }
+        .title-box p { font-size: 13px; color: var(--text-muted); }
+        .badge {
+            display: inline-block; font-family: var(--font-mono); font-size: 11px;
+            padding: 3px 10px; border-radius: 20px; background: rgba(90, 247, 142, 0.15);
+            color: var(--online); border: 1px solid rgba(90, 247, 142, 0.3); margin-top: 6px;
+        }
+        .card {
+            background: var(--glass-card); border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 18px; padding: 24px; backdrop-filter: blur(20px);
+        }
+        .card h2 { font-size: 16px; font-weight: 700; color: #fff; margin-bottom: 14px; }
+        code { font-family: var(--font-mono); background: rgba(0,0,0,0.5); padding: 2px 6px; border-radius: 6px; font-size: 12px; color: #86efac; }
+        ol.steps { padding-left: 20px; }
+        ol.steps li { margin-bottom: 14px; font-size: 13px; color: #cbd5e1; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header-card">
+            <div class="logo-box">
+                <img src="/icons/adguard.svg" alt="AdGuard Home">
+            </div>
+            <div class="title-box">
+                <h1>AdGuard Home Network DNS & Privacy Shield</h1>
+                <p>Network-wide ad-blocking, parental protection, and encrypted DNS over HTTPS</p>
+                <span class="badge">● DNS Server Port 53 / Web Port 3000</span>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>📱 How to Configure Devices to Use AdGuard Home</h2>
+            <ol class="steps">
+                <li>
+                    <strong>Whole-Home Router DNS:</strong> Open your home Wi-Fi router settings (e.g. <code>192.168.1.1</code> or <code>192.168.3.1</code>). In DHCP / LAN DNS settings, enter your server's LAN IP: <code>10.3.2.105</code> (or <code>192.168.99.1</code>). Every device on your home network will automatically block ads and trackers with 0 client configuration.
+                </li>
+                <li>
+                    <strong>Android Private DNS:</strong> Settings ➔ Network & Internet ➔ Private DNS. Enter your Tailscale node hostname or DNS profile to enjoy network-wide ad protection on cellular 4G/5G data outside home.
+                </li>
+                <li>
+                    <strong>Tailnet Global DNS (Zero-Config):</strong> In Tailscale Admin Console ➔ DNS ➔ Nameservers: Add <code>100.108.215.120</code> as a global nameserver and enable "Override local DNS". Every device on your Tailnet will filter ads worldwide.
+                </li>
+            </ol>
+        </div>
+
+        <div class="card">
+            <h2>⚙️ Web Control Center</h2>
+            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px;">
+                Access the AdGuard Home query log, blocklists, and parental restrictions:
+            </p>
+            <p><a href="http://pineapple-server.taildb42a2.ts.net:3000" target="_blank" style="color: #86efac; font-family: var(--font-mono); font-size: 13px;">http://pineapple-server:3000</a></p>
+        </div>
+    </div>
+</body>
+</html>
