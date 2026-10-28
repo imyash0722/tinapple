@@ -1881,9 +1881,16 @@ func (m *AppManager) configurePackUnlocked(id string) error {
 	case "cloud-vault":
 		_ = os.MkdirAll("/srv/backups", 0775)
 		_ = exec.Command("chmod", "-R", "775", "/srv/backups").Run()
+		cleanStalePacmanLock()
+		_ = exec.Command("pacman", "-S", "--noconfirm", "--needed", "vaultwarden-web").Run()
+		_ = exec.Command("sed", "-i", "s|^WEB_VAULT_ENABLED=false|WEB_VAULT_ENABLED=true|", "/etc/vaultwarden.env").Run()
+		_ = exec.Command("sed", "-i", "s|^# WEB_VAULT_FOLDER=.*|WEB_VAULT_FOLDER=/usr/share/webapps/vaultwarden-web|", "/etc/vaultwarden.env").Run()
+		_ = exec.Command("sed", "-i", "s|^# ROCKET_ADDRESS=0.0.0.0|ROCKET_ADDRESS=0.0.0.0|", "/etc/vaultwarden.env").Run()
+		_ = exec.Command("sed", "-i", "s|^# SIGNUPS_ALLOWED=true|SIGNUPS_ALLOWED=true|", "/etc/vaultwarden.env").Run()
+		_ = exec.Command("tailscale", "serve", "--bg", "8000").Run()
 		_ = exec.Command("systemctl", "restart", "vaultwarden").Run()
 		_ = exec.Command("systemctl", "restart", "filebrowser").Run()
-		m.AppendLog(id, "info", "[✓] Vaultwarden Bitwarden-compatible vault active on port 8000")
+		m.AppendLog(id, "info", "[✓] Vaultwarden Bitwarden vault active with Web Vault & Tailscale HTTPS")
 		m.AppendLog(id, "info", "[✓] FileBrowser Quantum file manager active on port 8082")
 
 	case "second-brain":
