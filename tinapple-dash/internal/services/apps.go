@@ -558,18 +558,35 @@ func NewAppManager() *AppManager {
 		},
 		{
 			ID:          "manga-suite",
-			Name:        "Manga & Comic Infinite Library",
-			Tagline:     "Decentralized manga streaming & multi-device reading sync",
-			Description: "Self-hosted manga, comic, and webtoon streaming hub powered by Suwayomi with 1,000+ Keiyoushi source extensions, built-in Suwayomi-Tsumiru reader, and SyncYomi sync bridge for Tachiyomi, Mihon, and Kuukiyomi.",
+			Name:        "Manga Infinite Library (Suwayomi + Tsumiru)",
+			Tagline:     "Self-hosted manga streaming with native Web & Tsumiru client",
+			Description: "Decentralized manga, comic, and webtoon streaming hub powered by Suwayomi Server with 1,000+ Keiyoushi source extensions, native desktop WebUI, and direct native integration for the Suwayomi-Tsumiru phone client. Real-time server-side synchronization with zero extra bridges needed.",
 			Badge:       "MANGA & COMICS",
 			AccentColor: "#F43F5E",
 			Icon:        "suwayomi",
-			Apps:        []string{"suwayomi", "syncyomi"},
+			Apps:        []string{"suwayomi"},
 			Features: []string{
 				"1,000+ Keiyoushi manga source extensions enabled",
 				"Local library storage in /srv/media/manga",
-				"Suwayomi-Tsumiru native web reader (:4567 /tsumiru/)",
-				"SyncYomi cross-device reading progress synchronization (:8282)",
+				"Native Suwayomi WebUI for desktop (:4567)",
+				"Native Tsumiru client APK for mobile with direct server sync",
+				"Zero-overhead direct SQLite server synchronization",
+			},
+		},
+		{
+			ID:          "manga-syncyomi",
+			Name:        "Manga & Mihon Sync Bridge (Suwayomi + SyncYomi)",
+			Tagline:     "Suwayomi manga server paired with SyncYomi cross-device bridge",
+			Description: "Complete manga ecosystem featuring Suwayomi server with 1,000+ Keiyoushi extensions, paired with SyncYomi synchronization bridge for external standalone readers (Mihon, TachiyomiJ2K, TachiyomiSY, and Kuukiyomi).",
+			Badge:       "MIHON & SYNC",
+			AccentColor: "#EC4899",
+			Icon:        "syncyomi",
+			Apps:        []string{"suwayomi", "syncyomi"},
+			Features: []string{
+				"Suwayomi manga server with Keiyoushi extension repository (:4567)",
+				"SyncYomi multi-device sync bridge for standalone Mihon/Tachiyomi (:8282)",
+				"Local library storage in /srv/media/manga",
+				"Cross-device reading progress sync for offline mobile readers",
 			},
 		},
 		{
@@ -1853,6 +1870,18 @@ func (m *AppManager) configurePackUnlocked(id string) error {
 		m.AppendLog(id, "info", "[✓] Storage /srv/media/manga configured with media group permissions")
 		_ = exec.Command("systemctl", "restart", "suwayomi-server").Run()
 		m.AppendLog(id, "info", "[✓] Suwayomi Manga Server reloaded and active on port 4567")
+		m.AppendLog(id, "info", "[✓] Tsumiru native client ready for phone sync")
+
+	case "manga-syncyomi":
+		_ = os.MkdirAll("/srv/media/manga", 0775)
+		_ = exec.Command("chown", "-R", "root:media", "/srv/media/manga").Run()
+		_ = exec.Command("chmod", "-R", "775", "/srv/media/manga").Run()
+		_ = exec.Command("chmod", "-R", "g+s", "/srv/media/manga").Run()
+		m.AppendLog(id, "info", "[✓] Storage /srv/media/manga configured with media group permissions")
+		_ = exec.Command("systemctl", "restart", "suwayomi-server").Run()
+		_ = exec.Command("systemctl", "restart", "syncyomi").Run()
+		m.AppendLog(id, "info", "[✓] Suwayomi Manga Server active on port 4567")
+		m.AppendLog(id, "info", "[✓] SyncYomi Mihon/Tachiyomi sync bridge active on port 8282")
 
 	case "privacy-shield":
 		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
