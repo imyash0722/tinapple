@@ -25,17 +25,20 @@ export interface HomarrResourceWidgetProps {
 }
 
 export const HomarrResourceWidget: React.FC<HomarrResourceWidgetProps> = ({ telemetry, systemInfo }) => {
-  const cpuPercent = Math.min(100, Math.round(telemetry.cpu.loadPercent || 0));
-  const ramPercent = Math.min(100, Math.round(telemetry.memory.percent || 0));
-  const diskPercent = Math.min(100, Math.round(telemetry.storage.percent || 0));
+  const cpuPercent = Math.min(100, Math.round(telemetry?.cpu?.usagePercent ?? 0));
+  const ramPercent = Math.min(100, Math.round(telemetry?.memory?.usagePercent ?? 0));
+  const diskPercent = Math.min(100, Math.round(telemetry?.disk?.usagePercent ?? 0));
 
-  const formatBytes = (bytes: number) => {
-    if (bytes === 0) return '0 B';
+  const formatBytes = (bytes?: number) => {
+    if (!bytes || bytes === 0) return '0 B';
     const k = 1024;
     const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
   };
+
+  const coreCount = Array.isArray(telemetry?.cpu?.cores) ? telemetry.cpu.cores.length : 4;
+  const tempC = telemetry?.thermal?.cpuTemp ? `${Math.round(telemetry.thermal.cpuTemp)}°C` : 'Normal';
 
   return (
     <div className="col-span-12 lg:col-span-6 rounded-2xl bg-slate-900/60 border border-white/[0.08] backdrop-blur-xl p-5 flex flex-col justify-between shadow-lg shadow-black/20">
@@ -51,13 +54,13 @@ export const HomarrResourceWidget: React.FC<HomarrResourceWidgetProps> = ({ tele
                 LIVE
               </span>
             </h4>
-            <span className="text-[11px] text-zinc-400 font-mono">{systemInfo.hostname || 'tinapple-node'}</span>
+            <span className="text-[11px] text-zinc-400 font-mono">{systemInfo?.hostname || 'tinapple-node'}</span>
           </div>
         </div>
         <div className="text-right font-mono text-[11px] text-zinc-400">
-          <span>{telemetry.cpu.cores ? `${telemetry.cpu.cores} Cores` : 'x86_64'}</span>
+          <span>{coreCount} Cores</span>
           <span className="text-zinc-600 mx-1">|</span>
-          <span className="text-tinapple-gold">{telemetry.cpu.temperatureC ? `${telemetry.cpu.temperatureC}°C` : 'Normal'}</span>
+          <span className="text-tinapple-gold">{tempC}</span>
         </div>
       </div>
 
@@ -90,7 +93,7 @@ export const HomarrResourceWidget: React.FC<HomarrResourceWidgetProps> = ({ tele
               <span>Memory (RAM)</span>
             </span>
             <span className="font-bold text-white">
-              {formatBytes(telemetry.memory.usedBytes)} / {formatBytes(telemetry.memory.totalBytes)} ({ramPercent}%)
+              {formatBytes(telemetry?.memory?.usedBytes)} / {formatBytes(telemetry?.memory?.totalBytes)} ({ramPercent}%)
             </span>
           </div>
           <div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden p-0.5">
@@ -111,7 +114,7 @@ export const HomarrResourceWidget: React.FC<HomarrResourceWidgetProps> = ({ tele
               <span>Root Storage</span>
             </span>
             <span className="font-bold text-white">
-              {formatBytes(telemetry.storage.usedBytes)} / {formatBytes(telemetry.storage.totalBytes)} ({diskPercent}%)
+              {formatBytes(telemetry?.disk?.usedBytes)} / {formatBytes(telemetry?.disk?.totalBytes)} ({diskPercent}%)
             </span>
           </div>
           <div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden p-0.5">
@@ -167,7 +170,7 @@ export const HomarrClockWidget: React.FC<{ systemInfo: SystemInfo }> = ({ system
 
       <div className="pt-2.5 border-t border-white/[0.06] flex items-center justify-between text-[11px] text-zinc-400">
         <span>Uptime:</span>
-        <span className="text-emerald-400 font-bold">{formatUptime(systemInfo.uptime || 0)}</span>
+        <span className="text-emerald-400 font-bold">{formatUptime(systemInfo?.uptime || 0)}</span>
       </div>
     </div>
   );
