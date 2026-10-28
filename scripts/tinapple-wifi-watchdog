@@ -1,0 +1,93 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# tinapple Resilient Wi-Fi Watchdog & Self-Healing Auto-Reconnect
+# Monitors network reachability and automatically re-associates and recovers
+# Wi-Fi connectivity if the AP reboots, drops, or encounters firmware scan stalls.
+# ==============================================================================
+set -u
+
+CHECK_INTERVAL=45
+FAIL_COUNT=0
+
+log() {
+  echo "[$(date '+%Y-%m-%d %H:%M:%S')] [tinapple-wifi-watchdog] $*"
+}
+
+detect_wifi() {
+  WIFI_IFACE=$(nmcli -t -f DEVICE,TYPE device 2>/dev/null | awk -F: '$2=="wifi"{print $1; exit}')
+  WIFI_IFACE="${WIFI_IFACE:-wlo1}"
+
+  WIFI_CONN=$(nmcli -t -f NAME,TYPE connection show 2>/dev/null | awk -F: '$2=="802-11-wireless"{print $1; exit}')
+  WIFI_CONN="${WIFI_CONN:-Space}"
+}
+
+get_gateway() {
+  local gw
+  gw=$(ip route show default dev "${WIFI_IFACE}" 2>/dev/null | awk '/default via/{print $3; exit}')
+  if [[ -z "${gw}" ]]; then
+    gw=$(ip route show default 2>/dev/null | awk '/default via/{print $3; exit}')
+  fi
+  echo "${gw:-192.168.1.1}"
+}
+
+check_connectivity() {
+  local gw="$1"
+  if ping -c 1 -W 2 "${gw}" >/dev/null 2>&1; then
+    return 0
+  fi
+  # Fallback check against global DNS in case gateway ignores ICMP
+  if ping -c 1 -W 2 1.1.1.1 >/dev/null 2>&1 || ping -c 1 -W 2 8.8.8.8 >/dev/null 2>&1; then
+    return 0
+  fi
+  return 1
+}
+
+log "Starting Wi-Fi watchdog daemon (check interval: ${CHECK_INTERVAL}s)..."
+detect_wifi
+log "Detected Wi-Fi interface: ${WIFI_IFACE}, target connection: ${WIFI_CONN}"
+
+while true; do
+  detect_wifi
+  GW=$(get_gateway)
+
+  if check_connectivity "${GW}"; then
+    if [[ ${FAIL_COUNT} -gt 0 ]]; then
+      log "Connectivity restored after ${FAIL_COUNT} failed checks (gateway: ${GW})."
+      FAIL_COUNT=0
+    fi
+  else
+    FAIL_COUNT=$((FAIL_COUNT + 1))
+    log "Reachability check failed (streak: ${FAIL_COUNT}, gateway: ${GW})."
+
+    if [[ ${FAIL_COUNT} -eq 2 ]]; then
+      # ~90 seconds of loss: gentle reconnect
+      log "Level 1: Re-triggering NetworkManager connection for '${WIFI_CONN}'..."
+      nmcli connection up "${WIFI_CONN}" ifname "${WIFI_IFACE}" >/dev/null 2>&1 || nmcli device connect "${WIFI_IFACE}" >/dev/null 2>&1
+    elif [[ ${FAIL_COUNT} -eq 4 ]]; then
+      # ~3 minutes of loss: cycle radio to clear firmware scan stalls
+      log "Level 2: Cycling Wi-Fi radio to reset firmware state..."
+      nmcli radio wifi off >/dev/null 2>&1
+      sleep 2
+      nmcli radio wifi on >/dev/null 2>&1
+      sleep 3
+      nmcli connection up "${WIFI_CONN}" ifname "${WIFI_IFACE}" >/dev/null 2>&1
+    elif [[ ${FAIL_COUNT} -eq 6 ]]; then
+      # ~4.5 minutes of loss: restart wpa_supplicant and NetworkManager
+      log "Level 3: Restarting wpa_supplicant and NetworkManager services..."
+      systemctl restart wpa_supplicant NetworkManager >/dev/null 2>&1
+    elif [[ ${FAIL_COUNT} -ge 12 && $((FAIL_COUNT % 6)) -eq 0 ]]; then
+      # >9 minutes of persistent failure: reload wireless kernel modules if Intel iwlwifi
+      if lsmod | grep -q "^iwlwifi"; then
+        log "Level 4: Reloading iwlwifi kernel modules..."
+        modprobe -r iwlmvm iwlwifi >/dev/null 2>&1 || true
+        sleep 2
+        modprobe iwlwifi >/dev/null 2>&1 || true
+        modprobe iwlmvm >/dev/null 2>&1 || true
+        sleep 3
+        systemctl restart NetworkManager >/dev/null 2>&1 || true
+      fi
+    fi
+  fi
+
+  sleep "${CHECK_INTERVAL}"
+done

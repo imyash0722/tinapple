@@ -49,7 +49,14 @@ echo -e "${CYAN}[4/5] Deploying assets and binary to server...${NC}"
 ssh "${TARGET_USER}@${TARGET_HOST}" "sudo systemctl stop tinapple-dash.service"
 scp -q bin/tinapple-dash "${TARGET_USER}@${TARGET_HOST}:/tmp/tinapple-dash"
 ssh "${TARGET_USER}@${TARGET_HOST}" "sudo cp /tmp/tinapple-dash /usr/bin/tinapple-dash && sudo chmod 755 /usr/bin/tinapple-dash && rm -f /tmp/tinapple-dash"
-tar -C "${REPO_DIR}/tinapple-dash/web/dist" -cf - assets index.html | ssh "${TARGET_USER}@${TARGET_HOST}" "sudo tar -C /usr/share/tinapple-dash/web/dist -xf -"
+tar -C "${REPO_DIR}/tinapple-dash/web/dist" -cf - . | ssh "${TARGET_USER}@${TARGET_HOST}" "sudo tar -C /usr/share/tinapple-dash/web/dist -xf -"
+
+if [[ -f "${REPO_DIR}/scripts/tinapple-wifi-watchdog" && -f "${REPO_DIR}/scripts/tinapple-wifi-watchdog.service" ]]; then
+  scp -q "${REPO_DIR}/scripts/tinapple-wifi-watchdog" "${TARGET_USER}@${TARGET_HOST}:/tmp/tinapple-wifi-watchdog"
+  scp -q "${REPO_DIR}/scripts/tinapple-wifi-watchdog.service" "${TARGET_USER}@${TARGET_HOST}:/tmp/tinapple-wifi-watchdog.service"
+  ssh "${TARGET_USER}@${TARGET_HOST}" "sudo install -Dm755 /tmp/tinapple-wifi-watchdog /usr/local/bin/tinapple-wifi-watchdog && sudo install -Dm644 /tmp/tinapple-wifi-watchdog.service /etc/systemd/system/tinapple-wifi-watchdog.service && rm -f /tmp/tinapple-wifi-watchdog /tmp/tinapple-wifi-watchdog.service && sudo systemctl daemon-reload && sudo systemctl enable --now tinapple-wifi-watchdog.service >/dev/null 2>&1 || true"
+fi
+
 ssh "${TARGET_USER}@${TARGET_HOST}" "sudo systemctl start tinapple-dash.service"
 echo -e "${GREEN}✓ Assets deployed and tinapple-dash restarted.${NC}"
 
