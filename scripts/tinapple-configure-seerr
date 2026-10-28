@@ -208,17 +208,21 @@ if os.path.exists(seerr_cfg) and radarr_key and sonarr_key:
             except Exception:
                 pass
         cfg['public']['initialized'] = has_user
-        cfg['jellyfin'] = {
-            'name': 'pineapple',
-            'ip': '127.0.0.1',
-            'port': 8096,
-            'useSsl': False,
-            'urlBase': '',
-            'externalHostname': 'http://pineapple-server:8096',
-            'libraries': [],
-            'serverId': '5e0ad999bdf243dda8b63664bd21e08f',
-            'apiKey': ''
-        }
+        if has_user:
+            cfg['jellyfin'] = {
+                'name': 'pineapple',
+                'ip': '127.0.0.1',
+                'port': 8096,
+                'useSsl': False,
+                'urlBase': '',
+                'externalHostname': 'http://pineapple-server:8096',
+                'libraries': [],
+                'serverId': '5e0ad999bdf243dda8b63664bd21e08f',
+                'apiKey': ''
+            }
+        else:
+            if 'jellyfin' in cfg:
+                cfg['jellyfin']['ip'] = ''
         cfg['radarr'] = [{
             'id': 1,
             'name': 'Radarr',
