@@ -5,13 +5,44 @@
 
 :root {
   color-scheme: dark;
-  --tinapple-accent: #38bdf8;
+  /* Material Design 3 (M3) Matugen Core Tokens */
+  --md-sys-color-primary: #38bdf8;
+  --md-sys-color-on-primary: #003549;
+  --md-sys-color-primary-container: #004d67;
+  --md-sys-color-on-primary-container: #c4e7ff;
+  --md-sys-color-secondary: #b5c9d7;
+  --md-sys-color-on-secondary: #20333e;
+  --md-sys-color-secondary-container: #374955;
+  --md-sys-color-on-secondary-container: #d1e5f4;
+  --md-sys-color-tertiary: #cac1e9;
+  --md-sys-color-on-tertiary: #322c4c;
+  --md-sys-color-tertiary-container: #494264;
+  --md-sys-color-on-tertiary-container: #e6deff;
+  --md-sys-color-surface: #090e18;
+  --md-sys-color-surface-dim: #070a13;
+  --md-sys-color-surface-bright: #2a3242;
+  --md-sys-color-surface-container-lowest: #05070f;
+  --md-sys-color-surface-container-low: #0c121f;
+  --md-sys-color-surface-container: #101828;
+  --md-sys-color-surface-container-high: #152034;
+  --md-sys-color-surface-container-highest: #1c2940;
+  --md-sys-color-on-surface: #e0e5ed;
+  --md-sys-color-on-surface-variant: #c1c8d4;
+  --md-sys-color-outline: #8b939f;
+  --md-sys-color-outline-variant: #3f4755;
+  --md-sys-color-background: #060a12;
+  --md-sys-color-on-background: #e0e5ed;
+  --md-sys-color-error: #ffb4ab;
+  --md-sys-color-error-container: #93000a;
+
+  --tinapple-accent: var(--md-sys-color-primary);
   --tinapple-accent-rgb: 56 189 248;
   --tinapple-accent-glow: rgba(56, 189, 248, 0.35);
-  --tinapple-accent-secondary: #3b82f6;
+  --tinapple-accent-secondary: var(--md-sys-color-tertiary);
   --tinapple-secondary-rgb: 59 130 246;
-  --glass-bg: rgba(10, 18, 38, 0.75);
-  --glass-border: rgba(56, 189, 248, 0.12);
+  --glass-bg: rgba(12, 18, 31, 0.75);
+  --glass-border: rgba(63, 71, 85, 0.45);
+  --glass-border-accent: rgba(56, 189, 248, 0.35);
   --glass-filter: blur(20px) saturate(180%);
 }
 
@@ -47,9 +78,16 @@ body {
 }
 
 /* Opacity variants are generated from the RGB variables in Tailwind. */
-.text-tinapple-gold { color: var(--tinapple-accent, #e5b567) !important; }
-.bg-tinapple-gold { background-color: var(--tinapple-accent, #e5b567) !important; }
-.border-tinapple-gold { border-color: var(--tinapple-accent, #e5b567) !important; }
+.text-tinapple-gold { color: var(--tinapple-accent, #38bdf8) !important; }
+.bg-tinapple-gold { background-color: var(--tinapple-accent, #38bdf8) !important; }
+.border-tinapple-gold { border-color: var(--tinapple-accent, #38bdf8) !important; }
+
+/* Dynamic Material 3 surfaces & containers across all cards and widgets */
+.bg-tinapple-dark { background-color: var(--md-sys-color-surface, #090e18) !important; }
+.bg-tinapple-base { background-color: var(--md-sys-color-surface-container-lowest, #05070f) !important; }
+.bg-tinapple-surface { background-color: var(--md-sys-color-surface-container, #101828) !important; }
+.bg-tinapple-card { background-color: var(--md-sys-color-surface-container-high, #152034) !important; }
+.border-tinapple-border { border-color: var(--md-sys-color-outline-variant, rgba(63, 71, 85, 0.45)) !important; }
 
 .tinapple-glass-card {
   background-color: var(--glass-bg) !important;

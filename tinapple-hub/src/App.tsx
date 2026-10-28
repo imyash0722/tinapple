@@ -33,6 +33,7 @@ import { AppearanceModal } from './components/common/AppearanceModal';
 import { BookmarkModal } from './components/common/BookmarkModal';
 import { Sidebar } from './components/common/Sidebar';
 import { BUNDLED_WALLPAPERS, THEME_STORAGE_KEY, colorChannels, extractWallpaperColors, loadSettings } from './theme/appearance';
+import { fetchMatugenPalette, applyMatugenM3 } from './theme/matugen';
 import { DockItem } from './components/reactbits/Dock';
 
 import { TelemetryCards } from './components/widgets/TelemetryCards';
@@ -105,6 +106,19 @@ export const App: React.FC = () => {
     const zoomVal = parseInt(scale) / 100;
     (document.body.style as any).zoom = zoomVal.toString();
 
+    // Material 3 (M3) Matugen dynamic coloring for the entire dashboard
+    let active = true;
+    fetchMatugenPalette({
+      hex: settings.accentColor,
+      wallpaper: settings.mode === 'wallpaper' ? settings.wallpaperUrl : undefined,
+    }).then((palette) => {
+      if (active && palette) {
+        applyMatugenM3(palette, translucency, settings.enableGlass);
+      }
+    }).catch((err) => {
+      console.debug('M3 palette application error:', err);
+    });
+
     try {
       localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(settings));
       localStorage.setItem('tinapple_blur', blur.toString());
@@ -113,6 +127,8 @@ export const App: React.FC = () => {
       localStorage.setItem('tinapple_scale', scale);
       setStorageStatus('');
     } catch { setStorageStatus('Browser storage is unavailable. Changes apply for this session only.'); }
+
+    return () => { active = false; };
   }, [settings]);
 
   useEffect(() => {
@@ -507,14 +523,14 @@ export const App: React.FC = () => {
             </div>
 
             {/* Desktop Page Title & Breadcrumb */}
-            <div className="hidden md:flex items-center gap-2.5 min-w-0">
+            <div className="hidden md:flex items-center gap-2.5 min-w-0 shrink-0">
               <span className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500 shrink-0">Node</span>
               <span className="text-xs text-zinc-600 shrink-0">/</span>
               <div className="flex items-center gap-2 min-w-0">
                 <span className="text-sm font-mono font-black text-white capitalize truncate">
                   {activeTab === 'store' ? 'App Store & Packs' : activeTab}
                 </span>
-                <span className="hidden xl:inline-flex text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/[0.05] border border-white/10 text-tinapple-gold font-bold whitespace-nowrap">
+                <span className="hidden 2xl:inline-flex text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/[0.05] border border-white/10 text-tinapple-gold font-bold whitespace-nowrap">
                   {systemInfo.sessionMode === 'headless' ? 'Headless Server' : 'Niri Desktop'}
                 </span>
               </div>
@@ -532,7 +548,7 @@ export const App: React.FC = () => {
             {/* Tailscale VPN Chip */}
             <button
               onClick={() => setTailscaleOpen(true)}
-              className="hidden xl:flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/20 text-[11px] font-mono text-sky-300 transition-all cursor-pointer whitespace-nowrap"
+              className="hidden 2xl:flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/20 text-[11px] font-mono text-sky-300 transition-all cursor-pointer whitespace-nowrap"
               title="Tailscale VPN Mesh Status"
             >
               <span className="w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse" />

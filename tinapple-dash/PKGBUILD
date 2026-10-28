@@ -1,12 +1,14 @@
 # Maintainer: tinapple Project <https://github.com/tinapple/tinapple-arch>
 pkgname=tinapple-dash
-pkgver=0.0.2
+pkgver=0.0.3
 pkgrel=1
 pkgdesc="Web dashboard and telemetry monitor for tinapple"
 arch=('x86_64')
 url="https://github.com/tinapple/tinapple-arch"
 license=('MIT')
 depends=('glibc' 'tinapple-nginx')
+optdepends=('matugen: Material 3 dynamic color scheme generator'
+            'pacman-contrib: Arch Linux pacman update scripts and checkupdates')
 makedepends=('go')
 source=()
 sha256sums=()

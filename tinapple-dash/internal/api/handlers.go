@@ -105,6 +105,8 @@ func SetupRoutes(r *gin.Engine, cfg *config.Manifest, svcMgr *services.SystemdMa
 		v1.POST("/system/install", h.RunInstall)
 		v1.GET("/system/install/status", h.InstallStatus)
 		v1.POST("/system/update", h.RunSystemUpdate)
+		v1.GET("/system/matugen", h.GetMatugenPalette)
+		v1.POST("/system/matugen", h.GetMatugenPalette)
 
 		// Apps (Comprehensive Application & Config Management)
 		v1.GET("/apps", h.ListApps)
@@ -229,6 +231,8 @@ func SetupRoutes(r *gin.Engine, cfg *config.Manifest, svcMgr *services.SystemdMa
 	r.POST("/api/wallpaper/upload", h.UploadWallpaper)
 	r.POST("/api/wallpapers/select", h.SelectWallpaper)
 	r.POST("/api/wallpaper/select", h.SelectWallpaper)
+	r.GET("/api/matugen", h.GetMatugenPalette)
+	r.POST("/api/matugen", h.GetMatugenPalette)
 	r.GET("/api/pywal", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"colors": gin.H{

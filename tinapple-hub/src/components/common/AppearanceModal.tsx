@@ -272,7 +272,7 @@ export const AppearanceModal: React.FC<AppearanceModalProps> = ({
               Portal Appearance & Atmosphere
             </h2>
             <p className="mt-0.5 text-xs text-zinc-400 font-mono">
-              Live Pywal colors, video loops, and glass styling
+              Material 3 (M3) Matugen engine, dynamic wallpaper extraction, and glass styling
             </p>
           </div>
           <button
@@ -524,10 +524,48 @@ export const AppearanceModal: React.FC<AppearanceModalProps> = ({
 
               {toggle(
                 'syncWallpaperColors',
-                'Dynamic Pywal Auto-Color Sampling',
-                'Automatically sample dominant accent hues from each selected wallpaper.'
+                'Material 3 (M3) Matugen Wallpaper Sync',
+                'Automatically generate full Material You M3 palette from the active wallpaper.'
               )}
               {colorStatus && <p role="status" className="text-xs text-zinc-400 font-mono">{colorStatus}</p>}
+
+              {/* Live Material 3 Token Chips */}
+              <div className="p-3 rounded-xl bg-white/[0.03] border border-white/10 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-mono text-tinapple-gold font-bold uppercase tracking-wider flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5" /> Material 3 (M3) Matugen
+                  </span>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+                    M3 Tokens Active
+                  </span>
+                </div>
+                <div className="grid grid-cols-6 gap-1.5 pt-1">
+                  <div className="flex flex-col items-center">
+                    <div className="w-7 h-7 rounded-lg border border-white/20 shadow-sm" style={{ backgroundColor: 'var(--md-sys-color-primary, #38bdf8)' }} />
+                    <span className="text-[9px] font-mono text-zinc-400 mt-1">Primary</span>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <div className="w-7 h-7 rounded-lg border border-white/20 shadow-sm" style={{ backgroundColor: 'var(--md-sys-color-primary-container, #004d67)' }} />
+                    <span className="text-[9px] font-mono text-zinc-400 mt-1">Container</span>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <div className="w-7 h-7 rounded-lg border border-white/20 shadow-sm" style={{ backgroundColor: 'var(--md-sys-color-secondary, #b5c9d7)' }} />
+                    <span className="text-[9px] font-mono text-zinc-400 mt-1">Secondary</span>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <div className="w-7 h-7 rounded-lg border border-white/20 shadow-sm" style={{ backgroundColor: 'var(--md-sys-color-tertiary, #cac1e9)' }} />
+                    <span className="text-[9px] font-mono text-zinc-400 mt-1">Tertiary</span>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <div className="w-7 h-7 rounded-lg border border-white/20 shadow-sm" style={{ backgroundColor: 'var(--md-sys-color-surface-container, #101828)' }} />
+                    <span className="text-[9px] font-mono text-zinc-400 mt-1">Surface</span>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <div className="w-7 h-7 rounded-lg border border-white/20 shadow-sm" style={{ backgroundColor: 'var(--md-sys-color-outline-variant, #3f4755)' }} />
+                    <span className="text-[9px] font-mono text-zinc-400 mt-1">Outline</span>
+                  </div>
+                </div>
+              </div>
             </section>
           )}
 

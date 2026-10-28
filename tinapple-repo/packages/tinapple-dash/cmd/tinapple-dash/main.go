@@ -5,8 +5,12 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/http/httputil"
+	"net/url"
 	"os"
 	"os/signal"
+	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
 
@@ -54,21 +58,134 @@ func main() {
 	// API routes
 	api.SetupRoutes(r, cfg, svcMgr, telemetryCollector)
 
-	// Static files for web UI
-	staticDir := "/usr/share/tinapple-dash/web/static"
-	templateGlob := "/usr/share/tinapple-dash/web/templates/*"
-	if _, err := os.Stat("web/static"); err == nil {
-		staticDir = "web/static"
-		templateGlob = "web/templates/*"
+	// Legacy reports proxy if port 8085 is running
+	tinarchyTarget, err := url.Parse("http://127.0.0.1:8085")
+	if err == nil {
+		proxy := httputil.NewSingleHostReverseProxy(tinarchyTarget)
+		proxyHandler := func(c *gin.Context) {
+			proxy.ServeHTTP(c.Writer, c.Request)
+		}
+		r.Any("/api/reports/*path", proxyHandler)
 	}
-	r.Static("/static", staticDir)
-	r.LoadHTMLGlob(templateGlob)
-	r.GET("/", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "index.html", gin.H{
-			"title":   "tinapple Dashboard",
-			"version": "0.0.1",
-		})
+
+	// Web UI static files (check for modern React Hub build in web/dist)
+	distDir := "/usr/share/tinapple-dash/web/dist"
+	if _, err := os.Stat("tinapple-dash/web/dist"); err == nil {
+		distDir = "tinapple-dash/web/dist"
+	} else if _, err := os.Stat("web/dist"); err == nil {
+		distDir = "web/dist"
+	}
+
+	apkPath := filepath.Join(distDir, "tinapple-client.apk")
+	if _, err := os.Stat("tinapple-client.apk"); err == nil {
+		apkPath = "tinapple-client.apk"
+	}
+
+	r.StaticFile("/tinapple-client.apk", apkPath)
+	r.GET("/download/apk", func(c *gin.Context) {
+		c.Redirect(http.StatusFound, "/tinapple-client.apk")
 	})
+
+	// Suwayomi-Tsumiru Manga Client APK route
+	tsumiruApkPath := filepath.Join(distDir, "tsumiru-client.apk")
+	if _, err := os.Stat("tsumiru-client.apk"); err == nil {
+		tsumiruApkPath = "tsumiru-client.apk"
+	}
+	r.StaticFile("/tsumiru-client.apk", tsumiruApkPath)
+	r.GET("/download/tsumiru", func(c *gin.Context) {
+		c.Redirect(http.StatusFound, "/tsumiru-client.apk")
+	})
+
+	// Tsumiru Web App route
+	tsumiruDir := filepath.Join(distDir, "tsumiru")
+	if _, err := os.Stat(tsumiruDir); err == nil {
+		r.Static("/tsumiru", tsumiruDir)
+	} else {
+		r.GET("/tsumiru", func(c *gin.Context) {
+			c.Redirect(http.StatusFound, "http://"+c.Request.Host+":4567/")
+		})
+		r.GET("/tsumiru/", func(c *gin.Context) {
+			c.Redirect(http.StatusFound, "http://"+c.Request.Host+":4567/")
+		})
+	}
+
+	if _, err := os.Stat(filepath.Join(distDir, "index.html")); err == nil {
+		r.Static("/assets", filepath.Join(distDir, "assets"))
+		r.Static("/icons", filepath.Join(distDir, "icons"))
+		if _, err := os.Stat(filepath.Join(distDir, "guides")); err == nil {
+			r.Static("/guides", filepath.Join(distDir, "guides"))
+		}
+		if _, err := os.Stat(filepath.Join(distDir, "images")); err == nil {
+			r.Static("/images", filepath.Join(distDir, "images"))
+		}
+		wpDir := api.FindWallpapersDir(distDir)
+		r.Static("/wallpapers", wpDir)
+		r.StaticFile("/favicon.ico", filepath.Join(distDir, "favicon.ico"))
+		serveIndex := func(c *gin.Context) {
+			c.Header("Cache-Control", "no-cache, no-store, must-revalidate, max-age=0")
+			c.Header("Pragma", "no-cache")
+			c.Header("Expires", "0")
+			c.File(filepath.Join(distDir, "index.html"))
+		}
+		guideMap := map[string]string{
+			"/guide/plezy":       "/guides/plezy.html",
+			"/guide/jellyfin":    "/guides/plezy.html",
+			"/guide/seerr":       "/guides/seerr.html",
+			"/guide/servarr":     "/guides/seerr.html",
+			"/guide/adguard":     "/guides/adguard.html",
+			"/guide/navidrome":   "/guides/navidrome.html",
+			"/guide/syncyomi":    "/guides/syncyomi.html",
+			"/guide/beeper":      "/guides/beeper.html",
+			"/guide/vaultwarden": "/guides/vaultwarden.html",
+			"/guide/syncthing":   "/guides/syncthing.html",
+			"/guide/obsidian":    "/guides/obsidian.html",
+			"/guide/ssh":         "/guides/ssh.html",
+			"/guide/tor":         "/guides/tor.html",
+		}
+		for routePath, targetFile := range guideMap {
+			tgt := targetFile
+			r.GET(routePath, func(c *gin.Context) {
+				c.Redirect(http.StatusFound, tgt)
+			})
+		}
+
+		r.GET("/", serveIndex)
+		r.NoRoute(func(c *gin.Context) {
+			path := c.Request.URL.Path
+			if path == "/tsumiru" {
+				c.Redirect(http.StatusMovedPermanently, "/tsumiru/")
+				return
+			}
+			if strings.HasPrefix(path, "/api") ||
+				strings.HasPrefix(path, "/assets") ||
+				strings.HasPrefix(path, "/icons") ||
+				strings.HasPrefix(path, "/images") ||
+				strings.HasPrefix(path, "/wallpapers") ||
+				strings.HasPrefix(path, "/tsumiru") {
+				c.JSON(http.StatusNotFound, gin.H{"error": "Resource not found"})
+				return
+			}
+			serveIndex(c)
+		})
+	} else {
+		// Fallback to legacy templates if dist not present
+		staticDir := "/usr/share/tinapple-dash/web/static"
+		templateGlob := "/usr/share/tinapple-dash/web/templates/*"
+		if _, err := os.Stat("web/static"); err == nil {
+			staticDir = "web/static"
+			templateGlob = "web/templates/*"
+		}
+		r.Static("/static", staticDir)
+		if matches, _ := filepath.Glob(templateGlob); len(matches) > 0 {
+			r.LoadHTMLGlob(templateGlob)
+		}
+		r.GET("/", func(c *gin.Context) {
+			c.HTML(http.StatusOK, "index.html", gin.H{
+				"title":   "tinapple Dashboard",
+				"version": "0.0.1",
+			})
+		})
+	}
 
 	// Health check
 	r.GET("/health", func(c *gin.Context) {
@@ -77,6 +194,12 @@ func main() {
 
 	// Start server
 	port := cfg.Services["dash"].Port
+	if p := os.Getenv("PORT"); p != "" {
+		var customPort int
+		if _, err := fmt.Sscanf(p, "%d", &customPort); err == nil && customPort > 0 {
+			port = customPort
+		}
+	}
 	if port == 0 {
 		port = 8088
 	}
