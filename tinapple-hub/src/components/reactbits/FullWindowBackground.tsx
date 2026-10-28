@@ -124,6 +124,13 @@ export const FullWindowBackground: React.FC<{ settings: BackgroundSettings }> = 
             />
           )}
           <div className="absolute inset-0" style={{ backgroundColor: `rgba(4, 7, 20, ${wallpaperDim})` }} />
+          {/* Subtle Matte Diffuse Vignette for True Material 3 Matte Depth */}
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background: `radial-gradient(circle at 50% 40%, transparent 50%, rgba(5, 8, 18, 0.4) 100%)`,
+            }}
+          />
         </>
       )}
       {enableNebula && <>

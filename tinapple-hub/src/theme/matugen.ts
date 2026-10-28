@@ -164,26 +164,35 @@ export function applyMatugenM3(
   root.style.setProperty('--tinapple-accent-secondary', secondaryHex);
   root.style.setProperty('--tinapple-secondary-rgb', hexToRgbChannels(secondaryHex));
 
-  // 3. Dynamic Material 3 Glass Styling
-  const alpha = Math.max(0.08, Math.min(0.95, (100 - translucency) / 100));
+  // 3. Dynamic Material 3 Matte Styling (velvety, low-specular, anti-glare surfaces)
+  const surfaceBase = colors.surface || '#090e18';
+  const surfaceContainer = colors.surface_container || '#101828';
+  const surfaceHigh = colors.surface_container_high || '#152034';
+
+  // Matte opacity is rich and solid (92-95%) so typography and telemetry have high contrast
+  const matteAlpha = 0.94;
   root.style.setProperty(
     '--glass-bg',
-    enableGlass ? hexToRgba(surfaceLow, alpha) : (colors.surface_container || '#101828')
+    enableGlass ? hexToRgba(surfaceLow, matteAlpha) : surfaceContainer
   );
   root.style.setProperty(
     '--glass-border',
-    hexToRgba(outlineVar, 0.35)
+    hexToRgba(outlineVar, 0.22)
   );
   root.style.setProperty(
     '--glass-border-accent',
-    hexToRgba(primaryHex, 0.4)
+    hexToRgba(primaryHex, 0.45)
+  );
+  root.style.setProperty(
+    '--glass-filter',
+    'blur(12px) saturate(110%)'
   );
 
   // Surface and card backgrounds
-  root.style.setProperty('--tinapple-surface', colors.surface_container || '#101828');
-  root.style.setProperty('--tinapple-card', colors.surface_container_high || '#152034');
-  root.style.setProperty('--tinapple-dark', colors.surface || '#090e18');
-  root.style.setProperty('--tinapple-border', hexToRgba(outlineVar, 0.25));
+  root.style.setProperty('--tinapple-surface', surfaceContainer);
+  root.style.setProperty('--tinapple-card', surfaceHigh);
+  root.style.setProperty('--tinapple-dark', surfaceBase);
+  root.style.setProperty('--tinapple-border', hexToRgba(outlineVar, 0.20));
 
   // Persist current palette in localStorage
   try {

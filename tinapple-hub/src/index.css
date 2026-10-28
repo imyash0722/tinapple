@@ -40,10 +40,10 @@
   --tinapple-accent-glow: rgba(56, 189, 248, 0.35);
   --tinapple-accent-secondary: var(--md-sys-color-tertiary);
   --tinapple-secondary-rgb: 59 130 246;
-  --glass-bg: rgba(12, 18, 31, 0.75);
-  --glass-border: rgba(63, 71, 85, 0.45);
-  --glass-border-accent: rgba(56, 189, 248, 0.35);
-  --glass-filter: blur(20px) saturate(180%);
+  --glass-bg: rgba(12, 18, 31, 0.94);
+  --glass-border: rgba(63, 71, 85, 0.22);
+  --glass-border-accent: rgba(56, 189, 248, 0.4);
+  --glass-filter: blur(12px) saturate(110%);
 }
 
 body {
@@ -90,12 +90,40 @@ body {
 .border-tinapple-border { border-color: var(--md-sys-color-outline-variant, rgba(63, 71, 85, 0.45)) !important; }
 
 .tinapple-glass-card {
-  background-color: var(--glass-bg) !important;
+  background-color: var(--glass-bg, var(--md-sys-color-surface-container-low, #0c121f)) !important;
   background-image: none !important;
-  backdrop-filter: var(--glass-filter);
-  -webkit-backdrop-filter: var(--glass-filter);
-  border: 1px solid var(--glass-border) !important;
-  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+  backdrop-filter: var(--glass-filter, blur(12px) saturate(110%));
+  -webkit-backdrop-filter: var(--glass-filter, blur(12px) saturate(110%));
+  border: 1px solid var(--glass-border, rgba(63, 71, 85, 0.22)) !important;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.35);
+  transition: all 0.25s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.tinapple-glass-card:hover {
+  border-color: var(--glass-border-accent, var(--md-sys-color-outline, #8b939f)) !important;
+  box-shadow: 0 6px 24px -2px rgba(0, 0, 0, 0.45);
+}
+
+/* Material 3 Matte Overrides for Homarr Widgets and Containers */
+.bg-slate-900\/60,
+.bg-slate-900\/70,
+.bg-slate-900\/80,
+.bg-slate-900\/90 {
+  background-color: var(--md-sys-color-surface-container-low, #0c121f) !important;
+  border-color: var(--md-sys-color-outline-variant, rgba(63, 71, 85, 0.22)) !important;
+}
+
+.bg-slate-800\/50,
+.bg-slate-800\/60,
+.bg-slate-800\/80 {
+  background-color: var(--md-sys-color-surface-container, #101828) !important;
+  border-color: var(--md-sys-color-outline-variant, rgba(63, 71, 85, 0.22)) !important;
+}
+
+.bg-slate-950\/80,
+.bg-slate-950\/85,
+.bg-slate-950\/90 {
+  background-color: var(--md-sys-color-surface-container-lowest, #05070f) !important;
 }
 
 .appearance-drawer::backdrop {

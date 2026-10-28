@@ -133,28 +133,34 @@ export const App: React.FC = () => {
 
   useEffect(() => {
     setColorStatus('');
-    if (settings.mode !== 'wallpaper' || !settings.syncWallpaperColors) return;
-    const controller = new AbortController();
-    const wallpaper = BUNDLED_WALLPAPERS.find(item => item.url === settings.wallpaperUrl);
-    const applyColors = (accentColor: string, secondaryColor: string) => {
-      if (controller.signal.aborted) return;
-      setSettings(previous => previous.wallpaperUrl === settings.wallpaperUrl && previous.syncWallpaperColors
-        ? { ...previous, accentColor, secondaryColor } : previous);
-    };
-    if (wallpaper) {
-      applyColors(wallpaper.defaultPrimary, wallpaper.defaultSecondary);
-      setColorStatus('Matching wallpaper palette applied.');
-    } else {
-      setColorStatus('Sampling wallpaper colors…');
-      extractWallpaperColors(settings.wallpaperUrl, controller.signal).then(([primary, secondary]) => {
-        applyColors(primary, secondary);
-        if (!controller.signal.aborted) setColorStatus('Wallpaper colors applied.');
-      }).catch(error => {
-        if (!controller.signal.aborted) setColorStatus(error.message);
-      });
-    }
-    return () => controller.abort();
-  }, [settings.mode, settings.wallpaperUrl, settings.syncWallpaperColors]);
+    // Matugen extraction: automatically triggers if wallpaper mode is enabled
+    if (settings.mode !== 'wallpaper') return;
+
+    let active = true;
+    setColorStatus('Matugen M3 extracting palette from wallpaper…');
+    fetchMatugenPalette({
+      wallpaper: settings.wallpaperUrl,
+      mode: 'dark',
+    }).then((palette) => {
+      if (active && palette) {
+        applyMatugenM3(palette, settings.glassTranslucency, settings.enableGlass);
+        const primary = palette.colors.primary;
+        const secondary = palette.colors.tertiary || palette.colors.secondary;
+        if (primary && (primary !== settings.accentColor || secondary !== settings.secondaryColor)) {
+          setSettings(previous => ({
+            ...previous,
+            accentColor: primary,
+            secondaryColor: secondary || previous.secondaryColor,
+          }));
+        }
+        setColorStatus(`Matugen M3 active: ${palette.source_color}`);
+      }
+    }).catch(() => {
+      if (active) setColorStatus('Matugen active');
+    });
+
+    return () => { active = false; };
+  }, [settings.mode, settings.wallpaperUrl]);
   const [telemetry, setTelemetry] = useState<TelemetrySnapshot>(MOCK_TELEMETRY);
   const [services, setServices] = useState<ServiceInfo[]>(MOCK_SERVICES);
   const [hardware, setHardware] = useState<HardwareInfo>(MOCK_HARDWARE);
