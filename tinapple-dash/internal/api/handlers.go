@@ -24,14 +24,15 @@ import (
 )
 
 type Handler struct {
-	cfg            *config.Manifest
-	svcMgr         *services.SystemdManager
-	appMgr         *services.AppManager
-	playitMgr      *services.PlayitManager
-	tailscaleMgr   *services.TailscaleManager
-	telemetry      *telemetry.Collector
-	wsUpgrader     websocket.Upgrader
-	wsClients      map[*websocket.Conn]bool
+	cfg          *config.Manifest
+	svcMgr       *services.SystemdManager
+	appMgr       *services.AppManager
+	playitMgr    *services.PlayitManager
+	tailscaleMgr *services.TailscaleManager
+	rolesMgr     *services.RolesManager
+	telemetry    *telemetry.Collector
+	wsUpgrader   websocket.Upgrader
+	wsClients    map[*websocket.Conn]bool
 }
 
 func NewHandler(cfg *config.Manifest, svcMgr *services.SystemdManager, tel *telemetry.Collector) *Handler {
@@ -41,6 +42,7 @@ func NewHandler(cfg *config.Manifest, svcMgr *services.SystemdManager, tel *tele
 		appMgr:       services.NewAppManager(),
 		playitMgr:    services.NewPlayitManager(),
 		tailscaleMgr: services.NewTailscaleManager(),
+		rolesMgr:     services.NewRolesManager(),
 		telemetry:    tel,
 		wsClients:    make(map[*websocket.Conn]bool),
 		wsUpgrader: websocket.Upgrader{
@@ -189,9 +191,21 @@ func SetupRoutes(r *gin.Engine, cfg *config.Manifest, svcMgr *services.SystemdMa
 		// Interactive Web Terminal (PTY WebSocket)
 		v1.GET("/terminal/ws", h.TerminalWebSocket)
 
+		// Tailscale Mesh RBAC & User Management (Tinarchy architecture)
+		v1.GET("/users", h.GetUsers)
+		v1.POST("/users/role", h.UpdateUserRole)
+		v1.POST("/users/permissions", h.UpdateUserPermissions)
+		v1.POST("/users/guest-tor-exit", h.UpdateGuestTorExit)
+
 		// WebSocket
 		v1.GET("/ws", h.WebSocketHandler)
 	}
+
+	// Tailscale Mesh RBAC (Direct /api paths for cross-compatibility)
+	r.GET("/api/users", h.GetUsers)
+	r.POST("/api/users/role", h.UpdateUserRole)
+	r.POST("/api/users/permissions", h.UpdateUserPermissions)
+	r.POST("/api/users/guest-tor-exit", h.UpdateGuestTorExit)
 
 	// Universal Client Pairing Endpoint (Tinarchy style)
 	r.GET("/pair.sh", h.ServePairScript)
@@ -1964,6 +1978,143 @@ fi
 	c.Header("Content-Type", "text/x-shellscript; charset=utf-8")
 	c.String(http.StatusOK, pairScript)
 }
+
+// GetUsers returns Tailscale mesh users, device list, and RBAC roles configuration
+func (h *Handler) GetUsers(c *gin.Context) {
+	clientIP := h.getClientIP(c)
+	payload, err := h.tailscaleMgr.GetUserManagementData(c.Request.Context(), h.rolesMgr, clientIP)
+	if err != nil {
+		// Return resilient fallback with roles config
+		cfg := h.rolesMgr.GetConfig()
+		c.JSON(http.StatusOK, gin.H{
+			"current_user": gin.H{
+				"device_ip":        clientIP,
+				"role":             "owner",
+				"is_owner":         true,
+				"is_tailscale":     false,
+				"allowed_services": services.GetAllServiceIDs(),
+			},
+			"tailscale_users":          []interface{}{},
+			"roles_config":             cfg,
+			"can_manage_roles":         true,
+			"can_manage_site_access":   true,
+			"available_services":       services.DefaultApplianceServices,
+			"hide_tor_exit_for_guests": cfg.HideTorExitForGuests,
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, payload)
+}
+
+type updateUserRoleReq struct {
+	TargetUser string `json:"target_user" binding:"required"`
+	Role       string `json:"role" binding:"required"`
+}
+
+func (h *Handler) UpdateUserRole(c *gin.Context) {
+	clientIP := h.getClientIP(c)
+	payload, _ := h.tailscaleMgr.GetUserManagementData(c.Request.Context(), h.rolesMgr, clientIP)
+	if payload != nil && !payload.CanManageRoles {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Forbidden: Only the Owner can modify user roles"})
+		return
+	}
+
+	var req updateUserRoleReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	ownerLogin := ""
+	if payload != nil {
+		for _, u := range payload.TailscaleUsers {
+			if u.IsOwner {
+				ownerLogin = u.LoginName
+				break
+			}
+		}
+	}
+
+	if err := h.rolesMgr.UpdateUserRole(req.TargetUser, req.Role, ownerLogin); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success":     true,
+		"target_user": req.TargetUser,
+		"role":        req.Role,
+	})
+}
+
+type updatePermissionsReq struct {
+	TargetUser      string   `json:"target_user" binding:"required"`
+	AllowedServices []string `json:"allowed_services"`
+}
+
+func (h *Handler) UpdateUserPermissions(c *gin.Context) {
+	clientIP := h.getClientIP(c)
+	payload, _ := h.tailscaleMgr.GetUserManagementData(c.Request.Context(), h.rolesMgr, clientIP)
+	if payload != nil && !payload.CanManageSiteAccess {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Forbidden: Administrator or Owner privileges required"})
+		return
+	}
+
+	var req updatePermissionsReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	ownerLogin := ""
+	if payload != nil {
+		for _, u := range payload.TailscaleUsers {
+			if u.IsOwner {
+				ownerLogin = u.LoginName
+				break
+			}
+		}
+	}
+
+	sanitized, err := h.rolesMgr.UpdateUserPermissions(req.TargetUser, req.AllowedServices, ownerLogin)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success":          true,
+		"target_user":      req.TargetUser,
+		"allowed_services": sanitized,
+	})
+}
+
+type guestTorExitReq struct {
+	Hide bool `json:"hide"`
+}
+
+func (h *Handler) UpdateGuestTorExit(c *gin.Context) {
+	clientIP := h.getClientIP(c)
+	payload, _ := h.tailscaleMgr.GetUserManagementData(c.Request.Context(), h.rolesMgr, clientIP)
+	if payload != nil && !payload.CanManageSiteAccess {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Forbidden: Administrator privileges required"})
+		return
+	}
+
+	var req guestTorExitReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	res := h.rolesMgr.UpdateGuestTorExitPolicy(req.Hide)
+	c.JSON(http.StatusOK, gin.H{
+		"success":                  true,
+		"hide_tor_exit_for_guests": res,
+	})
+}
+
 
 
 

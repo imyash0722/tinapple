@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"encoding/json"
+	"fmt"
 	"net"
 	"os"
 	"os/exec"
@@ -382,4 +383,210 @@ func (m *TailscaleManager) CheckClientRole(ctx context.Context, rawIP string) (i
 
 	return false, "external"
 }
+
+type tsStatusUserItem struct {
+	ID            int64  `json:"ID"`
+	LoginName     string `json:"LoginName"`
+	DisplayName   string `json:"DisplayName"`
+	ProfilePicURL string `json:"ProfilePicURL"`
+}
+
+type tsStatusPeerItem struct {
+	ID           string   `json:"ID"`
+	HostName     string   `json:"HostName"`
+	DNSName      string   `json:"DNSName"`
+	OS           string   `json:"OS"`
+	UserID       int64    `json:"UserID"`
+	TailscaleIPs []string `json:"TailscaleIPs"`
+	Online       bool     `json:"Online"`
+}
+
+type fullTailscaleStatus struct {
+	Self struct {
+		ID           string   `json:"ID"`
+		HostName     string   `json:"HostName"`
+		DNSName      string   `json:"DNSName"`
+		OS           string   `json:"OS"`
+		UserID       int64    `json:"UserID"`
+		TailscaleIPs []string `json:"TailscaleIPs"`
+		Online       bool     `json:"Online"`
+	} `json:"Self"`
+	User map[string]tsStatusUserItem `json:"User"`
+	Peer map[string]tsStatusPeerItem `json:"Peer"`
+}
+
+func (m *TailscaleManager) GetUserManagementData(ctx context.Context, rolesMgr *RolesManager, rawIP string) (*UserManagementPayload, error) {
+	bin := m.findTailscaleBin()
+	cmdCtx, cancel := context.WithTimeout(ctx, 4*time.Second)
+	defer cancel()
+
+	cmd := exec.CommandContext(cmdCtx, bin, "status", "--json")
+	out, err := cmd.Output()
+	if err != nil {
+		return nil, err
+	}
+
+	var full fullTailscaleStatus
+	if err := json.Unmarshal(out, &full); err != nil {
+		return nil, err
+	}
+
+	// 1. Identify Host Owner
+	hostOwnerUserID := full.Self.UserID
+	var hostOwnerLogin string
+	if ownerUser, ok := full.User[fmt.Sprintf("%d", hostOwnerUserID)]; ok {
+		hostOwnerLogin = ownerUser.LoginName
+	}
+	if hostOwnerLogin == "" {
+		hostOwnerLogin = os.Getenv("TINAPPLE_OWNER_EMAIL")
+	}
+
+	// 2. Identify Current Client
+	cleanIP := strings.TrimSpace(rawIP)
+	if h, _, err := net.SplitHostPort(cleanIP); err == nil {
+		cleanIP = h
+	}
+	cleanIP = strings.Trim(cleanIP, "[]")
+	parsedIP := net.ParseIP(cleanIP)
+
+	currentSession := CurrentUserSession{
+		DeviceIP:    cleanIP,
+		Role:        "viewer",
+		IsOwner:     false,
+		IsTailscale: false,
+	}
+
+	isLoopback := parsedIP != nil && (parsedIP.IsLoopback() || cleanIP == "127.0.0.1" || cleanIP == "::1")
+	isLan := parsedIP != nil && !isTailscaleIP(parsedIP) && isPrivateLAN(parsedIP)
+
+	if isLoopback || isLan {
+		currentSession.IsOwner = true
+		currentSession.Role = "owner"
+		currentSession.LoginName = hostOwnerLogin
+		currentSession.DisplayName = "Node Host Owner"
+		currentSession.AllowedServices = GetAllServiceIDs()
+	} else if parsedIP != nil && isTailscaleIP(parsedIP) {
+		currentSession.IsTailscale = true
+		// Search in Self or Peers
+		foundUser := false
+		for _, ipStr := range full.Self.TailscaleIPs {
+			if ipStr == cleanIP {
+				currentSession.UserID = full.Self.UserID
+				currentSession.DeviceName = full.Self.HostName
+				if u, ok := full.User[fmt.Sprintf("%d", full.Self.UserID)]; ok {
+					currentSession.LoginName = u.LoginName
+					currentSession.DisplayName = u.DisplayName
+					currentSession.Avatar = u.ProfilePicURL
+				}
+				foundUser = true
+				break
+			}
+		}
+
+		if !foundUser {
+			for _, peer := range full.Peer {
+				for _, ipStr := range peer.TailscaleIPs {
+					if ipStr == cleanIP {
+						currentSession.UserID = peer.UserID
+						currentSession.DeviceName = peer.HostName
+						if u, ok := full.User[fmt.Sprintf("%d", peer.UserID)]; ok {
+							currentSession.LoginName = u.LoginName
+							currentSession.DisplayName = u.DisplayName
+							currentSession.Avatar = u.ProfilePicURL
+						}
+						foundUser = true
+						break
+					}
+				}
+				if foundUser {
+					break
+				}
+			}
+		}
+
+		role := rolesMgr.GetUserRole(currentSession.LoginName, hostOwnerLogin)
+		currentSession.Role = role
+		currentSession.IsOwner = (role == "owner")
+		currentSession.AllowedServices = rolesMgr.GetUserAllowedServices(currentSession.LoginName, role)
+	}
+
+	// 3. Build User List & Aggregate Peer Devices
+	userDevicesMap := make(map[int64][]DeviceInfo)
+
+	// Add self device
+	selfIP := ""
+	if len(full.Self.TailscaleIPs) > 0 {
+		selfIP = full.Self.TailscaleIPs[0]
+	}
+	userDevicesMap[full.Self.UserID] = append(userDevicesMap[full.Self.UserID], DeviceInfo{
+		Name:   full.Self.HostName,
+		IP:     selfIP,
+		OS:     full.Self.OS,
+		Online: full.Self.Online,
+	})
+
+	// Add peer devices
+	for _, peer := range full.Peer {
+		peerIP := ""
+		if len(peer.TailscaleIPs) > 0 {
+			peerIP = peer.TailscaleIPs[0]
+		}
+		userDevicesMap[peer.UserID] = append(userDevicesMap[peer.UserID], DeviceInfo{
+			Name:   peer.HostName,
+			IP:     peerIP,
+			OS:     peer.OS,
+			Online: peer.Online,
+		})
+	}
+
+	tailscaleUsers := make([]TailscaleUser, 0)
+	for _, u := range full.User {
+		role := rolesMgr.GetUserRole(u.LoginName, hostOwnerLogin)
+		isOwner := (role == "owner") || (u.ID == hostOwnerUserID)
+		if isOwner {
+			role = "owner"
+		}
+
+		devices := userDevicesMap[u.ID]
+		if devices == nil {
+			devices = []DeviceInfo{}
+		}
+
+		tailscaleUsers = append(tailscaleUsers, TailscaleUser{
+			UserID:          u.ID,
+			LoginName:       u.LoginName,
+			DisplayName:     u.DisplayName,
+			Avatar:          u.ProfilePicURL,
+			Role:            role,
+			IsOwner:         isOwner,
+			AllowedServices: rolesMgr.GetUserAllowedServices(u.LoginName, role),
+			Devices:         devices,
+		})
+	}
+
+	// Sort: Owner first, then Admins, then Viewers
+	rolesOrder := map[string]int{"owner": 0, "admin": 1, "viewer": 2}
+	for i := 0; i < len(tailscaleUsers)-1; i++ {
+		for j := i + 1; j < len(tailscaleUsers); j++ {
+			if rolesOrder[tailscaleUsers[i].Role] > rolesOrder[tailscaleUsers[j].Role] {
+				tailscaleUsers[i], tailscaleUsers[j] = tailscaleUsers[j], tailscaleUsers[i]
+			}
+		}
+	}
+
+	cfg := rolesMgr.GetConfig()
+
+	payload := &UserManagementPayload{
+		CurrentUser:          currentSession,
+		TailscaleUsers:       tailscaleUsers,
+		RolesConfig:          cfg,
+		CanManageRoles:       currentSession.IsOwner,
+		CanManageSiteAccess:  currentSession.IsOwner || currentSession.Role == "admin",
+		AvailableServices:    DefaultApplianceServices,
+		HideTorExitForGuests: cfg.HideTorExitForGuests,
+	}
+
+	return payload, nil
+}
+
 

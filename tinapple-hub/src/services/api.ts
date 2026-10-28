@@ -1,4 +1,4 @@
-import { SystemInfo, TelemetrySnapshot, ServiceInfo, HardwareInfo, SessionMode, AppInfo, AppActionResult, InstallProgressState, InstallLogMessage, TailscaleStatus, AppliancePackStatus, WallpaperItem, OpenPortInfo, AppConfigDetails, MaintenanceResult, FailedUnitsResult } from '../types/api';
+import { SystemInfo, TelemetrySnapshot, ServiceInfo, HardwareInfo, SessionMode, AppInfo, AppActionResult, InstallProgressState, InstallLogMessage, TailscaleStatus, AppliancePackStatus, WallpaperItem, OpenPortInfo, AppConfigDetails, MaintenanceResult, FailedUnitsResult, UserManagementData } from '../types/api';
 
 const API_BASE = '/api/v1';
 
@@ -924,6 +924,80 @@ class ApiService {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(req),
+      });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  async getUserManagement(): Promise<UserManagementData> {
+    try {
+      const res = await fetch(`${API_BASE}/users`);
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch (e) {
+      console.warn('Failed to fetch user management data', e);
+    }
+    return {
+      current_user: {
+        login_name: 'local',
+        display_name: 'Local Administrator',
+        device_ip: '127.0.0.1',
+        role: 'owner',
+        is_owner: true,
+        is_tailscale: false,
+        allowed_services: [],
+      },
+      tailscale_users: [],
+      roles_config: {
+        admin_accounts: [],
+        roles: {},
+        default_role: 'viewer',
+        user_permissions: {},
+        default_permissions: [],
+        hide_tor_exit_for_guests: true,
+      },
+      can_manage_roles: true,
+      can_manage_site_access: true,
+      available_services: [],
+      hide_tor_exit_for_guests: true,
+    };
+  }
+
+  async updateUserRole(targetUser: string, role: string): Promise<boolean> {
+    try {
+      const res = await fetch(`${API_BASE}/users/role`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ target_user: targetUser, role }),
+      });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  async updateUserPermissions(targetUser: string, allowedServices: string[]): Promise<boolean> {
+    try {
+      const res = await fetch(`${API_BASE}/users/permissions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ target_user: targetUser, allowed_services: allowedServices }),
+      });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  async updateGuestTorExit(hide: boolean): Promise<boolean> {
+    try {
+      const res = await fetch(`${API_BASE}/users/guest-tor-exit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ hide }),
       });
       return res.ok;
     } catch {

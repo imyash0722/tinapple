@@ -238,4 +238,60 @@ export interface FailedUnitsResult {
   count: number;
 }
 
+export interface TailscaleDeviceItem {
+  name: string;
+  ip: string;
+  os: string;
+  online: boolean;
+}
+
+export interface TailscaleUserItem {
+  user_id: number;
+  login_name: string;
+  display_name: string;
+  avatar?: string;
+  role: 'owner' | 'admin' | 'viewer';
+  is_owner: boolean;
+  allowed_services: string[];
+  devices: TailscaleDeviceItem[];
+}
+
+export interface CurrentUserSession {
+  user_id?: number;
+  login_name: string;
+  display_name: string;
+  avatar?: string;
+  device_name?: string;
+  device_ip: string;
+  role: 'owner' | 'admin' | 'viewer';
+  is_owner: boolean;
+  is_tailscale: boolean;
+  allowed_services: string[];
+}
+
+export interface RolesConfigData {
+  admin_accounts: string[];
+  roles: Record<string, string>;
+  default_role: string;
+  user_permissions: Record<string, string[]>;
+  default_permissions: string[];
+  hide_tor_exit_for_guests: boolean;
+}
+
+export interface UserManagementData {
+  current_user: CurrentUserSession;
+  tailscale_users: TailscaleUserItem[];
+  roles_config: RolesConfigData;
+  can_manage_roles: boolean;
+  can_manage_site_access: boolean;
+  available_services: {
+    id: string;
+    name: string;
+    icon: string;
+    description: string;
+  }[];
+  hide_tor_exit_for_guests: boolean;
+}
+
+
 

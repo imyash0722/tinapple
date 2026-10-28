@@ -20,6 +20,7 @@ import { SpotlightCard } from '../reactbits/SpotlightCard';
 import { SquishSwitch } from '../reactbits/SquishSwitch';
 import HoldButton from '../reactbits/HoldButton';
 import { SystemInfo, SessionMode } from '../../types/api';
+import { TailscaleUserManager } from './TailscaleUserManager';
 
 interface SettingsManifestProps {
   systemInfo: SystemInfo;
@@ -807,6 +808,9 @@ export const SettingsManifest: React.FC<SettingsManifestProps> = ({
           </div>
         </div>
       </SpotlightCard>
+
+      {/* 2. Tailscale Mesh Identity & Role-Based Access Control (RBAC) */}
+      <TailscaleUserManager />
     </div>
   );
 };

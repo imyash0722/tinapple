@@ -51,6 +51,7 @@ import { QuickConnectCard } from './components/widgets/QuickConnectCard';
 import { TransfersWidget } from './components/widgets/TransfersWidget';
 import { MangaShelfWidget } from './components/widgets/MangaShelfWidget';
 import { TorPrivacyWidget } from './components/widgets/TorPrivacyWidget';
+import { HomarrCanvas } from './components/homarr/HomarrCanvas';
 
 import { api, MOCK_SYSTEM_INFO, MOCK_TELEMETRY, MOCK_SERVICES, MOCK_HARDWARE } from './services/api';
 import { SystemInfo, TelemetrySnapshot, ServiceInfo, HardwareInfo, SessionMode } from './types/api';
@@ -506,14 +507,14 @@ export const App: React.FC = () => {
             </div>
 
             {/* Desktop Page Title & Breadcrumb */}
-            <div className="hidden md:flex items-center gap-2.5">
-              <span className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500">Node</span>
-              <span className="text-xs text-zinc-600">/</span>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-mono font-black text-white capitalize">
+            <div className="hidden md:flex items-center gap-2.5 min-w-0">
+              <span className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500 shrink-0">Node</span>
+              <span className="text-xs text-zinc-600 shrink-0">/</span>
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="text-sm font-mono font-black text-white capitalize truncate">
                   {activeTab === 'store' ? 'App Store & Packs' : activeTab}
                 </span>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/[0.05] border border-white/10 text-tinapple-gold font-bold">
+                <span className="hidden xl:inline-flex text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/[0.05] border border-white/10 text-tinapple-gold font-bold whitespace-nowrap">
                   {systemInfo.sessionMode === 'headless' ? 'Headless Server' : 'Niri Desktop'}
                 </span>
               </div>
@@ -521,9 +522,9 @@ export const App: React.FC = () => {
           </div>
 
           {/* Right: Live Telemetry Status & Quick Actions */}
-          <div className="flex items-center justify-end gap-1.5 sm:gap-2.5 shrink-0">
+          <div className="flex items-center justify-end gap-1.5 sm:gap-2 shrink-0">
             {/* Live SSE Pulse Chip */}
-            <div className="hidden lg:flex items-center gap-2 px-2.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[11px] font-mono text-emerald-300">
+            <div className="hidden 2xl:flex items-center gap-2 px-2.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[11px] font-mono text-emerald-300">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
               <span>SSE Live</span>
             </div>
@@ -531,7 +532,7 @@ export const App: React.FC = () => {
             {/* Tailscale VPN Chip */}
             <button
               onClick={() => setTailscaleOpen(true)}
-              className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/20 text-[11px] font-mono text-sky-300 transition-all cursor-pointer"
+              className="hidden xl:flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/20 text-[11px] font-mono text-sky-300 transition-all cursor-pointer whitespace-nowrap"
               title="Tailscale VPN Mesh Status"
             >
               <span className="w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse" />
@@ -546,13 +547,13 @@ export const App: React.FC = () => {
               title="Full System & Appliance Update (paru/pacman -Syu)"
             >
               <ArrowUpCircle className={`w-4 h-4 text-emerald-400 ${isUpdatingSystem ? 'animate-spin' : ''}`} />
-              <span className="hidden sm:inline">Update OS</span>
+              <span className="hidden xl:inline">Update OS</span>
             </button>
 
             {/* Interactive Guides Button */}
             <button
               onClick={() => handleOpenGuide('jellyfin')}
-              className="hidden sm:flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl border border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 transition-all font-mono text-xs font-semibold shadow-sm active:scale-95"
+              className="hidden lg:flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl border border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 transition-all font-mono text-xs font-semibold shadow-sm active:scale-95"
               title="Interactive Setup Guides"
             >
               <BookOpen className="w-4 h-4 text-purple-400" />
@@ -632,142 +633,21 @@ export const App: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -14 }}
               transition={{ duration: 0.25, ease: 'easeOut' }}
-              className="space-y-6"
             >
-              {/* Tinarchy Homarr Edit Mode Customizer Banner */}
-              {isEditMode && (
-                <div className="rounded-2xl bg-gradient-to-r from-amber-500/15 via-purple-500/10 to-sky-500/15 border border-tinapple-gold/40 p-4 sm:p-5 backdrop-blur-xl shadow-xl flex flex-wrap items-center justify-between gap-4 font-mono animate-in fade-in">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-tinapple-gold/20 border border-tinapple-gold/40 flex items-center justify-center text-tinapple-gold text-lg shadow-sm">
-                      🛠️
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                        <span>Dashboard Customizer & Edit Mode</span>
-                        <span className="px-2 py-0.5 rounded-full text-[10px] bg-tinapple-gold/20 text-tinapple-gold border border-tinapple-gold/40">
-                          Active
-                        </span>
-                      </h3>
-                      <p className="text-xs text-slate-300 mt-0.5">
-                        Reorder or hide widgets, manage quick-connect links, and add custom homelab bookmarks.
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => {
-                        setEditingBookmark(null);
-                        setBookmarkModalOpen(true);
-                      }}
-                      className="px-3.5 py-1.5 rounded-xl bg-tinapple-gold hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 shadow-md transition-all"
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                      <span>Add Bookmark</span>
-                    </button>
-                    <button
-                      onClick={handleResetLayout}
-                      className="px-3 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 text-xs flex items-center gap-1.5 transition-colors"
-                      title="Reset to default layout"
-                    >
-                      <RotateCcw className="w-3.5 h-3.5" />
-                      <span className="hidden sm:inline">Reset</span>
-                    </button>
-                    <button
-                      onClick={() => setIsEditMode(false)}
-                      className="px-4 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 font-bold text-xs flex items-center gap-1.5 transition-all"
-                    >
-                      <Check className="w-3.5 h-3.5" />
-                      <span>Done</span>
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* Render dynamic widgets according to layout order & visibility */}
-              {[...layout.widgets]
-                .filter((w) => isOwner || w.id !== 'manga')
-                .sort((a, b) => a.order - b.order)
-                .map((w, idx, arr) => {
-                  if (!w.visible && !isEditMode) return null;
-
-                  const renderWidgetContent = () => {
-                    switch (w.id) {
-                      case 'quickconnect':
-                        return (
-                          <QuickConnectCard
-                            services={displayServices}
-                            customBookmarks={layout.bookmarks}
-                            isEditMode={isEditMode}
-                            isAdmin={isOwner}
-                            onAddBookmark={() => {
-                              setEditingBookmark(null);
-                              setBookmarkModalOpen(true);
-                            }}
-                            onEditBookmark={(bm) => {
-                              setEditingBookmark(bm);
-                              setBookmarkModalOpen(true);
-                            }}
-                            onDeleteBookmark={handleDeleteBookmark}
-                            onSelectTab={(tab) => setActiveTab(tab as any)}
-                            onOpenTailscale={() => setTailscaleOpen(true)}
-                            onOpenGuide={handleOpenGuide}
-                          />
-                        );
-                      case 'transfers':
-                        return <TransfersWidget />;
-                      case 'manga':
-                        return <MangaShelfWidget />;
-                      case 'tor':
-                        return <TorPrivacyWidget />;
-                      default:
-                        return null;
-                    }
-                  };
-
-                  return (
-                    <div key={w.id} className="relative group/widget">
-                      {isEditMode && (
-                        <div className="flex items-center justify-between px-3 py-1.5 mb-2 rounded-xl bg-slate-900/80 border border-slate-700/80 text-xs font-mono text-slate-300">
-                          <div className="flex items-center gap-2">
-                            <span className="w-2 h-2 rounded-full bg-tinapple-gold" />
-                            <span className="font-bold text-white">{w.title}</span>
-                            {!w.visible && (
-                              <span className="px-1.5 py-0.5 text-[10px] bg-rose-500/20 text-rose-300 rounded border border-rose-500/30">
-                                Hidden
-                              </span>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <button
-                              onClick={() => handleMoveWidget(w.id, 'up')}
-                              disabled={idx === 0}
-                              className="p-1 rounded hover:bg-slate-800 disabled:opacity-30 text-slate-400 hover:text-white"
-                              title="Move section up"
-                            >
-                              <ArrowUp className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              onClick={() => handleMoveWidget(w.id, 'down')}
-                              disabled={idx === arr.length - 1}
-                              className="p-1 rounded hover:bg-slate-800 disabled:opacity-30 text-slate-400 hover:text-white"
-                              title="Move section down"
-                            >
-                              <ArrowDown className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              onClick={() => handleToggleWidgetVisibility(w.id)}
-                              className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-white ml-1"
-                              title={w.visible ? 'Hide widget from dashboard' : 'Show widget on dashboard'}
-                            >
-                              {w.visible ? <Eye className="w-3.5 h-3.5 text-emerald-400" /> : <EyeOff className="w-3.5 h-3.5 text-slate-500" />}
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                      {w.visible && renderWidgetContent()}
-                    </div>
-                  );
-                })}
+              <HomarrCanvas
+                telemetry={telemetry}
+                systemInfo={systemInfo}
+                services={displayServices}
+                isEditMode={isEditMode}
+                setIsEditMode={setIsEditMode}
+                isOwner={isOwner}
+                onOpenAppSettings={(app) => {
+                  setSelectedAppForConfig(app);
+                  setAppSettingsOpen(true);
+                }}
+                onOpenTailscale={() => setTailscaleOpen(true)}
+                onOpenGuide={handleOpenGuide}
+              />
             </motion.div>
           )}
 
