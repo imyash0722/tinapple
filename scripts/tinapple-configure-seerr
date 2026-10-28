@@ -194,7 +194,20 @@ if os.path.exists(seerr_cfg) and radarr_key and sonarr_key:
     try:
         with open(seerr_cfg, 'r') as f:
             cfg = json.load(f)
-        cfg['public']['initialized'] = True
+        # Only mark initialized if an admin user already exists in Seerr database
+        has_user = False
+        db_path = '/var/lib/seerr/db/db.sqlite3'
+        if os.path.exists(db_path):
+            try:
+                import sqlite3
+                conn = sqlite3.connect(db_path)
+                c = conn.cursor()
+                c.execute("SELECT count(*) FROM user")
+                has_user = c.fetchone()[0] > 0
+                conn.close()
+            except Exception:
+                pass
+        cfg['public']['initialized'] = has_user
         cfg['jellyfin'] = {
             'name': 'pineapple',
             'ip': '127.0.0.1',
