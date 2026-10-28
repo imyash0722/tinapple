@@ -1,4 +1,4 @@
-import { SystemInfo, TelemetrySnapshot, ServiceInfo, HardwareInfo, SessionMode, AppInfo, AppActionResult, InstallProgressState, InstallLogMessage, TailscaleStatus, AppliancePackStatus, WallpaperItem } from '../types/api';
+import { SystemInfo, TelemetrySnapshot, ServiceInfo, HardwareInfo, SessionMode, AppInfo, AppActionResult, InstallProgressState, InstallLogMessage, TailscaleStatus, AppliancePackStatus, WallpaperItem, OpenPortInfo, AppConfigDetails, MaintenanceResult, FailedUnitsResult } from '../types/api';
 
 const API_BASE = '/api/v1';
 
@@ -464,28 +464,6 @@ class ApiService {
     }
   }
 
-  async getAppConfig(id: string): Promise<any> {
-    try {
-      const res = await fetch(`${API_BASE}/apps/${id}/config`);
-      if (!res.ok) throw new Error('Config fetch failed');
-      return await res.json();
-    } catch {
-      return null;
-    }
-  }
-
-  async updateAppConfig(id: string, config: { port?: number; customEnv?: Record<string, string> }): Promise<boolean> {
-    try {
-      const res = await fetch(`${API_BASE}/apps/${id}/config`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(config),
-      });
-      return res.ok;
-    } catch {
-      return false;
-    }
-  }
 
   async getPacks(): Promise<AppliancePackStatus[]> {
     try {
@@ -868,6 +846,85 @@ class ApiService {
   async downTailscale(): Promise<boolean> {
     try {
       const res = await fetch(`${API_BASE}/tailscale/down`, { method: 'POST' });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  // Server Tools & Port Matrix (ss -tulpn)
+  async getOpenPorts(): Promise<OpenPortInfo[]> {
+    try {
+      const res = await fetch(`${API_BASE}/tools/ports`);
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data)) return data;
+        if (data && Array.isArray(data.ports)) return data.ports;
+      }
+    } catch {}
+    return [];
+  }
+
+  async runMaintenance(action: string): Promise<MaintenanceResult> {
+    try {
+      const res = await fetch(`${API_BASE}/tools/maintenance`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action }),
+      });
+      if (res.ok) return await res.json();
+      const err = await res.json();
+      return { action, success: false, output: err.error || 'Execution failed' };
+    } catch (e: any) {
+      return { action, success: false, output: e?.message || 'Network error' };
+    }
+  }
+
+  async getFailedUnits(): Promise<FailedUnitsResult> {
+    try {
+      const res = await fetch(`${API_BASE}/tools/failed-units`);
+      if (res.ok) return await res.json();
+    } catch {}
+    return { units: [], count: 0 };
+  }
+
+  async getKernelLogs(): Promise<string[]> {
+    try {
+      const res = await fetch(`${API_BASE}/tools/kernel-logs`);
+      if (res.ok) {
+        const data = await res.json();
+        return data.logs || [];
+      }
+    } catch {}
+    return [];
+  }
+
+  // App Configuration & Raw Config Editor
+  async getAppConfig(appId: string): Promise<AppConfigDetails | null> {
+    try {
+      const res = await fetch(`${API_BASE}/apps/${encodeURIComponent(appId)}/config`);
+      if (res.ok) return await res.json();
+    } catch {}
+    return null;
+  }
+
+  async updateAppConfig(
+    appId: string,
+    req: {
+      port?: number;
+      rawConfig?: string;
+      autostart?: boolean;
+      cpuWeight?: number;
+      ignorePerms?: boolean;
+      customEnv?: Record<string, string>;
+    }
+  ): Promise<boolean> {
+    try {
+      const res = await fetch(`${API_BASE}/apps/${encodeURIComponent(appId)}/config`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(req),
+      });
       return res.ok;
     } catch {
       return false;

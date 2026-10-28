@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"regexp"
 	"runtime"
 	"strings"
 	"sync"
@@ -16,6 +17,7 @@ import (
 	"tinapple-dash/internal/config"
 	"tinapple-dash/internal/services"
 	"tinapple-dash/internal/telemetry"
+	"tinapple-dash/internal/terminal"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
@@ -175,9 +177,25 @@ func SetupRoutes(r *gin.Engine, cfg *config.Manifest, svcMgr *services.SystemdMa
 		v1.POST("/wallpapers/upload", h.UploadWallpaper)
 		v1.POST("/wallpapers/select", h.SelectWallpaper)
 
+		// Server Operations & Network Toolkit
+		v1.GET("/tools/open-ports", h.GetOpenPorts)
+		v1.GET("/tools/ports", h.GetOpenPorts)
+		v1.POST("/tools/run", h.RunMaintenanceTool)
+		v1.POST("/tools/maintenance", h.RunMaintenanceTool)
+		v1.GET("/tools/failed-units", h.GetFailedUnits)
+		v1.GET("/tools/dmesg", h.GetKernelLogs)
+		v1.GET("/tools/kernel-logs", h.GetKernelLogs)
+
+		// Interactive Web Terminal (PTY WebSocket)
+		v1.GET("/terminal/ws", h.TerminalWebSocket)
+
 		// WebSocket
 		v1.GET("/ws", h.WebSocketHandler)
 	}
+
+	// Universal Client Pairing Endpoint (Tinarchy style)
+	r.GET("/pair.sh", h.ServePairScript)
+	r.GET("/pair", h.ServePairScript)
 
 	// Native Widget Fallbacks & Direct Proxy
 	r.GET("/api/widgets/qbittorrent", h.WidgetQBittorrent)
@@ -1871,5 +1889,81 @@ func (h *Handler) DownTailscale(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"status": "ok", "message": "Tailscale stopped"})
 }
+
+// TerminalWebSocket handles live interactive in-browser PTY sessions
+func (h *Handler) TerminalWebSocket(c *gin.Context) {
+	isOwner, _ := h.getClientRole(c)
+	terminal.HandleTerminalWS(c, isOwner)
+}
+
+// ServePairScript generates a dynamic client pairing script for Syncthing
+func (h *Handler) ServePairScript(c *gin.Context) {
+	deviceId := ""
+	homeDir, _ := os.UserHomeDir()
+	configPaths := []string{
+		fmt.Sprintf("%s/.local/state/syncthing/config.xml", homeDir),
+		fmt.Sprintf("%s/.config/syncthing/config.xml", homeDir),
+		"/var/lib/syncthing/config.xml",
+	}
+	for _, p := range configPaths {
+		if data, err := os.ReadFile(p); err == nil {
+			re := regexp.MustCompile(`<device id="([^"]+)" name="[^"]*" compression=`)
+			if m := re.FindStringSubmatch(string(data)); len(m) > 1 {
+				deviceId = m[1]
+				break
+			}
+		}
+	}
+
+	serverName := h.cfg.Hostname
+	if serverName == "" {
+		serverName = "Tinapple Server"
+	}
+
+	pairScript := fmt.Sprintf(`#!/usr/bin/env bash
+# Universal Syncthing Client Auto-Pairing Script for %s
+set -e
+SERVER_ID="%s"
+SERVER_NAME="%s"
+FOLDER_ID="shared"
+FOLDER_LABEL="Shared"
+TARGET_DIR="${HOME}/drive"
+
+echo "╔══════════════════════════════════════════════════════════════════════╗"
+printf "║  %%-68s║\n" "🔗 ${SERVER_NAME} — Client Auto-Pairing"
+echo "╚══════════════════════════════════════════════════════════════════════╝"
+
+if ! command -v syncthing >/dev/null 2>&1; then
+    echo "⚙️  Installing Syncthing..."
+    if command -v pacman >/dev/null 2>&1; then
+        sudo pacman -S --needed --noconfirm syncthing
+    elif command -v apt-get >/dev/null 2>&1; then
+        sudo apt-get update && sudo apt-get install -y syncthing
+    elif command -v dnf >/dev/null 2>&1; then
+        sudo dnf install -y syncthing
+    fi
+fi
+
+mkdir -p "$TARGET_DIR"
+if command -v systemctl >/dev/null 2>&1; then
+    systemctl --user enable --now syncthing 2>/dev/null || true
+fi
+sleep 2
+
+if [ -n "$SERVER_ID" ]; then
+    echo "🔗 Pairing client with ${SERVER_NAME} (${SERVER_ID})..."
+    syncthing cli config devices add --device-id "$SERVER_ID" --name "$SERVER_NAME" --auto-accept-folders 2>/dev/null || true
+    syncthing cli config folders add --id "$FOLDER_ID" --label "$FOLDER_LABEL" --path "$TARGET_DIR" 2>/dev/null || true
+    syncthing cli config folders "$FOLDER_ID" devices add --device-id "$SERVER_ID" 2>/dev/null || true
+    echo "✅ Successfully paired with ${SERVER_NAME}! Files in ~/drive will now sync automatically."
+else
+    echo "⚠️  Server ID not yet initialized. Please open http://%s:8088 to view Syncthing pairing code."
+fi
+`, serverName, deviceId, serverName, c.Request.Host)
+
+	c.Header("Content-Type", "text/x-shellscript; charset=utf-8")
+	c.String(http.StatusOK, pairScript)
+}
+
 
 

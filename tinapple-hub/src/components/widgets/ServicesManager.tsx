@@ -10,6 +10,7 @@ import {
   ShieldCheck,
   BookOpen,
   ExternalLink,
+  Settings,
 } from 'lucide-react';
 import { SpotlightCard } from '../reactbits/SpotlightCard';
 import HoldButton from '../reactbits/HoldButton';
@@ -22,6 +23,7 @@ interface ServicesManagerProps {
   isAdmin?: boolean;
   onControlService: (name: string, action: 'start' | 'stop' | 'restart' | 'enable' | 'disable') => Promise<{ ok: boolean; error?: string } | void>;
   onOpenLogs: (name: string) => void;
+  onOpenSettings?: (name: string) => void;
   onOpenTailscale?: () => void;
   onOpenGuide?: (guideId: string) => void;
 }
@@ -32,6 +34,7 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({
   isAdmin = true,
   onControlService,
   onOpenLogs,
+  onOpenSettings,
   onOpenTailscale,
   onOpenGuide,
 }) => {
@@ -450,6 +453,16 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({
                         <span className="hidden sm:inline">Guide</span>
                       </button>
                     )}
+                    {onOpenSettings && (
+                      <button
+                        onClick={() => onOpenSettings(service.name)}
+                        className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-mono font-medium bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-zinc-300 hover:text-white transition-colors"
+                        title={`Configure ${service.displayName || service.name} & Paste Config`}
+                      >
+                        <Settings className="w-3.5 h-3.5 text-tinapple-gold" />
+                        <span className="hidden sm:inline">Config</span>
+                      </button>
+                    )}
                     <button
                       onClick={() => onOpenLogs(service.name)}
                       className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-mono font-medium bg-tinapple-dark/80 hover:bg-tinapple-surface border border-tinapple-border text-tinapple-subtext hover:text-white transition-colors"
@@ -586,6 +599,15 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({
                           <span className="text-[10px] text-tinapple-muted px-2 py-0.5">
                             Not Installed
                           </span>
+                        )}
+                        {onOpenSettings && (
+                          <button
+                            onClick={() => onOpenSettings(service.name)}
+                            className="px-2 py-1 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-[11px] text-zinc-300 hover:text-white"
+                            title="Configure"
+                          >
+                            <Settings className="w-3 h-3 text-tinapple-gold inline" />
+                          </button>
                         )}
                         <button
                           onClick={() => onOpenLogs(service.name)}

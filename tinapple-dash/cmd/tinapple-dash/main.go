@@ -100,6 +100,13 @@ func main() {
 	tsumiruDir := filepath.Join(distDir, "tsumiru")
 	if _, err := os.Stat(tsumiruDir); err == nil {
 		r.Static("/tsumiru", tsumiruDir)
+	} else {
+		r.GET("/tsumiru", func(c *gin.Context) {
+			c.Redirect(http.StatusFound, "http://"+c.Request.Host+":4567/")
+		})
+		r.GET("/tsumiru/", func(c *gin.Context) {
+			c.Redirect(http.StatusFound, "http://"+c.Request.Host+":4567/")
+		})
 	}
 
 	if _, err := os.Stat(filepath.Join(distDir, "index.html")); err == nil {
@@ -145,11 +152,16 @@ func main() {
 		r.GET("/", serveIndex)
 		r.NoRoute(func(c *gin.Context) {
 			path := c.Request.URL.Path
+			if path == "/tsumiru" {
+				c.Redirect(http.StatusMovedPermanently, "/tsumiru/")
+				return
+			}
 			if strings.HasPrefix(path, "/api") ||
 				strings.HasPrefix(path, "/assets") ||
 				strings.HasPrefix(path, "/icons") ||
 				strings.HasPrefix(path, "/images") ||
-				strings.HasPrefix(path, "/wallpapers") {
+				strings.HasPrefix(path, "/wallpapers") ||
+				strings.HasPrefix(path, "/tsumiru") {
 				c.JSON(http.StatusNotFound, gin.H{"error": "Resource not found"})
 				return
 			}

@@ -144,6 +144,22 @@ const FALLBACK_APPS: AppInfo[] = [
     status: 'not_installed',
   },
   {
+    id: 'samba',
+    name: 'Samba SMB Storage Server',
+    tagline: 'Enterprise LAN file sharing for Windows, Mac & Linux',
+    description: 'High-performance SMB/CIFS network storage sharing /srv/storage datasets across local home network.',
+    category: 'storage',
+    package: 'samba',
+    unit: 'smb.service',
+    binary: 'smbd',
+    port: 445,
+    icon: 'folder',
+    accentColor: '#0EA5E9',
+    installed: false,
+    running: false,
+    status: 'not_installed',
+  },
+  {
     id: 'adguard',
     name: 'AdGuard Home DNS',
     tagline: 'Network-wide tracking & ad blocker',
@@ -582,14 +598,41 @@ const FALLBACK_PACKS: AppliancePackStatus[] = [
     allInstalled: false,
     allRunning: false,
   },
+  {
+    id: 'truenas-vault',
+    name: 'TrueNAS & Syncthing Storage Vault',
+    tagline: 'Enterprise-grade ZFS NAS datasets, Samba LAN shares & Syncthing multi-OS sync',
+    description: 'Transform your Tinapple appliance into a high-capacity TrueNAS-style vault. Pre-configures datasets in /srv/storage/{shared,media,backups}, enables Samba SMB network shares for Windows/macOS Explorer, and tunes Syncthing with ignorePerms for conflict-free bi-directional sync.',
+    badge: 'STORAGE & NAS',
+    accentColor: '#0EA5E9',
+    icon: 'syncthing',
+    apps: ['syncthing', 'samba', 'filebrowser'],
+    features: [
+      'Pre-tuned Syncthing with ignorePerms=true (eliminates NTFS/POSIX permission collisions)',
+      'Samba SMB shares for \\\\tinapple\\shared on LAN (:445)',
+      'FileBrowser Quantum modern web file explorer (:8082)',
+      'Dedicated storage hierarchy at /srv/storage with group permissions',
+      'Self-contained automated pairing script (/pair.sh) for client devices',
+    ],
+    installedCount: 0,
+    runningCount: 0,
+    totalCount: 3,
+    allInstalled: false,
+    allRunning: false,
+  },
 ];
 
 interface ChaddyStoreProps {
   onOpenGuide?: (guideId: string) => void;
+  onOpenSettings?: (appId: string, appName?: string) => void;
   isAdmin?: boolean;
 }
 
-export const ChaddyStore: React.FC<ChaddyStoreProps> = ({ onOpenGuide, isAdmin = true }) => {
+export const ChaddyStore: React.FC<ChaddyStoreProps> = ({
+  onOpenGuide,
+  onOpenSettings,
+  isAdmin = true,
+}) => {
   const [storeTab, setStoreTab] = useState<'packs' | 'apps'>('packs');
   const [apps, setApps] = useState<AppInfo[]>(FALLBACK_APPS);
   const [packs, setPacks] = useState<AppliancePackStatus[]>(FALLBACK_PACKS);
@@ -757,6 +800,10 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({ onOpenGuide, isAdmin =
   };
 
   const handleOpenConfig = async (app: AppInfo) => {
+    if (onOpenSettings) {
+      onOpenSettings(app.id, app.name);
+      return;
+    }
     setConfigModalApp(app);
     setEditPort(app.port || 0);
     setRawConfigPreview('Loading current system configuration...');

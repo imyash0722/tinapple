@@ -36,13 +36,16 @@ func TestCheckClientRole(t *testing.T) {
 	// 3. Tailscale mocked check
 	dir := t.TempDir()
 	tailscaleScript := `#!/bin/sh
-if [ "$2" = "100.103.108.21" ]; then
-  echo '{"Node":{"Hostinfo":{"ShareeNode":false,"Hostname":"tinux"}},"UserProfile":{"LoginName":"yatinrajesh77@gmail.com"}}'
-elif [ "$2" = "100.67.155.4" ]; then
-  echo '{"Node":{"Hostinfo":{"ShareeNode":true,"Hostname":"friend-phone"}},"UserProfile":{"LoginName":"thirukumaran3057@gmail.com"}}'
-else
-  exit 1
-fi
+for arg in "$@"; do
+  if [ "$arg" = "100.103.108.21" ]; then
+    echo '{"Node":{"Hostinfo":{"ShareeNode":false,"Hostname":"tinux"}},"UserProfile":{"LoginName":"yatinrajesh77@gmail.com"}}'
+    exit 0
+  elif [ "$arg" = "100.67.155.4" ]; then
+    echo '{"Node":{"Hostinfo":{"ShareeNode":true,"Hostname":"friend-phone"}},"UserProfile":{"LoginName":"thirukumaran3057@gmail.com"}}'
+    exit 0
+  fi
+done
+exit 1
 `
 	scriptPath := filepath.Join(dir, "tailscale")
 	if err := os.WriteFile(scriptPath, []byte(tailscaleScript), 0755); err != nil {

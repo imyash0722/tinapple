@@ -20,6 +20,7 @@ import {
   Terminal,
   Monitor,
   Timer,
+  Network,
 } from 'lucide-react';
 import { SystemInfo, ServiceInfo } from '../../types/api';
 
@@ -37,6 +38,8 @@ export interface SidebarProps {
   onOpenGuides: () => void;
   onOpenAppearance: () => void;
   onOpenTailscale: () => void;
+  onOpenTerminal?: () => void;
+  onOpenTools?: () => void;
   onRunUpdate: () => void;
   isUpdatingSystem: boolean;
   onSyncClock: () => void;
@@ -61,6 +64,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenGuides,
   onOpenAppearance,
   onOpenTailscale,
+  onOpenTerminal,
+  onOpenTools,
   onRunUpdate,
   isUpdatingSystem,
   onSyncClock,
@@ -227,7 +232,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     key={item.id}
                     onClick={() => handleSelectTab(item.id)}
                     title={item.label}
-                    className={`w-12 h-12 mx-auto flex items-center justify-center p-0 rounded-2xl transition-all duration-200 group relative ${
+                    className={`w-12 h-12 mx-auto flex items-center justify-center p-0 rounded-2xl transition-all duration-200 group ${
                       isActive
                         ? 'bg-gradient-to-br from-tinapple-gold/25 via-tinapple-gold/15 to-tinapple-gold/5 border border-tinapple-gold/50 text-tinapple-gold shadow-lg shadow-tinapple-gold/20 font-bold scale-[1.03]'
                         : 'text-zinc-400 hover:text-white hover:bg-white/[0.06] border border-transparent'
@@ -240,13 +245,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     >
                       {item.icon}
                     </div>
-
-                    {/* Collapsed Badge Pill on top-right edge if present (e.g. Services active count) */}
-                    {item.badge && typeof item.badge === 'number' && (
-                      <span className="absolute -top-1 -right-1 px-1.5 py-0.5 text-[9px] font-mono font-black rounded-full bg-emerald-500 text-slate-950 border border-slate-900 shadow-sm leading-none pointer-events-none">
-                        {item.badge}
-                      </span>
-                    )}
                   </button>
                 );
               }
@@ -359,10 +357,64 @@ export const Sidebar: React.FC<SidebarProps> = ({
               {!isCollapsed && (
                 <div className="flex items-center justify-between w-full">
                   <span className="font-semibold text-xs">Tailscale Mesh</span>
-                  <span className="w-2 h-2 rounded-full bg-sky-400 animate-pulse" />
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-sky-500/20 text-sky-300 font-bold">
+                    VPN
+                  </span>
                 </div>
               )}
             </button>
+
+            {/* Interactive Web Terminal */}
+            {onOpenTerminal && (
+              <button
+                onClick={() => {
+                  onOpenTerminal();
+                  setMobileOpen(false);
+                }}
+                title="Interactive Web Terminal (PTY bash shell)"
+                className={`transition-all group ${
+                  isCollapsed
+                    ? 'w-12 h-12 mx-auto flex items-center justify-center rounded-2xl text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 border border-transparent p-0'
+                    : 'w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-mono text-emerald-300 hover:text-emerald-200 hover:bg-emerald-500/10 border border-transparent'
+                }`}
+              >
+                <Terminal className="w-5 h-5 shrink-0 text-emerald-400 group-hover:scale-110 transition-transform" />
+                {!isCollapsed && (
+                  <div className="flex items-center justify-between w-full">
+                    <span className="font-semibold text-xs">Web Terminal</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 font-bold">
+                      PTY
+                    </span>
+                  </div>
+                )}
+              </button>
+            )}
+
+            {/* Server Operations & Port Matrix */}
+            {onOpenTools && (
+              <button
+                onClick={() => {
+                  onOpenTools();
+                  setMobileOpen(false);
+                }}
+                title="Server Operations & Port Matrix"
+                className={`transition-all group ${
+                  isCollapsed
+                    ? 'w-12 h-12 mx-auto flex items-center justify-center rounded-2xl text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 border border-transparent p-0'
+                    : 'w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-mono text-amber-300 hover:text-amber-200 hover:bg-amber-500/10 border border-transparent'
+                }`}
+              >
+                <Network className="w-5 h-5 shrink-0 text-amber-400 group-hover:scale-110 transition-transform" />
+                {!isCollapsed && (
+                  <div className="flex items-center justify-between w-full">
+                    <span className="font-semibold text-xs">Port Matrix & Tools</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-300 font-bold">
+                      Ops
+                    </span>
+                  </div>
+                )}
+              </button>
+            )}
 
             {/* Edit Deck Layout (Dashboard tab only) */}
             {activeTab === 'dashboard' && (

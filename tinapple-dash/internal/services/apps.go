@@ -516,6 +516,20 @@ func NewAppManager() *AppManager {
 			AccentColor: "#6D4AFF",
 			ConfigPath:  filepath.Join(primaryHome, ".config/protonvpn/user_settings.json"),
 		},
+		{
+			ID:          "samba",
+			Name:        "Samba SMB File Server",
+			Description: "Windows, macOS, and Linux SMB/CIFS network drive server. Seamlessly browse and mount server storage on your home LAN without SSH.",
+			Tagline:     "TrueNAS-style network file sharing",
+			Category:    "storage",
+			Package:     "samba",
+			Unit:        "smb.service",
+			Binary:      "smbd",
+			Port:        445,
+			ConfigPath:  "/etc/samba/smb.conf",
+			Icon:        "syncthing",
+			AccentColor: "#0EA5E9",
+		},
 	}
 
 	for _, d := range definitions {
@@ -635,6 +649,23 @@ func NewAppManager() *AppManager {
 				"Aikar's optimized garbage collection GC flags pre-configured",
 				"Playit.gg Anycast tunnel with custom public domain",
 				"Automated crash recovery & systemd supervision",
+			},
+		},
+		{
+			ID:          "truenas-vault",
+			Name:        "TrueNAS & Syncthing Storage Vault",
+			Tagline:     "Enterprise storage, decentralized sync & Samba network drive sharing",
+			Description: "TrueNAS-style unified storage architecture combining Syncthing continuous folder synchronization, Samba (SMB) network drive sharing for Windows/Mac/Linux PCs, and FileBrowser Quantum web management with pre-configured cross-platform permissions.",
+			Badge:       "STORAGE & TRUENAS",
+			AccentColor: "#0EA5E9",
+			Icon:        "syncthing",
+			Apps:        []string{"syncthing", "samba", "filebrowser"},
+			Features: []string{
+				"Samba SMB shares for /srv/storage and ~/drive (\\\\<server>\\shared)",
+				"Syncthing ignorePerms=true configured to eliminate cross-OS permission conflicts",
+				"Dedicated storage pools in /srv/storage/{shared,media,backups}",
+				"LZ4/Zstandard block compression active across LAN & Tailscale mesh",
+				"Instant client auto-pairing via curl http://<server>:8088/pair.sh | bash",
 			},
 		},
 	}
@@ -1814,6 +1845,50 @@ func (m *AppManager) configurePackUnlocked(id string) error {
 		_ = exec.Command("systemctl", "restart", "playit").Run()
 		m.AppendLog(id, "info", "[✓] PaperMC high-performance Minecraft engine active on port 25565")
 		m.AppendLog(id, "info", "[✓] Playit.gg Anycast public domain tunnel active")
+
+	case "truenas-vault":
+		_ = os.MkdirAll("/srv/storage/shared", 0775)
+		_ = os.MkdirAll("/srv/storage/media", 0775)
+		_ = os.MkdirAll("/srv/storage/backups", 0775)
+		_ = exec.Command("chmod", "-R", "775", "/srv/storage").Run()
+		_ = exec.Command("chmod", "-R", "g+s", "/srv/storage").Run()
+
+		if _, err := os.Stat("/etc/samba/smb.conf"); os.IsNotExist(err) {
+			_ = os.MkdirAll("/etc/samba", 0755)
+			smbTemplate := `[global]
+   workgroup = WORKGROUP
+   server string = Tinapple TrueNAS Storage
+   server role = standalone server
+   security = user
+   map to guest = Bad User
+   dns proxy = no
+
+[shared]
+   path = /srv/storage/shared
+   browseable = yes
+   writable = yes
+   guest ok = yes
+   create mask = 0775
+   directory mask = 0775
+
+[media]
+   path = /srv/storage/media
+   browseable = yes
+   writable = yes
+   guest ok = yes
+   create mask = 0775
+   directory mask = 0775
+`
+			_ = os.WriteFile("/etc/samba/smb.conf", []byte(smbTemplate), 0644)
+		}
+
+		_ = exec.Command("systemctl", "enable", "--now", "smb.service").Run()
+		_ = exec.Command("systemctl", "restart", "syncthing").Run()
+		_ = exec.Command("systemctl", "restart", "filebrowser").Run()
+		m.AppendLog(id, "info", "[✓] Storage hierarchy /srv/storage/{shared,media,backups} provisioned")
+		m.AppendLog(id, "info", "[✓] Samba SMB shares enabled (accessible at \\\\<server>\\shared without SSH)")
+		m.AppendLog(id, "info", "[✓] Syncthing continuous peer-to-peer sync engine active (:8384)")
+		m.AppendLog(id, "info", "[✓] FileBrowser Quantum web management active (:8082)")
 	}
 
 	m.AppendLog(id, "success", fmt.Sprintf("SUCCESS: %s is 100%% configured, synchronized, and operational!", pack.Name))
@@ -2047,11 +2122,19 @@ func (m *AppManager) GetConfig(id string) (map[string]interface{}, error) {
 		return nil, fmt.Errorf("app %s not found", id)
 	}
 
+	// Check autostart via systemctl is-enabled
+	autostart := false
+	if cmd := exec.Command("systemctl", "is-enabled", app.Unit); cmd.Run() == nil {
+		autostart = true
+	}
+
 	res := map[string]interface{}{
 		"id":         app.ID,
 		"name":       app.Name,
 		"port":       app.Port,
 		"configPath": app.ConfigPath,
+		"unit":       app.Unit,
+		"autostart":  autostart,
 		"customEnv":  make(map[string]string),
 	}
 
@@ -2061,13 +2144,16 @@ func (m *AppManager) GetConfig(id string) (map[string]interface{}, error) {
 		res["rawOverride"] = string(data)
 	}
 
-	// Read small config snippet if config file exists
+	// Read full config file if config file exists (up to 200KB)
 	if app.ConfigPath != "" {
 		if data, err := os.ReadFile(app.ConfigPath); err == nil {
-			if len(data) > 10000 {
-				res["rawConfig"] = string(data[:10000]) + "\n... [truncated]"
+			if len(data) > 200000 {
+				res["rawConfig"] = string(data[:200000]) + "\n... [truncated]"
 			} else {
 				res["rawConfig"] = string(data)
+			}
+			if app.ID == "syncthing" {
+				res["ignorePerms"] = strings.Contains(string(data), "<ignorePerms>true</ignorePerms>")
 			}
 		}
 	}
@@ -2076,8 +2162,12 @@ func (m *AppManager) GetConfig(id string) (map[string]interface{}, error) {
 }
 
 type UpdateConfigRequest struct {
-	Port      int               `json:"port"`
-	CustomEnv map[string]string `json:"customEnv"`
+	Port        int               `json:"port"`
+	CustomEnv   map[string]string `json:"customEnv"`
+	RawConfig   string            `json:"rawConfig"`
+	Autostart   *bool             `json:"autostart"`
+	CpuWeight   int               `json:"cpuWeight"`
+	IgnorePerms *bool             `json:"ignorePerms"`
 }
 
 func (m *AppManager) UpdateConfig(id string, req UpdateConfigRequest) error {
@@ -2088,6 +2178,23 @@ func (m *AppManager) UpdateConfig(id string, req UpdateConfigRequest) error {
 		return fmt.Errorf("app %s not found", id)
 	}
 
+	// 1. Direct Raw Config Box update: if provided, write to app.ConfigPath
+	if req.RawConfig != "" && app.ConfigPath != "" {
+		if err := os.MkdirAll(filepath.Dir(app.ConfigPath), 0755); err == nil {
+			_ = os.WriteFile(app.ConfigPath, []byte(req.RawConfig), 0644)
+		}
+	}
+
+	// 2. Autostart toggle
+	if req.Autostart != nil {
+		if *req.Autostart {
+			_ = exec.Command("systemctl", "enable", app.Unit).Run()
+		} else {
+			_ = exec.Command("systemctl", "disable", app.Unit).Run()
+		}
+	}
+
+	// 3. Drop-in overrides (Port, CPU Weight, Custom Environment)
 	dropInDir := fmt.Sprintf("/etc/systemd/system/%s.d", app.Unit)
 	if err := os.MkdirAll(dropInDir, 0755); err != nil {
 		return fmt.Errorf("failed to create override dir: %w", err)
@@ -2097,6 +2204,9 @@ func (m *AppManager) UpdateConfig(id string, req UpdateConfigRequest) error {
 	dropInContent.WriteString("[Service]\n")
 	if req.Port > 0 {
 		dropInContent.WriteString(fmt.Sprintf("Environment=\"PORT=%d\"\n", req.Port))
+	}
+	if req.CpuWeight > 0 {
+		dropInContent.WriteString(fmt.Sprintf("CPUWeight=%d\n", req.CpuWeight))
 	}
 	for k, v := range req.CustomEnv {
 		dropInContent.WriteString(fmt.Sprintf("Environment=\"%s=%s\"\n", k, v))

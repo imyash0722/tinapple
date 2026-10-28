@@ -202,4 +202,40 @@ export interface WallpaperItem {
   size?: number;
 }
 
+export interface OpenPortInfo {
+  protocol: string;
+  address?: string;
+  localIp?: string;
+  port: number;
+  process: string;
+  pid: number;
+  label?: string;
+  webUrl?: string;
+}
+
+export interface AppConfigDetails {
+  id: string;
+  name: string;
+  port: number;
+  configPath?: string;
+  unit: string;
+  autostart: boolean;
+  rawConfig?: string;
+  rawOverride?: string;
+  cpuWeight?: number;
+  ignorePerms?: boolean;
+  customEnv?: Record<string, string>;
+}
+
+export interface MaintenanceResult {
+  action: string;
+  success: boolean;
+  output: string;
+}
+
+export interface FailedUnitsResult {
+  units: string[];
+  count: number;
+}
+
 

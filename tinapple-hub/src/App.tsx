@@ -43,6 +43,9 @@ import { SettingsManifest } from './components/widgets/SettingsManifest';
 import { LogsModal } from './components/widgets/LogsModal';
 import { TailscaleModal } from './components/widgets/TailscaleModal';
 import { GuidesModal } from './components/widgets/GuidesModal';
+import { WebTerminalModal } from './components/widgets/WebTerminalModal';
+import { AppSettingsModal } from './components/widgets/AppSettingsModal';
+import { ServerToolsModal } from './components/widgets/ServerToolsModal';
 import { WelcomeInstaller } from './components/installer/WelcomeInstaller';
 import { QuickConnectCard } from './components/widgets/QuickConnectCard';
 import { TransfersWidget } from './components/widgets/TransfersWidget';
@@ -152,6 +155,9 @@ export const App: React.FC = () => {
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [tailscaleOpen, setTailscaleOpen] = useState<boolean>(false);
   const [guidesOpen, setGuidesOpen] = useState<boolean>(false);
+  const [webTerminalOpen, setWebTerminalOpen] = useState<boolean>(false);
+  const [serverToolsOpen, setServerToolsOpen] = useState<boolean>(false);
+  const [settingsModalApp, setSettingsModalApp] = useState<{ id: string; name?: string } | null>(null);
   const [selectedGuideId, setSelectedGuideId] = useState<string | null>('jellyfin');
 
   const handleOpenGuide = (guideId?: string) => {
@@ -460,6 +466,8 @@ export const App: React.FC = () => {
         onOpenGuides={() => handleOpenGuide('jellyfin')}
         onOpenAppearance={() => setAppearanceOpen(true)}
         onOpenTailscale={() => setTailscaleOpen(true)}
+        onOpenTerminal={() => setWebTerminalOpen(true)}
+        onOpenTools={() => setServerToolsOpen(true)}
         onRunUpdate={handleRunSystemUpdate}
         isUpdatingSystem={isUpdatingSystem}
         onSyncClock={handleSyncClock}
@@ -549,6 +557,26 @@ export const App: React.FC = () => {
             >
               <BookOpen className="w-4 h-4 text-purple-400" />
               <span>Guides</span>
+            </button>
+
+            {/* Interactive Web Terminal */}
+            <button
+              onClick={() => setWebTerminalOpen(true)}
+              className={actionButtonClass}
+              title="Interactive Web Terminal (PTY)"
+              aria-label="Interactive Web Terminal (PTY)"
+            >
+              <Terminal className="w-4 h-4 text-emerald-400" />
+            </button>
+
+            {/* Server Operations & Port Matrix */}
+            <button
+              onClick={() => setServerToolsOpen(true)}
+              className={actionButtonClass}
+              title="Port Matrix & Maintenance Tools"
+              aria-label="Port Matrix & Maintenance Tools"
+            >
+              <Wrench className="w-4 h-4 text-tinapple-gold" />
             </button>
 
             {/* Appearance / Wallpaper Modal Button */}
@@ -768,6 +796,7 @@ export const App: React.FC = () => {
                 isAdmin={isOwner}
                 onControlService={handleControlService}
                 onOpenLogs={handleOpenLogs}
+                onOpenSettings={(name) => setSettingsModalApp({ id: name, name })}
                 onOpenTailscale={() => setTailscaleOpen(true)}
                 onOpenGuide={handleOpenGuide}
               />
@@ -782,7 +811,11 @@ export const App: React.FC = () => {
               exit={{ opacity: 0, y: -14 }}
               transition={{ duration: 0.25, ease: 'easeOut' }}
             >
-              <ChaddyStore isAdmin={isOwner} onOpenGuide={handleOpenGuide} />
+              <ChaddyStore
+                isAdmin={isOwner}
+                onOpenGuide={handleOpenGuide}
+                onOpenSettings={(appId, name) => setSettingsModalApp({ id: appId, name })}
+              />
             </motion.div>
           )}
 
@@ -849,6 +882,27 @@ export const App: React.FC = () => {
         isOpen={guidesOpen}
         onClose={() => setGuidesOpen(false)}
         initialGuideId={selectedGuideId}
+      />
+
+      {/* REACTBITS INTERACTIVE PTY WEB TERMINAL */}
+      <WebTerminalModal
+        isOpen={webTerminalOpen}
+        onClose={() => setWebTerminalOpen(false)}
+      />
+
+      {/* SERVER OPERATIONS & PORT MATRIX MODAL */}
+      <ServerToolsModal
+        isOpen={serverToolsOpen}
+        onClose={() => setServerToolsOpen(false)}
+      />
+
+      {/* INDEPENDENT APP SETTINGS & RAW CONFIG EDITOR MODAL */}
+      <AppSettingsModal
+        isOpen={Boolean(settingsModalApp)}
+        appId={settingsModalApp?.id || null}
+        appName={settingsModalApp?.name}
+        onClose={() => setSettingsModalApp(null)}
+        onAppUpdated={handleRefresh}
       />
 
       {/* HOMARR ADD/EDIT BOOKMARK MODAL (TINARCHY FEATURE) */}

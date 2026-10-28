@@ -79,6 +79,9 @@ func NewTailscaleManager() *TailscaleManager {
 }
 
 func (m *TailscaleManager) findTailscaleBin() string {
+	if p, err := exec.LookPath("tailscale"); err == nil {
+		return p
+	}
 	candidates := []string{
 		"/usr/bin/tailscale",
 		"/usr/local/bin/tailscale",
@@ -87,9 +90,6 @@ func (m *TailscaleManager) findTailscaleBin() string {
 		if _, err := os.Stat(c); err == nil {
 			return c
 		}
-	}
-	if p, err := exec.LookPath("tailscale"); err == nil {
-		return p
 	}
 	return "tailscale"
 }
