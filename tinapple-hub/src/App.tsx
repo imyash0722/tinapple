@@ -646,6 +646,8 @@ export const App: React.FC = () => {
                   setAppSettingsOpen(true);
                 }}
                 onOpenTailscale={() => setTailscaleOpen(true)}
+                onOpenTerminal={() => setWebTerminalOpen(true)}
+                onOpenTools={() => setServerToolsOpen(true)}
                 onOpenGuide={handleOpenGuide}
               />
             </motion.div>

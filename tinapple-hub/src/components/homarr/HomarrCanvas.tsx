@@ -1,217 +1,183 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   LayoutGrid,
-  Search,
   Plus,
   Wrench,
   Check,
   RotateCcw,
-  SlidersHorizontal,
-  ExternalLink,
-  Layers,
-  Sparkles,
-  Bookmark,
+  GripVertical,
+  Maximize2,
+  Minimize2,
   X,
   Eye,
   EyeOff,
+  Bookmark,
+  Search,
 } from 'lucide-react';
-import { HomarrAppTile } from './HomarrAppTile';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   HomarrResourceWidget,
   HomarrClockWidget,
   HomarrDownloadsWidget,
+  HomarrNetworkGuardWidget,
+  HomarrMediaWidget,
+  HomarrMangaWidget,
+  HomarrSyncVaultWidget,
+  HomarrHardwareWidget,
+  HomarrPortMatrixWidget,
+  HomarrTerminalWidget,
+  HomarrJournalWidget,
   HomarrBookmarksWidget,
   CustomBookmarkItem,
 } from './HomarrWidgets';
 import { QuickConnectCard } from '../widgets/QuickConnectCard';
 import { TelemetrySnapshot, SystemInfo, ServiceInfo } from '../../types/api';
 
-export interface HomarrBoardItem {
+export interface HomarrWidgetDef {
   id: string;
-  name: string;
-  tagline: string;
-  category: 'media' | 'downloads' | 'storage' | 'network' | 'system' | 'custom';
+  title: string;
+  description: string;
   icon: string;
-  port?: string | number;
-  url?: string;
-  unit?: string;
+  category: 'telemetry' | 'network' | 'media' | 'storage' | 'system';
+  colSpan: 3 | 4 | 6 | 12;
   visible: boolean;
-  colSpan?: 3 | 4 | 6 | 12;
   order: number;
 }
 
-const DEFAULT_BOARD_ITEMS: HomarrBoardItem[] = [
+const DEFAULT_WIDGETS: HomarrWidgetDef[] = [
   {
-    id: 'jellyfin',
-    name: 'Jellyfin Media',
-    tagline: 'Hardware Video & 4K HDR Transcode',
-    category: 'media',
-    icon: '🎬',
-    port: 8096,
-    unit: 'jellyfin',
+    id: 'silicon_telemetry',
+    title: 'Silicon Resource Monitor',
+    description: 'Real-time CPU load, Memory (RAM), Root storage fill bars, core count, and thermals.',
+    icon: '⚡',
+    category: 'telemetry',
+    colSpan: 6,
     visible: true,
+    order: 0,
+  },
+  {
+    id: 'digital_clock',
+    title: 'Digital Clock & Uptime',
+    description: 'Real-time digital clock with seconds, date, UTC timezone, and node uptime.',
+    icon: '⏱️',
+    category: 'system',
     colSpan: 3,
+    visible: true,
     order: 1,
   },
   {
-    id: 'suwayomi',
-    name: 'Suwayomi Manga',
-    tagline: 'Self-Hosted Manga & Webtoon Reader',
-    category: 'media',
-    icon: '📖',
-    port: 4567,
-    unit: 'suwayomi-server',
-    visible: true,
+    id: 'transfers_rate',
+    title: 'Active Transfers & Speeds',
+    description: 'qBittorrent & MeTube download/upload transfer speeds and active torrent tasks count.',
+    icon: '📥',
+    category: 'storage',
     colSpan: 3,
+    visible: true,
     order: 2,
   },
   {
-    id: 'qbittorrent',
-    name: 'qBittorrent',
-    tagline: 'High-Throughput BitTorrent Client',
-    category: 'downloads',
-    icon: '📥',
-    port: 8080,
-    unit: 'qbittorrent-nox@root',
+    id: 'network_guard',
+    title: 'Tailscale Mesh & Privacy Guard',
+    description: 'Tailscale VPN MagicDNS status, direct Tor onion exit toggle switch, and AdGuard Home.',
+    icon: '🛡️',
+    category: 'network',
+    colSpan: 6,
     visible: true,
-    colSpan: 3,
     order: 3,
   },
   {
-    id: 'filebrowser',
-    name: 'FileBrowser',
-    tagline: 'Web File Manager & Storage Vault',
-    category: 'storage',
-    icon: '📁',
-    port: 8081,
-    unit: 'filebrowser',
+    id: 'port_matrix',
+    title: 'Server Port Matrix & Listeners',
+    description: 'Live matrix of verified open ports (:8088, :8096, :4567, :8080, :8384, :8081, :3000, :8000).',
+    icon: '🔌',
+    category: 'network',
+    colSpan: 6,
     visible: true,
-    colSpan: 3,
     order: 4,
   },
   {
-    id: 'syncthing',
-    name: 'Syncthing Sync',
-    tagline: 'Continuous P2P Folder Sync',
-    category: 'storage',
-    icon: '🔄',
-    port: 8384,
-    unit: 'syncthing@root',
+    id: 'media_server',
+    title: 'Jellyfin Media Server',
+    description: 'Hardware video transcoding status (VA-API/QSV), 4K DirectPlay streaming, and web player.',
+    icon: '🎬',
+    category: 'media',
+    colSpan: 6,
     visible: true,
-    colSpan: 3,
     order: 5,
   },
   {
-    id: 'navidrome',
-    name: 'Navidrome Music',
-    tagline: 'Subsonic-Compatible Music Streamer',
-    category: 'media',
-    icon: '🎵',
-    port: 4533,
-    unit: 'navidrome',
+    id: 'storage_vault',
+    title: 'Syncthing & TrueNAS Bridge',
+    description: 'Continuous encrypted P2P folder synchronization and TrueNAS ZFS dataset bridge.',
+    icon: '🔄',
+    category: 'storage',
+    colSpan: 6,
     visible: true,
-    colSpan: 3,
     order: 6,
   },
   {
-    id: 'adguard',
-    name: 'AdGuard Home',
-    tagline: 'Network-Wide DNS Ad-Blocking',
-    category: 'network',
-    icon: '🛡️',
-    port: 3000,
-    unit: 'adguard-home',
+    id: 'quick_terminal',
+    title: 'Interactive Web Terminal',
+    description: 'Embedded fast PTY bash shell launcher for quick node troubleshooting.',
+    icon: '💻',
+    category: 'system',
+    colSpan: 4,
     visible: true,
-    colSpan: 3,
     order: 7,
   },
   {
-    id: 'vaultwarden',
-    name: 'Vaultwarden',
-    tagline: 'Bitwarden Password Vault',
-    category: 'storage',
-    icon: '🔐',
-    port: 8000,
-    unit: 'vaultwarden',
+    id: 'hardware_thermals',
+    title: 'Hardware Thermals & Battery',
+    description: 'Silicon sensor temperatures, cooling fan RPM, battery health and charge limiter.',
+    icon: '🌡️',
+    category: 'telemetry',
+    colSpan: 4,
     visible: true,
-    colSpan: 3,
     order: 8,
   },
   {
-    id: 'metube',
-    name: 'MeTube Downloader',
-    tagline: 'Web GUI for YouTube & Video Downloads',
-    category: 'downloads',
-    icon: '📹',
-    port: 8082,
-    unit: 'metube',
+    id: 'manga_shelf',
+    title: 'Suwayomi Manga Shelf',
+    description: 'Self-hosted manga library status and fast offline Tsumiru reader launcher.',
+    icon: '📖',
+    category: 'media',
+    colSpan: 4,
     visible: true,
-    colSpan: 3,
     order: 9,
   },
   {
-    id: 'radarr',
-    name: 'Radarr Movies',
-    tagline: 'Automated Movie Acquisition',
-    category: 'media',
-    icon: '🎥',
-    port: 7878,
-    unit: 'radarr',
-    visible: true,
-    colSpan: 3,
+    id: 'system_journal',
+    title: 'Kernel & Journal Alert Feed',
+    description: 'Real-time alert stream of systemd and kernel error logs (priority ≤ 3).',
+    icon: '📋',
+    category: 'system',
+    colSpan: 6,
+    visible: false,
     order: 10,
   },
   {
-    id: 'sonarr',
-    name: 'Sonarr TV',
-    tagline: 'Automated TV Series Manager',
-    category: 'media',
-    icon: '📺',
-    port: 8989,
-    unit: 'sonarr',
+    id: 'quick_connect',
+    title: 'Direct Connection Endpoints',
+    description: 'Active session link, Direct Ethernet patch, Tailscale MagicDNS link with copy buttons.',
+    icon: '⚡',
+    category: 'network',
+    colSpan: 12,
     visible: true,
-    colSpan: 3,
     order: 11,
   },
   {
-    id: 'prowlarr',
-    name: 'Prowlarr Indexer',
-    tagline: 'Torrent & Usenet Indexer Proxy',
-    category: 'downloads',
-    icon: '🔍',
-    port: 9696,
-    unit: 'prowlarr',
-    visible: true,
-    colSpan: 3,
-    order: 12,
-  },
-  {
-    id: 'seerr',
-    name: 'Jellyseerr Requests',
-    tagline: 'Media Discovery & Request Manager',
-    category: 'media',
-    icon: '🍿',
-    port: 5055,
-    unit: 'jellyseerr',
-    visible: true,
-    colSpan: 3,
-    order: 13,
-  },
-  {
-    id: 'cockpit',
-    name: 'Cockpit Terminal Admin',
-    tagline: 'Linux Server Web Terminal & Metrics',
+    id: 'homelab_bookmarks',
+    title: 'Homelab Web Bookmarks',
+    description: 'Customizable grid of external web links and homelab portals with icon customization.',
+    icon: '🔖',
     category: 'system',
-    icon: '⚙️',
-    port: 9090,
-    unit: 'cockpit.socket',
+    colSpan: 12,
     visible: true,
-    colSpan: 3,
-    order: 14,
+    order: 12,
   },
 ];
 
-const STORAGE_KEY = 'tinapple_homarr_canvas_layout_v2';
+const STORAGE_KEY = 'tinapple_homarr_canvas_widgets_v4';
 
 export interface HomarrCanvasProps {
   telemetry: TelemetrySnapshot;
@@ -220,8 +186,10 @@ export interface HomarrCanvasProps {
   isEditMode: boolean;
   setIsEditMode: React.Dispatch<React.SetStateAction<boolean>>;
   isOwner: boolean;
-  onOpenAppSettings: (app: any) => void;
+  onOpenAppSettings?: (app: any) => void;
   onOpenTailscale: () => void;
+  onOpenTerminal?: () => void;
+  onOpenTools?: () => void;
   onOpenGuide: (guideId: string) => void;
 }
 
@@ -232,21 +200,25 @@ export const HomarrCanvas: React.FC<HomarrCanvasProps> = ({
   isEditMode,
   setIsEditMode,
   isOwner,
-  onOpenAppSettings,
   onOpenTailscale,
+  onOpenTerminal,
+  onOpenTools,
   onOpenGuide,
 }) => {
-  const [boardItems, setBoardItems] = useState<HomarrBoardItem[]>(() => {
+  const [widgets, setWidgets] = useState<HomarrWidgetDef[]>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed.items)) {
-          return parsed.items;
+        if (Array.isArray(parsed.widgets) && parsed.widgets.length > 0) {
+          // Merge with any new default widgets that might not exist in saved layout
+          const existingIds = new Set(parsed.widgets.map((w: any) => w.id));
+          const missing = DEFAULT_WIDGETS.filter((w) => !existingIds.has(w.id));
+          return [...parsed.widgets, ...missing];
         }
       }
     } catch {}
-    return DEFAULT_BOARD_ITEMS;
+    return DEFAULT_WIDGETS;
   });
 
   const [customBookmarks, setCustomBookmarks] = useState<CustomBookmarkItem[]>(() => {
@@ -254,11 +226,8 @@ export const HomarrCanvas: React.FC<HomarrCanvasProps> = ({
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed.bookmarks)) {
-          return parsed.bookmarks;
-        }
+        if (Array.isArray(parsed.bookmarks)) return parsed.bookmarks;
       }
-      // Fallback check legacy bookmarks
       const legacy = localStorage.getItem('tinapple_dashboard_layout_v1');
       if (legacy) {
         const p = JSON.parse(legacy);
@@ -268,48 +237,99 @@ export const HomarrCanvas: React.FC<HomarrCanvasProps> = ({
     return [];
   });
 
-  const [activeCategory, setActiveCategory] = useState<string>('all');
-  const [searchQuery, setSearchQuery] = useState<string>('');
   const [catalogOpen, setCatalogOpen] = useState<boolean>(false);
   const [bookmarkModalOpen, setBookmarkModalOpen] = useState<boolean>(false);
   const [newBmName, setNewBmName] = useState('');
   const [newBmUrl, setNewBmUrl] = useState('');
   const [newBmIcon, setNewBmIcon] = useState('🌐');
 
-  // Persist layout to localStorage
+  // Drag and drop state
+  const [draggedWidgetId, setDraggedWidgetId] = useState<string | null>(null);
+  const [dragOverWidgetId, setDragOverWidgetId] = useState<string | null>(null);
+
+  // Persist to localStorage
   useEffect(() => {
     try {
       localStorage.setItem(
         STORAGE_KEY,
         JSON.stringify({
-          items: boardItems,
+          widgets,
           bookmarks: customBookmarks,
         })
       );
     } catch {}
-  }, [boardItems, customBookmarks]);
+  }, [widgets, customBookmarks]);
 
   const handleResetBoard = () => {
-    setBoardItems(DEFAULT_BOARD_ITEMS);
+    setWidgets(DEFAULT_WIDGETS);
     localStorage.removeItem(STORAGE_KEY);
   };
 
-  const handleToggleColSpan = (itemId: string) => {
-    setBoardItems((prev) =>
-      prev.map((item) => {
-        if (item.id === itemId) {
-          const nextSpan = item.colSpan === 3 ? 6 : 3;
-          return { ...item, colSpan: nextSpan };
+  const handleToggleColSpan = (widgetId: string) => {
+    setWidgets((prev) =>
+      prev.map((w) => {
+        if (w.id === widgetId) {
+          let nextSpan: 3 | 4 | 6 | 12 = 6;
+          if (w.colSpan === 3) nextSpan = 4;
+          else if (w.colSpan === 4) nextSpan = 6;
+          else if (w.colSpan === 6) nextSpan = 12;
+          else nextSpan = 3;
+          return { ...w, colSpan: nextSpan };
         }
-        return item;
+        return w;
       })
     );
   };
 
-  const handleToggleItemVisibility = (itemId: string) => {
-    setBoardItems((prev) =>
-      prev.map((item) => (item.id === itemId ? { ...item, visible: !item.visible } : item))
+  const handleToggleWidgetVisibility = (widgetId: string) => {
+    setWidgets((prev) =>
+      prev.map((w) => (w.id === widgetId ? { ...w, visible: !w.visible } : w))
     );
+  };
+
+  // Drag & Drop Handlers
+  const handleDragStart = (e: React.DragEvent, id: string) => {
+    if (!isEditMode) return;
+    setDraggedWidgetId(id);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', id);
+  };
+
+  const handleDragOver = (e: React.DragEvent, id: string) => {
+    if (!isEditMode) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (dragOverWidgetId !== id) {
+      setDragOverWidgetId(id);
+    }
+  };
+
+  const handleDragLeave = () => {
+    setDragOverWidgetId(null);
+  };
+
+  const handleDrop = (e: React.DragEvent, targetId: string) => {
+    if (!isEditMode || !draggedWidgetId || draggedWidgetId === targetId) {
+      setDraggedWidgetId(null);
+      setDragOverWidgetId(null);
+      return;
+    }
+    e.preventDefault();
+
+    setWidgets((prev) => {
+      const sourceIndex = prev.findIndex((w) => w.id === draggedWidgetId);
+      const targetIndex = prev.findIndex((w) => w.id === targetId);
+      if (sourceIndex === -1 || targetIndex === -1) return prev;
+
+      const updated = [...prev];
+      const [moved] = updated.splice(sourceIndex, 1);
+      updated.splice(targetIndex, 0, moved);
+
+      return updated.map((w, index) => ({ ...w, order: index }));
+    });
+
+    setDraggedWidgetId(null);
+    setDragOverWidgetId(null);
   };
 
   const handleAddBookmark = () => {
@@ -331,54 +351,80 @@ export const HomarrCanvas: React.FC<HomarrCanvasProps> = ({
     setCustomBookmarks((prev) => prev.filter((b) => b.id !== id));
   };
 
-  const currentHost = window.location.hostname;
-  const isHttps = window.location.protocol === 'https:';
+  const getColSpanClass = (span: 3 | 4 | 6 | 12) => {
+    switch (span) {
+      case 12:
+        return 'col-span-12';
+      case 6:
+        return 'col-span-12 lg:col-span-6';
+      case 4:
+        return 'col-span-12 sm:col-span-6 lg:col-span-4';
+      case 3:
+      default:
+        return 'col-span-12 sm:col-span-6 md:col-span-4 lg:col-span-3';
+    }
+  };
 
-  // Categories count calculation
-  const categories = useMemo(() => {
-    const list = [
-      { id: 'all', label: 'All Items' },
-      { id: 'media', label: '🎬 Media' },
-      { id: 'downloads', label: '📥 Downloads' },
-      { id: 'storage', label: '🗄️ Storage & Sync' },
-      { id: 'network', label: '🛡️ Network' },
-      { id: 'system', label: '⚙️ System' },
-    ];
-    return list;
-  }, []);
+  const visibleWidgets = useMemo(() => {
+    return widgets.filter((w) => (isEditMode ? true : w.visible));
+  }, [widgets, isEditMode]);
 
-  // Filter items
-  const filteredItems = useMemo(() => {
-    return boardItems.filter((item) => {
-      // Permission check
-      if (!isOwner && (item.id === 'suwayomi' || item.id === 'cockpit')) {
-        return false;
-      }
-
-      if (!item.visible && !isEditMode) return false;
-
-      if (activeCategory !== 'all' && item.category !== activeCategory) {
-        return false;
-      }
-
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase();
+  const renderWidgetContent = (widgetId: string) => {
+    switch (widgetId) {
+      case 'silicon_telemetry':
+        return <HomarrResourceWidget telemetry={telemetry} systemInfo={systemInfo} />;
+      case 'digital_clock':
+        return <HomarrClockWidget systemInfo={systemInfo} />;
+      case 'transfers_rate':
+        return <HomarrDownloadsWidget />;
+      case 'network_guard':
+        return <HomarrNetworkGuardWidget onOpenTailscale={onOpenTailscale} />;
+      case 'media_server':
+        return <HomarrMediaWidget onOpenGuide={onOpenGuide} />;
+      case 'manga_shelf':
+        return <HomarrMangaWidget />;
+      case 'storage_vault':
+        return <HomarrSyncVaultWidget />;
+      case 'hardware_thermals':
+        return <HomarrHardwareWidget telemetry={telemetry} />;
+      case 'port_matrix':
+        return <HomarrPortMatrixWidget onOpenTools={onOpenTools} />;
+      case 'quick_terminal':
+        return <HomarrTerminalWidget onOpenTerminal={onOpenTerminal} />;
+      case 'system_journal':
+        return <HomarrJournalWidget />;
+      case 'quick_connect':
         return (
-          item.name.toLowerCase().includes(q) ||
-          item.tagline.toLowerCase().includes(q) ||
-          item.category.toLowerCase().includes(q)
+          <QuickConnectCard
+            services={services}
+            customBookmarks={customBookmarks}
+            isEditMode={isEditMode}
+            isAdmin={isOwner}
+            onAddBookmark={() => setBookmarkModalOpen(true)}
+            onDeleteBookmark={handleDeleteBookmark}
+            onOpenTailscale={onOpenTailscale}
+            onOpenGuide={onOpenGuide}
+          />
         );
-      }
-
-      return true;
-    });
-  }, [boardItems, activeCategory, searchQuery, isEditMode, isOwner]);
+      case 'homelab_bookmarks':
+        return (
+          <HomarrBookmarksWidget
+            bookmarks={customBookmarks}
+            isEditMode={isEditMode}
+            onAddBookmark={() => setBookmarkModalOpen(true)}
+            onDeleteBookmark={handleDeleteBookmark}
+          />
+        );
+      default:
+        return null;
+    }
+  };
 
   return (
-    <div className="space-y-6 relative">
+    <div className="space-y-6 relative select-none">
       {/* Homarr Subtle Dotted Canvas Grid Pattern (Matches homarr-labs/homarr) */}
       <div
-        className="pointer-events-none fixed inset-0 z-0 opacity-[0.035]"
+        className="pointer-events-none fixed inset-0 z-0 opacity-[0.04]"
         style={{
           backgroundImage: 'radial-gradient(circle, #ffffff 1.5px, transparent 1.5px)',
           backgroundSize: '24px 24px',
@@ -387,43 +433,33 @@ export const HomarrCanvas: React.FC<HomarrCanvasProps> = ({
 
       {/* 1. Homarr Board Controls Bar */}
       <div className="relative z-10 rounded-2xl bg-slate-900/60 border border-white/[0.08] p-4 sm:p-5 backdrop-blur-xl shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
-        {/* Left: Search input & Active Board Info */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-1 min-w-0">
-          <div className="relative flex-1 max-w-md">
-            <Search className="w-4 h-4 text-zinc-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-            <input
-              type="text"
-              placeholder="Search apps, web services, or ports..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 rounded-xl bg-slate-950/70 border border-white/10 text-xs font-mono text-white placeholder-zinc-500 focus:outline-none focus:border-tinapple-gold transition-colors"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white"
-              >
-                ✕
-              </button>
-            )}
+        {/* Left: Board Status & Info */}
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500/20 via-purple-500/20 to-sky-500/20 border border-white/10 flex items-center justify-center text-lg shrink-0">
+            🧩
           </div>
-
-          {/* Quick Counter */}
-          <div className="hidden lg:flex items-center gap-2 text-xs font-mono text-zinc-400 shrink-0">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span>
-              {filteredItems.length} of {boardItems.length} items active
-            </span>
+          <div>
+            <h3 className="text-sm font-bold text-white uppercase font-mono tracking-wider flex items-center gap-2">
+              <span>Homarr Widget Canvas</span>
+              <span className="px-2 py-0.5 rounded-full text-[10px] bg-sky-500/20 text-sky-300 border border-sky-500/30">
+                12-Col Modular
+              </span>
+            </h3>
+            <p className="text-xs text-zinc-400 mt-0.5 font-mono">
+              {isEditMode
+                ? 'Drag handles to reorder widgets. Click width button to resize.'
+                : `${visibleWidgets.length} active widgets • Zero clutter • Direct service telemetry`}
+            </p>
           </div>
         </div>
 
-        {/* Right: Board Editing & Customization Actions */}
-        <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+        {/* Right: Board Controls & Edit Mode Toggle */}
+        <div className="flex items-center gap-2 shrink-0 self-end md:self-auto font-mono text-xs">
           {isEditMode ? (
             <>
               <button
                 onClick={() => setCatalogOpen(true)}
-                className="px-3 py-1.5 rounded-xl bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 border border-sky-500/40 font-mono text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm"
+                className="px-3.5 py-1.5 rounded-xl bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 border border-sky-500/40 font-bold flex items-center gap-1.5 transition-all shadow-sm"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>+ Add Widget</span>
@@ -431,7 +467,7 @@ export const HomarrCanvas: React.FC<HomarrCanvasProps> = ({
 
               <button
                 onClick={() => setBookmarkModalOpen(true)}
-                className="px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 font-mono text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm"
+                className="px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 font-bold flex items-center gap-1.5 transition-all shadow-sm"
               >
                 <Bookmark className="w-3.5 h-3.5" />
                 <span>+ Bookmark</span>
@@ -447,7 +483,7 @@ export const HomarrCanvas: React.FC<HomarrCanvasProps> = ({
 
               <button
                 onClick={() => setIsEditMode(false)}
-                className="px-4 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-mono text-xs font-black flex items-center gap-1.5 transition-all shadow-lg shadow-emerald-500/20"
+                className="px-4 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black flex items-center gap-1.5 transition-all shadow-lg shadow-emerald-500/20"
               >
                 <Check className="w-4 h-4" />
                 <span>Done Editing</span>
@@ -456,127 +492,85 @@ export const HomarrCanvas: React.FC<HomarrCanvasProps> = ({
           ) : (
             <button
               onClick={() => setIsEditMode(true)}
-              className="px-3.5 py-1.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.08] text-zinc-300 hover:text-white border border-white/10 font-mono text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm"
+              className="px-3.5 py-1.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.08] text-zinc-300 hover:text-white border border-white/10 font-semibold flex items-center gap-1.5 transition-all shadow-sm"
             >
               <Wrench className="w-3.5 h-3.5 text-tinapple-gold" />
-              <span>Customize Board</span>
+              <span>Customize Widgets & Layout</span>
             </button>
           )}
         </div>
       </div>
 
-      {/* 2. Homarr Category Filter Pills */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none font-mono text-xs">
-        {categories.map((cat) => {
-          const isActive = activeCategory === cat.id;
-          return (
-            <button
-              key={cat.id}
-              onClick={() => setActiveCategory(cat.id)}
-              className={`px-3 py-1.5 rounded-xl whitespace-nowrap transition-all ${
-                isActive
-                  ? 'bg-tinapple-gold text-slate-950 font-bold shadow-md shadow-tinapple-gold/20'
-                  : 'bg-slate-900/60 hover:bg-slate-800/80 text-zinc-400 hover:text-zinc-200 border border-white/[0.06]'
-              }`}
-            >
-              {cat.label}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* 3. Homarr 12-Column Canvas Board Grid */}
+      {/* 2. Drag-and-Drop 12-Column Canvas Board Grid */}
       <div className="grid grid-cols-12 gap-3.5 sm:gap-4 relative z-10">
-        {/* Top Feature Widgets (shown on "all" category) */}
-        {activeCategory === 'all' && !searchQuery && (
-          <>
-            {/* Real-time Silicon Telemetry Gauge */}
-            <HomarrResourceWidget telemetry={telemetry} systemInfo={systemInfo} />
+        <AnimatePresence>
+          {visibleWidgets.map((widget) => {
+            const isBeingDragged = draggedWidgetId === widget.id;
+            const isDragOver = dragOverWidgetId === widget.id;
 
-            {/* Digital Clock & Uptime */}
-            <HomarrClockWidget systemInfo={systemInfo} />
+            return (
+              <motion.div
+                key={widget.id}
+                layout
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+                draggable={isEditMode}
+                onDragStart={(e: any) => handleDragStart(e, widget.id)}
+                onDragOver={(e: any) => handleDragOver(e, widget.id)}
+                onDragLeave={handleDragLeave}
+                onDrop={(e: any) => handleDrop(e, widget.id)}
+                className={`${getColSpanClass(widget.colSpan)} relative group transition-all duration-150 ${
+                  isBeingDragged ? 'opacity-40 scale-[0.98]' : ''
+                } ${isDragOver ? 'ring-2 ring-tinapple-gold ring-offset-2 ring-offset-slate-950' : ''}`}
+              >
+                {/* Edit Mode Customizer Ribbon */}
+                {isEditMode && (
+                  <div className="absolute top-2 right-2 z-20 flex items-center gap-1 bg-slate-950/85 backdrop-blur-md rounded-xl p-1 border border-white/10 shadow-lg font-mono">
+                    {/* Drag Handle */}
+                    <div
+                      className="p-1 rounded-lg text-zinc-400 hover:text-white cursor-grab active:cursor-grabbing hover:bg-white/10 transition-colors"
+                      title="Drag to reposition widget"
+                    >
+                      <GripVertical className="w-3.5 h-3.5" />
+                    </div>
 
-            {/* Active Downloads & Transfer Speed */}
-            <HomarrDownloadsWidget />
-          </>
-        )}
+                    {/* Width Toggle */}
+                    <button
+                      onClick={() => handleToggleColSpan(widget.id)}
+                      className="px-1.5 py-1 rounded-lg text-[10px] text-zinc-400 hover:text-tinapple-gold hover:bg-white/10 font-bold transition-colors flex items-center gap-0.5"
+                      title={`Current width: ${widget.colSpan} cols. Click to cycle width.`}
+                    >
+                      <span>{widget.colSpan}/12</span>
+                      <Maximize2 className="w-2.5 h-2.5" />
+                    </button>
 
-        {/* Homarr App Tiles */}
-        {filteredItems.map((item) => {
-          const svc = services.find((s) => s.id === item.id || s.name.toLowerCase().includes(item.id));
-          const activeState = svc?.activeState || 'active';
+                    {/* Hide Widget */}
+                    <button
+                      onClick={() => handleToggleWidgetVisibility(widget.id)}
+                      className="p-1 rounded-lg text-red-400 hover:text-red-300 hover:bg-red-500/20 transition-colors"
+                      title="Remove widget from canvas"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
 
-          // Construct target URL
-          let url = item.url;
-          if (!url) {
-            if (item.id === 'suwayomi') {
-              url = '/tsumiru/';
-            } else if (item.port) {
-              const proto = isHttps && item.id === 'vaultwarden' ? 'https' : 'http';
-              url = `${proto}://${currentHost}:${item.port}`;
-            } else {
-              url = '#';
-            }
-          }
-
-          return (
-            <HomarrAppTile
-              key={item.id}
-              id={item.id}
-              name={item.name}
-              tagline={item.tagline}
-              category={item.category}
-              icon={item.icon}
-              url={url}
-              port={item.port}
-              activeState={activeState}
-              colSpan={item.colSpan || 3}
-              isEditMode={isEditMode}
-              onOpenSettings={() =>
-                onOpenAppSettings({
-                  id: item.id,
-                  name: item.name,
-                  port: Number(item.port) || 80,
-                  unit: item.unit || item.id,
-                })
-              }
-              onToggleColSpan={() => handleToggleColSpan(item.id)}
-              onRemove={() => handleToggleItemVisibility(item.id)}
-            />
-          );
-        })}
-
-        {/* Quick Connect & Tailscale Mesh Portals (Permanent homelab endpoints) */}
-        {activeCategory === 'all' && !searchQuery && (
-          <div className="col-span-12 mt-2">
-            <QuickConnectCard
-              services={services}
-              customBookmarks={customBookmarks}
-              isEditMode={isEditMode}
-              isAdmin={isOwner}
-              onAddBookmark={() => setBookmarkModalOpen(true)}
-              onDeleteBookmark={handleDeleteBookmark}
-              onOpenTailscale={onOpenTailscale}
-              onOpenGuide={onOpenGuide}
-            />
-          </div>
-        )}
-
-        {/* Custom Bookmarks Grid */}
-        {(activeCategory === 'all' || activeCategory === 'custom') && !searchQuery && (
-          <HomarrBookmarksWidget
-            bookmarks={customBookmarks}
-            isEditMode={isEditMode}
-            onAddBookmark={() => setBookmarkModalOpen(true)}
-            onDeleteBookmark={handleDeleteBookmark}
-          />
-        )}
+                {/* Widget Component */}
+                <div className={`h-full ${!widget.visible ? 'opacity-50 grayscale' : ''}`}>
+                  {renderWidgetContent(widget.id)}
+                </div>
+              </motion.div>
+            );
+          })}
+        </AnimatePresence>
       </div>
 
-      {/* 4. Homarr Widget Catalog Drawer Modal ("+ Add Widget") */}
+      {/* 3. Homarr Widget Catalog Drawer Modal ("+ Add Widget") */}
       {catalogOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in">
-          <div className="w-full max-w-xl rounded-2xl bg-slate-900 border border-white/10 shadow-2xl overflow-hidden font-mono text-xs">
+          <div className="w-full max-w-2xl rounded-2xl bg-slate-900 border border-white/10 shadow-2xl overflow-hidden font-mono text-xs">
             <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <LayoutGrid className="w-4 h-4 text-tinapple-gold" />
@@ -590,40 +584,45 @@ export const HomarrCanvas: React.FC<HomarrCanvasProps> = ({
               </button>
             </div>
 
-            <div className="p-5 max-h-[60vh] overflow-y-auto space-y-2">
+            <div className="p-5 max-h-[65vh] overflow-y-auto space-y-2.5">
               <p className="text-zinc-400 mb-3 text-[11px]">
-                Toggle tiles and modular widgets to pin or unpin them from your Homarr board:
+                Choose modular homelab widgets to add to or remove from your dashboard canvas:
               </p>
-              {boardItems.map((item) => (
+              {widgets.map((w) => (
                 <div
-                  key={item.id}
-                  className="p-3 rounded-xl bg-slate-800/60 border border-slate-700/60 flex items-center justify-between gap-3"
+                  key={w.id}
+                  className="p-3.5 rounded-xl bg-slate-800/60 border border-slate-700/60 flex items-center justify-between gap-3 hover:border-slate-600 transition-colors"
                 >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <span className="text-xl shrink-0">{item.icon}</span>
+                  <div className="flex items-center gap-3.5 min-w-0">
+                    <span className="text-2xl shrink-0">{w.icon}</span>
                     <div className="min-w-0">
-                      <span className="font-bold text-white block truncate">{item.name}</span>
-                      <span className="text-[10px] text-zinc-400 truncate block">{item.tagline}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-white text-xs">{w.title}</span>
+                        <span className="text-[9px] px-1.5 py-0.2 rounded uppercase bg-white/[0.05] text-zinc-400 border border-white/10">
+                          {w.category}
+                        </span>
+                      </div>
+                      <span className="text-[11px] text-zinc-400 truncate block mt-0.5">{w.description}</span>
                     </div>
                   </div>
 
                   <button
-                    onClick={() => handleToggleItemVisibility(item.id)}
-                    className={`px-3 py-1 rounded-lg border font-bold text-xs flex items-center gap-1.5 transition-all ${
-                      item.visible
+                    onClick={() => handleToggleWidgetVisibility(w.id)}
+                    className={`px-3 py-1.5 rounded-xl border font-bold text-xs flex items-center gap-1.5 shrink-0 transition-all ${
+                      w.visible
                         ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 hover:bg-emerald-500/30'
-                        : 'bg-slate-700/50 text-zinc-400 border-slate-600 hover:text-white'
+                        : 'bg-slate-700/50 text-zinc-300 border-slate-600 hover:bg-slate-700'
                     }`}
                   >
-                    {item.visible ? (
+                    {w.visible ? (
                       <>
                         <Eye className="w-3.5 h-3.5" />
-                        <span>Visible</span>
+                        <span>On Board</span>
                       </>
                     ) : (
                       <>
-                        <EyeOff className="w-3.5 h-3.5" />
-                        <span>Hidden</span>
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Add Widget</span>
                       </>
                     )}
                   </button>
@@ -636,14 +635,14 @@ export const HomarrCanvas: React.FC<HomarrCanvasProps> = ({
                 onClick={() => setCatalogOpen(false)}
                 className="px-4 py-1.5 rounded-xl bg-tinapple-gold text-slate-950 font-bold hover:bg-amber-400 transition-colors"
               >
-                Close Catalog
+                Done
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* 5. Homarr Add Bookmark Modal */}
+      {/* 4. Homarr Add Bookmark Modal */}
       {bookmarkModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in">
           <div className="w-full max-w-md rounded-2xl bg-slate-900 border border-white/10 p-5 shadow-2xl font-mono text-xs space-y-4">

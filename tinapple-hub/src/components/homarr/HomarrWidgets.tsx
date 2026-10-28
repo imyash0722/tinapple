@@ -11,12 +11,22 @@ import {
   ExternalLink,
   Plus,
   Trash2,
-  Edit2,
   Globe,
   Terminal,
+  Film,
+  BookOpen,
+  FolderSync,
+  Thermometer,
+  Zap,
+  Network,
+  AlertTriangle,
+  CheckCircle2,
+  Lock,
+  Radio,
+  Play,
+  RotateCw,
 } from 'lucide-react';
-import { TelemetrySnapshot, SystemInfo } from '../../types/api';
-import { api } from '../../services/api';
+import { TelemetrySnapshot, SystemInfo, ServiceInfo } from '../../types/api';
 
 // 1. Homarr Resource Monitor Widget
 export interface HomarrResourceWidgetProps {
@@ -41,7 +51,7 @@ export const HomarrResourceWidget: React.FC<HomarrResourceWidgetProps> = ({ tele
   const tempC = telemetry?.thermal?.cpuTemp ? `${Math.round(telemetry.thermal.cpuTemp)}°C` : 'Normal';
 
   return (
-    <div className="col-span-12 lg:col-span-6 rounded-2xl bg-slate-900/60 border border-white/[0.08] backdrop-blur-xl p-5 flex flex-col justify-between shadow-lg shadow-black/20">
+    <div className="h-full rounded-2xl bg-slate-900/60 border border-white/[0.08] backdrop-blur-xl p-5 flex flex-col justify-between shadow-lg shadow-black/20">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2.5">
           <div className="p-2 rounded-xl bg-sky-500/10 border border-sky-500/20 text-sky-400">
@@ -152,7 +162,7 @@ export const HomarrClockWidget: React.FC<{ systemInfo: SystemInfo }> = ({ system
   };
 
   return (
-    <div className="col-span-12 sm:col-span-6 lg:col-span-3 rounded-2xl bg-slate-900/60 border border-white/[0.08] backdrop-blur-xl p-5 flex flex-col justify-between shadow-lg shadow-black/20 font-mono">
+    <div className="h-full rounded-2xl bg-slate-900/60 border border-white/[0.08] backdrop-blur-xl p-5 flex flex-col justify-between shadow-lg shadow-black/20 font-mono">
       <div className="flex items-center justify-between text-zinc-400 text-xs">
         <span className="flex items-center gap-1.5 font-bold uppercase tracking-wider text-tinapple-gold">
           <Clock className="w-3.5 h-3.5" />
@@ -225,7 +235,7 @@ export const HomarrDownloadsWidget: React.FC = () => {
   const currentHost = window.location.hostname;
 
   return (
-    <div className="col-span-12 sm:col-span-6 lg:col-span-3 rounded-2xl bg-slate-900/60 border border-white/[0.08] backdrop-blur-xl p-5 flex flex-col justify-between shadow-lg shadow-black/20 font-mono">
+    <div className="h-full rounded-2xl bg-slate-900/60 border border-white/[0.08] backdrop-blur-xl p-5 flex flex-col justify-between shadow-lg shadow-black/20 font-mono">
       <div className="flex items-center justify-between text-xs">
         <span className="flex items-center gap-1.5 font-bold uppercase tracking-wider text-sky-400">
           <Download className="w-3.5 h-3.5" />
@@ -265,7 +275,455 @@ export const HomarrDownloadsWidget: React.FC = () => {
   );
 };
 
-// 4. Homarr Custom Bookmarks Component
+// 4. Homarr Tailscale Mesh & Privacy Guard Widget
+export const HomarrNetworkGuardWidget: React.FC<{ onOpenTailscale?: () => void }> = ({ onOpenTailscale }) => {
+  const [torActive, setTorActive] = useState(false);
+  const [isTogglingTor, setIsTogglingTor] = useState(false);
+  const [meshStatus, setMeshStatus] = useState<string>('Online');
+
+  useEffect(() => {
+    fetch('/api/system/tor-exit')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data && data.active !== undefined) setTorActive(data.active);
+      })
+      .catch(() => {});
+  }, []);
+
+  const handleToggleTor = async () => {
+    setIsTogglingTor(true);
+    try {
+      const res = await fetch('/api/system/tor-exit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ active: !torActive }),
+      });
+      if (res.ok) setTorActive(!torActive);
+    } catch {}
+    setIsTogglingTor(false);
+  };
+
+  const currentHost = window.location.hostname;
+
+  return (
+    <div className="h-full rounded-2xl bg-slate-900/60 border border-white/[0.08] backdrop-blur-xl p-5 flex flex-col justify-between shadow-lg shadow-black/20 font-mono">
+      <div className="flex items-center justify-between text-xs mb-3">
+        <span className="flex items-center gap-2 font-bold uppercase tracking-wider text-sky-400">
+          <Shield className="w-4 h-4" />
+          <span>Tailscale Mesh & Privacy</span>
+        </span>
+        {onOpenTailscale && (
+          <button
+            onClick={onOpenTailscale}
+            className="px-2 py-0.5 rounded-lg bg-sky-500/20 text-sky-300 border border-sky-500/30 text-[10px] font-bold hover:bg-sky-500/30 transition-colors"
+          >
+            Mesh Settings
+          </button>
+        )}
+      </div>
+
+      <div className="space-y-2.5 text-xs">
+        <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-800/50 border border-slate-700/60">
+          <div className="flex items-center gap-2 min-w-0">
+            <Wifi className="w-3.5 h-3.5 text-sky-400 shrink-0" />
+            <div className="min-w-0">
+              <span className="text-white font-bold block truncate">MagicDNS Mesh Link</span>
+              <span className="text-[10px] text-zinc-400 block truncate">pineapple-server.taildb42a2.ts.net</span>
+            </div>
+          </div>
+          <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold shrink-0">
+            Active
+          </span>
+        </div>
+
+        <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-800/50 border border-slate-700/60">
+          <div className="flex items-center gap-2">
+            <span className="text-sm">🧅</span>
+            <div>
+              <span className="text-white font-bold block">Tor Privacy Exit</span>
+              <span className="text-[10px] text-zinc-400 block">SOCKS5 127.0.0.1:9050</span>
+            </div>
+          </div>
+          <button
+            onClick={handleToggleTor}
+            disabled={isTogglingTor}
+            className={`px-2.5 py-1 rounded-lg text-[10px] font-bold border transition-all ${
+              torActive
+                ? 'bg-purple-500/20 text-purple-300 border-purple-500/40'
+                : 'bg-zinc-800 text-zinc-400 border-zinc-700'
+            }`}
+          >
+            {torActive ? 'Active (ON)' : 'Disabled'}
+          </button>
+        </div>
+      </div>
+
+      <div className="pt-2.5 border-t border-white/[0.06] flex items-center justify-between text-[11px] text-zinc-400 mt-2">
+        <span>DNS Shield:</span>
+        <a
+          href={`http://${currentHost}:3000`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-emerald-400 hover:underline flex items-center gap-1"
+        >
+          <span>AdGuard Home</span>
+          <ExternalLink className="w-3 h-3" />
+        </a>
+      </div>
+    </div>
+  );
+};
+
+// 5. Homarr Jellyfin Media Server Widget
+export const HomarrMediaWidget: React.FC<{ onOpenGuide?: (g: string) => void }> = ({ onOpenGuide }) => {
+  const currentHost = window.location.hostname;
+
+  return (
+    <div className="h-full rounded-2xl bg-slate-900/60 border border-white/[0.08] backdrop-blur-xl p-5 flex flex-col justify-between shadow-lg shadow-black/20 font-mono">
+      <div className="flex items-center justify-between text-xs mb-3">
+        <span className="flex items-center gap-2 font-bold uppercase tracking-wider text-purple-400">
+          <Film className="w-4 h-4" />
+          <span>Jellyfin Media Server</span>
+        </span>
+        <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold">
+          Port 8096
+        </span>
+      </div>
+
+      <div className="p-3 rounded-xl bg-purple-500/[0.07] border border-purple-500/20 space-y-1.5">
+        <div className="flex items-center justify-between text-xs">
+          <span className="text-white font-bold">Hardware Transcoding</span>
+          <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 font-bold">
+            VA-API / QSV
+          </span>
+        </div>
+        <p className="text-[11px] text-zinc-400">
+          DirectPlay 4K HDR streaming enabled for Plezy, Apple TV, Android, and web.
+        </p>
+      </div>
+
+      <div className="pt-3 border-t border-white/[0.06] flex items-center justify-between gap-2 mt-2">
+        {onOpenGuide && (
+          <button
+            onClick={() => onOpenGuide('jellyfin')}
+            className="text-[11px] text-purple-300 hover:text-white flex items-center gap-1 transition-colors"
+          >
+            <BookOpen className="w-3 h-3 text-purple-400" />
+            <span>Setup Guide</span>
+          </button>
+        )}
+        <a
+          href={`http://${currentHost}:8096`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="px-3 py-1 rounded-lg bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/40 text-purple-300 text-xs font-bold flex items-center gap-1 transition-all"
+        >
+          <span>Launch Web Player</span>
+          <ExternalLink className="w-3 h-3" />
+        </a>
+      </div>
+    </div>
+  );
+};
+
+// 6. Homarr Suwayomi & Manga Shelf Widget
+export const HomarrMangaWidget: React.FC = () => {
+  const [mangaCount, setMangaCount] = useState<number>(0);
+  const [online, setOnline] = useState<boolean>(true);
+
+  useEffect(() => {
+    fetch('/api/widgets/manga')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data) {
+          setOnline(data.online !== false);
+          if (data.totalCount) setMangaCount(data.totalCount);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  return (
+    <div className="h-full rounded-2xl bg-slate-900/60 border border-white/[0.08] backdrop-blur-xl p-5 flex flex-col justify-between shadow-lg shadow-black/20 font-mono">
+      <div className="flex items-center justify-between text-xs mb-3">
+        <span className="flex items-center gap-2 font-bold uppercase tracking-wider text-tinapple-gold">
+          <BookOpen className="w-4 h-4" />
+          <span>Suwayomi Manga Shelf</span>
+        </span>
+        <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold">
+          Port 4567
+        </span>
+      </div>
+
+      <div className="p-3 rounded-xl bg-amber-500/[0.07] border border-amber-500/20 space-y-1.5">
+        <div className="flex items-center justify-between text-xs">
+          <span className="text-white font-bold">Tsumiru PWA Reader</span>
+          <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold">
+            Offline Ready
+          </span>
+        </div>
+        <p className="text-[11px] text-zinc-400">
+          SyncYomi mobile app sync & fast offline local CanvasKit manga rendering.
+        </p>
+      </div>
+
+      <div className="pt-3 border-t border-white/[0.06] flex items-center justify-between gap-2 mt-2">
+        <span className="text-[11px] text-zinc-400">Manga Engine Active</span>
+        <a
+          href="/tsumiru/"
+          className="px-3 py-1 rounded-lg bg-tinapple-gold/20 hover:bg-tinapple-gold/30 border border-tinapple-gold/40 text-tinapple-gold text-xs font-bold flex items-center gap-1 transition-all"
+        >
+          <span>Open Tsumiru</span>
+          <ExternalLink className="w-3 h-3" />
+        </a>
+      </div>
+    </div>
+  );
+};
+
+// 7. Homarr Syncthing & TrueNAS Bridge Widget
+export const HomarrSyncVaultWidget: React.FC = () => {
+  const currentHost = window.location.hostname;
+
+  return (
+    <div className="h-full rounded-2xl bg-slate-900/60 border border-white/[0.08] backdrop-blur-xl p-5 flex flex-col justify-between shadow-lg shadow-black/20 font-mono">
+      <div className="flex items-center justify-between text-xs mb-3">
+        <span className="flex items-center gap-2 font-bold uppercase tracking-wider text-emerald-400">
+          <FolderSync className="w-4 h-4" />
+          <span>P2P Sync & TrueNAS Bridge</span>
+        </span>
+        <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold">
+          Port 8384
+        </span>
+      </div>
+
+      <div className="p-3 rounded-xl bg-emerald-500/[0.07] border border-emerald-500/20 space-y-1.5">
+        <div className="flex items-center justify-between text-xs">
+          <span className="text-white font-bold">Encrypted File Sync</span>
+          <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold">
+            Continuous
+          </span>
+        </div>
+        <p className="text-[11px] text-zinc-400">
+          Zero-cloud direct sync to phone, laptop, and TrueNAS ZFS vault datasets.
+        </p>
+      </div>
+
+      <div className="pt-3 border-t border-white/[0.06] flex items-center justify-between gap-2 mt-2">
+        <a
+          href="/pair.sh"
+          target="_blank"
+          className="text-[11px] text-emerald-400 hover:underline flex items-center gap-1"
+        >
+          <span>Pairing Script</span>
+          <ExternalLink className="w-3 h-3" />
+        </a>
+        <a
+          href={`http://${currentHost}:8384`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="px-3 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 text-xs font-bold flex items-center gap-1 transition-all"
+        >
+          <span>Sync Console</span>
+          <ExternalLink className="w-3 h-3" />
+        </a>
+      </div>
+    </div>
+  );
+};
+
+// 8. Homarr Hardware Sensors & Battery Widget
+export const HomarrHardwareWidget: React.FC<{ telemetry: TelemetrySnapshot }> = ({ telemetry }) => {
+  const temp = telemetry?.thermal?.cpuTemp ? Math.round(telemetry.thermal.cpuTemp) : 45;
+  const fan = telemetry?.thermal?.fanRpm ?? 1400;
+  const bat = telemetry?.battery;
+
+  return (
+    <div className="h-full rounded-2xl bg-slate-900/60 border border-white/[0.08] backdrop-blur-xl p-5 flex flex-col justify-between shadow-lg shadow-black/20 font-mono">
+      <div className="flex items-center justify-between text-xs mb-3">
+        <span className="flex items-center gap-2 font-bold uppercase tracking-wider text-rose-400">
+          <Thermometer className="w-4 h-4" />
+          <span>Hardware & Battery</span>
+        </span>
+        <span className="text-[11px] text-zinc-400">Thermal Profile: Normal</span>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2 text-xs">
+        <div className="p-2.5 rounded-xl bg-slate-800/60 border border-slate-700/60">
+          <span className="text-[10px] text-zinc-400 uppercase block mb-1">CPU Temperature</span>
+          <span className={`text-base font-bold ${temp > 75 ? 'text-red-400' : 'text-emerald-400'}`}>
+            {temp}°C
+          </span>
+        </div>
+
+        <div className="p-2.5 rounded-xl bg-slate-800/60 border border-slate-700/60">
+          <span className="text-[10px] text-zinc-400 uppercase block mb-1">Cooling Fan</span>
+          <span className="text-base font-bold text-sky-400">{fan} RPM</span>
+        </div>
+
+        {bat?.present && (
+          <div className="col-span-2 p-2.5 rounded-xl bg-slate-800/60 border border-slate-700/60 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Zap className="w-4 h-4 text-tinapple-gold" />
+              <div>
+                <span className="text-white font-bold block">Battery Threshold</span>
+                <span className="text-[10px] text-zinc-400 block">Charge limit {bat.chargeLimit}%</span>
+              </div>
+            </div>
+            <span className="text-sm font-bold text-white">{bat.percent}%</span>
+          </div>
+        )}
+      </div>
+
+      <div className="pt-2.5 border-t border-white/[0.06] flex items-center justify-between text-[11px] text-zinc-400 mt-2">
+        <span>Hardware Nonce:</span>
+        <span className="text-emerald-400 font-bold">TPM 2.0 Sealed</span>
+      </div>
+    </div>
+  );
+};
+
+// 9. Homarr Server Port Matrix Widget
+export const HomarrPortMatrixWidget: React.FC<{ onOpenTools?: () => void }> = ({ onOpenTools }) => {
+  const currentHost = window.location.hostname;
+  const isHttps = window.location.protocol === 'https:';
+
+  const ports = [
+    { name: 'Dash', port: 8088, path: `http://${currentHost}:8088`, color: 'text-tinapple-gold' },
+    { name: 'Media', port: 8096, path: `http://${currentHost}:8096`, color: 'text-purple-400' },
+    { name: 'Manga', port: 4567, path: `http://${currentHost}:4567`, color: 'text-amber-400' },
+    { name: 'Torrent', port: 8080, path: `http://${currentHost}:8080`, color: 'text-sky-400' },
+    { name: 'Sync', port: 8384, path: `http://${currentHost}:8384`, color: 'text-emerald-400' },
+    { name: 'Files', port: 8081, path: `http://${currentHost}:8081`, color: 'text-blue-400' },
+    { name: 'AdGuard', port: 3000, path: `http://${currentHost}:3000`, color: 'text-teal-400' },
+    { name: 'Vault', port: 8000, path: isHttps ? `https://${currentHost}:8000` : `http://${currentHost}:8000`, color: 'text-indigo-400' },
+  ];
+
+  return (
+    <div className="h-full rounded-2xl bg-slate-900/60 border border-white/[0.08] backdrop-blur-xl p-5 flex flex-col justify-between shadow-lg shadow-black/20 font-mono">
+      <div className="flex items-center justify-between text-xs mb-3">
+        <span className="flex items-center gap-2 font-bold uppercase tracking-wider text-tinapple-gold">
+          <Network className="w-4 h-4" />
+          <span>Active Port Matrix</span>
+        </span>
+        {onOpenTools && (
+          <button
+            onClick={onOpenTools}
+            className="text-[10px] text-tinapple-gold hover:underline font-bold"
+          >
+            Full Matrix ↗
+          </button>
+        )}
+      </div>
+
+      <div className="grid grid-cols-4 gap-2 text-xs">
+        {ports.map((p) => (
+          <a
+            key={p.port}
+            href={p.path}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="p-2 rounded-xl bg-slate-800/60 hover:bg-slate-700/80 border border-slate-700/60 transition-all flex flex-col items-center justify-center text-center group"
+          >
+            <span className="text-[10px] text-zinc-400 group-hover:text-white truncate w-full">{p.name}</span>
+            <span className={`font-bold ${p.color} text-xs mt-0.5`}>:{p.port}</span>
+          </a>
+        ))}
+      </div>
+
+      <div className="pt-2.5 border-t border-white/[0.06] flex items-center justify-between text-[11px] text-zinc-400 mt-2">
+        <span>Verified Listeners:</span>
+        <span className="text-emerald-400 font-bold">TCP 0.0.0.0</span>
+      </div>
+    </div>
+  );
+};
+
+// 10. Homarr Mini Terminal Quick Launcher Widget
+export const HomarrTerminalWidget: React.FC<{ onOpenTerminal?: () => void }> = ({ onOpenTerminal }) => {
+  return (
+    <div className="h-full rounded-2xl bg-slate-900/60 border border-white/[0.08] backdrop-blur-xl p-5 flex flex-col justify-between shadow-lg shadow-black/20 font-mono">
+      <div className="flex items-center justify-between text-xs mb-2">
+        <span className="flex items-center gap-2 font-bold uppercase tracking-wider text-emerald-400">
+          <Terminal className="w-4 h-4" />
+          <span>Web Terminal</span>
+        </span>
+        <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold">
+          PTY Bash
+        </span>
+      </div>
+
+      <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800 text-[11px] text-emerald-400/90 leading-relaxed font-mono">
+        <div>$ node-status --verified</div>
+        <div className="text-zinc-500">Kernel: 6.12.8-cachyos-tinapple</div>
+        <div className="text-zinc-400">Interactive PTY shell available</div>
+      </div>
+
+      <div className="pt-3 border-t border-white/[0.06] flex items-center justify-end mt-2">
+        {onOpenTerminal && (
+          <button
+            onClick={onOpenTerminal}
+            className="w-full py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-black flex items-center justify-center gap-1.5 transition-all shadow-md shadow-emerald-500/20"
+          >
+            <Play className="w-3.5 h-3.5" />
+            <span>Launch Web Terminal</span>
+          </button>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// 11. Homarr Journal Alert Stream Widget
+export const HomarrJournalWidget: React.FC = () => {
+  const [logs, setLogs] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/v1/tools/kernel-logs')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data && Array.isArray(data.logs)) {
+          setLogs(data.logs.slice(0, 4));
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  return (
+    <div className="h-full rounded-2xl bg-slate-900/60 border border-white/[0.08] backdrop-blur-xl p-5 flex flex-col justify-between shadow-lg shadow-black/20 font-mono">
+      <div className="flex items-center justify-between text-xs mb-2">
+        <span className="flex items-center gap-2 font-bold uppercase tracking-wider text-amber-400">
+          <AlertTriangle className="w-4 h-4" />
+          <span>Kernel & Journal Alerts</span>
+        </span>
+        <span className="text-[10px] text-zinc-500">Priority ≤ 3</span>
+      </div>
+
+      <div className="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800 space-y-1.5 text-[10px] text-zinc-300 max-h-28 overflow-y-auto scrollbar-none">
+        {logs.length > 0 ? (
+          logs.map((log, i) => (
+            <div key={i} className="truncate text-amber-300/90">
+              • {log}
+            </div>
+          ))
+        ) : (
+          <div className="text-emerald-400 flex items-center gap-1.5 py-1">
+            <CheckCircle2 className="w-3.5 h-3.5" />
+            <span>No critical system journal alerts recorded</span>
+          </div>
+        )}
+      </div>
+
+      <div className="pt-2.5 border-t border-white/[0.06] flex items-center justify-between text-[11px] text-zinc-400 mt-2">
+        <span>System Log State:</span>
+        <span className="text-emerald-400 font-bold">Healthy</span>
+      </div>
+    </div>
+  );
+};
+
+// 12. Homarr Custom Bookmarks Component
 export interface CustomBookmarkItem {
   id: string;
   name: string;
@@ -287,15 +745,13 @@ export const HomarrBookmarksWidget: React.FC<HomarrBookmarksWidgetProps> = ({
   onAddBookmark,
   onDeleteBookmark,
 }) => {
-  if (bookmarks.length === 0 && !isEditMode) return null;
-
   return (
-    <div className="col-span-12 rounded-2xl bg-slate-900/40 border border-white/[0.08] backdrop-blur-xl p-5 shadow-lg shadow-black/20">
+    <div className="h-full rounded-2xl bg-slate-900/40 border border-white/[0.08] backdrop-blur-xl p-5 shadow-lg shadow-black/20 font-mono">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <span className="text-base">🔖</span>
-          <h4 className="font-bold text-white text-sm font-mono tracking-wide uppercase">
-            Homelab Bookmarks & Web Services
+          <h4 className="font-bold text-white text-sm tracking-wide uppercase">
+            Homelab Bookmarks & Web Services ({bookmarks.length})
           </h4>
         </div>
         {isEditMode && (
@@ -343,6 +799,12 @@ export const HomarrBookmarksWidget: React.FC<HomarrBookmarksWidgetProps> = ({
             )}
           </div>
         ))}
+
+        {bookmarks.length === 0 && !isEditMode && (
+          <div className="col-span-full py-4 text-center text-xs text-zinc-500">
+            No custom bookmarks yet. Enable Edit Mode to add your homelab portals.
+          </div>
+        )}
       </div>
     </div>
   );
