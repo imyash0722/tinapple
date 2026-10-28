@@ -11,6 +11,7 @@ import {
   BookOpen,
   ExternalLink,
   Settings,
+  Smartphone,
 } from 'lucide-react';
 import { SpotlightCard } from '../reactbits/SpotlightCard';
 import HoldButton from '../reactbits/HoldButton';
@@ -364,16 +365,15 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({
                         <span>Open</span>
                       </a>
                     )}
-                    {(service.name === 'suwayomi' || service.name === 'suwayomi-server') && isActive && (
+                    {(service.name === 'suwayomi' || service.name === 'suwayomi-server') && (
                       <a
-                        href="/tsumiru/"
-                        target="_blank"
-                        rel="noreferrer"
-                        className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/40 text-purple-300 transition-colors active:scale-95"
-                        title="Open Suwayomi-Tsumiru Web Reader"
+                        href="/download/tsumiru"
+                        download="tsumiru-client.apk"
+                        className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/30 text-sky-300 transition-colors active:scale-95"
+                        title="Download Tsumiru Android APK for your phone (Connects via :4567)"
                       >
-                        <ExternalLink className="w-3.5 h-3.5" />
-                        <span>Tsumiru</span>
+                        <Smartphone className="w-3.5 h-3.5 text-sky-400" />
+                        <span>Phone APK</span>
                       </a>
                     )}
                     {isActive ? (

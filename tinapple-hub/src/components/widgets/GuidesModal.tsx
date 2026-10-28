@@ -109,9 +109,9 @@ const GUIDES_CATALOG: GuideArticle[] = [
     accentColor: '#f43f5e',
     htmlGuidePath: '/guides/syncyomi.html',
     endpoints: [
-      { label: 'Suwayomi Server', value: 'http://100.108.215.120:4567' },
+      { label: 'Suwayomi Web Reader', value: 'http://100.108.215.120:4567' },
       { label: 'SyncYomi Web GUI', value: 'http://100.108.215.120:8282' },
-      { label: 'Tsumiru Web Client', value: 'http://100.108.215.120:8088/tsumiru' },
+      { label: 'Tsumiru Phone Port', value: 'Port 4567 (Tailscale or Hotspot 192.168.4.1)' },
     ],
     steps: [
       {
@@ -127,9 +127,9 @@ const GUIDES_CATALOG: GuideArticle[] = [
       },
     ],
     clientApps: [
+      { name: 'Tsumiru Android APK', platform: 'Android (Connect to :4567)', link: '/download/tsumiru' },
+      { name: 'Suwayomi Native Web Reader', platform: 'Desktop Browser (:4567)', link: '/suwayomi' },
       { name: 'Mihon Android Reader', platform: 'Android', link: 'https://mihon.app' },
-      { name: 'Tsumiru Progressive Web App', platform: 'Web / Mobile', link: '/tsumiru' },
-      { name: 'Tsumiru Android APK', platform: 'Android', link: '/download/tsumiru' },
     ],
     specialConfigs: [
       {

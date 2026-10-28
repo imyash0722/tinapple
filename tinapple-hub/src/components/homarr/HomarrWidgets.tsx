@@ -25,6 +25,7 @@ import {
   Radio,
   Play,
   RotateCw,
+  Smartphone,
 } from 'lucide-react';
 import { TelemetrySnapshot, SystemInfo, ServiceInfo } from '../../types/api';
 
@@ -430,6 +431,8 @@ export const HomarrMediaWidget: React.FC<{ onOpenGuide?: (g: string) => void }> 
 export const HomarrMangaWidget: React.FC = () => {
   const [mangaCount, setMangaCount] = useState<number>(0);
   const [online, setOnline] = useState<boolean>(true);
+  const host = typeof window !== 'undefined' ? window.location.hostname : '127.0.0.1';
+  const suwayomiWebUrl = `http://${host}:4567/`;
 
   useEffect(() => {
     fetch('/api/widgets/manga')
@@ -448,7 +451,7 @@ export const HomarrMangaWidget: React.FC = () => {
       <div className="flex items-center justify-between text-xs mb-3">
         <span className="flex items-center gap-2 font-bold uppercase tracking-wider text-tinapple-gold">
           <BookOpen className="w-4 h-4" />
-          <span>Suwayomi Manga Shelf</span>
+          <span>Suwayomi Manga</span>
         </span>
         <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold">
           Port 4567
@@ -457,24 +460,35 @@ export const HomarrMangaWidget: React.FC = () => {
 
       <div className="p-3 rounded-xl bg-amber-500/[0.07] border border-amber-500/20 space-y-1.5">
         <div className="flex items-center justify-between text-xs">
-          <span className="text-white font-bold">Tsumiru PWA Reader</span>
-          <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold">
-            Offline Ready
+          <span className="text-white font-bold">Desktop Web & Phone App</span>
+          <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold">
+            {online ? 'Active' : 'Offline'}
           </span>
         </div>
         <p className="text-[11px] text-zinc-400">
-          SyncYomi mobile app sync & fast offline local CanvasKit manga rendering.
+          Desktop: Native Suwayomi Reader • Phone: Tsumiru Android App (connect to :4567).
         </p>
       </div>
 
       <div className="pt-3 border-t border-white/[0.06] flex items-center justify-between gap-2 mt-2">
-        <span className="text-[11px] text-zinc-400">Manga Engine Active</span>
         <a
-          href="/tsumiru/"
-          className="px-3 py-1 rounded-lg bg-tinapple-gold/20 hover:bg-tinapple-gold/30 border border-tinapple-gold/40 text-tinapple-gold text-xs font-bold flex items-center gap-1 transition-all"
+          href="/download/tsumiru"
+          download="tsumiru-client.apk"
+          className="px-2.5 py-1.5 rounded-lg bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/30 text-sky-300 text-xs font-bold flex items-center gap-1.5 transition-all"
+          title="Download Tsumiru Android APK for your phone"
         >
-          <span>Open Tsumiru</span>
-          <ExternalLink className="w-3 h-3" />
+          <Smartphone className="w-3.5 h-3.5 text-sky-400" />
+          <span>Phone APK</span>
+        </a>
+        <a
+          href={suwayomiWebUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="px-3 py-1.5 rounded-lg bg-tinapple-gold/20 hover:bg-tinapple-gold/30 border border-tinapple-gold/40 text-tinapple-gold text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm"
+          title="Open Suwayomi Manga Web Reader on Desktop (:4567)"
+        >
+          <span>Open WebUI</span>
+          <ExternalLink className="w-3.5 h-3.5" />
         </a>
       </div>
     </div>

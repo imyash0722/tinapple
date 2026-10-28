@@ -1287,13 +1287,13 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({
                             Suwayomi (:4567)
                           </a>
                           <a
-                            href="/tsumiru/"
-                            target="_blank"
-                            rel="noreferrer"
+                            href="/download/tsumiru"
+                            download="tsumiru-client.apk"
                             className="flex items-center gap-1 px-3 py-2 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-200 border border-purple-500/40 text-xs font-mono font-bold transition-all shadow-sm"
+                            title="Download Tsumiru Android APK for your phone (Connect via :4567)"
                           >
-                            <ExternalLink className="w-3 h-3" />
-                            Tsumiru Web
+                            <Download className="w-3 h-3" />
+                            Tsumiru APK
                           </a>
                         </>
                       )}
@@ -1399,26 +1399,15 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({
                       {selectedApp.id === 'suwayomi' ? 'Suwayomi Web (:4567)' : `Open WebUI (:${selectedApp.port})`}
                     </a>
                     {selectedApp.id === 'suwayomi' && (
-                      <>
-                        <a
-                          href="/tsumiru/"
-                          target="_blank"
-                          rel="noreferrer"
-                          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/40 text-xs font-mono font-bold transition-all shadow-sm"
-                        >
-                          <ExternalLink className="w-3.5 h-3.5" />
-                          Tsumiru Web
-                        </a>
-                        <a
-                          href="/download/tsumiru"
-                          download="tsumiru-client.apk"
-                          className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 text-xs font-mono font-bold transition-all shadow-sm"
-                          title="Download Suwayomi-Tsumiru Native Android APK"
-                        >
-                          <Download className="w-3.5 h-3.5" />
-                          Tsumiru APK
-                        </a>
-                      </>
+                      <a
+                        href="/download/tsumiru"
+                        download="tsumiru-client.apk"
+                        className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/40 text-xs font-mono font-bold transition-all shadow-sm"
+                        title="Download Tsumiru Native Android APK (Connects via :4567)"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        Tsumiru Phone APK
+                      </a>
                     )}
                   </>
                 )}
@@ -1579,14 +1568,13 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({
                         )}
                         {app.id === 'suwayomi' && (
                           <a
-                            href="/tsumiru/"
-                            target="_blank"
-                            rel="noreferrer"
-                            className="px-2.5 py-1.5 rounded-lg bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/40 text-xs font-mono font-bold flex items-center gap-1"
-                            title="Open Suwayomi-Tsumiru Web"
+                            href="/download/tsumiru"
+                            download="tsumiru-client.apk"
+                            className="px-2.5 py-1.5 rounded-lg bg-sky-500/15 hover:bg-sky-500/25 text-sky-300 border border-sky-500/30 text-xs font-mono font-bold flex items-center gap-1"
+                            title="Download Tsumiru Android APK"
                           >
-                            <ExternalLink className="w-3.5 h-3.5" />
-                            Tsumiru
+                            <Download className="w-3.5 h-3.5" />
+                            APK
                           </a>
                         )}
                         <button

@@ -96,18 +96,20 @@ func main() {
 		c.Redirect(http.StatusFound, "/tsumiru-client.apk")
 	})
 
-	// Tsumiru Web App route
-	tsumiruDir := filepath.Join(distDir, "tsumiru")
-	if _, err := os.Stat(tsumiruDir); err == nil {
-		r.Static("/tsumiru", tsumiruDir)
-	} else {
-		r.GET("/tsumiru", func(c *gin.Context) {
-			c.Redirect(http.StatusFound, "http://"+c.Request.Host+":4567/")
-		})
-		r.GET("/tsumiru/", func(c *gin.Context) {
-			c.Redirect(http.StatusFound, "http://"+c.Request.Host+":4567/")
-		})
+	// Suwayomi & Tsumiru Web Redirects to Suwayomi reader on :4567
+	handleSuwayomiRedirect := func(c *gin.Context) {
+		host := c.Request.Host
+		if colon := strings.Index(host, ":"); colon != -1 {
+			host = host[:colon]
+		}
+		c.Redirect(http.StatusFound, "http://"+host+":4567/")
 	}
+	r.GET("/tsumiru", handleSuwayomiRedirect)
+	r.GET("/tsumiru/", handleSuwayomiRedirect)
+	r.GET("/tsumiru/*filepath", handleSuwayomiRedirect)
+	r.GET("/suwayomi", handleSuwayomiRedirect)
+	r.GET("/suwayomi/", handleSuwayomiRedirect)
+	r.GET("/suwayomi/*filepath", handleSuwayomiRedirect)
 
 	if _, err := os.Stat(filepath.Join(distDir, "index.html")); err == nil {
 		r.Static("/assets", filepath.Join(distDir, "assets"))
@@ -152,16 +154,19 @@ func main() {
 		r.GET("/", serveIndex)
 		r.NoRoute(func(c *gin.Context) {
 			path := c.Request.URL.Path
-			if path == "/tsumiru" {
-				c.Redirect(http.StatusMovedPermanently, "/tsumiru/")
+			if strings.HasPrefix(path, "/tsumiru") || strings.HasPrefix(path, "/suwayomi") {
+				host := c.Request.Host
+				if colon := strings.Index(host, ":"); colon != -1 {
+					host = host[:colon]
+				}
+				c.Redirect(http.StatusFound, "http://"+host+":4567/")
 				return
 			}
 			if strings.HasPrefix(path, "/api") ||
 				strings.HasPrefix(path, "/assets") ||
 				strings.HasPrefix(path, "/icons") ||
 				strings.HasPrefix(path, "/images") ||
-				strings.HasPrefix(path, "/wallpapers") ||
-				strings.HasPrefix(path, "/tsumiru") {
+				strings.HasPrefix(path, "/wallpapers") {
 				c.JSON(http.StatusNotFound, gin.H{"error": "Resource not found"})
 				return
 			}
