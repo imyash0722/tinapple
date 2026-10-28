@@ -28,10 +28,11 @@ source=(
   pacman.conf
   manifest.yaml
   logind.conf.d/tinapple-lid.conf
+  sleep.conf.d/disable-sleep.conf
   systemd-preset/90-tinapple.preset
   bin/tinapple-boot-apply
 )
-sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP')
+sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP')
 
 package() {
   # Install pacman configuration template (avoid conflicting with pacman's /etc/pacman.conf)
@@ -42,6 +43,9 @@ package() {
 
   # Install logind configuration (lid behavior)
   install -Dm644 logind.conf.d/tinapple-lid.conf "$pkgdir/etc/systemd/logind.conf.d/tinapple-lid.conf"
+
+  # Install sleep configuration (disable suspend and hibernate)
+  install -Dm644 sleep.conf.d/disable-sleep.conf "$pkgdir/etc/systemd/sleep.conf.d/disable-sleep.conf"
 
   # Install systemd preset
   install -Dm644 systemd-preset/90-tinapple.preset "$pkgdir/usr/lib/systemd/system-preset/90-tinapple.preset"

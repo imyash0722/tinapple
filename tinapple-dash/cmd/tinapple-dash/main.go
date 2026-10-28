@@ -105,10 +105,8 @@ func main() {
 		c.Redirect(http.StatusFound, "http://"+host+":4567/")
 	}
 	r.GET("/tsumiru", handleSuwayomiRedirect)
-	r.GET("/tsumiru/", handleSuwayomiRedirect)
 	r.GET("/tsumiru/*filepath", handleSuwayomiRedirect)
 	r.GET("/suwayomi", handleSuwayomiRedirect)
-	r.GET("/suwayomi/", handleSuwayomiRedirect)
 	r.GET("/suwayomi/*filepath", handleSuwayomiRedirect)
 
 	if _, err := os.Stat(filepath.Join(distDir, "index.html")); err == nil {

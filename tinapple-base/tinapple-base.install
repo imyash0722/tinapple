@@ -10,6 +10,12 @@ Include = /etc/pacman.d/tinapple-mirrorlist
 EOPAC
   fi
 
+  # Set multi-user target as default (headless server appliance)
+  systemctl set-default multi-user.target >/dev/null 2>&1 || true
+
+  # Completely mask sleep and hibernation targets (24/7 server policy)
+  systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target suspend-then-hibernate.target >/dev/null 2>&1 || true
+
   # Enable core systemd services
   systemctl enable systemd-resolved.service >/dev/null 2>&1 || true
   systemctl enable systemd-networkd.service >/dev/null 2>&1 || true

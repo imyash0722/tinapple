@@ -100,15 +100,33 @@ EOH"
   run_sh "arch-chroot $target usermod -aG seat,video,input,audio '$username'"
   run_sh "arch-chroot $target systemctl enable seatd 2>/dev/null || true"
 
-  # Configure TTY1 auto-login directly into Niri Wayland Session
-  log_info "configuring tty1 autologin and Niri Wayland auto-launch for %s..." "$username"
+  # Configure TTY1 and Session Mode
+  local is_headless="false"
+  if [[ "${TINAPPLE_SESSION_MODE:-headless}" == "headless" ]]; then
+    is_headless="true"
+  fi
+  if [[ "$profiles_csv" != *"niri"* && "$profiles_csv" != *"desktop"* && "$profiles_csv" != *"wayland"* ]]; then
+    is_headless="true"
+  fi
+
+  # Configure TTY1 auto-login
+  log_info "configuring tty1 autologin for %s..." "$username"
   run_sh "mkdir -p $target/etc/systemd/system/getty@tty1.service.d"
   run_sh "cat << 'EOA' > $target/etc/systemd/system/getty@tty1.service.d/autologin.conf
 [Service]
 ExecStart=
 ExecStart=-/usr/bin/agetty --noreset --noclear --autologin '$username' %I linux
 EOA"
-  run_sh "cat << 'EOZ' > $target/home/$username/.zprofile
+
+  if [[ "$is_headless" == "true" ]]; then
+    log_info "headless mode selected: setting multi-user.target and disabling GUI autostart..."
+    run_sh "arch-chroot $target systemctl set-default multi-user.target 2>/dev/null || true"
+    run_sh "arch-chroot $target systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target suspend-then-hibernate.target 2>/dev/null || true"
+    # Ensure login scripts do not autostart graphical sessions
+    run_sh "touch $target/home/$username/.zprofile $target/home/$username/.zlogin $target/home/$username/.bash_profile"
+  else
+    log_info "graphical mode selected: configuring Niri Wayland auto-launch for %s..." "$username"
+    run_sh "cat << 'EOZ' > $target/home/$username/.zprofile
 if [[ \"\$(tty)\" == \"/dev/tty1\" ]] && [[ -z \"\${NIRI_STARTING:-}\" ]]; then
     if [[ -z \"\${WAYLAND_DISPLAY:-}\" ]] && ! pgrep -x niri >/dev/null; then
         export NIRI_STARTING=1
@@ -123,9 +141,9 @@ if [[ \"\$(tty)\" == \"/dev/tty1\" ]] && [[ -z \"\${NIRI_STARTING:-}\" ]]; then
     fi
 fi
 EOZ"
-  run_sh "cp $target/home/$username/.zprofile $target/home/$username/.zlogin"
-  run_sh "mkdir -p $target/etc/skel && cp $target/home/$username/.zprofile $target/etc/skel/.zprofile && cp $target/home/$username/.zprofile $target/etc/skel/.zlogin"
-  run_sh "cat << 'EOB' >> $target/home/$username/.bash_profile
+    run_sh "cp $target/home/$username/.zprofile $target/home/$username/.zlogin"
+    run_sh "mkdir -p $target/etc/skel && cp $target/home/$username/.zprofile $target/etc/skel/.zprofile && cp $target/home/$username/.zprofile $target/etc/skel/.zlogin"
+    run_sh "cat << 'EOB' >> $target/home/$username/.bash_profile
 if [[ \"\$(tty)\" == \"/dev/tty1\" ]]; then
     if [[ -z \"\${WAYLAND_DISPLAY:-}\" ]] && ! pgrep -x niri >/dev/null; then
         export XDG_CURRENT_DESKTOP=\"niri\"
@@ -139,6 +157,7 @@ if [[ \"\$(tty)\" == \"/dev/tty1\" ]]; then
     fi
 fi
 EOB"
+  fi
   run_sh "arch-chroot $target chown -R $username:users /home/$username 2>/dev/null || true"
 
   # 6. Enable Systemd Services
@@ -245,7 +264,7 @@ profiles:
 $(for p in "${prof_array[@]}"; do echo "  - $(echo "$p" | tr -d '[:space:]')"; done)
 services:
   niri:
-    enabled: true
+    enabled: $(if [[ "$is_headless" == "true" ]]; then echo "false"; else echo "true"; fi)
     user: $username
   jellyfin:
     enabled: true
@@ -258,7 +277,7 @@ hardware:
   battery:
     charge_limit: 80
     charge_limit_min: 40
-    critical_action: hibernate
+    critical_action: poweroff
     critical_threshold: 5
   power_profile: balanced
   thermal_profile: server

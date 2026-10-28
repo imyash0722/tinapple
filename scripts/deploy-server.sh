@@ -57,6 +57,26 @@ if [[ -f "${REPO_DIR}/scripts/tinapple-wifi-watchdog" && -f "${REPO_DIR}/scripts
   ssh "${TARGET_USER}@${TARGET_HOST}" "sudo install -Dm755 /tmp/tinapple-wifi-watchdog /usr/local/bin/tinapple-wifi-watchdog && sudo install -Dm644 /tmp/tinapple-wifi-watchdog.service /etc/systemd/system/tinapple-wifi-watchdog.service && rm -f /tmp/tinapple-wifi-watchdog /tmp/tinapple-wifi-watchdog.service && sudo systemctl daemon-reload && sudo systemctl enable --now tinapple-wifi-watchdog.service >/dev/null 2>&1 || true"
 fi
 
+# Deploy systemd lid and sleep configurations (headless 24/7 server mode)
+if [[ -f "${REPO_DIR}/tinapple-base/configs/logind.conf.d/tinapple-lid.conf" ]]; then
+  scp -q "${REPO_DIR}/tinapple-base/configs/logind.conf.d/tinapple-lid.conf" "${TARGET_USER}@${TARGET_HOST}:/tmp/tinapple-lid.conf"
+  ssh "${TARGET_USER}@${TARGET_HOST}" "sudo install -Dm644 /tmp/tinapple-lid.conf /etc/systemd/logind.conf.d/tinapple-lid.conf && rm -f /tmp/tinapple-lid.conf"
+fi
+if [[ -f "${REPO_DIR}/tinapple-base/configs/sleep.conf.d/disable-sleep.conf" ]]; then
+  scp -q "${REPO_DIR}/tinapple-base/configs/sleep.conf.d/disable-sleep.conf" "${TARGET_USER}@${TARGET_HOST}:/tmp/disable-sleep.conf"
+  ssh "${TARGET_USER}@${TARGET_HOST}" "sudo install -Dm644 /tmp/disable-sleep.conf /etc/systemd/sleep.conf.d/disable-sleep.conf && rm -f /tmp/disable-sleep.conf"
+fi
+
+# Deploy hardware daemons
+if [[ -f "${REPO_DIR}/tinapple-repo/packages/tinapple-hw/src/tinapple-thermal.bin" ]]; then
+  scp -q "${REPO_DIR}/tinapple-repo/packages/tinapple-hw/src/tinapple-thermal.bin" "${TARGET_USER}@${TARGET_HOST}:/tmp/tinapple-thermal"
+  ssh "${TARGET_USER}@${TARGET_HOST}" "sudo install -Dm755 /tmp/tinapple-thermal /usr/bin/tinapple-thermal && rm -f /tmp/tinapple-thermal"
+fi
+if [[ -f "${REPO_DIR}/tinapple-repo/packages/tinapple-hw/src/tinapple-battery" ]]; then
+  scp -q "${REPO_DIR}/tinapple-repo/packages/tinapple-hw/src/tinapple-battery" "${TARGET_USER}@${TARGET_HOST}:/tmp/tinapple-battery"
+  ssh "${TARGET_USER}@${TARGET_HOST}" "sudo install -Dm755 /tmp/tinapple-battery /usr/bin/tinapple-battery && rm -f /tmp/tinapple-battery"
+fi
+
 ssh "${TARGET_USER}@${TARGET_HOST}" "sudo systemctl start tinapple-dash.service"
 echo -e "${GREEN}✓ Assets deployed and tinapple-dash restarted.${NC}"
 

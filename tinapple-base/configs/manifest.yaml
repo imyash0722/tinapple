@@ -32,7 +32,7 @@ hardware:
   battery:
     charge_limit: 80
     charge_limit_min: 40
-    critical_action: hibernate
+    critical_action: poweroff
     critical_threshold: 5
   power_profile: balanced      # balanced | performance | power-saver | custom
   thermal_profile: server      # balanced | performance | quiet | server
