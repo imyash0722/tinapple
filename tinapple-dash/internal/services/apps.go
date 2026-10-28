@@ -191,19 +191,19 @@ func NewAppManager() *AppManager {
 			ConfigPath:  "/home/media/.config/qBittorrent/qBittorrent.conf",
 		},
 		{
-			ID:          "metube",
-			Name:        "MeTube YouTube Downloader",
-			Description: "Headless Web GUI for downloading YouTube videos and playlists with automated Kodi/Jellyfin NFO metadata and poster streaming integration.",
-			Tagline:     "Headless YouTube downloader & media streaming engine",
-			Category:    "downloads",
-			Package:     "metube",
-			Unit:        "metube.service",
-			Binary:      "metube",
-			Port:        8085,
+			ID:          "pinchflat",
+			Name:        "Pinchflat YouTube Manager",
+			Description: "Automated YouTube channel and playlist archiver with Kodi/Jellyfin NFO metadata, SponsorBlock integration, chapter markers, and automated media library indexing.",
+			Tagline:     "Automated YouTube channel archiver & Jellyfin media sync",
+			Category:    "media",
+			Package:     "pinchflat",
+			Unit:        "pinchflat.service",
+			Binary:      "docker",
+			Port:        8945,
 			Icon:        "youtube",
 			AccentColor: "#FF0000",
-			ConfigPath:  "/etc/tinapple/metube.env",
-			WebURL:      "http://{host}:8085",
+			ConfigPath:  "/var/lib/pinchflat",
+			WebURL:      "http://{host}:8945",
 		},
 		{
 			ID:           "suwayomi",
@@ -542,17 +542,18 @@ func NewAppManager() *AppManager {
 			ID:          "seerr-stack",
 			Name:        "Ultimate Streaming & Servarr Stack",
 			Tagline:     "Zero-touch 4K/1080p streaming cloud with automated discovery",
-			Description: "Complete media automation stack featuring Jellyfin streaming server, Jellyseerr discovery and user requests portal, Radarr & Sonarr automated indexers via Prowlarr, Bazarr subtitle synchronization, and qBittorrent high-speed engine.",
+			Description: "Complete media automation stack featuring Jellyfin streaming server, Jellyseerr discovery and user requests portal, Radarr & Sonarr automated indexers via Prowlarr, Bazarr subtitle synchronization, qBittorrent engine, and Pinchflat YouTube manager.",
 			Badge:       "STREAMING & MEDIA",
 			AccentColor: "#AA5CC3",
 			Icon:        "seerr",
-			Apps:        []string{"jellyfin", "seerr", "radarr", "sonarr", "prowlarr", "bazarr", "qbittorrent"},
+			Apps:        []string{"jellyfin", "seerr", "radarr", "sonarr", "prowlarr", "bazarr", "qbittorrent", "pinchflat"},
 			Features: []string{
-				"Automated root libraries in /srv/media/{movies,shows}",
+				"Automated root libraries in /srv/media/{movies,shows,youtube}",
 				"qBittorrent client authenticated and synced (:8080)",
 				"Prowlarr public trackers (YTS, Nyaa, TPB, LimeTorrents) linked",
 				"Bazarr multi-language subtitle automator connected",
 				"Jellyseerr 1-click requests linked to Jellyfin & Servarrs (:5055)",
+				"Pinchflat automated YouTube manager with Jellyfin NFO tags (:8945)",
 			},
 		},
 		{
@@ -591,15 +592,15 @@ func NewAppManager() *AppManager {
 			ID:          "audiophile-cloud",
 			Name:        "Audiophile Music Cloud & Downloader",
 			Tagline:     "Lossless Subsonic audio streaming & offline YouTube archiver",
-			Description: "Modern high-fidelity music streaming server compatible with Symfonium, Feishin, and Substreamer, integrated with MeTube for headless scheduled downloading of YouTube Music tracks, albums, and playlists.",
+			Description: "Modern high-fidelity music streaming server compatible with Symfonium, Feishin, and Substreamer, integrated with Pinchflat for scheduled archiving of YouTube Music tracks, albums, and audio feeds.",
 			Badge:       "MUSIC & AUDIO",
 			AccentColor: "#FF7F00",
 			Icon:        "navidrome",
-			Apps:        []string{"navidrome", "metube"},
+			Apps:        []string{"navidrome", "pinchflat"},
 			Features: []string{
 				"Subsonic & Airsonic REST API support for mobile & desktop players",
 				"Storage in /srv/media/music with automated library scanning",
-				"Headless MeTube YouTube/SoundCloud playlist archiver (:8085)",
+				"Pinchflat YouTube & audio channel archiver (:8945)",
 				"On-the-fly FLAC/Opus/MP3 transcoding",
 			},
 		},
@@ -1349,37 +1350,89 @@ WantedBy=multi-user.target
 	return nil
 }
 
-func installMetube() error {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+func installPinchflat(m *AppManager) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 	defer cancel()
 
-	cleanStalePacmanLock()
-	cmdDeps := exec.CommandContext(ctx, "pacman", "-S", "--noconfirm", "--needed",
-		"python", "python-aiohttp", "python-socketio", "python-watchfiles", "yt-dlp", "ffmpeg", "aria2")
-	_ = cmdDeps.Run()
+	_ = m.runStreamCmd(ctx, "pinchflat", "systemctl", "enable", "--now", "docker")
 
 	_ = os.MkdirAll("/srv/media/youtube", 0775)
 	_ = os.MkdirAll("/srv/media/youtube-music", 0775)
-	_ = os.MkdirAll("/var/lib/metube", 0755)
-	_ = os.MkdirAll("/etc/tinapple", 0755)
+	_ = os.MkdirAll("/var/lib/pinchflat", 0775)
+	_ = exec.Command("chown", "-R", "root:media", "/srv/media/youtube", "/srv/media/youtube-music").Run()
+	_ = exec.Command("chmod", "-R", "775", "/srv/media/youtube", "/srv/media/youtube-music").Run()
+	_ = exec.Command("chmod", "-R", "g+s", "/srv/media/youtube", "/srv/media/youtube-music").Run()
+
+	m.AppendLog("pinchflat", "info", "Pulling official Pinchflat container image...")
+	_ = m.runStreamCmd(ctx, "pinchflat", "docker", "pull", "ghcr.io/kieraneglin/pinchflat:latest")
 
 	serviceContent := `[Unit]
-Description=MeTube Headless YouTube Downloader
-After=network.target
+Description=Pinchflat YouTube Media Manager for Jellyfin
+After=docker.service network.target
+Requires=docker.service
 
 [Service]
 Type=simple
-EnvironmentFile=-/etc/tinapple/metube.env
-ExecStart=/usr/local/bin/metube
 Restart=always
 RestartSec=5
+ExecStartPre=-/usr/bin/docker stop pinchflat
+ExecStartPre=-/usr/bin/docker rm pinchflat
+ExecStart=/usr/bin/docker run --name pinchflat \
+  --net=host \
+  -e TZ=Asia/Kolkata \
+  -e PORT=8945 \
+  -v /var/lib/pinchflat:/config \
+  -v /srv/media/youtube:/downloads \
+  ghcr.io/kieraneglin/pinchflat:latest
+ExecStop=/usr/bin/docker stop pinchflat
 
 [Install]
 WantedBy=multi-user.target
 `
-	if err := os.WriteFile("/etc/systemd/system/metube.service", []byte(serviceContent), 0644); err != nil {
-		return fmt.Errorf("failed to create metube.service: %w", err)
+	if err := os.WriteFile("/etc/systemd/system/pinchflat.service", []byte(serviceContent), 0644); err != nil {
+		return fmt.Errorf("failed to create pinchflat.service: %w", err)
 	}
+
+	// Pre-provision Jellyfin YouTube library definition if Jellyfin is installed
+	if _, err := os.Stat("/var/lib/jellyfin"); err == nil {
+		jellyLibDir := "/var/lib/jellyfin/root/default/YouTube"
+		_ = os.MkdirAll(jellyLibDir, 0775)
+		_ = os.Symlink("/srv/media/youtube", filepath.Join(jellyLibDir, "YouTube"))
+		optionsXML := `<?xml version="1.0" encoding="utf-8"?>
+<LibraryOptions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <Enabled>true</Enabled>
+  <EnablePhotos>false</EnablePhotos>
+  <EnableRealtimeMonitor>true</EnableRealtimeMonitor>
+  <EnableChapterImageExtraction>true</EnableChapterImageExtraction>
+  <ExtractChapterImagesDuringLibraryScan>true</ExtractChapterImagesDuringLibraryScan>
+  <PathInfos>
+    <MediaPathInfo>
+      <Path>/srv/media/youtube</Path>
+    </MediaPathInfo>
+  </PathInfos>
+  <TypeOptions>
+    <TypeOptions>
+      <Type>Movie</Type>
+      <MetadataFetchers>
+        <string>Nfo</string>
+      </MetadataFetchers>
+      <MetadataFetcherOrder>
+        <string>Nfo</string>
+      </MetadataFetcherOrder>
+      <ImageFetchers>
+        <string>Embedded</string>
+        <string>Screen Grabber</string>
+      </ImageFetchers>
+    </TypeOptions>
+  </TypeOptions>
+</LibraryOptions>
+`
+		_ = os.WriteFile(filepath.Join(jellyLibDir, "options.xml"), []byte(optionsXML), 0644)
+		_ = exec.Command("chown", "-R", "jellyfin:jellyfin", jellyLibDir).Run()
+	}
+
+	_ = m.runStreamCmd(ctx, "pinchflat", "systemctl", "daemon-reload")
+	_ = m.runStreamCmd(ctx, "pinchflat", "systemctl", "enable", "--now", "pinchflat.service")
 	return nil
 }
 
@@ -1597,9 +1650,9 @@ func (m *AppManager) installUnlocked(id string) error {
 	case "filebrowser":
 		m.AppendLog(id, "info", "Downloading official FileBrowser Quantum binary release...")
 		installErr = installFilebrowser()
-	case "metube":
-		m.AppendLog(id, "info", "Installing MeTube Python requirements (yt-dlp, ffmpeg, aiohttp)...")
-		installErr = installMetube()
+	case "pinchflat", "metube":
+		m.AppendLog(id, "info", "Deploying Pinchflat YouTube media manager container...")
+		installErr = installPinchflat(m)
 	case "minecraft":
 		m.AppendLog(id, "info", "Deploying PaperMC / PurpurMC appliance server runtime...")
 		installErr = installMinecraftServer()
@@ -1821,8 +1874,8 @@ func (m *AppManager) configurePackUnlocked(id string) error {
 			_ = exec.Command("usermod", "-aG", "media", u).Run()
 		}
 		_ = exec.Command("systemctl", "restart", "navidrome").Run()
-		_ = exec.Command("systemctl", "restart", "metube").Run()
-		m.AppendLog(id, "info", "[✓] /srv/media/music library configured and linked to MeTube downloads")
+		_ = exec.Command("systemctl", "restart", "pinchflat").Run()
+		m.AppendLog(id, "info", "[✓] /srv/media/music library configured and linked to Pinchflat downloads")
 		m.AppendLog(id, "info", "[✓] Navidrome Subsonic music streamer active on port 4533")
 
 	case "cloud-vault":
@@ -1978,7 +2031,11 @@ func (m *AppManager) Uninstall(id string) error {
 		_ = os.RemoveAll("/opt/Sonarr")
 		_ = os.Remove("/usr/local/bin/sonarr")
 		_ = os.Remove("/etc/systemd/system/sonarr.service")
-	case "metube":
+	case "pinchflat", "metube":
+		_ = exec.Command("systemctl", "disable", "--now", "pinchflat.service").Run()
+		_ = exec.Command("docker", "stop", "pinchflat").Run()
+		_ = exec.Command("docker", "rm", "-f", "pinchflat").Run()
+		_ = os.Remove("/etc/systemd/system/pinchflat.service")
 		_ = os.Remove("/etc/systemd/system/metube.service")
 	case "protonvpn":
 		_ = exec.Command("systemctl", "disable", "--now", "proton.VPN.service").Run()

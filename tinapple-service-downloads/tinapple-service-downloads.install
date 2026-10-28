@@ -3,7 +3,6 @@ post_install() {
   systemctl enable transmission.service >/dev/null 2>&1 || true
   systemctl enable jdownloader2.service >/dev/null 2>&1 || true
   systemctl enable flaresolverr.service >/dev/null 2>&1 || true
-  systemctl enable metube.service >/dev/null 2>&1 || true
   systemctl enable tinapple-youtube-sync.timer >/dev/null 2>&1 || true
 }
 
@@ -13,6 +12,5 @@ pre_remove() {
   systemctl disable transmission.service >/dev/null 2>&1 || true
   systemctl disable jdownloader2.service >/dev/null 2>&1 || true
   systemctl disable flaresolverr.service >/dev/null 2>&1 || true
-  systemctl disable metube.service >/dev/null 2>&1 || true
   systemctl disable tinapple-youtube-sync.timer >/dev/null 2>&1 || true
 }

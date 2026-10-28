@@ -247,4 +247,57 @@ if os.path.exists(seerr_cfg) and radarr_key and sonarr_key:
     except Exception as e:
         print(f"[!] Jellyseerr notice: {e}")
 
+# 10. Pinchflat YouTube Media Manager & Jellyfin Library Setup
+try:
+    os.makedirs('/srv/media/youtube', exist_ok=True)
+    os.makedirs('/var/lib/pinchflat', exist_ok=True)
+    subprocess.run(['systemctl', 'enable', '--now', 'pinchflat'], check=False)
+    
+    # Setup Jellyfin YouTube library directory & options
+    jellyfin_yt_dir = '/var/lib/jellyfin/root/default/YouTube'
+    os.makedirs(jellyfin_yt_dir, exist_ok=True)
+    yt_symlink = os.path.join(jellyfin_yt_dir, 'YouTube')
+    if not os.path.exists(yt_symlink):
+        try:
+            os.symlink('/srv/media/youtube', yt_symlink)
+        except OSError:
+            pass
+            
+    options_xml_path = os.path.join(jellyfin_yt_dir, 'options.xml')
+    if not os.path.exists(options_xml_path):
+        with open(options_xml_path, 'w') as f:
+            f.write('''<?xml version="1.0" encoding="utf-8"?>
+<LibraryOptions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <Enabled>true</Enabled>
+  <EnablePhotos>false</EnablePhotos>
+  <EnableRealtimeMonitor>true</EnableRealtimeMonitor>
+  <EnableChapterImageExtraction>true</EnableChapterImageExtraction>
+  <ExtractChapterImagesDuringLibraryScan>true</ExtractChapterImagesDuringLibraryScan>
+  <PathInfos>
+    <MediaPathInfo>
+      <Path>/srv/media/youtube</Path>
+    </MediaPathInfo>
+  </PathInfos>
+  <TypeOptions>
+    <TypeOptions>
+      <Type>Movie</Type>
+      <MetadataFetchers>
+        <string>Nfo</string>
+      </MetadataFetchers>
+      <MetadataFetcherOrder>
+        <string>Nfo</string>
+      </MetadataFetcherOrder>
+      <ImageFetchers>
+        <string>Embedded</string>
+        <string>Screen Grabber</string>
+      </ImageFetchers>
+    </TypeOptions>
+  </TypeOptions>
+</LibraryOptions>
+''')
+    subprocess.run(['chown', '-R', 'jellyfin:jellyfin', jellyfin_yt_dir], check=False)
+    print("[✓] Pinchflat YouTube library provisioned for Jellyfin (/srv/media/youtube)")
+except Exception as e:
+    print(f"[!] Pinchflat YouTube notice: {e}")
+
 print("=== [SUCCESS] Full Seerr & Servarr Media Stack is 100% Configured & Ready! ===")

@@ -33,6 +33,11 @@ export const APP_BRAND_CONFIG: Record<string, BrandConfig> = {
     iconPath: '/icons/youtube.svg',
     accentColor: '#FF0000',
   },
+  pinchflat: {
+    name: 'Pinchflat',
+    iconPath: '/icons/youtube.svg',
+    accentColor: '#FF0000',
+  },
   youtube: {
     name: 'YouTube Downloader',
     iconPath: '/icons/youtube.svg',

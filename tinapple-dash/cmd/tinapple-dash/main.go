@@ -97,17 +97,7 @@ func main() {
 	})
 
 	// Suwayomi & Tsumiru Web Redirects to Suwayomi reader on :4567
-	handleSuwayomiRedirect := func(c *gin.Context) {
-		host := c.Request.Host
-		if colon := strings.Index(host, ":"); colon != -1 {
-			host = host[:colon]
-		}
-		c.Redirect(http.StatusFound, "http://"+host+":4567/")
-	}
-	r.GET("/tsumiru", handleSuwayomiRedirect)
-	r.GET("/tsumiru/*filepath", handleSuwayomiRedirect)
-	r.GET("/suwayomi", handleSuwayomiRedirect)
-	r.GET("/suwayomi/*filepath", handleSuwayomiRedirect)
+	// Handled seamlessly in NoRoute middleware without route collisions
 
 	if _, err := os.Stat(filepath.Join(distDir, "index.html")); err == nil {
 		r.Static("/assets", filepath.Join(distDir, "assets"))
@@ -158,6 +148,14 @@ func main() {
 					host = host[:colon]
 				}
 				c.Redirect(http.StatusFound, "http://"+host+":4567/")
+				return
+			}
+			if strings.HasPrefix(path, "/pinchflat") || strings.HasPrefix(path, "/youtube") {
+				host := c.Request.Host
+				if colon := strings.Index(host, ":"); colon != -1 {
+					host = host[:colon]
+				}
+				c.Redirect(http.StatusFound, "http://"+host+":8945/")
 				return
 			}
 			if strings.HasPrefix(path, "/api") ||

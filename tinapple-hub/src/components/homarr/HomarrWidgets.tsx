@@ -270,7 +270,7 @@ export const HomarrDownloadsWidget: React.FC = () => {
 
       <div className="pt-2.5 border-t border-white/[0.06] flex items-center justify-between text-[11px] text-zinc-400">
         <span>Engines:</span>
-        <span className="text-zinc-300 font-medium">qBittorrent / MeTube</span>
+        <span className="text-zinc-300 font-medium">qBittorrent / Pinchflat</span>
       </div>
     </div>
   );

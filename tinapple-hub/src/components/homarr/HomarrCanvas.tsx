@@ -68,7 +68,7 @@ const DEFAULT_WIDGETS: HomarrWidgetDef[] = [
   {
     id: 'transfers_rate',
     title: 'Active Transfers & Speeds',
-    description: 'qBittorrent & MeTube download/upload transfer speeds and active torrent tasks count.',
+    description: 'qBittorrent & Pinchflat download/upload transfer speeds and active torrent tasks count.',
     icon: '📥',
     category: 'storage',
     colSpan: 3,

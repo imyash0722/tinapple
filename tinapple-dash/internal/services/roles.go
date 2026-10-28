@@ -79,7 +79,7 @@ var DefaultApplianceServices = []AvailableService{
 	{ID: "sonarr", Name: "Sonarr TV", Icon: "📺", Description: "Automated TV show and episodic series manager"},
 	{ID: "prowlarr", Name: "Prowlarr Indexer", Icon: "🔍", Description: "Centralized torrent indexer and tracker manager"},
 	{ID: "seerr", Name: "Jellyseerr", Icon: "🍿", Description: "User media request management and auto-approval"},
-	{ID: "metube", Name: "MeTube Downloader", Icon: "📹", Description: "Web GUI for yt-dlp video downloading"},
+	{ID: "pinchflat", Name: "Pinchflat YouTube Manager", Icon: "📹", Description: "Automated YouTube channel and playlist manager for Jellyfin"},
 	{ID: "tor", Name: "Tor Privacy Proxy", Icon: "🧅", Description: "Tor SOCKS5 onion routing and exit proxy"},
 	{ID: "cockpit", Name: "Cockpit Console", Icon: "⚙️", Description: "RedHat Cockpit system performance and terminal admin"},
 	{ID: "truenas", Name: "TrueNAS Vault", Icon: "🗄️", Description: "ZFS dataset and TrueNAS Syncthing storage bridge"},

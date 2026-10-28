@@ -21,6 +21,7 @@ import {
   ChevronRight,
   Monitor,
   Smartphone,
+  Youtube,
 } from 'lucide-react';
 
 export interface GuideArticle {
@@ -404,6 +405,57 @@ const GUIDES_CATALOG: GuideArticle[] = [
       {
         title: 'One-Click Automated Configuration',
         description: 'The entire stack is auto-linked by Tinapple OS via /usr/local/bin/tinapple-configure-seerr. API keys and paths are continuously maintained.',
+      },
+    ],
+  },
+  {
+    id: 'pinchflat',
+    title: 'Pinchflat YouTube Media Manager & Jellyfin Sync',
+    subtitle: 'Automated YouTube channel archiving, SponsorBlock cutting, and Kodi/Jellyfin NFO library integration',
+    category: 'automation',
+    icon: <Youtube className="w-5 h-5 text-red-500" />,
+    accentColor: '#ef4444',
+    endpoints: [
+      { label: 'Pinchflat WebUI', value: 'http://pineapple.lan:8945' },
+      { label: 'Direct Hotspot IP', value: 'http://192.168.4.1:8945' },
+      { label: 'Tailscale MagicDNS', value: 'http://pineapple-server.taildb42a2.ts.net:8945' },
+      { label: 'Jellyfin YouTube Library', value: '/srv/media/youtube' },
+    ],
+    steps: [
+      {
+        title: 'Access the Pinchflat Web Dashboard',
+        description: 'Navigate to http://pineapple.lan:8945 or port 8945 on your server IP. Pinchflat requires no initial login.',
+        code: 'http://pineapple.lan:8945',
+      },
+      {
+        title: 'Add Channels, Playlists, or Search Queries',
+        description: 'Click "Add Source" or "New Subscription". Paste any YouTube Channel URL (e.g., https://www.youtube.com/@Veritasium) or Playlist URL.',
+      },
+      {
+        title: 'Set Media Profile & Jellyfin TV Format Preset',
+        description: 'Under Media Profile, choose your desired video resolution (1080p / best). Select the TV Shows naming format so each channel appears in Jellyfin as a Series with seasons by year.',
+      },
+      {
+        title: 'Enable SponsorBlock & Automatic Subtitles',
+        description: 'Toggle SponsorBlock to auto-skip sponsor segments, intro/outro cards, and self-promotion. Pinchflat will download .nfo metadata and .jpg thumbnails automatically.',
+      },
+      {
+        title: 'Enjoy in Jellyfin Across All Devices',
+        description: 'Your videos are saved directly to /srv/media/youtube. Jellyfin automatically indexes new episodes with posters, descriptions, and chapter markers.',
+      },
+    ],
+    clientApps: [
+      { name: 'Pinchflat Web Dashboard', platform: 'Web / Mobile', link: 'http://pineapple.lan:8945' },
+      { name: 'Jellyfin Client (Smart TVs, Mobile, PC)', platform: 'All Platforms', link: 'http://pineapple.lan:8096' },
+    ],
+    specialConfigs: [
+      {
+        title: 'SponsorBlock & Jellyfin NFO Support Built-in',
+        description: 'Pinchflat generates Kodi/Jellyfin compatible NFO files with full video descriptions, tags, upload dates, and high-res thumbnails with zero extra scrapers needed.',
+      },
+      {
+        title: 'Audio Mode for Music & Podcasts',
+        description: 'You can configure subscriptions in Audio mode (e.g. MP3/Opus) to automatically populate Navidrome at /srv/media/youtube-music.',
       },
     ],
   },

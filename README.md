@@ -108,7 +108,7 @@ tinapple packages and manages a comprehensive suite of homelab services. Below i
 | Jellyfin | `jellyfin-server` | `jellyfin.service` | 8096 | `http://<server>:8096/` | Media streaming for movies, shows, and audiobooks |
 | Navidrome | `navidrome` | `navidrome.service` | 4533 | `http://<server>:4533/` | Subsonic-compatible personal music streaming |
 | qBittorrent | `qbittorrent-nox` | `qbittorrent-nox.service` | 8080 | `http://<server>:8080/` | Headless BitTorrent client with remote WebUI |
-| MeTube | `metube` | `metube.service` | 8085 | `http://<server>:8085/` | Web GUI for yt-dlp video and audio downloads |
+| Pinchflat | `pinchflat` | `pinchflat.service` | 8945 | `http://<server>:8945/` | Automated YouTube channel and playlist manager for Jellyfin |
 | AdGuard Home | `adguardhome` | `adguardhome.service` | 3000 / 53 | `http://<server>:3000/` | Network-wide DNS sinkhole, privacy filter, and ad-blocker |
 | Syncthing | `syncthing` | `syncthing@tinapple.service` | 8384 | `http://<server>:8384/` | Continuous peer-to-peer decentralized file sync |
 | FileBrowser | `filebrowser` | `filebrowser.service` | 8081 | `http://<server>:8081/` | Web-based file manager and browser |
@@ -133,10 +133,10 @@ Tinapple delivers cohesive homelab experiences through pre-configured **Applianc
 
 | Pack Name | Included Daemons | Badge | Core Highlights |
 |-----------|------------------|-------|-----------------|
-| **Ultimate Streaming & Servarr Stack** | `jellyfin`, `seerr`, `radarr`, `sonarr`, `prowlarr`, `bazarr`, `qbittorrent` | `STREAMING & MEDIA` | Zero-touch 4K/1080p media cloud: automated root libraries in `/srv/media`, qBittorrent authenticated API linking, Prowlarr trackers auto-synced, Bazarr multi-language subtitle fetching, and Jellyseerr discovery connected to Jellyfin server. |
+| **Ultimate Streaming & Servarr Stack** | `jellyfin`, `seerr`, `radarr`, `sonarr`, `prowlarr`, `bazarr`, `qbittorrent`, `pinchflat` | `STREAMING & MEDIA` | Zero-touch 4K/1080p media cloud: automated root libraries in `/srv/media`, qBittorrent authenticated API linking, Prowlarr trackers auto-synced, Bazarr multi-language subtitle fetching, Jellyseerr discovery, and Pinchflat YouTube channel manager with Jellyfin NFO tags. |
 | **Manga & Comic Infinite Library** | `suwayomi`, `syncyomi` | `MANGA & COMICS` | 1,000+ Keiyoushi source extensions enabled, local storage in `/srv/media/manga`, Suwayomi-Tsumiru native Web and mobile reader, and cross-device reading progress synchronization via SyncYomi (:8282). |
 | **Mesh Privacy & Perimeter Shield** | `tailscale`, `adguard`, `protonvpn`, `tor` | `SECURITY & MESH` | Zero-trust WireGuard mesh networking, AdGuard Home DNS-over-HTTPS & ad/tracker blocking (:3000), Tor anonymous SOCKS5 onion proxy (:9050), and Proton VPN high-speed egress encryption. |
-| **Audiophile Music Cloud & Downloader** | `navidrome`, `metube` | `MUSIC & AUDIO` | Lossless Subsonic/Airsonic streaming server for Symfonium, Feishin, and Substreamer, paired with MeTube for headless automated downloading of YouTube/SoundCloud playlists directly into `/srv/media/music`. |
+| **Audiophile Music Cloud & Downloader** | `navidrome`, `pinchflat` | `MUSIC & AUDIO` | Lossless Subsonic/Airsonic streaming server for Symfonium, Feishin, and Substreamer, paired with Pinchflat for automated archiving of YouTube Music tracks and audio feeds directly into `/srv/media/music`. |
 | **Cloud Vault & Resilient Backups** | `vaultwarden`, `syncthing`, `filebrowser` | `VAULT & SYNC` | Bitwarden-compatible password vault with Web Crypto API, Syncthing peer-to-peer real-time file synchronization across mobile and desktop devices, and FileBrowser Quantum web file explorer. |
 | **Second Brain & Knowledge Base** | `couchdb`, `filebrowser` | `KNOWLEDGE & NOTES` | Real-time end-to-end encrypted database sync for Obsidian LiveSync across iOS, Android, and PC with CORS enabled (:5984), paired with FileBrowser for markdown search and document storage. |
 | **Gaming Appliance & Anycast Tunnel** | `minecraft`, `playit` | `GAMING & CLOUD` | PaperMC high-performance Minecraft server (:25565) with Aikar's tuned JVM GC memory optimization flags, paired with Playit.gg Anycast agent providing public player join domains without port forwarding. |
