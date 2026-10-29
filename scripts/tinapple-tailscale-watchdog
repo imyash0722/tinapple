@@ -1,0 +1,133 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# tinapple Resilient Tailscale Connection Watchdog & Self-Healing Auto-Restart
+# Monitors Tailscale daemon and coordination health. If connectivity fails
+# continuously for more than 5 minutes (300 seconds), attempts soft recovery
+# and automatically restarts the system to restore remote access.
+# ==============================================================================
+set -u
+
+CHECK_INTERVAL=30
+BOOT_GRACE_PERIOD=180
+SOFT_RECOVERY_SECONDS=120
+MAX_FAIL_SECONDS=300
+MAX_CONSECUTIVE_REBOOTS=3
+
+STATE_DIR="/run/tinapple-tailscale-watchdog"
+FAIL_FILE="${STATE_DIR}/failed_since"
+RESTART_FLAG="${STATE_DIR}/restarted_flag"
+REBOOT_COUNT_FILE="/var/lib/tinapple/tailscale_watchdog_reboots"
+
+mkdir -p "${STATE_DIR}"
+mkdir -p "$(dirname "${REBOOT_COUNT_FILE}")"
+
+log() {
+  local level="${1:-INFO}"
+  shift
+  echo "[$(date '+%Y-%m-%d %H:%M:%S')] [tinapple-tailscale-watchdog] [${level}] $*"
+}
+
+get_uptime_seconds() {
+  awk '{print int($1)}' /proc/uptime 2>/dev/null || echo 9999
+}
+
+get_reboot_count() {
+  if [[ -f "${REBOOT_COUNT_FILE}" ]]; then
+    cat "${REBOOT_COUNT_FILE}" 2>/dev/null || echo 0
+  else
+    echo 0
+  fi
+}
+
+set_reboot_count() {
+  local count="$1"
+  echo "${count}" > "${REBOOT_COUNT_FILE}" 2>/dev/null || true
+}
+
+is_tailscale_healthy() {
+  # 1. Check if tailscaled service is running
+  if ! systemctl is-active --quiet tailscaled; then
+    return 1
+  fi
+
+  # 2. Query status JSON with timeout
+  local json
+  if ! json=$(timeout 10 tailscale status --json 2>/dev/null); then
+    return 1
+  fi
+
+  # 3. Verify backend state and coordination connectivity
+  local backend_state online
+  backend_state=$(echo "${json}" | jq -r '.BackendState // empty' 2>/dev/null || true)
+  online=$(echo "${json}" | jq -r '.Self.Online // false' 2>/dev/null || true)
+
+  if [[ "${backend_state}" != "Running" || "${online}" != "true" ]]; then
+    return 1
+  fi
+
+  return 0
+}
+
+log "INFO" "Starting Tailscale watchdog daemon (check interval: ${CHECK_INTERVAL}s, max fail: ${MAX_FAIL_SECONDS}s)..."
+
+while true; do
+  UPTIME_S=$(get_uptime_seconds)
+
+  # Check if still within boot grace period
+  if (( UPTIME_S < BOOT_GRACE_PERIOD )); then
+    log "INFO" "System booted recently (${UPTIME_S}s / ${BOOT_GRACE_PERIOD}s grace period). Waiting for network stabilization..."
+    sleep "${CHECK_INTERVAL}"
+    continue
+  fi
+
+  CURRENT_TIME=$(date +%s)
+
+  if is_tailscale_healthy; then
+    if [[ -f "${FAIL_FILE}" ]]; then
+      log "INFO" "[RECOVERED] Tailscale connectivity restored. Watchdog timer reset."
+      rm -f "${FAIL_FILE}" "${RESTART_FLAG}"
+    fi
+
+    # Reset consecutive watchdog reboots if previously set
+    REBOOT_COUNT=$(get_reboot_count)
+    if [[ "${REBOOT_COUNT}" -gt 0 ]]; then
+      log "INFO" "Tailscale verified healthy. Resetting consecutive watchdog reboot counter from ${REBOOT_COUNT} to 0."
+      set_reboot_count 0
+    fi
+  else
+    if [[ ! -f "${FAIL_FILE}" ]]; then
+      echo "${CURRENT_TIME}" > "${FAIL_FILE}"
+      log "WARN" "[ALERT] Tailscale health check failed. Starting ${MAX_FAIL_SECONDS}s failure countdown."
+    else
+      FAILED_SINCE=$(cat "${FAIL_FILE}" 2>/dev/null || echo "${CURRENT_TIME}")
+      ELAPSED=$(( CURRENT_TIME - FAILED_SINCE ))
+
+      log "WARN" "Tailscale down for ${ELAPSED}s / ${MAX_FAIL_SECONDS}s."
+
+      # Level 1: Soft recovery at 2 minutes
+      if (( ELAPSED >= SOFT_RECOVERY_SECONDS )) && [[ ! -f "${RESTART_FLAG}" ]]; then
+        log "WARN" "[ACTION] Soft recovery triggered: restarting NetworkManager and tailscaled..."
+        touch "${RESTART_FLAG}"
+        systemctl restart NetworkManager tailscaled >/dev/null 2>&1 || true
+      fi
+
+      # Level 2: Hard recovery (system reboot) at 5 minutes
+      if (( ELAPSED >= MAX_FAIL_SECONDS )); then
+        REBOOT_COUNT=$(get_reboot_count)
+
+        if (( REBOOT_COUNT < MAX_CONSECUTIVE_REBOOTS )); then
+          NEXT_COUNT=$(( REBOOT_COUNT + 1 ))
+          set_reboot_count "${NEXT_COUNT}"
+          log "CRIT" "[CRITICAL] Tailscale down for ${ELAPSED}s (exceeded ${MAX_FAIL_SECONDS}s). Triggering auto-reboot (attempt ${NEXT_COUNT}/${MAX_CONSECUTIVE_REBOOTS})..."
+          sync
+          systemctl reboot
+          exit 0
+        else
+          log "CRIT" "[CIRCUIT_BREAKER] Tailscale down for ${ELAPSED}s, but reached maximum consecutive watchdog reboots (${MAX_CONSECUTIVE_REBOOTS}). Halting further reboots to avoid boot loop."
+        fi
+      fi
+    fi
+  fi
+
+  sleep "${CHECK_INTERVAL}"
+done

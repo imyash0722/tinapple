@@ -67,6 +67,12 @@ if [[ -f "${REPO_DIR}/scripts/tinapple-wifi-watchdog" && -f "${REPO_DIR}/scripts
   ssh "${TARGET_USER}@${TARGET_HOST}" "sudo install -Dm755 /tmp/tinapple-wifi-watchdog /usr/local/bin/tinapple-wifi-watchdog && sudo install -Dm644 /tmp/tinapple-wifi-watchdog.service /etc/systemd/system/tinapple-wifi-watchdog.service && rm -f /tmp/tinapple-wifi-watchdog /tmp/tinapple-wifi-watchdog.service && sudo systemctl daemon-reload && sudo systemctl enable --now tinapple-wifi-watchdog.service >/dev/null 2>&1 || true"
 fi
 
+if [[ -f "${REPO_DIR}/scripts/tinapple-tailscale-watchdog" && -f "${REPO_DIR}/scripts/tinapple-tailscale-watchdog.service" ]]; then
+  scp -q "${REPO_DIR}/scripts/tinapple-tailscale-watchdog" "${TARGET_USER}@${TARGET_HOST}:/tmp/tinapple-tailscale-watchdog"
+  scp -q "${REPO_DIR}/scripts/tinapple-tailscale-watchdog.service" "${TARGET_USER}@${TARGET_HOST}:/tmp/tinapple-tailscale-watchdog.service"
+  ssh "${TARGET_USER}@${TARGET_HOST}" "sudo install -Dm755 /tmp/tinapple-tailscale-watchdog /usr/local/bin/tinapple-tailscale-watchdog && sudo install -Dm644 /tmp/tinapple-tailscale-watchdog.service /etc/systemd/system/tinapple-tailscale-watchdog.service && rm -f /tmp/tinapple-tailscale-watchdog /tmp/tinapple-tailscale-watchdog.service && sudo systemctl daemon-reload && sudo systemctl enable --now tinapple-tailscale-watchdog.service >/dev/null 2>&1 || true"
+fi
+
 if [[ -f "${REPO_DIR}/scripts/tinapple-configure-seerr" ]]; then
   scp -q "${REPO_DIR}/scripts/tinapple-configure-seerr" "${TARGET_USER}@${TARGET_HOST}:/tmp/tinapple-configure-seerr"
   ssh "${TARGET_USER}@${TARGET_HOST}" "sudo install -Dm755 /tmp/tinapple-configure-seerr /usr/local/bin/tinapple-configure-seerr && rm -f /tmp/tinapple-configure-seerr"

@@ -1,0 +1,15 @@
+[Unit]
+Description=tinapple Resilient Tailscale Connection Watchdog & Auto-Restart
+After=network.target tailscaled.service
+Wants=tailscaled.service
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/tinapple-tailscale-watchdog
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
