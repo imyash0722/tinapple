@@ -427,7 +427,121 @@ if jf_token:
     if 'K-Drama' not in existing_folders and 'KDrama' not in existing_folders:
         u = 'http://127.0.0.1:8096/Library/VirtualFolders?' + urllib.parse.urlencode({'name': 'K-Drama', 'collectionType': 'tvshows', 'paths': '/srv/media/kdrama'})
         api_request(u, method='POST', headers=jf_headers)
-    print("[✓] Jellyfin libraries verified (Movies, Shows, Anime, K-Drama)")
+
+    # Ensure TheTVDB plugin is installed for rich TV metadata
+    try:
+        plugins_dir = '/var/lib/jellyfin/plugins'
+        has_tvdb = any('TheTVDB' in p for p in os.listdir(plugins_dir)) if os.path.exists(plugins_dir) else False
+        if not has_tvdb:
+            api_request('http://127.0.0.1:8096/Packages/Installed/TheTVDB?version=24.0.0.0', method='POST', headers=jf_headers)
+    except Exception as e:
+        print(f"[!] TVDB plugin setup notice: {e}")
+
+    # Ensure Internet Metadata Providers are enabled and fetchers configured
+    base_dir = '/var/lib/jellyfin/root/default'
+    tv_type_options = '''
+    <TypeOptions>
+      <Type>Series</Type>
+      <MetadataFetchers>
+        <string>TheTVDB</string>
+        <string>TheMovieDb</string>
+        <string>The Open Movie Database</string>
+      </MetadataFetchers>
+      <MetadataFetcherOrder>
+        <string>TheTVDB</string>
+        <string>TheMovieDb</string>
+        <string>The Open Movie Database</string>
+      </MetadataFetcherOrder>
+      <ImageFetchers>
+        <string>TheTVDB</string>
+        <string>TheMovieDb</string>
+        <string>The Open Movie Database</string>
+      </ImageFetchers>
+      <ImageFetcherOrder>
+        <string>TheTVDB</string>
+        <string>TheMovieDb</string>
+        <string>The Open Movie Database</string>
+      </ImageFetcherOrder>
+      <ImageOptions />
+      <SimilarItemProviders>
+        <string>Local Genre/Tag</string>
+      </SimilarItemProviders>
+      <SimilarItemProviderOrder />
+    </TypeOptions>
+    <TypeOptions>
+      <Type>Season</Type>
+      <MetadataFetchers>
+        <string>TheTVDB</string>
+        <string>TheMovieDb</string>
+      </MetadataFetchers>
+      <MetadataFetcherOrder>
+        <string>TheTVDB</string>
+        <string>TheMovieDb</string>
+      </MetadataFetcherOrder>
+      <ImageFetchers>
+        <string>TheTVDB</string>
+        <string>TheMovieDb</string>
+      </ImageFetchers>
+      <ImageFetcherOrder>
+        <string>TheTVDB</string>
+        <string>TheMovieDb</string>
+      </ImageFetcherOrder>
+      <ImageOptions />
+      <SimilarItemProviders />
+      <SimilarItemProviderOrder />
+    </TypeOptions>
+    <TypeOptions>
+      <Type>Episode</Type>
+      <MetadataFetchers>
+        <string>TheTVDB</string>
+        <string>TheMovieDb</string>
+        <string>The Open Movie Database</string>
+      </MetadataFetchers>
+      <MetadataFetcherOrder>
+        <string>TheTVDB</string>
+        <string>TheMovieDb</string>
+        <string>The Open Movie Database</string>
+      </MetadataFetcherOrder>
+      <ImageFetchers>
+        <string>TheTVDB</string>
+        <string>TheMovieDb</string>
+        <string>The Open Movie Database</string>
+        <string>Embedded Image Extractor</string>
+        <string>Screen Grabber</string>
+      </ImageFetchers>
+      <ImageFetcherOrder>
+        <string>TheTVDB</string>
+        <string>TheMovieDb</string>
+        <string>The Open Movie Database</string>
+        <string>Embedded Image Extractor</string>
+        <string>Screen Grabber</string>
+      </ImageFetcherOrder>
+      <ImageOptions />
+      <SimilarItemProviders />
+      <SimilarItemProviderOrder />
+    </TypeOptions>
+'''
+    for lib in ['Shows', 'Anime', 'K-Drama', 'Movies']:
+        opt_file = os.path.join(base_dir, lib, 'options.xml')
+        if os.path.exists(opt_file):
+            try:
+                with open(opt_file, 'r', encoding='utf-8') as f:
+                    c = f.read()
+                c = c.replace('<EnableInternetProviders>false</EnableInternetProviders>', '<EnableInternetProviders>true</EnableInternetProviders>')
+                c = c.replace('<EnableRealtimeMonitor>false</EnableRealtimeMonitor>', '<EnableRealtimeMonitor>true</EnableRealtimeMonitor>')
+                if lib in ['Shows', 'Anime', 'K-Drama']:
+                    if '<TypeOptions />' in c:
+                        c = c.replace('<TypeOptions />', f'<TypeOptions>{tv_type_options}</TypeOptions>')
+                    elif '<TypeOptions>' in c and 'TheTVDB' not in c:
+                        c = c.replace('<MetadataFetchers>\\n        <string>TheMovieDb</string>', '<MetadataFetchers>\\n        <string>TheTVDB</string>\\n        <string>TheMovieDb</string>')
+                        c = c.replace('<MetadataFetcherOrder>\\n        <string>TheMovieDb</string>', '<MetadataFetcherOrder>\\n        <string>TheTVDB</string>\\n        <string>TheMovieDb</string>')
+                        c = c.replace('<ImageFetchers>\\n        <string>TheMovieDb</string>', '<ImageFetchers>\\n        <string>TheTVDB</string>\\n        <string>TheMovieDb</string>')
+                        c = c.replace('<ImageFetcherOrder>\\n        <string>TheMovieDb</string>', '<ImageFetcherOrder>\\n        <string>TheTVDB</string>\\n        <string>TheMovieDb</string>')
+                with open(opt_file, 'w', encoding='utf-8') as f:
+                    f.write(c)
+            except Exception:
+                pass
+    print("[✓] Jellyfin libraries verified (Movies, Shows, Anime, K-Drama) with Internet Providers enabled")
 
 # 11. Jellyseerr Configuration
 seerr_cfg = '/var/lib/seerr/settings.json'
