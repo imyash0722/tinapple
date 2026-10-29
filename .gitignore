@@ -53,6 +53,10 @@ host_key.pub
 !tinapple-installer/iso/airootfs/usr/local/bin/
 tinapple-installer/iso/airootfs/usr/local/bin/tinapple-install
 tinapple-android/build/
+tinapple-android/assets/
+tinapple-android/app/src/main/assets/
+tinapple-android/keystore/
+tinapple-dash/web/dist/releases/
 tinapple-dash/web/dist/tsumiru/
 tinapple-repo/packages/tinapple-dash/web/dist/tsumiru/
 

@@ -2,6 +2,7 @@ export type WidgetCategory = 'telemetry' | 'network' | 'media' | 'storage' | 'sy
 
 export type WidgetType =
   | 'homarr_apps_board'
+  | 'single_appliance'
   | 'silicon_telemetry'
   | 'digital_clock'
   | 'transfers_rate'

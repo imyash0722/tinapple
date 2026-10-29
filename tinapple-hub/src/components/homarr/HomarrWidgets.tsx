@@ -2,6 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Search } from 'lucide-react';
 import { HomarrAppTile } from './HomarrAppTile';
 import { AppBrandIcon } from '../common/AppBrandIcons';
+import { SquishSwitch } from '../reactbits/SquishSwitch';
+import { api } from '../../services/api';
 import {
   Cpu,
   HardDrive,
@@ -279,11 +281,13 @@ export const HomarrDownloadsWidget: React.FC = () => {
   );
 };
 
-// 4. Homarr Tailscale Mesh & Privacy Guard Widget
+// 4. Homarr Tailscale Mesh & Privacy Guard Widget (Tor & Proton VPN Exit Controls)
 export const HomarrNetworkGuardWidget: React.FC<{ onOpenTailscale?: () => void }> = ({ onOpenTailscale }) => {
   const [torActive, setTorActive] = useState(false);
   const [isTogglingTor, setIsTogglingTor] = useState(false);
-  const [meshStatus, setMeshStatus] = useState<string>('Online');
+  const [protonActive, setProtonActive] = useState(false);
+  const [protonDetails, setProtonDetails] = useState<string>('');
+  const [isTogglingProton, setIsTogglingProton] = useState(false);
 
   useEffect(() => {
     fetch('/api/system/tor-exit')
@@ -292,26 +296,46 @@ export const HomarrNetworkGuardWidget: React.FC<{ onOpenTailscale?: () => void }
         if (data && data.active !== undefined) setTorActive(data.active);
       })
       .catch(() => {});
+
+    api.getProtonStatus().then((res) => {
+      setProtonActive(res.active);
+      if (res.details) setProtonDetails(res.details);
+    }).catch(() => {});
   }, []);
 
-  const handleToggleTor = async () => {
+  const handleToggleTor = async (nextState: boolean) => {
     setIsTogglingTor(true);
     try {
       const res = await fetch('/api/system/tor-exit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ active: !torActive }),
+        body: JSON.stringify({ active: nextState }),
       });
-      if (res.ok) setTorActive(!torActive);
-    } catch {}
-    setIsTogglingTor(false);
+      if (res.ok) setTorActive(nextState);
+    } catch {} finally {
+      setIsTogglingTor(false);
+    }
+  };
+
+  const handleToggleProton = async (nextState: boolean) => {
+    setIsTogglingProton(true);
+    try {
+      const res = await api.toggleProtonStatus(nextState);
+      setProtonActive(res.active);
+      // Re-fetch details
+      const updated = await api.getProtonStatus();
+      setProtonActive(updated.active);
+      if (updated.details) setProtonDetails(updated.details);
+    } catch {} finally {
+      setIsTogglingProton(false);
+    }
   };
 
   const currentHost = window.location.hostname;
 
   return (
     <div className="h-full rounded-2xl bg-slate-900/60 border border-white/[0.08] backdrop-blur-xl p-5 flex flex-col justify-between shadow-lg shadow-black/20 font-mono">
-      <div className="flex items-center justify-between text-xs mb-3">
+      <div className="flex items-center justify-between text-xs mb-2.5">
         <span className="flex items-center gap-2 font-bold uppercase tracking-wider text-sky-400">
           <Shield className="w-4 h-4" />
           <span>Tailscale Mesh & Privacy</span>
@@ -326,8 +350,9 @@ export const HomarrNetworkGuardWidget: React.FC<{ onOpenTailscale?: () => void }
         )}
       </div>
 
-      <div className="space-y-2.5 text-xs">
-        <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-800/50 border border-slate-700/60">
+      <div className="space-y-2 text-xs">
+        {/* MagicDNS Mesh Link */}
+        <div className="flex items-center justify-between p-2 rounded-xl bg-slate-800/50 border border-slate-700/60">
           <div className="flex items-center gap-2 min-w-0">
             <Wifi className="w-3.5 h-3.5 text-sky-400 shrink-0" />
             <div className="min-w-0">
@@ -340,29 +365,46 @@ export const HomarrNetworkGuardWidget: React.FC<{ onOpenTailscale?: () => void }
           </span>
         </div>
 
-        <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-800/50 border border-slate-700/60">
-          <div className="flex items-center gap-2">
-            <span className="text-sm">🧅</span>
-            <div>
-              <span className="text-white font-bold block">Tor Privacy Exit</span>
-              <span className="text-[10px] text-zinc-400 block">SOCKS5 127.0.0.1:9050</span>
+        {/* Proton VPN Privacy Exit Node */}
+        <div className="flex items-center justify-between p-2 rounded-xl bg-slate-800/50 border border-slate-700/60">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="text-sm shrink-0">🛡️</span>
+            <div className="min-w-0">
+              <span className="text-white font-bold block truncate">Proton Privacy Exit</span>
+              <span className="text-[10px] text-zinc-400 block truncate">
+                {protonActive ? (protonDetails || 'Swiss WireGuard Active') : 'Swiss WireGuard & OpenVPN'}
+              </span>
             </div>
           </div>
-          <button
-            onClick={handleToggleTor}
+          <SquishSwitch
+            checked={protonActive}
+            onChange={handleToggleProton}
+            disabled={isTogglingProton}
+            variant="emerald"
+            size="sm"
+          />
+        </div>
+
+        {/* Tor Privacy Exit Node */}
+        <div className="flex items-center justify-between p-2 rounded-xl bg-slate-800/50 border border-slate-700/60">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="text-sm shrink-0">🧅</span>
+            <div className="min-w-0">
+              <span className="text-white font-bold block truncate">Tor Privacy Exit</span>
+              <span className="text-[10px] text-zinc-400 block truncate">SOCKS5 127.0.0.1:9050</span>
+            </div>
+          </div>
+          <SquishSwitch
+            checked={torActive}
+            onChange={handleToggleTor}
             disabled={isTogglingTor}
-            className={`px-2.5 py-1 rounded-lg text-[10px] font-bold border transition-all ${
-              torActive
-                ? 'bg-purple-500/20 text-purple-300 border-purple-500/40'
-                : 'bg-zinc-800 text-zinc-400 border-zinc-700'
-            }`}
-          >
-            {torActive ? 'Active (ON)' : 'Disabled'}
-          </button>
+            variant="purple"
+            size="sm"
+          />
         </div>
       </div>
 
-      <div className="pt-2.5 border-t border-white/[0.06] flex items-center justify-between text-[11px] text-zinc-400 mt-2">
+      <div className="pt-2 border-t border-white/[0.06] flex items-center justify-between text-[11px] text-zinc-400 mt-2">
         <span>DNS Shield:</span>
         <a
           href={`http://${currentHost}:3000`}
@@ -373,6 +415,157 @@ export const HomarrNetworkGuardWidget: React.FC<{ onOpenTailscale?: () => void }
           <span>AdGuard Home</span>
           <ExternalLink className="w-3 h-3" />
         </a>
+      </div>
+    </div>
+  );
+};
+
+// 4b. Dedicated Single Appliance Custom Widget
+export interface HomarrSingleApplianceWidgetProps {
+  appId: string;
+  customTitle?: string;
+  customIcon?: string;
+  customColor?: string;
+}
+
+export const HomarrSingleApplianceWidget: React.FC<HomarrSingleApplianceWidgetProps> = ({
+  appId,
+  customTitle,
+  customIcon,
+  customColor,
+}) => {
+  const [app, setApp] = useState<any>(null);
+  const [actionBusy, setActionBusy] = useState<string | null>(null);
+
+  const fetchApp = async () => {
+    try {
+      const res = await fetch(`/api/v1/apps/${appId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setApp(data);
+      }
+    } catch {}
+  };
+
+  useEffect(() => {
+    fetchApp();
+    const interval = setInterval(fetchApp, 4000);
+    return () => clearInterval(interval);
+  }, [appId]);
+
+  const handleAction = async (action: 'start' | 'stop' | 'restart') => {
+    setActionBusy(action);
+    try {
+      await fetch(`/api/v1/apps/${appId}/${action}`, { method: 'POST' });
+      await fetchApp();
+    } finally {
+      setActionBusy(null);
+    }
+  };
+
+  const isRunning = app?.status === 'running' || app?.running;
+  const isInstalled = app?.installed;
+  const port = app?.port || 0;
+  const currentHost = window.location.hostname;
+  const webUrl = port > 0 ? `http://${currentHost}:${port}` : null;
+  const accentColor = customColor || app?.accentColor || '#38bdf8';
+
+  return (
+    <div className="h-full rounded-2xl bg-slate-900/70 border border-white/[0.08] backdrop-blur-xl p-5 flex flex-col justify-between shadow-xl shadow-black/25 font-mono select-none relative overflow-hidden group">
+      {/* Ambient background glow */}
+      <div
+        className="absolute -top-12 -right-12 w-28 h-28 rounded-full blur-2xl opacity-20 pointer-events-none transition-opacity group-hover:opacity-35"
+        style={{ backgroundColor: accentColor }}
+      />
+
+      {/* Top Header */}
+      <div className="flex items-center justify-between text-xs mb-2">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <AppBrandIcon id={customIcon || app?.icon || appId} size={30} />
+          <div className="min-w-0">
+            <h4 className="text-sm font-black text-white truncate">
+              {customTitle || app?.name || appId}
+            </h4>
+            <p className="text-[10px] text-tinapple-muted truncate">
+              {app?.tagline || `Systemd service ${appId}.service`}
+            </p>
+          </div>
+        </div>
+        <span
+          className={`px-2 py-0.5 rounded-full text-[10px] font-bold border flex items-center gap-1.5 shrink-0 ${
+            isRunning
+              ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
+              : isInstalled
+              ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
+              : 'bg-slate-800 text-slate-400 border-slate-700'
+          }`}
+        >
+          <span
+            className={`w-1.5 h-1.5 rounded-full ${
+              isRunning ? 'bg-emerald-400 animate-pulse' : isInstalled ? 'bg-amber-400' : 'bg-slate-500'
+            }`}
+          />
+          {isRunning ? 'RUNNING' : isInstalled ? 'STOPPED' : 'UNINSTALLED'}
+        </span>
+      </div>
+
+      {/* Metrics & Port badge */}
+      <div className="grid grid-cols-2 gap-2 my-2.5">
+        <div className="p-2.5 rounded-xl bg-slate-950/60 border border-white/5 flex flex-col justify-between">
+          <span className="text-[10px] text-zinc-400">Assigned Port</span>
+          <span className="text-xs font-bold text-white mt-1">
+            {port > 0 ? `:${port}` : 'None'}
+          </span>
+        </div>
+        <div className="p-2.5 rounded-xl bg-slate-950/60 border border-white/5 flex flex-col justify-between">
+          <span className="text-[10px] text-zinc-400">Active State</span>
+          <span className="text-xs font-bold text-zinc-200 mt-1 capitalize truncate">
+            {app?.activeState || (isRunning ? 'Active' : 'Inactive')}
+          </span>
+        </div>
+      </div>
+
+      {/* Footer Controls */}
+      <div className="pt-2.5 border-t border-white/[0.06] flex items-center justify-between gap-2">
+        <div className="flex items-center gap-1.5">
+          {isRunning ? (
+            <button
+              onClick={() => handleAction('stop')}
+              disabled={Boolean(actionBusy)}
+              className="px-2.5 py-1 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/30 text-[10px] font-bold transition-all disabled:opacity-50"
+            >
+              {actionBusy === 'stop' ? 'Stopping...' : 'Stop'}
+            </button>
+          ) : (
+            <button
+              onClick={() => handleAction('start')}
+              disabled={Boolean(actionBusy) || !isInstalled}
+              className="px-2.5 py-1 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold transition-all disabled:opacity-50"
+            >
+              {actionBusy === 'start' ? 'Starting...' : 'Start'}
+            </button>
+          )}
+          <button
+            onClick={() => handleAction('restart')}
+            disabled={Boolean(actionBusy) || !isInstalled}
+            className="p-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-zinc-300 hover:text-white border border-white/5 text-[10px] transition-all disabled:opacity-50"
+            title="Restart Service"
+          >
+            <RotateCw className={`w-3.5 h-3.5 ${actionBusy === 'restart' ? 'animate-spin' : ''}`} />
+          </button>
+        </div>
+
+        {webUrl && (
+          <a
+            href={webUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-tinapple-gold hover:bg-amber-400 text-slate-950 text-[10px] font-black transition-all shadow-md active:scale-95"
+          >
+            <span>Open UI</span>
+            <ExternalLink className="w-3 h-3" />
+          </a>
+        )}
       </div>
     </div>
   );

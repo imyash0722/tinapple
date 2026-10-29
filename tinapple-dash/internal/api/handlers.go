@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"regexp"
 	"runtime"
 	"strings"
@@ -172,9 +173,11 @@ func SetupRoutes(r *gin.Engine, cfg *config.Manifest, svcMgr *services.SystemdMa
 		v1.POST("/tailscale/up", h.UpTailscale)
 		v1.POST("/tailscale/down", h.DownTailscale)
 
-		// Tor Anonymity & Privacy Exit
+		// Tor & Proton Anonymity & Privacy Exit
 		v1.GET("/system/tor-exit", h.GetTorStatus)
 		v1.POST("/system/tor-exit", h.ToggleTorStatus)
+		v1.GET("/system/proton-exit", h.GetProtonStatus)
+		v1.POST("/system/proton-exit", h.ToggleProtonStatus)
 
 		// Wallpapers (Tinarchy style with video loops and custom upload)
 		v1.GET("/wallpapers", h.ListWallpapers)
@@ -195,9 +198,16 @@ func SetupRoutes(r *gin.Engine, cfg *config.Manifest, svcMgr *services.SystemdMa
 
 		// Tailscale Mesh RBAC & User Management (Tinarchy architecture)
 		v1.GET("/users", h.GetUsers)
+		v1.POST("/users/add", h.AddUser)
 		v1.POST("/users/role", h.UpdateUserRole)
 		v1.POST("/users/permissions", h.UpdateUserPermissions)
 		v1.POST("/users/guest-tor-exit", h.UpdateGuestTorExit)
+
+		// Persistent Dashboard Layout & Client Settings
+		v1.GET("/dashboard/layout", h.GetDashboardLayout)
+		v1.POST("/dashboard/layout", h.SaveDashboardLayout)
+		v1.GET("/user/settings", h.GetUserSettings)
+		v1.POST("/user/settings", h.SaveUserSettings)
 
 		// WebSocket
 		v1.GET("/ws", h.WebSocketHandler)
@@ -205,9 +215,16 @@ func SetupRoutes(r *gin.Engine, cfg *config.Manifest, svcMgr *services.SystemdMa
 
 	// Tailscale Mesh RBAC (Direct /api paths for cross-compatibility)
 	r.GET("/api/users", h.GetUsers)
+	r.POST("/api/users/add", h.AddUser)
 	r.POST("/api/users/role", h.UpdateUserRole)
 	r.POST("/api/users/permissions", h.UpdateUserPermissions)
 	r.POST("/api/users/guest-tor-exit", h.UpdateGuestTorExit)
+
+	// Dashboard Layout & Client Settings Direct /api endpoints
+	r.GET("/api/dashboard/layout", h.GetDashboardLayout)
+	r.POST("/api/dashboard/layout", h.SaveDashboardLayout)
+	r.GET("/api/user/settings", h.GetUserSettings)
+	r.POST("/api/user/settings", h.SaveUserSettings)
 
 	// Universal Client Pairing Endpoint (Tinarchy style)
 	r.GET("/pair.sh", h.ServePairScript)
@@ -224,6 +241,8 @@ func SetupRoutes(r *gin.Engine, cfg *config.Manifest, svcMgr *services.SystemdMa
 	r.GET("/api/beeper/status", h.BeeperStatus)
 	r.GET("/api/system/tor-exit", h.GetTorStatus)
 	r.POST("/api/system/tor-exit", h.ToggleTorStatus)
+	r.GET("/api/system/proton-exit", h.GetProtonStatus)
+	r.POST("/api/system/proton-exit", h.ToggleProtonStatus)
 
 	// Wallpaper APIs (compatible with v1 and legacy Tinarchy paths)
 	r.GET("/api/wallpapers", h.ListWallpapers)
@@ -897,6 +916,82 @@ func (h *Handler) GetTorStatus(c *gin.Context) {
 	})
 }
 
+// GetProtonStatus returns whether Proton VPN exit node is active
+func (h *Handler) GetProtonStatus(c *gin.Context) {
+	out, _ := exec.Command("protonvpn", "status").CombinedOutput()
+	outStr := string(out)
+	active := strings.Contains(outStr, "Status: Connected") || strings.Contains(outStr, "Connected to")
+	if !active {
+		active = exec.Command("systemctl", "is-active", "--quiet", "wg-quick@proton.service").Run() == nil
+	}
+
+	status := "stopped"
+	if active {
+		status = "running"
+	}
+
+	serverInfo := ""
+	for _, line := range strings.Split(outStr, "\n") {
+		trimmed := strings.TrimSpace(line)
+		if strings.HasPrefix(trimmed, "Server:") || strings.HasPrefix(trimmed, "IP:") || strings.HasPrefix(trimmed, "Country:") {
+			serverInfo += trimmed + " • "
+		}
+	}
+	serverInfo = strings.TrimSuffix(serverInfo, " • ")
+
+	c.JSON(http.StatusOK, gin.H{
+		"active":  active,
+		"status":  status,
+		"details": serverInfo,
+	})
+}
+
+// ToggleProtonStatus connects or disconnects Proton VPN
+func (h *Handler) ToggleProtonStatus(c *gin.Context) {
+	var req struct {
+		Active bool `json:"active"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	var output string
+	if req.Active {
+		_ = exec.Command("systemctl", "start", "proton.VPN.service").Run()
+		out, err := exec.Command("protonvpn", "connect", "-f").CombinedOutput()
+		output = string(out)
+		if err != nil && (strings.Contains(output, "signin") || strings.Contains(output, "No account")) {
+			// Try WireGuard fallback if configured
+			if _, statErr := os.Stat("/etc/wireguard/proton.conf"); statErr == nil {
+				_ = exec.Command("systemctl", "start", "wg-quick@proton.service").Run()
+			}
+		}
+	} else {
+		out, _ := exec.Command("protonvpn", "disconnect").CombinedOutput()
+		output = string(out)
+		_ = exec.Command("systemctl", "stop", "wg-quick@proton.service").Run()
+	}
+
+	out, _ := exec.Command("protonvpn", "status").CombinedOutput()
+	outStr := string(out)
+	active := strings.Contains(outStr, "Status: Connected") || strings.Contains(outStr, "Connected to")
+	if !active {
+		active = exec.Command("systemctl", "is-active", "--quiet", "wg-quick@proton.service").Run() == nil
+	}
+
+	status := "stopped"
+	if active {
+		status = "running"
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"active": active,
+		"status": status,
+		"output": output,
+	})
+}
+
 // ToggleTorStatus starts or stops tor.service
 func (h *Handler) ToggleTorStatus(c *gin.Context) {
 	var req struct {
@@ -923,6 +1018,49 @@ func (h *Handler) ToggleTorStatus(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"active": active,
 		"status": status,
+	})
+}
+
+// AddUser adds or grants role/permissions to a shared user
+type addUserReq struct {
+	LoginName       string   `json:"login_name" binding:"required"`
+	Role            string   `json:"role"`
+	AllowedServices []string `json:"allowed_services"`
+}
+
+func (h *Handler) AddUser(c *gin.Context) {
+	clientIP := h.getClientIP(c)
+	payload, _ := h.tailscaleMgr.GetUserManagementData(c.Request.Context(), h.rolesMgr, clientIP)
+	if payload != nil && !payload.CanManageRoles {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Forbidden: Only the Owner can add users or modify roles"})
+		return
+	}
+
+	var req addUserReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	ownerLogin := ""
+	if payload != nil {
+		for _, u := range payload.TailscaleUsers {
+			if u.IsOwner {
+				ownerLogin = u.LoginName
+				break
+			}
+		}
+	}
+
+	if err := h.rolesMgr.AddUser(req.LoginName, req.Role, req.AllowedServices, ownerLogin); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success":    true,
+		"login_name": req.LoginName,
+		"role":       req.Role,
 	})
 }
 
@@ -2117,6 +2255,107 @@ func (h *Handler) UpdateGuestTorExit(c *gin.Context) {
 		"success":                  true,
 		"hide_tor_exit_for_guests": res,
 	})
+}
+
+// GetDashboardLayout returns persistent canvas layout and widgets
+func (h *Handler) GetDashboardLayout(c *gin.Context) {
+	layoutPath := "/etc/tinapple/dashboard_layout.json"
+	data, err := os.ReadFile(layoutPath)
+	if err != nil {
+		data, err = os.ReadFile("/var/lib/tinapple/dashboard_layout.json")
+	}
+	if err != nil || len(data) == 0 {
+		c.JSON(http.StatusOK, gin.H{
+			"version":  2,
+			"widgets":  []interface{}{},
+			"viewport": gin.H{"panX": 0, "panY": 0, "zoom": 1.0},
+			"empty":    true,
+		})
+		return
+	}
+	var layout interface{}
+	if err := json.Unmarshal(data, &layout); err != nil {
+		c.JSON(http.StatusOK, gin.H{"version": 2, "widgets": []interface{}{}, "empty": true})
+		return
+	}
+	c.JSON(http.StatusOK, layout)
+}
+
+// SaveDashboardLayout persists canvas layout and widgets to disk
+func (h *Handler) SaveDashboardLayout(c *gin.Context) {
+	var body map[string]interface{}
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid json layout payload: " + err.Error()})
+		return
+	}
+
+	data, err := json.MarshalIndent(body, "", "  ")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to encode layout json: " + err.Error()})
+		return
+	}
+
+	layoutDir := "/etc/tinapple"
+	if err := os.MkdirAll(layoutDir, 0755); err != nil {
+		layoutDir = "/var/lib/tinapple"
+		_ = os.MkdirAll(layoutDir, 0755)
+	}
+
+	targetPath := filepath.Join(layoutDir, "dashboard_layout.json")
+	if err := os.WriteFile(targetPath, data, 0644); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to write layout file: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"status": "ok", "message": "dashboard layout saved successfully", "path": targetPath})
+}
+
+// GetUserSettings returns persistent client/user preferences (theme, Matugen tokens, server URL)
+func (h *Handler) GetUserSettings(c *gin.Context) {
+	settingsPath := "/etc/tinapple/user_settings.json"
+	data, err := os.ReadFile(settingsPath)
+	if err != nil {
+		data, err = os.ReadFile("/var/lib/tinapple/user_settings.json")
+	}
+	if err != nil || len(data) == 0 {
+		c.JSON(http.StatusOK, gin.H{"empty": true})
+		return
+	}
+	var settings interface{}
+	if err := json.Unmarshal(data, &settings); err != nil {
+		c.JSON(http.StatusOK, gin.H{"empty": true})
+		return
+	}
+	c.JSON(http.StatusOK, settings)
+}
+
+// SaveUserSettings persists client/user preferences to disk
+func (h *Handler) SaveUserSettings(c *gin.Context) {
+	var body map[string]interface{}
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid settings payload: " + err.Error()})
+		return
+	}
+
+	data, err := json.MarshalIndent(body, "", "  ")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to encode settings: " + err.Error()})
+		return
+	}
+
+	settingsDir := "/etc/tinapple"
+	if err := os.MkdirAll(settingsDir, 0755); err != nil {
+		settingsDir = "/var/lib/tinapple"
+		_ = os.MkdirAll(settingsDir, 0755)
+	}
+
+	targetPath := filepath.Join(settingsDir, "user_settings.json")
+	if err := os.WriteFile(targetPath, data, 0644); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to write settings file: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"status": "ok", "message": "user settings saved successfully", "path": targetPath})
 }
 
 

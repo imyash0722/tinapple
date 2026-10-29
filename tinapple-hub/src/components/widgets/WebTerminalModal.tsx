@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Terminal as XTerm } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
+import { getWsTerminalUrl } from '../../services/api';
 import {
   Terminal as TerminalIcon,
   Maximize2,
@@ -50,8 +51,7 @@ export const WebTerminalModal: React.FC<WebTerminalModalProps> = ({ isOpen, onCl
     setConnecting(true);
     setErrorMsg(null);
 
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}/api/v1/terminal/ws`;
+    const wsUrl = getWsTerminalUrl();
 
     try {
       const ws = new WebSocket(wsUrl);

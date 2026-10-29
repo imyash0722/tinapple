@@ -6,9 +6,12 @@ import android.view.KeyEvent
 import android.view.View
 import android.view.WindowManager
 import android.webkit.WebChromeClient
+import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import java.io.InputStream
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
@@ -66,6 +69,31 @@ class MainActivity : ComponentActivity() {
                         addJavascriptInterface(TinappleBridge(context), "TinappleBridge")
 
                         webViewClient = object : WebViewClient() {
+                            override fun shouldInterceptRequest(
+                                view: WebView?,
+                                request: WebResourceRequest?
+                            ): WebResourceResponse? {
+                                val path = request?.url?.path ?: return null
+                                if (path.startsWith("/assets/") || path.startsWith("/icons/") || path.startsWith("/wallpapers/") || path == "/" || path == "/index.html") {
+                                    val assetPath = "web" + if (path == "/") "/index.html" else path
+                                    try {
+                                        val stream: InputStream = context.assets.open(assetPath)
+                                        val mimeType = when {
+                                            path.endsWith(".html") || path == "/" -> "text/html"
+                                            path.endsWith(".js") -> "application/javascript"
+                                            path.endsWith(".css") -> "text/css"
+                                            path.endsWith(".svg") -> "image/svg+xml"
+                                            path.endsWith(".png") -> "image/png"
+                                            path.endsWith(".woff2") -> "font/woff2"
+                                            path.endsWith(".json") -> "application/json"
+                                            else -> "text/plain"
+                                        }
+                                        return WebResourceResponse(mimeType, "UTF-8", stream)
+                                    } catch (_: Exception) {}
+                                }
+                                return super.shouldInterceptRequest(view, request)
+                            }
+
                             override fun onReceivedError(
                                 view: WebView?,
                                 errorCode: Int,

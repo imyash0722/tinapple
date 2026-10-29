@@ -1,6 +1,51 @@
 import { SystemInfo, TelemetrySnapshot, ServiceInfo, HardwareInfo, SessionMode, AppInfo, AppActionResult, InstallProgressState, InstallLogMessage, TailscaleStatus, AppliancePackStatus, WallpaperItem, OpenPortInfo, AppConfigDetails, MaintenanceResult, FailedUnitsResult, UserManagementData } from '../types/api';
 
-const API_BASE = '/api/v1';
+export function getApiBaseUrl(): string {
+  if (typeof window !== 'undefined') {
+    const customUrl = localStorage.getItem('tinapple_server_url');
+    if (customUrl) {
+      return `${customUrl.replace(/\/+$/, '')}/api/v1`;
+    }
+    const isStandaloneClient =
+      window.location.protocol === 'file:' ||
+      window.location.protocol === 'tauri:' ||
+      window.location.hostname === 'tauri.localhost' ||
+      (window.location.hostname === 'localhost' && window.location.port === '1420') ||
+      window.location.hostname === '';
+    if (isStandaloneClient) {
+      return 'http://100.108.215.120:8088/api/v1';
+    }
+  }
+  return '/api/v1';
+}
+
+export function getWsTerminalUrl(): string {
+  if (typeof window !== 'undefined') {
+    const customUrl = localStorage.getItem('tinapple_server_url');
+    if (customUrl) {
+      const isHttps = customUrl.startsWith('https:');
+      const host = customUrl.replace(/^https?:\/\//, '').replace(/\/+$/, '');
+      return `${isHttps ? 'wss:' : 'ws:'}//${host}/api/v1/terminal/ws`;
+    }
+    const isStandaloneClient =
+      window.location.protocol === 'file:' ||
+      window.location.protocol === 'tauri:' ||
+      window.location.hostname === 'tauri.localhost' ||
+      (window.location.hostname === 'localhost' && window.location.port === '1420') ||
+      window.location.hostname === '';
+    if (isStandaloneClient) {
+      return 'ws://100.108.215.120:8088/api/v1/terminal/ws';
+    }
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    return `${protocol}//${window.location.host}/api/v1/terminal/ws`;
+  }
+  return 'ws://100.108.215.120:8088/api/v1/terminal/ws';
+}
+
+const API_BASE = {
+  toString: () => getApiBaseUrl(),
+  valueOf: () => getApiBaseUrl(),
+} as unknown as string;
 
 export const MOCK_SYSTEM_INFO: SystemInfo = {
   installed: true,
@@ -1002,6 +1047,116 @@ class ApiService {
       return res.ok;
     } catch {
       return false;
+    }
+  }
+
+  async getProtonStatus(): Promise<{ active: boolean; status: string; details?: string }> {
+    try {
+      const res = await fetch(`${API_BASE}/system/proton-exit`);
+      if (!res.ok) return { active: false, status: 'stopped' };
+      return await res.json();
+    } catch {
+      return { active: false, status: 'stopped' };
+    }
+  }
+
+  async toggleProtonStatus(active: boolean): Promise<{ active: boolean; status: string; output?: string }> {
+    try {
+      const res = await fetch(`${API_BASE}/system/proton-exit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ active }),
+      });
+      if (!res.ok) return { active: false, status: 'stopped' };
+      return await res.json();
+    } catch {
+      return { active: false, status: 'stopped' };
+    }
+  }
+
+  async addUser(loginName: string, role: string, allowedServices?: string[]): Promise<boolean> {
+    try {
+      const res = await fetch(`${API_BASE}/users/add`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          login_name: loginName,
+          role,
+          allowed_services: allowedServices || [],
+        }),
+      });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  async getDashboardLayout(): Promise<any> {
+    try {
+      const res = await fetch(`${API_BASE}/dashboard/layout`);
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch (e) {
+      console.warn('Failed to load dashboard layout from server:', e);
+    }
+    return null;
+  }
+
+  async saveDashboardLayout(layout: any): Promise<boolean> {
+    try {
+      const res = await fetch(`${API_BASE}/dashboard/layout`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(layout),
+      });
+      return res.ok;
+    } catch (e) {
+      console.warn('Failed to save dashboard layout to server:', e);
+      return false;
+    }
+  }
+
+  async getUserSettings(): Promise<any> {
+    try {
+      const res = await fetch(`${API_BASE}/user/settings`);
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch (e) {
+      console.warn('Failed to load user settings from server:', e);
+    }
+    return null;
+  }
+
+  async saveUserSettings(settings: any): Promise<boolean> {
+    try {
+      const res = await fetch(`${API_BASE}/user/settings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(settings),
+      });
+      return res.ok;
+    } catch (e) {
+      console.warn('Failed to save user settings to server:', e);
+      return false;
+    }
+  }
+
+  getServerUrl(): string {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('tinapple_server_url') || 'http://100.108.215.120:8088';
+    }
+    return 'http://100.108.215.120:8088';
+  }
+
+  setServerUrl(url: string): void {
+    if (typeof window !== 'undefined') {
+      if (!url || url.trim() === '') {
+        localStorage.removeItem('tinapple_server_url');
+      } else {
+        localStorage.setItem('tinapple_server_url', url.trim());
+      }
     }
   }
 

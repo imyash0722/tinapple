@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Edit2, Trash2, ExternalLink, Globe, BookOpen } from 'lucide-react';
+import { Plus, Edit2, Trash2, ExternalLink, Globe, BookOpen, Download, Laptop, Smartphone, Monitor } from 'lucide-react';
 import { AppBrandIcon } from '../common/AppBrandIcons';
 import { ServiceStatus } from '../../types/api';
 import { CustomBookmark } from '../../services/dashboardLayout';
@@ -162,6 +162,95 @@ export const QuickConnectCard: React.FC<QuickConnectCardProps> = ({
             </div>
           </div>
         ))}
+      </div>
+
+      {/* Multi-Platform Client Apps & Offline Cache Stack */}
+      <div className="tinapple-glass-card rounded-xl bg-slate-900/40 border border-slate-800/60 p-4 sm:p-5 backdrop-blur-md">
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-3.5">
+          <div>
+            <h4 className="text-xs font-mono uppercase tracking-wider text-tinapple-gold flex items-center gap-2">
+              <Download className="w-3.5 h-3.5" />
+              <span>Native Client Applications (Zero-Latency Offline Cache Stack)</span>
+            </h4>
+            <p className="text-[11px] text-slate-400 mt-0.5">
+              Instant launch with embedded React UI bundle — zero delay over slow Wi-Fi or cellular networks.
+            </p>
+          </div>
+          <a
+            href="/download/releases/SHA256SUMS"
+            target="_blank"
+            rel="noreferrer"
+            className="text-[10px] font-mono text-slate-500 hover:text-slate-300 underline"
+          >
+            SHA-256 Checksums
+          </a>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <a
+            href="/download/desktop"
+            className="flex items-center gap-3 p-3 rounded-xl bg-slate-800/50 hover:bg-slate-800 border border-slate-700/60 hover:border-tinapple-gold/50 transition-all group"
+          >
+            <div className="w-9 h-9 rounded-lg bg-tinapple-gold/15 text-tinapple-gold flex items-center justify-center shrink-0">
+              <Laptop className="w-4 h-4" />
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-bold text-white group-hover:text-tinapple-gold transition-colors">Linux Desktop</span>
+                <span className="text-[9px] font-mono px-1.5 py-0.5 bg-tinapple-gold/10 text-tinapple-gold rounded">AppImage</span>
+              </div>
+              <p className="text-[10px] text-slate-400 font-mono truncate">x86_64 Standalone</p>
+            </div>
+          </a>
+
+          <a
+            href="/download/windows"
+            className="flex items-center gap-3 p-3 rounded-xl bg-slate-800/50 hover:bg-slate-800 border border-slate-700/60 hover:border-sky-500/50 transition-all group"
+          >
+            <div className="w-9 h-9 rounded-lg bg-sky-500/15 text-sky-400 flex items-center justify-center shrink-0">
+              <Monitor className="w-4 h-4" />
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-bold text-white group-hover:text-sky-300 transition-colors">Windows Client</span>
+                <span className="text-[9px] font-mono px-1.5 py-0.5 bg-sky-500/10 text-sky-400 rounded">EXE</span>
+              </div>
+              <p className="text-[10px] text-slate-400 font-mono truncate">Windows 10/11 x64</p>
+            </div>
+          </a>
+
+          <a
+            href="/download/macos"
+            className="flex items-center gap-3 p-3 rounded-xl bg-slate-800/50 hover:bg-slate-800 border border-slate-700/60 hover:border-purple-500/50 transition-all group"
+          >
+            <div className="w-9 h-9 rounded-lg bg-purple-500/15 text-purple-400 flex items-center justify-center shrink-0">
+              <Laptop className="w-4 h-4" />
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-bold text-white group-hover:text-purple-300 transition-colors">macOS Universal</span>
+                <span className="text-[9px] font-mono px-1.5 py-0.5 bg-purple-500/10 text-purple-400 rounded">DMG</span>
+              </div>
+              <p className="text-[10px] text-slate-400 font-mono truncate">Apple Silicon & Intel</p>
+            </div>
+          </a>
+
+          <a
+            href="/download/apk"
+            className="flex items-center gap-3 p-3 rounded-xl bg-slate-800/50 hover:bg-slate-800 border border-slate-700/60 hover:border-emerald-500/50 transition-all group"
+          >
+            <div className="w-9 h-9 rounded-lg bg-emerald-500/15 text-emerald-400 flex items-center justify-center shrink-0">
+              <Smartphone className="w-4 h-4" />
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-bold text-white group-hover:text-emerald-300 transition-colors">Android Companion</span>
+                <span className="text-[9px] font-mono px-1.5 py-0.5 bg-emerald-500/10 text-emerald-400 rounded">APK</span>
+              </div>
+              <p className="text-[10px] text-slate-400 font-mono truncate">Kotlin + Compose Canvas</p>
+            </div>
+          </a>
+        </div>
       </div>
 
       {/* Direct Service Jump Grid */}

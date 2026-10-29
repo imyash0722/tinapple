@@ -1,0 +1,98 @@
+name: "Tinapple Client Releases (Desktop & Mobile)"
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-tauri:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: 'macos-latest'
+            args: '--target universal-apple-darwin'
+          - platform: 'ubuntu-22.04'
+            args: ''
+          - platform: 'windows-latest'
+            args: ''
+
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Node.js setup
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: 'tinapple-hub/package-lock.json'
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+
+      - name: Install Linux dependencies
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libssl-dev build-essential
+
+      - name: Install frontend dependencies & compile bundle
+        working-directory: tinapple-hub
+        run: |
+          npm ci
+          npm run build
+
+      - name: Build Tauri Desktop Apps
+        uses: tauri-apps/action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectPath: './tinapple-hub'
+          tagName: ${{ github.ref_name }}
+          releaseName: 'Tinapple Client ${{ github.ref_name }}'
+          releaseBody: |
+            ## Tinapple Homelab Appliance Client ${{ github.ref_name }}
+            High-performance cross-platform desktop & mobile client for Tinapple Homelab OS.
+            - **Zero-Latency Asset Caching**: 100% locally cached React bundle for instant launch.
+            - **2D Draggable Homarr Canvas**: Infinite pan/zoom, custom widgets, single appliance widgets.
+            - **Tor & Proton Privacy Exits**: Real-time switchboard control.
+            - **Web Terminal**: Fullscreen PTY with quick server diagnostics.
+          releaseDraft: false
+          prerelease: false
+          args: ${{ matrix.args }}
+
+  build-android:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Build and Package Android Companion APK
+        run: |
+          ./scripts/build-desktop-releases.sh
+
+      - name: Upload Android Release Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: tinapple-android-client
+          path: out/releases/tinapple-android-client.apk

@@ -53,6 +53,7 @@ const LogsModal = lazy(() => import('./components/widgets/LogsModal').then((m) =
 const TailscaleModal = lazy(() => import('./components/widgets/TailscaleModal').then((m) => ({ default: m.TailscaleModal })));
 const GuidesModal = lazy(() => import('./components/widgets/GuidesModal').then((m) => ({ default: m.GuidesModal })));
 const WebTerminalModal = lazy(() => import('./components/widgets/WebTerminalModal').then((m) => ({ default: m.WebTerminalModal })));
+const WebTerminalPage = lazy(() => import('./components/widgets/WebTerminalPage').then((m) => ({ default: m.WebTerminalPage })));
 const AppSettingsModal = lazy(() => import('./components/widgets/AppSettingsModal').then((m) => ({ default: m.AppSettingsModal })));
 const ServerToolsModal = lazy(() => import('./components/widgets/ServerToolsModal').then((m) => ({ default: m.ServerToolsModal })));
 const WelcomeInstaller = lazy(() => import('./components/installer/WelcomeInstaller').then((m) => ({ default: m.WelcomeInstaller })));
@@ -513,7 +514,7 @@ export const App: React.FC = () => {
         onOpenGuides={() => handleOpenGuide('jellyfin')}
         onOpenAppearance={() => setAppearanceOpen(true)}
         onOpenTailscale={() => setTailscaleOpen(true)}
-        onOpenTerminal={() => setWebTerminalOpen(true)}
+        onOpenTerminal={() => setSelectedTab('terminal')}
         onOpenTools={() => setServerToolsOpen(true)}
         onRunUpdate={handleRunSystemUpdate}
         isUpdatingSystem={isUpdatingSystem}
@@ -548,7 +549,7 @@ export const App: React.FC = () => {
             <div className="md:hidden flex items-center gap-2 min-w-0">
               <span className="text-lg shrink-0">🍎</span>
               <span className="font-mono font-bold text-sm text-white capitalize truncate max-w-[120px] sm:max-w-xs">
-                {activeTab === 'store' ? 'App Store' : activeTab === 'guides' ? 'Guides' : activeTab}
+                {activeTab === 'store' ? 'App Store' : activeTab === 'guides' ? 'Guides' : activeTab === 'terminal' ? 'Terminal' : activeTab}
               </span>
             </div>
 
@@ -558,7 +559,7 @@ export const App: React.FC = () => {
               <span className="text-xs text-zinc-600 shrink-0">/</span>
               <div className="flex items-center gap-2 min-w-0">
                 <span className="text-sm font-mono font-black text-white capitalize truncate">
-                  {activeTab === 'store' ? 'App Store & Packs' : activeTab === 'guides' ? 'Appliance Guides' : activeTab}
+                  {activeTab === 'store' ? 'App Store & Packs' : activeTab === 'guides' ? 'Appliance Guides' : activeTab === 'terminal' ? 'Appliance Web Terminal' : activeTab}
                 </span>
                 <span className="hidden 2xl:inline-flex text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/[0.05] border border-white/10 text-tinapple-gold font-bold whitespace-nowrap">
                   {systemInfo.sessionMode === 'headless' ? 'Headless Server' : 'Niri Desktop'}
@@ -608,7 +609,7 @@ export const App: React.FC = () => {
 
             {/* Interactive Web Terminal */}
             <button
-              onClick={() => setWebTerminalOpen(true)}
+              onClick={() => setSelectedTab('terminal')}
               className={actionButtonClass}
               title="Interactive Web Terminal (PTY)"
               aria-label="Interactive Web Terminal (PTY)"
@@ -692,7 +693,7 @@ export const App: React.FC = () => {
                   setAppSettingsOpen(true);
                 }}
                 onOpenTailscale={() => setTailscaleOpen(true)}
-                onOpenTerminal={() => setWebTerminalOpen(true)}
+                onOpenTerminal={() => setSelectedTab('terminal')}
                 onOpenTools={() => setServerToolsOpen(true)}
                 onOpenGuide={handleOpenGuide}
               />
@@ -802,6 +803,29 @@ export const App: React.FC = () => {
               className="space-y-6"
             >
               <SettingsManifest systemInfo={systemInfo} onUpdateSession={handleUpdateSession} />
+            </motion.div>
+          )}
+
+          {activeTab === 'terminal' && (
+            <motion.div
+              key="terminal"
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -14 }}
+              transition={{ duration: 0.25, ease: 'easeOut' }}
+            >
+              <Suspense
+                fallback={
+                  <div className="h-96 rounded-2xl bg-slate-950/90 border border-white/10 flex items-center justify-center font-mono text-xs text-zinc-400">
+                    Loading Fullpage Terminal...
+                  </div>
+                }
+              >
+                <WebTerminalPage
+                  onOpenServices={() => setSelectedTab('services')}
+                  onOpenStore={() => setSelectedTab('store')}
+                />
+              </Suspense>
             </motion.div>
           )}
         </AnimatePresence>

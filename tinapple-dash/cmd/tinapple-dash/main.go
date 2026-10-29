@@ -85,6 +85,28 @@ func main() {
 	r.GET("/download/apk", func(c *gin.Context) {
 		c.Redirect(http.StatusFound, "/tinapple-client.apk")
 	})
+	r.GET("/download/android", func(c *gin.Context) {
+		c.Redirect(http.StatusFound, "/tinapple-client.apk")
+	})
+
+	// Multi-platform releases endpoints
+	releasesDir := filepath.Join(distDir, "releases")
+	if _, err := os.Stat("out/releases"); err == nil {
+		releasesDir = "out/releases"
+	}
+	r.Static("/download/releases", releasesDir)
+	r.GET("/download/desktop", func(c *gin.Context) {
+		c.Redirect(http.StatusFound, "/download/releases/tinapple-desktop-linux-x86_64.AppImage")
+	})
+	r.GET("/download/windows", func(c *gin.Context) {
+		c.Redirect(http.StatusFound, "/download/releases/tinapple-desktop-windows-x64.exe")
+	})
+	r.GET("/download/macos", func(c *gin.Context) {
+		c.Redirect(http.StatusFound, "/download/releases/tinapple-desktop-macos-universal.dmg")
+	})
+	r.GET("/download/ios", func(c *gin.Context) {
+		c.Redirect(http.StatusFound, "/download/releases/tinapple-ios-client.ipa")
+	})
 
 	// Suwayomi-Tsumiru Manga Client APK route
 	tsumiruApkPath := filepath.Join(distDir, "tsumiru-client.apk")

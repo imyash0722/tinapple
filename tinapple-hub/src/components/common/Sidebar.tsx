@@ -107,6 +107,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
       icon: <Cpu className="w-5 h-5 shrink-0" />,
     },
     {
+      id: 'terminal',
+      label: 'Terminal',
+      desc: 'PTY Web Shell',
+      icon: <Terminal className="w-5 h-5 shrink-0 text-emerald-400" />,
+      badge: 'SSH',
+      badgeColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
+    },
+    {
       id: 'settings',
       label: 'Settings',
       desc: 'Node & Manifest',

@@ -20,9 +20,12 @@ import android.webkit.URLUtil;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceError;
 import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import java.io.InputStream;
+import java.io.IOException;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
@@ -36,9 +39,9 @@ public class MainActivity extends Activity {
     private static final String KEY_SERVER_URL = "server_url";
 
     // Presets
-    public static final String SERVER_TAILSCALE_HTTPS = "https://tinapple-server.tail3dee69.ts.net";
-    public static final String SERVER_LOCAL_WIFI = "https://192.168.1.17";
-    public static final String SERVER_TAILSCALE_IP = "https://100.67.207.60";
+    public static final String SERVER_TAILSCALE_HTTPS = "http://100.108.215.120:8088";
+    public static final String SERVER_LOCAL_HOTSPOT = "http://192.168.4.1:8088";
+    public static final String SERVER_LOCAL_WIFI = "http://pineapple-server:8088";
     public static final String SERVER_DIRECT_ETH = "http://192.168.99.1:8088";
 
     private WebView mWebView;
@@ -131,6 +134,29 @@ public class MainActivity extends Activity {
         });
 
         mWebView.setWebViewClient(new WebViewClient() {
+            @Override
+            public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+                Uri uri = request.getUrl();
+                String path = uri.getPath();
+                if (path != null && (path.startsWith("/assets/") || path.startsWith("/icons/") || path.startsWith("/wallpapers/") || path.equals("/") || path.equals("/index.html"))) {
+                    String assetPath = "web" + (path.equals("/") ? "/index.html" : path);
+                    try {
+                        InputStream is = getAssets().open(assetPath);
+                        String mimeType = "text/plain";
+                        if (path.endsWith(".html") || path.equals("/")) mimeType = "text/html";
+                        else if (path.endsWith(".js")) mimeType = "application/javascript";
+                        else if (path.endsWith(".css")) mimeType = "text/css";
+                        else if (path.endsWith(".svg")) mimeType = "image/svg+xml";
+                        else if (path.endsWith(".png")) mimeType = "image/png";
+                        else if (path.endsWith(".json")) mimeType = "application/json";
+                        else if (path.endsWith(".woff2")) mimeType = "font/woff2";
+                        return new WebResourceResponse(mimeType, "UTF-8", is);
+                    } catch (IOException ignored) {
+                    }
+                }
+                return super.shouldInterceptRequest(view, request);
+            }
+
             @Override
             public void onPageStarted(WebView view, String url, Bitmap favicon) {
                 super.onPageStarted(view, url, favicon);

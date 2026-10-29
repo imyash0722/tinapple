@@ -311,6 +311,23 @@ func (rm *RolesManager) UpdateUserPermissions(targetUser string, allowedServices
 	return sanitized, nil
 }
 
+func (rm *RolesManager) AddUser(loginName string, role string, services []string, hostOwnerLogin string) error {
+	cleanLogin := strings.TrimSpace(strings.ToLower(loginName))
+	if cleanLogin == "" {
+		return fmt.Errorf("login name cannot be empty")
+	}
+	if role != "admin" && role != "viewer" {
+		role = "viewer"
+	}
+	if err := rm.UpdateUserRole(cleanLogin, role, hostOwnerLogin); err != nil {
+		return err
+	}
+	if len(services) > 0 {
+		_, _ = rm.UpdateUserPermissions(cleanLogin, services, hostOwnerLogin)
+	}
+	return nil
+}
+
 func (rm *RolesManager) UpdateGuestTorExitPolicy(hide bool) bool {
 	cfg := rm.GetConfig()
 	cfg.HideTorExitForGuests = hide

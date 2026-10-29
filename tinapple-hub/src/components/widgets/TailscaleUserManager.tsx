@@ -14,6 +14,8 @@ import {
   Sliders,
   Globe,
   Lock,
+  Plus,
+  UserPlus,
 } from 'lucide-react';
 import { api } from '../../services/api';
 import { UserManagementData, TailscaleUserItem } from '../../types/api';
@@ -25,6 +27,9 @@ export const TailscaleUserManager: React.FC = () => {
   const [expandedUser, setExpandedUser] = useState<string | null>(null);
   const [selectedPerms, setSelectedPerms] = useState<Record<string, string[]>>({});
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+  const [showAddUser, setShowAddUser] = useState<boolean>(false);
+  const [newEmail, setNewEmail] = useState<string>('');
+  const [newRole, setNewRole] = useState<'admin' | 'viewer'>('admin');
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -60,6 +65,26 @@ export const TailscaleUserManager: React.FC = () => {
       setMessage({ text: 'Failed to update user role', type: 'error' });
     }
     setIsUpdating(false);
+  };
+
+  const handleAddUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newEmail.trim()) return;
+    setIsUpdating(true);
+    setMessage(null);
+    try {
+      const ok = await api.addUser(newEmail.trim(), newRole);
+      if (ok) {
+        setMessage({ text: `Granted ${newRole.toUpperCase()} access to ${newEmail.trim()}`, type: 'success' });
+        setNewEmail('');
+        setShowAddUser(false);
+        await fetchData();
+      } else {
+        setMessage({ text: 'Failed to add user or grant role', type: 'error' });
+      }
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
   const handleToggleService = (userLogin: string, serviceId: string) => {
@@ -150,6 +175,15 @@ export const TailscaleUserManager: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2 self-start sm:self-auto">
+            {isOwner && (
+              <button
+                onClick={() => setShowAddUser(!showAddUser)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-tinapple-gold hover:bg-amber-400 text-slate-950 font-bold font-mono text-xs shadow-md transition-all active:scale-95"
+              >
+                <UserPlus className="w-3.5 h-3.5" />
+                <span>{showAddUser ? 'Cancel' : 'Grant Control / Add User'}</span>
+              </button>
+            )}
             <button
               onClick={fetchData}
               disabled={isLoading || isUpdating}
@@ -160,6 +194,48 @@ export const TailscaleUserManager: React.FC = () => {
             </button>
           </div>
         </div>
+
+        {/* Add User / Grant Control Form */}
+        {showAddUser && (
+          <form
+            onSubmit={handleAddUser}
+            className="mt-4 pt-4 border-t border-white/[0.08] flex flex-col sm:flex-row items-center gap-2.5 bg-slate-950/70 p-3.5 rounded-xl border border-tinapple-gold/30 animate-in fade-in"
+          >
+            <div className="flex-1 w-full">
+              <label className="text-[10px] text-zinc-400 font-mono block mb-1">
+                Shared User Tailscale Email:
+              </label>
+              <input
+                type="email"
+                placeholder="imyashlinux@gmail.com"
+                value={newEmail}
+                onChange={(e) => setNewEmail(e.target.value)}
+                required
+                className="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-white font-mono text-xs focus:outline-none focus:border-tinapple-gold"
+              />
+            </div>
+            <div className="w-full sm:w-44">
+              <label className="text-[10px] text-zinc-400 font-mono block mb-1">
+                Assigned Role:
+              </label>
+              <select
+                value={newRole}
+                onChange={(e) => setNewRole(e.target.value as 'admin' | 'viewer')}
+                className="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-white font-mono text-xs focus:outline-none focus:border-tinapple-gold cursor-pointer"
+              >
+                <option value="admin">🛡️ Administrator</option>
+                <option value="viewer">👁️ Viewer / Guest</option>
+              </select>
+            </div>
+            <button
+              type="submit"
+              disabled={isUpdating || !newEmail.trim()}
+              className="w-full sm:w-auto mt-auto px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold font-mono text-xs shadow-md transition-all active:scale-95 disabled:opacity-50 shrink-0"
+            >
+              {isUpdating ? 'Saving...' : 'Authorize User'}
+            </button>
+          </form>
+        )}
 
         {/* Current User Session Status Pill */}
         {currentUser && (

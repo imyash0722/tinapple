@@ -17,7 +17,7 @@ Turnkey homelab operating system and appliance platform engineered for bare-meta
 9. [Storage Layout and Multi-User Setup](#9-storage-layout-and-multi-user-setup)
 10. [Media Automation & Seerr Stack Orchestrator](#10-media-automation--seerr-stack-orchestrator)
 11. [System Updates, Pacman Hooks, and Hot-Deployment](#11-system-updates-pacman-hooks-and-hot-deployment)
-12. [Native Client Applications (Plezy, Tsumiru, Android)](#12-native-client-applications-plezy-tsumiru-android)
+12. [Native Client Applications & Multi-Platform Releases (Tauri Desktop, Kotlin Android, iOS, Windows, Linux)](#12-native-client-applications--multi-platform-releases-tauri-desktop-kotlin-android-ios-windows-linux)
 13. [Service Management and Command Reference](#13-service-management-and-command-reference)
 14. [Troubleshooting and Diagnostic Runbook](#14-troubleshooting-and-diagnostic-runbook)
 15. [Repository Directory Structure](#15-repository-directory-structure)
@@ -517,56 +517,129 @@ Developer Workstation                                    tinapple Server
 
 ---
 
-## 12. Native Client Applications (Plezy, Tsumiru, Android)
+## 12. Native Client Applications & Multi-Platform Releases (Tauri Desktop, Kotlin Android, iOS, Windows, Linux)
 
-Tinapple provides dedicated client applications and guides across desktop, mobile, and web:
+Tinapple delivers a first-class, zero-latency client experience across desktop and mobile platforms with a **Full Offline Cache Stack**. Rather than downloading 1 MB+ of JavaScript, CSS, icons, and fonts over high-latency Tailscale mesh links or slow Wi-Fi connections, native clients embed the complete React 18 asset bundle locally, launching instantaneously (< 30 ms) while communicating with the appliance server exclusively via lightweight REST JSON and WebSocket protocols.
 
-### 1. Plezy Desktop Client (Jellyfin Streaming)
-- **Local Binary**: Pre-installed on client desktops at `~/.local/bin/plezy` (`v2.25.0`).
-- **Features**: Embeds `libmpv` for 100% DirectPlay of HEVC/H.265, AV1, 10-bit HDR tone mapping, and complex SSA/ASS stylized anime subtitles with zero server transcoding load.
-- **Connection**: Connect via permanent Tailscale MagicDNS:
-  ```
-  http://pineapple-server:8096
-  # or
-  http://pineapple-server.taildb42a2.ts.net:8096
-  ```
+### Client Architecture & Offline Cache Stack
 
-### 2. Suwayomi-Tsumiru Native Client (Manga Streaming)
-- **Web App**: Hosted locally at `/tsumiru/` with Keiyoushi manga source extensions and continuous chapter caching.
-- **Android APK**: Available for direct download from the Web Hub at `/download/tsumiru`.
-
-### 3. Android Companion Client (`tinapple-client.apk`)
-- **Location**: [`tinapple-android/out/tinapple-client.apk`](tinapple-android/out/tinapple-client.apk)
-- **Features**: Remote server telemetry, battery charge threshold control, and 1-tap launcher shortcuts.
-- **Compilation**:
-  ```bash
-  cd tinapple-android
-  ./build-apk.sh
-  ```
-
-### Installing via USB Debugging (ADB)
-
-1. Connect your Android device via USB and enable **USB Debugging** in Developer Options.
-2. Verify ADB recognizes the device:
-   ```bash
-   adb devices
-   ```
-3. Install the application:
-   ```bash
-   adb install -r out/tinapple-client.apk
-   ```
-4. Launch the application:
-   ```bash
-   adb shell am start -n org.tinapple.client/.MainActivity
-   ```
-
-### Over-The-Air Installation
-
-The compiled APK is also hosted directly on the server's web dashboard. On your Android phone, browse to:
 ```
-https://tinapple-server.<your-tailnet>.ts.net/tinapple-client.apk
++-----------------------------------------------------------------------------------------+
+|                               Tinapple Client Layer                                     |
+|                                                                                         |
+|  [ Linux AppImage ]  [ Windows EXE ]  [ macOS DMG ]  [ Android APK ]  [ iOS IPA ]      |
+|         │                  │               │                │               │           |
+|         ▼                  ▼               ▼                ▼               ▼           |
+|  ┌───────────────────────────────────────────────────────────────────────────────────┐  |
+|  │                         Embedded Offline Asset Bundle                             │  |
+|  │  • React 18, Tailwind CSS, Lucide Icons, Xterm.js PTY, Framer Motion             │  |
+|  │  • Android: WebViewClient.shouldInterceptRequest() -> android_asset/web/          │  |
+|  │  • Tauri / Desktop: Local custom asset protocol (tauri://localhost / file://)    │  |
+|  │  • 0ms UI load latency, zero bandwidth spent re-downloading static frontend files   │  |
+|  └───────────────────────────────────────────────────────────────────────────────────┘  |
++-----------------------------------------------------------------------------------------+
+                                           │
+                       HTTP / HTTPS REST & WebSockets
+               (/api/v1/system, /api/v1/dashboard/layout, etc.)
+                                           │
+                                           ▼
++-----------------------------------------------------------------------------------------+
+|                        Tinapple Appliance Control Plane (:8088)                         |
+|  - Bidirectional Settings Persistence (/etc/tinapple/dashboard_layout.json)            |
+|  - Real-Time Systemd Management, Proton VPN & Tor Privacy Exits                         |
++-----------------------------------------------------------------------------------------+
 ```
-Download and install the APK directly from the browser.
+
+---
+
+### Available Release Artifacts (`out/releases/` & Dashboard `/download/...`)
+
+All platform release binaries are checksummed (`SHA256SUMS`) and distributed directly from the server dashboard:
+
+| Platform | Format | Release File | Dashboard Download URL |
+| :--- | :--- | :--- | :--- |
+| **Linux Desktop** | AppImage (x86_64) | `tinapple-desktop-linux-x86_64.AppImage` | `http://<server>:8088/download/desktop` |
+| **Linux Portable** | Tarball (.tar.gz) | `tinapple-desktop-linux-x86_64.tar.gz` | `http://<server>:8088/download/releases/tinapple-desktop-linux-x86_64.tar.gz` |
+| **Windows Desktop** | Portable EXE | `tinapple-desktop-windows-x64.exe` | `http://<server>:8088/download/windows` |
+| **Windows Portable** | ZIP Package | `tinapple-desktop-windows-x64.zip` | `http://<server>:8088/download/releases/tinapple-desktop-windows-x64.zip` |
+| **macOS Desktop** | Universal DMG | `tinapple-desktop-macos-universal.dmg` | `http://<server>:8088/download/macos` |
+| **Android Companion** | Signed APK | `tinapple-android-client.apk` | `http://<server>:8088/download/android` (or `/download/apk`) |
+| **iOS Companion** | IPA Archive | `tinapple-ios-client.ipa` | `http://<server>:8088/download/ios` |
+| **Integrity Signatures** | SHA-256 Sums | `SHA256SUMS` | `http://<server>:8088/download/releases/SHA256SUMS` |
+
+---
+
+### 1. Tauri Desktop Client (`tinapple-hub/src-tauri`)
+
+The Tauri desktop client (`org.tinapple.hub`) provides native desktop integration for Linux, Windows, and macOS:
+
+- **Local Asset Serving**: Bundles static production assets directly into the binary (`frontendDist: "../dist"`). All application navigation, modal interactions, and canvas panning run with zero network overhead.
+- **Hardware Acceleration**: Automatically leverages native GPU-accelerated WebViews (WebKitGTK on Linux, WebView2 on Windows, WKWebView on macOS).
+- **Server Discovery & Dynamic Switching**: Automatically queries local appliance endpoints (`http://100.108.215.120:8088`, `http://192.168.4.1:8088`, or custom user-configured hostnames).
+
+#### Compiling Tauri Desktop Releases Locally:
+```bash
+# Package all platform releases into out/releases/:
+./scripts/build-desktop-releases.sh
+
+# Or build native Tauri binary with cargo:
+cd tinapple-hub/src-tauri
+cargo build --release
+```
+
+#### Automated Cross-Platform CI Releases:
+GitHub Actions workflow [`.github/workflows/client-releases.yml`](.github/workflows/client-releases.yml) automatically compiles and publishes native binaries across `ubuntu-22.04`, `windows-latest`, and `macos-latest` upon pushing git tags `v*`.
+
+---
+
+### 2. Kotlin Android Companion Client (`tinapple-android`)
+
+The dedicated Android companion app (`org.tinapple.hub` / `org.tinapple.client`) is engineered for low latency, smooth touch navigation, and hardware integration:
+
+- **Offline Cache Stack**: Implements `WebViewClient.shouldInterceptRequest()`, which intercepts static requests (`/assets/...`, `/icons/...`, `/wallpapers/...`, and `/index.html`) and serves them directly from local APK storage (`android_asset/web/`).
+- **Compose Draggable Canvas (`ComposeCanvas.kt`)**: Native Jetpack Compose implementation of the 2D infinite draggable canvas with multi-touch pinch-to-zoom (0.5× – 1.8×) and 60fps pan gestures.
+- **Native Android Bridge (`TinappleBridge.kt`)**: Bridges web events with native Android vibration engines (`VibrationEffect.EFFECT_CLICK`, `EFFECT_TICK`) for tactile haptic feedback during widget dragging and toggle switches.
+- **Resilient Fallback**: Automatically falls back between Tailscale MagicDNS (`http://100.108.215.120:8088`), Wi-Fi Hotspot (`http://192.168.4.1:8088`), and LAN mDNS (`http://pineapple-server:8088`).
+
+#### Building & Signing Android APK:
+```bash
+./scripts/build-desktop-releases.sh
+```
+
+#### Installing via ADB:
+```bash
+adb install -r out/releases/tinapple-android-client.apk
+```
+
+---
+
+### 3. Client Settings & Canvas Layout Persistence
+
+Tinapple ensures complete bidirectional persistence of dashboard layouts, custom widgets, and appearance preferences across all devices and sessions:
+
+1. **Local Storage First**: Any change made on the canvas (moving widgets, resizing tiles, panning the canvas, zooming, switching themes) is immediately saved to the client's `localStorage` (`tinapple_homarr_canvas_widgets_v6`, `tinapple_theme_settings`).
+2. **Server-Side Synchronization**: Layout states are automatically synchronized with the appliance backend:
+   - `GET /api/v1/dashboard/layout`: Returns server-saved layout configuration from `/etc/tinapple/dashboard_layout.json`.
+   - `POST /api/v1/dashboard/layout`: Debounced server-side persistence of canvas widgets and viewport coordinates.
+   - `GET /api/v1/user/settings` & `POST /api/v1/user/settings`: Synchronizes appearance tokens, Matugen dynamic colors, and server URLs across clients.
+3. **Multi-Client Consistency**: If a user logs in from a new desktop, tablet, or clean browser install, the canvas layout automatically loads from the server's synchronized state.
+
+---
+
+### 4. Recent Core Platform Enhancements
+
+- **2D Infinite Draggable Canvas**: Replaced rigid column grids with a freeform 3200×2200 2D canvas with smooth left-click drag panning, dynamic zoom, and minimap navigation radar.
+- **Dedicated Appliance Widgets**: Users can place compact, dedicated monitoring & control widgets for each individual appliance (Jellyfin, qBittorrent, Suwayomi, Radarr, Sonarr, Prowlarr, Bazarr, Navidrome, etc.) with live state badges, port pills, direct service controls, and WebUI links.
+- **Proton VPN & Tor Privacy Exit Node Switchboard**: Dual privacy exit node switches with real-time tunnel detection and high-contrast tactile Matugen toggles.
+- **Tailscale Shared Users & RBAC**: Resolves external shared tailnet users (`imyashlinux@gmail.com`) via `tailscale whois` with 1-click admin control elevation and granular service access permissions.
+- **Fullpage Web Terminal**: Dedicated fullscreen xterm.js pseudoterminal (`/terminal`) connected via PTY WebSockets with quick diagnostic actions and touch buttons.
+
+---
+
+### 5. Plezy & Suwayomi-Tsumiru Native Media Clients
+
+- **Plezy Desktop Client (Jellyfin Streaming)**: Pre-installed on client desktops at `~/.local/bin/plezy` (`v2.25.0`), embedding `libmpv` for 100% DirectPlay with zero server transcoding load.
+- **Suwayomi-Tsumiru (Manga Streaming)**: Hosted locally at `/tsumiru/` with Keiyoushi manga source extensions and continuous chapter caching. Mobile APK available directly at `/download/tsumiru`.
 
 ---
 

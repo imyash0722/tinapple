@@ -713,17 +713,31 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({
 
   const computedPacks = useMemo(() => {
     return packs.map((pack) => {
-      const packApps = pack.apps.map((appId) => apps.find((a) => a.id === appId)).filter(Boolean) as AppInfo[];
-      const installedCount = packApps.filter((a) => a.installed).length;
-      const runningCount = packApps.filter((a) => a.status === 'running').length;
-      const totalCount = pack.apps.length;
+      // Prioritize live appsStatus directly populated from systemd by the server backend
+      const packApps: AppInfo[] = pack.apps.map((appId) => {
+        const fromPack = pack.appsStatus?.find((a) => a.id === appId);
+        if (fromPack) return fromPack as AppInfo;
+        return apps.find((a) => a.id === appId);
+      }).filter(Boolean) as AppInfo[];
+
+      const totalCount = pack.totalCount || pack.apps.length;
+      const installedCount = (typeof pack.installedCount === 'number' && pack.installedCount > 0)
+        ? pack.installedCount
+        : packApps.filter((a) => a.installed).length;
+      const runningCount = (typeof pack.runningCount === 'number' && pack.runningCount > 0)
+        ? pack.runningCount
+        : packApps.filter((a) => a.status === 'running' || (a as any).running).length;
+
+      const allInstalled = pack.allInstalled ?? (installedCount >= totalCount && totalCount > 0);
+      const allRunning = pack.allRunning ?? (runningCount >= totalCount && totalCount > 0);
+
       return {
         ...pack,
         installedCount,
         runningCount,
         totalCount,
-        allInstalled: installedCount === totalCount && totalCount > 0,
-        allRunning: runningCount === totalCount && totalCount > 0,
+        allInstalled,
+        allRunning,
         appsStatus: packApps,
       };
     });
@@ -1143,9 +1157,9 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({
 
                     <div className="flex flex-wrap gap-1.5 sm:gap-2">
                       {pack.apps.map((appId) => {
-                        const app = apps.find((a) => a.id === appId);
-                        const isAppRunning = app?.status === 'running';
-                        const isAppInstalled = app?.installed;
+                        const app = pack.appsStatus?.find((a) => a.id === appId) || apps.find((a) => a.id === appId);
+                        const isAppRunning = app?.status === 'running' || (app as any)?.running;
+                        const isAppInstalled = app?.installed || isAppRunning;
                         return (
                           <div
                             key={appId}

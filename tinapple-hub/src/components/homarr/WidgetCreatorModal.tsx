@@ -16,7 +16,10 @@ import {
   Terminal,
   Layers,
   Sparkles,
+  Server,
+  Zap,
 } from 'lucide-react';
+import { AppBrandIcon } from '../common/AppBrandIcons';
 import { CanvasWidget, WidgetCategory, WidgetType } from '../../types/canvas';
 
 interface WidgetCreatorModalProps {
@@ -37,6 +40,37 @@ interface WidgetTemplate {
   defaultH: number;
   isCustom?: boolean;
 }
+
+interface ApplianceTemplate {
+  id: string;
+  name: string;
+  tagline: string;
+  icon: string;
+  port: number;
+  category: WidgetCategory;
+  accentColor: string;
+}
+
+const APPLIANCES: ApplianceTemplate[] = [
+  { id: 'jellyfin', name: 'Jellyfin Media Server', tagline: 'Hardware Transcoding & 4K Streaming', icon: 'jellyfin', port: 8096, category: 'media', accentColor: '#AA5CC3' },
+  { id: 'qbittorrent', name: 'qBittorrent Headless', tagline: 'BitTorrent Engine & WebUI', icon: 'qbittorrent', port: 8080, category: 'storage', accentColor: '#3A75C4' },
+  { id: 'suwayomi', name: 'Suwayomi Manga Server', tagline: 'Keiyoushi Extensions & Mihon Sync', icon: 'suwayomi', port: 4567, category: 'media', accentColor: '#F43F5E' },
+  { id: 'radarr', name: 'Radarr Movie Automator', tagline: 'Automated 4K/1080p Movie Grabber', icon: 'radarr', port: 7878, category: 'media', accentColor: '#FFC230' },
+  { id: 'sonarr', name: 'Sonarr TV Series Automator', tagline: 'Automated TV & Anime PVR', icon: 'sonarr', port: 8989, category: 'media', accentColor: '#00C4FF' },
+  { id: 'prowlarr', name: 'Prowlarr Tracker Proxy', tagline: 'Unified Torrent & Usenet Indexer', icon: 'prowlarr', port: 9696, category: 'network', accentColor: '#F59E0B' },
+  { id: 'bazarr', name: 'Bazarr Subtitle Manager', tagline: 'Multilingual Subtitle Synchronizer', icon: 'bazarr', port: 6767, category: 'media', accentColor: '#8B5CF6' },
+  { id: 'seerr', name: 'Jellyseerr Media Discovery', tagline: '1-Click Requests & Approvals', icon: 'seerr', port: 5055, category: 'media', accentColor: '#6366F1' },
+  { id: 'pinchflat', name: 'Pinchflat YouTube Archiver', tagline: 'Automated Channel Downloader', icon: 'youtube', port: 8945, category: 'media', accentColor: '#EF4444' },
+  { id: 'navidrome', name: 'Navidrome Music Server', tagline: 'Lossless Subsonic Audio Streaming', icon: 'navidrome', port: 4533, category: 'media', accentColor: '#EA580C' },
+  { id: 'syncthing', name: 'Syncthing Continuous Sync', tagline: 'P2P Encrypted File Replication', icon: 'syncthing', port: 8384, category: 'storage', accentColor: '#0284C7' },
+  { id: 'filebrowser', name: 'FileBrowser Quantum', tagline: 'Web File Manager & Storage Vault', icon: 'filebrowser', port: 8081, category: 'storage', accentColor: '#10B981' },
+  { id: 'adguard', name: 'AdGuard Home DNS', tagline: 'Network-wide DNS & Ad Blocking', icon: 'adguard', port: 3000, category: 'network', accentColor: '#16A34A' },
+  { id: 'vaultwarden', name: 'Vaultwarden Password Vault', tagline: 'Bitwarden-Compatible Secure Vault', icon: 'vaultwarden', port: 8000, category: 'system', accentColor: '#2563EB' },
+  { id: 'protonvpn', name: 'Proton VPN Client', tagline: 'Swiss WireGuard & NetShield', icon: 'protonvpn', port: 0, category: 'network', accentColor: '#6D4AFF' },
+  { id: 'beeper', name: 'Beeper Matrix Bridge', tagline: 'Universal Unified Chat Engine', icon: 'beeper', port: 0, category: 'network', accentColor: '#8B5CF6' },
+  { id: 'samba', name: 'Samba SMB File Server', tagline: 'LAN Network Drive Sharing', icon: 'syncthing', port: 445, category: 'storage', accentColor: '#0EA5E9' },
+  { id: 'minecraft', name: 'Paper Minecraft Server', tagline: 'Purpur / Paper High-TPS Server', icon: 'minecraft', port: 25565, category: 'system', accentColor: '#84CC16' },
+];
 
 const TEMPLATES: WidgetTemplate[] = [
   // Custom interactive widgets
@@ -192,10 +226,36 @@ export const WidgetCreatorModal: React.FC<WidgetCreatorModalProps> = ({
 }) => {
   if (!isOpen) return null;
 
-  const [activeTab, setActiveTab] = useState<'custom' | 'builtin'>('custom');
+  const [activeTab, setActiveTab] = useState<'individual' | 'custom' | 'builtin'>('individual');
   const [selectedTemplate, setSelectedTemplate] = useState<WidgetTemplate>(TEMPLATES[0]);
   const [customTitle, setCustomTitle] = useState('');
   const [customUrl, setCustomUrl] = useState('');
+
+  const handleCreateAppliance = (app: ApplianceTemplate) => {
+    const id = `widget_app_${app.id}_${Date.now()}`;
+    const newWidget: CanvasWidget = {
+      id,
+      type: 'single_appliance',
+      title: app.name,
+      description: app.tagline,
+      icon: app.icon,
+      category: app.category,
+      x: Math.max(40, Math.round(viewportCenter.x - 380 / 2)),
+      y: Math.max(40, Math.round(viewportCenter.y - 280 / 2)),
+      w: 380,
+      h: 280,
+      zIndex: currentWidgetCount + 10,
+      visible: true,
+      color: app.accentColor,
+      customConfig: {
+        appId: app.id,
+        targetPort: app.port,
+      },
+    };
+
+    onAddWidget(newWidget);
+    onClose();
+  };
 
   const handleCreate = (tmpl: WidgetTemplate) => {
     const id = `widget_${tmpl.type}_${Date.now()}`;
@@ -225,7 +285,7 @@ export const WidgetCreatorModal: React.FC<WidgetCreatorModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in select-none">
-      <div className="w-full max-w-2xl rounded-2xl bg-slate-900 border border-white/10 shadow-2xl overflow-hidden font-mono text-xs flex flex-col max-h-[85vh]">
+      <div className="w-full max-w-3xl rounded-2xl bg-slate-900 border border-white/10 shadow-2xl overflow-hidden font-mono text-xs flex flex-col max-h-[85vh]">
         {/* Header */}
         <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between bg-slate-950/60 shrink-0">
           <div className="flex items-center gap-2.5">
@@ -238,66 +298,122 @@ export const WidgetCreatorModal: React.FC<WidgetCreatorModalProps> = ({
         </div>
 
         {/* Tab switcher */}
-        <div className="px-5 pt-3 border-b border-white/5 flex gap-4 bg-slate-950/30 shrink-0">
+        <div className="px-5 pt-3 border-b border-white/5 flex gap-4 bg-slate-950/30 shrink-0 overflow-x-auto">
+          <button
+            onClick={() => setActiveTab('individual')}
+            className={`pb-2.5 border-b-2 font-bold flex items-center gap-1.5 transition-all whitespace-nowrap ${
+              activeTab === 'individual'
+                ? 'border-tinapple-gold text-tinapple-gold'
+                : 'border-transparent text-zinc-400 hover:text-white'
+            }`}
+          >
+            <Server className="w-3.5 h-3.5" />
+            <span>Dedicated Appliance Widgets ({APPLIANCES.length})</span>
+          </button>
           <button
             onClick={() => setActiveTab('custom')}
-            className={`pb-2.5 border-b-2 font-bold flex items-center gap-1.5 transition-all ${
+            className={`pb-2.5 border-b-2 font-bold flex items-center gap-1.5 transition-all whitespace-nowrap ${
               activeTab === 'custom'
                 ? 'border-tinapple-gold text-tinapple-gold'
                 : 'border-transparent text-zinc-400 hover:text-white'
             }`}
           >
             <Sparkles className="w-3.5 h-3.5" />
-            <span>Custom Widgets (Embed, Note, Links, Ping)</span>
+            <span>Custom Interactive (Embed, Note, Links, Ping)</span>
           </button>
           <button
             onClick={() => setActiveTab('builtin')}
-            className={`pb-2.5 border-b-2 font-bold flex items-center gap-1.5 transition-all ${
+            className={`pb-2.5 border-b-2 font-bold flex items-center gap-1.5 transition-all whitespace-nowrap ${
               activeTab === 'builtin'
                 ? 'border-tinapple-gold text-tinapple-gold'
                 : 'border-transparent text-zinc-400 hover:text-white'
             }`}
           >
             <LayoutGrid className="w-3.5 h-3.5" />
-            <span>Built-in Appliance Stack Widgets</span>
+            <span>System Dashboards & Telemetry</span>
           </button>
         </div>
 
         {/* Templates Grid */}
         <div className="p-5 overflow-y-auto space-y-3 flex-1">
-          <p className="text-[11px] text-zinc-400 mb-2">
-            Click a widget template to spawn it directly into your canvas:
-          </p>
+          {activeTab === 'individual' ? (
+            <>
+              <p className="text-[11px] text-zinc-400 mb-2">
+                Click any individual appliance to spawn a dedicated compact live monitoring & control card:
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {APPLIANCES.map((app) => (
+                  <div
+                    key={app.id}
+                    onClick={() => handleCreateAppliance(app)}
+                    className="p-3.5 rounded-xl bg-slate-950/70 hover:bg-slate-800/80 border border-white/10 hover:border-tinapple-gold/50 cursor-pointer transition-all group flex flex-col justify-between shadow-md relative overflow-hidden"
+                  >
+                    <div
+                      className="absolute -top-10 -right-10 w-20 h-20 rounded-full blur-xl opacity-20 pointer-events-none group-hover:opacity-40 transition-opacity"
+                      style={{ backgroundColor: app.accentColor }}
+                    />
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <AppBrandIcon id={app.icon} size={28} />
+                        <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-white/5 text-zinc-400 border border-white/10">
+                          {app.port > 0 ? `:${app.port}` : 'daemon'}
+                        </span>
+                      </div>
+                      <h4 className="font-bold text-white text-xs group-hover:text-tinapple-gold transition-colors">
+                        {app.name}
+                      </h4>
+                      <p className="text-[10px] text-zinc-400 mt-1 leading-relaxed line-clamp-2">
+                        {app.tagline}
+                      </p>
+                    </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {filteredTemplates.map((t) => (
-              <div
-                key={t.type}
-                onClick={() => handleCreate(t)}
-                className="p-4 rounded-xl bg-slate-950/70 hover:bg-slate-800/80 border border-white/10 hover:border-tinapple-gold/50 cursor-pointer transition-all group flex flex-col justify-between shadow-md"
-              >
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-2xl">{t.icon}</span>
-                    <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-white/5 text-zinc-400 border border-white/10">
-                      {t.defaultW}×{t.defaultH}px
-                    </span>
+                    <div className="mt-3 pt-2 border-t border-white/5 flex items-center justify-between text-[10px] text-zinc-500 font-bold">
+                      <span className="capitalize">{app.category}</span>
+                      <span className="text-tinapple-gold flex items-center gap-0.5 group-hover:translate-x-0.5 transition-transform">
+                        Spawn Widget +
+                      </span>
+                    </div>
                   </div>
-                  <h4 className="font-bold text-white text-xs group-hover:text-tinapple-gold transition-colors">
-                    {t.title}
-                  </h4>
-                  <p className="text-[11px] text-zinc-400 mt-1 leading-relaxed">{t.description}</p>
-                </div>
-
-                <div className="mt-3 pt-2.5 border-t border-white/5 flex items-center justify-between text-[10px] text-zinc-500 font-bold">
-                  <span>Category: {t.category}</span>
-                  <span className="text-tinapple-gold flex items-center gap-0.5 group-hover:translate-x-0.5 transition-transform">
-                    Spawn +
-                  </span>
-                </div>
+                ))}
               </div>
-            ))}
-          </div>
+            </>
+          ) : (
+            <>
+              <p className="text-[11px] text-zinc-400 mb-2">
+                Click a widget template to spawn it directly into your canvas:
+              </p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {filteredTemplates.map((t) => (
+                  <div
+                    key={t.type}
+                    onClick={() => handleCreate(t)}
+                    className="p-4 rounded-xl bg-slate-950/70 hover:bg-slate-800/80 border border-white/10 hover:border-tinapple-gold/50 cursor-pointer transition-all group flex flex-col justify-between shadow-md"
+                  >
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-2xl">{t.icon}</span>
+                        <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-white/5 text-zinc-400 border border-white/10">
+                          {t.defaultW}×{t.defaultH}px
+                        </span>
+                      </div>
+                      <h4 className="font-bold text-white text-xs group-hover:text-tinapple-gold transition-colors">
+                        {t.title}
+                      </h4>
+                      <p className="text-[11px] text-zinc-400 mt-1 leading-relaxed">{t.description}</p>
+                    </div>
+
+                    <div className="mt-3 pt-2.5 border-t border-white/5 flex items-center justify-between text-[10px] text-zinc-500 font-bold">
+                      <span>Category: {t.category}</span>
+                      <span className="text-tinapple-gold flex items-center gap-0.5 group-hover:translate-x-0.5 transition-transform">
+                        Spawn +
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
         </div>
 
         {/* Footer */}

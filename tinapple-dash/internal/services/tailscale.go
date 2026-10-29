@@ -399,6 +399,60 @@ type tsStatusPeerItem struct {
 	UserID       int64    `json:"UserID"`
 	TailscaleIPs []string `json:"TailscaleIPs"`
 	Online       bool     `json:"Online"`
+	ShareeNode   bool     `json:"ShareeNode"`
+}
+
+type tsWhoisResult struct {
+	UserProfile struct {
+		ID            int64  `json:"ID"`
+		LoginName     string `json:"LoginName"`
+		DisplayName   string `json:"DisplayName"`
+		ProfilePicURL string `json:"ProfilePicURL"`
+	} `json:"UserProfile"`
+}
+
+var (
+	peerWhoisCache   = make(map[string]tsStatusUserItem)
+	peerWhoisCacheMu sync.RWMutex
+)
+
+func lookupPeerWhois(ctx context.Context, bin string, ip string) *tsStatusUserItem {
+	if ip == "" {
+		return nil
+	}
+
+	peerWhoisCacheMu.RLock()
+	if cached, ok := peerWhoisCache[ip]; ok && cached.LoginName != "" {
+		peerWhoisCacheMu.RUnlock()
+		return &cached
+	}
+	peerWhoisCacheMu.RUnlock()
+
+	cmdCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
+	defer cancel()
+
+	out, err := exec.CommandContext(cmdCtx, bin, "whois", "--json", ip).Output()
+	if err != nil {
+		return nil
+	}
+
+	var res tsWhoisResult
+	if err := json.Unmarshal(out, &res); err != nil || res.UserProfile.LoginName == "" {
+		return nil
+	}
+
+	item := tsStatusUserItem{
+		ID:            res.UserProfile.ID,
+		LoginName:     res.UserProfile.LoginName,
+		DisplayName:   res.UserProfile.DisplayName,
+		ProfilePicURL: res.UserProfile.ProfilePicURL,
+	}
+
+	peerWhoisCacheMu.Lock()
+	peerWhoisCache[ip] = item
+	peerWhoisCacheMu.Unlock()
+
+	return &item
 }
 
 type fullTailscaleStatus struct {
@@ -429,6 +483,26 @@ func (m *TailscaleManager) GetUserManagementData(ctx context.Context, rolesMgr *
 	var full fullTailscaleStatus
 	if err := json.Unmarshal(out, &full); err != nil {
 		return nil, err
+	}
+	if full.User == nil {
+		full.User = make(map[string]tsStatusUserItem)
+	}
+
+	// 0. Discover external shared peers (e.g. imyashlinux@gmail.com) via whois
+	for _, peer := range full.Peer {
+		if peer.UserID == 0 {
+			continue
+		}
+		userKey := fmt.Sprintf("%d", peer.UserID)
+		if _, ok := full.User[userKey]; !ok {
+			peerIP := ""
+			if len(peer.TailscaleIPs) > 0 {
+				peerIP = peer.TailscaleIPs[0]
+			}
+			if whois := lookupPeerWhois(ctx, bin, peerIP); whois != nil {
+				full.User[userKey] = *whois
+			}
+		}
 	}
 
 	// 1. Identify Host Owner
@@ -493,6 +567,10 @@ func (m *TailscaleManager) GetUserManagementData(ctx context.Context, rolesMgr *
 							currentSession.LoginName = u.LoginName
 							currentSession.DisplayName = u.DisplayName
 							currentSession.Avatar = u.ProfilePicURL
+						} else if whois := lookupPeerWhois(ctx, bin, cleanIP); whois != nil {
+							currentSession.LoginName = whois.LoginName
+							currentSession.DisplayName = whois.DisplayName
+							currentSession.Avatar = whois.ProfilePicURL
 						}
 						foundUser = true
 						break
@@ -539,8 +617,13 @@ func (m *TailscaleManager) GetUserManagementData(ctx context.Context, rolesMgr *
 		})
 	}
 
+	seenLogins := make(map[string]bool)
 	tailscaleUsers := make([]TailscaleUser, 0)
 	for _, u := range full.User {
+		cleanLogin := strings.TrimSpace(strings.ToLower(u.LoginName))
+		if cleanLogin != "" {
+			seenLogins[cleanLogin] = true
+		}
 		role := rolesMgr.GetUserRole(u.LoginName, hostOwnerLogin)
 		isOwner := (role == "owner") || (u.ID == hostOwnerUserID)
 		if isOwner {
@@ -564,6 +647,44 @@ func (m *TailscaleManager) GetUserManagementData(ctx context.Context, rolesMgr *
 		})
 	}
 
+	// 4. Also incorporate any users explicitly saved in roles config but offline
+	cfg := rolesMgr.GetConfig()
+	for login, role := range cfg.Roles {
+		cleanLogin := strings.TrimSpace(strings.ToLower(login))
+		if cleanLogin == "" || seenLogins[cleanLogin] {
+			continue
+		}
+		seenLogins[cleanLogin] = true
+		isOwner := (role == "owner")
+		tailscaleUsers = append(tailscaleUsers, TailscaleUser{
+			UserID:          0,
+			LoginName:       login,
+			DisplayName:     login,
+			Avatar:          "",
+			Role:            role,
+			IsOwner:         isOwner,
+			AllowedServices: rolesMgr.GetUserAllowedServices(login, role),
+			Devices:         []DeviceInfo{},
+		})
+	}
+	for _, adminLogin := range cfg.AdminAccounts {
+		cleanLogin := strings.TrimSpace(strings.ToLower(adminLogin))
+		if cleanLogin == "" || seenLogins[cleanLogin] {
+			continue
+		}
+		seenLogins[cleanLogin] = true
+		tailscaleUsers = append(tailscaleUsers, TailscaleUser{
+			UserID:          0,
+			LoginName:       adminLogin,
+			DisplayName:     adminLogin,
+			Avatar:          "",
+			Role:            "admin",
+			IsOwner:         false,
+			AllowedServices: GetAllServiceIDs(),
+			Devices:         []DeviceInfo{},
+		})
+	}
+
 	// Sort: Owner first, then Admins, then Viewers
 	rolesOrder := map[string]int{"owner": 0, "admin": 1, "viewer": 2}
 	for i := 0; i < len(tailscaleUsers)-1; i++ {
@@ -574,7 +695,7 @@ func (m *TailscaleManager) GetUserManagementData(ctx context.Context, rolesMgr *
 		}
 	}
 
-	cfg := rolesMgr.GetConfig()
+	cfg = rolesMgr.GetConfig()
 
 	payload := &UserManagementPayload{
 		CurrentUser:          currentSession,

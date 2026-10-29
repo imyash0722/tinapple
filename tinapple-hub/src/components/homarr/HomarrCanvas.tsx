@@ -36,6 +36,7 @@ import {
   HomarrBookmarksWidget,
   HomarrAppsGridWidget,
   CustomBookmarkItem,
+  HomarrSingleApplianceWidget,
 } from './HomarrWidgets';
 import {
   CustomIframeWidget,
@@ -50,6 +51,7 @@ import { QuickConnectCard } from '../widgets/QuickConnectCard';
 import { TelemetrySnapshot, SystemInfo, ServiceInfo } from '../../types/api';
 import { CanvasWidget, CanvasViewport, CanvasLayoutMode } from '../../types/canvas';
 import { AndroidBridge } from '../../services/androidBridge';
+import { api } from '../../services/api';
 
 const CANVAS_WIDTH = 3200;
 const CANVAS_HEIGHT = 2200;
@@ -365,20 +367,39 @@ export const HomarrCanvas: React.FC<HomarrCanvasProps> = ({
     return () => window.removeEventListener('resize', updateSize);
   }, []);
 
-  // Save to localStorage
+  // Synchronize layout with backend on mount
   useEffect(() => {
+    let active = true;
+    api.getDashboardLayout().then((remote) => {
+      if (!active || !remote || !Array.isArray(remote.widgets) || remote.widgets.length === 0) return;
+      const localSaved = localStorage.getItem(STORAGE_KEY);
+      if (!localSaved) {
+        setWidgets(remote.widgets);
+        if (remote.viewport) setViewport(remote.viewport);
+      }
+    }).catch(() => {});
+    return () => { active = false; };
+  }, []);
+
+  // Save to localStorage & synchronize with server
+  useEffect(() => {
+    const payload = {
+      version: 2,
+      layoutMode,
+      snapToGrid,
+      widgets,
+      viewport,
+      updatedAt: Date.now(),
+    };
     try {
-      localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify({
-          version: 2,
-          layoutMode,
-          snapToGrid,
-          widgets,
-          viewport,
-        })
-      );
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
     } catch {}
+
+    const timer = setTimeout(() => {
+      api.saveDashboardLayout(payload);
+    }, 1200);
+
+    return () => clearTimeout(timer);
   }, [widgets, layoutMode, snapToGrid, viewport]);
 
   // Center / Reset View
@@ -412,6 +433,7 @@ export const HomarrCanvas: React.FC<HomarrCanvasProps> = ({
     if (e.button !== 0) return; // only left click
     if ((e.target as HTMLElement).closest('[data-canvas-widget]')) return;
 
+    e.preventDefault();
     setIsPanning(true);
     panStartRef.current = {
       x: e.clientX,
@@ -639,6 +661,15 @@ export const HomarrCanvas: React.FC<HomarrCanvasProps> = ({
   // Widget content renderer
   const renderWidgetContent = (widget: CanvasWidget) => {
     switch (widget.type) {
+      case 'single_appliance':
+        return (
+          <HomarrSingleApplianceWidget
+            appId={widget.customConfig?.appId || 'jellyfin'}
+            customTitle={widget.title}
+            customIcon={widget.icon}
+            customColor={widget.color}
+          />
+        );
       case 'homarr_apps_board':
         return (
           <HomarrAppsGridWidget
@@ -729,60 +760,22 @@ export const HomarrCanvas: React.FC<HomarrCanvasProps> = ({
                 Interactive Homarr Canvas
               </h2>
               <span className="px-2 py-0.5 rounded-full text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/30 font-mono font-bold">
-                {layoutMode === 'canvas' ? '2D Infinite Space' : '12-Col Modular'}
+                2D Pannable Space
               </span>
               <span className="hidden sm:inline-block px-1.5 py-0.5 rounded text-[10px] bg-sky-500/15 text-sky-300 font-mono">
                 Kotlin & Android Ready
               </span>
             </div>
             <p className="text-xs text-zinc-400 mt-0.5 font-mono">
-              {layoutMode === 'canvas'
-                ? isEditMode
-                  ? 'Drag cards to position anywhere. Drag bottom-right corner to resize.'
-                  : 'Drag background to explore canvas. Click widgets to launch appliances.'
-                : '12-Column clean layout mode.'}
+              {isEditMode
+                ? 'Drag cards to position anywhere. Drag bottom-right corner to resize.'
+                : 'Hold left click & drag background to pan smoothly. Click widgets to launch appliances.'}
             </p>
           </div>
         </div>
 
         {/* Right: Floating Control Actions */}
         <div className="flex items-center flex-wrap gap-2 shrink-0 font-mono text-xs">
-          {/* Layout Mode Switcher */}
-          <div className="flex items-center bg-slate-950/80 rounded-xl p-1 border border-white/10">
-            <button
-              onClick={() => {
-                setLayoutMode('canvas');
-                AndroidBridge.performHaptic('selection');
-                AndroidBridge.notifyLayoutModeChanged('canvas');
-              }}
-              className={`px-2.5 py-1 rounded-lg font-bold flex items-center gap-1 transition-all ${
-                layoutMode === 'canvas'
-                  ? 'bg-tinapple-gold text-slate-950 shadow-sm'
-                  : 'text-zinc-400 hover:text-white'
-              }`}
-              title="2D Freeform Pannable Canvas"
-            >
-              <Move className="w-3.5 h-3.5" />
-              <span>Canvas</span>
-            </button>
-            <button
-              onClick={() => {
-                setLayoutMode('grid');
-                AndroidBridge.performHaptic('selection');
-                AndroidBridge.notifyLayoutModeChanged('grid');
-              }}
-              className={`px-2.5 py-1 rounded-lg font-bold flex items-center gap-1 transition-all ${
-                layoutMode === 'grid'
-                  ? 'bg-tinapple-gold text-slate-950 shadow-sm'
-                  : 'text-zinc-400 hover:text-white'
-              }`}
-              title="Standard Column Grid"
-            >
-              <Columns className="w-3.5 h-3.5" />
-              <span>Grid</span>
-            </button>
-          </div>
-
           {/* Add Widget Button */}
           <button
             onClick={() => {
@@ -820,47 +813,45 @@ export const HomarrCanvas: React.FC<HomarrCanvasProps> = ({
             )}
           </button>
 
-          {/* Canvas Viewport Zoom & Reset Controls (Canvas Mode Only) */}
-          {layoutMode === 'canvas' && (
-            <div className="flex items-center gap-1 bg-slate-950/80 rounded-xl p-1 border border-white/10">
-              <button
-                onClick={() => handleZoom(-0.15)}
-                className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 transition-colors"
-                title="Zoom Out"
-              >
-                <ZoomOut className="w-3.5 h-3.5" />
-              </button>
-              <span className="text-[11px] font-bold text-zinc-300 px-1 w-10 text-center">
-                {Math.round(viewport.zoom * 100)}%
-              </span>
-              <button
-                onClick={() => handleZoom(0.15)}
-                className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 transition-colors"
-                title="Zoom In"
-              >
-                <ZoomIn className="w-3.5 h-3.5" />
-              </button>
-              <button
-                onClick={handleCenterView}
-                className="p-1.5 rounded-lg text-zinc-400 hover:text-tinapple-gold hover:bg-white/10 transition-colors ml-0.5"
-                title="Center / Reset View"
-              >
-                <Target className="w-3.5 h-3.5" />
-              </button>
-              <button
-                onClick={() => {
-                  setSnapToGrid(!snapToGrid);
-                  AndroidBridge.performHaptic('selection');
-                }}
-                className={`p-1.5 rounded-lg transition-colors ml-0.5 ${
-                  snapToGrid ? 'text-tinapple-gold bg-amber-500/10' : 'text-zinc-500 hover:text-zinc-300'
-                }`}
-                title={`Snap to Grid (${GRID_SIZE}px): ${snapToGrid ? 'ON' : 'OFF'}`}
-              >
-                <Magnet className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          )}
+          {/* Canvas Viewport Zoom & Reset Controls */}
+          <div className="flex items-center gap-1 bg-slate-950/80 rounded-xl p-1 border border-white/10">
+            <button
+              onClick={() => handleZoom(-0.15)}
+              className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 transition-colors"
+              title="Zoom Out"
+            >
+              <ZoomOut className="w-3.5 h-3.5" />
+            </button>
+            <span className="text-[11px] font-bold text-zinc-300 px-1 w-10 text-center">
+              {Math.round(viewport.zoom * 100)}%
+            </span>
+            <button
+              onClick={() => handleZoom(0.15)}
+              className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 transition-colors"
+              title="Zoom In"
+            >
+              <ZoomIn className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={handleCenterView}
+              className="p-1.5 rounded-lg text-zinc-400 hover:text-tinapple-gold hover:bg-white/10 transition-colors ml-0.5"
+              title="Center / Reset View"
+            >
+              <Target className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={() => {
+                setSnapToGrid(!snapToGrid);
+                AndroidBridge.performHaptic('selection');
+              }}
+              className={`p-1.5 rounded-lg transition-colors ml-0.5 ${
+                snapToGrid ? 'text-tinapple-gold bg-amber-500/10' : 'text-zinc-500 hover:text-zinc-300'
+              }`}
+              title={`Snap to Grid (${GRID_SIZE}px): ${snapToGrid ? 'ON' : 'OFF'}`}
+            >
+              <Magnet className="w-3.5 h-3.5" />
+            </button>
+          </div>
 
           {/* Reset Board */}
           <button
@@ -873,18 +864,17 @@ export const HomarrCanvas: React.FC<HomarrCanvasProps> = ({
         </div>
       </div>
 
-      {/* 2. Main Canvas Viewport vs Grid View */}
-      {layoutMode === 'canvas' ? (
-        <div
-          ref={containerRef}
-          onMouseDown={handleCanvasMouseDown}
-          onTouchStart={handleCanvasTouchStart}
-          onWheel={handleWheel}
-          style={{ height: 'calc(100vh - 13.5rem)', minHeight: '620px' }}
-          className={`w-full rounded-2xl bg-slate-950/90 border border-white/10 overflow-hidden relative shadow-2xl backdrop-blur-xl ${
-            isPanning ? 'cursor-grabbing' : 'cursor-grab'
-          }`}
-        >
+      {/* 2. Main 2D Canvas Viewport */}
+      <div
+        ref={containerRef}
+        onMouseDown={handleCanvasMouseDown}
+        onTouchStart={handleCanvasTouchStart}
+        onWheel={handleWheel}
+        style={{ height: 'calc(100vh - 13.5rem)', minHeight: '620px' }}
+        className={`w-full rounded-2xl bg-slate-950/90 border border-white/10 overflow-hidden relative shadow-2xl backdrop-blur-xl ${
+          isPanning ? 'cursor-grabbing' : 'cursor-grab'
+        }`}
+      >
           {/* Blueprint Dot Matrix Canvas Pattern */}
           <div
             className="absolute inset-0 pointer-events-none opacity-[0.06]"
@@ -1025,56 +1015,6 @@ export const HomarrCanvas: React.FC<HomarrCanvasProps> = ({
             </span>
           </div>
         </div>
-      ) : (
-        /* 3. 12-Column Responsive Grid Fallback View */
-        <div className="grid grid-cols-12 gap-3.5 sm:gap-4 relative z-10">
-          <AnimatePresence>
-            {visibleWidgets.map((widget) => {
-              const colSpan = widget.colSpan || 6;
-              const spanClass =
-                colSpan === 12
-                  ? 'col-span-12'
-                  : colSpan === 6
-                  ? 'col-span-12 lg:col-span-6'
-                  : colSpan === 4
-                  ? 'col-span-12 sm:col-span-6 lg:col-span-4'
-                  : 'col-span-12 sm:col-span-6 md:col-span-4 lg:col-span-3';
-
-              return (
-                <motion.div
-                  key={widget.id}
-                  layout
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  className={`${spanClass} relative group transition-all`}
-                >
-                  {isEditMode && (
-                    <div className="absolute top-2 right-2 z-20 flex items-center gap-1 bg-slate-950/85 backdrop-blur-md rounded-xl p-1 border border-white/10 shadow-lg font-mono">
-                      <button
-                        onClick={() => setEditingWidget(widget)}
-                        className="p-1 rounded-lg text-zinc-400 hover:text-tinapple-gold hover:bg-white/10 transition-colors"
-                        title="Configure Widget"
-                      >
-                        <Sliders className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteWidget(widget.id)}
-                        className="p-1 rounded-lg text-red-400 hover:text-red-300 hover:bg-red-500/20 transition-colors"
-                        title="Remove"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  )}
-
-                  <div className="h-full">{renderWidgetContent(widget)}</div>
-                </motion.div>
-              );
-            })}
-          </AnimatePresence>
-        </div>
-      )}
 
       {/* 4. Edit Widget Modal */}
       <WidgetEditorModal
