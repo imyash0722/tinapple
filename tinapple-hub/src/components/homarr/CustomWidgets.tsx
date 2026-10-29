@@ -13,6 +13,7 @@ import {
   Check,
 } from 'lucide-react';
 import { CanvasWidget } from '../../types/canvas';
+import { getServiceHost } from '../../services/api';
 
 // 1. Custom Iframe Embed Widget
 export const CustomIframeWidget: React.FC<{ widget: CanvasWidget }> = ({ widget }) => {
@@ -162,7 +163,7 @@ export const CustomMonitorWidget: React.FC<{ widget: CanvasWidget }> = ({ widget
     setStatus('checking');
     const start = performance.now();
     try {
-      const targetUrl = endpoint || (port ? `http://${window.location.hostname}:${port}` : null);
+      const targetUrl = endpoint || (port ? `http://${getServiceHost()}:${port}` : null);
       if (!targetUrl) {
         setStatus('offline');
         return;

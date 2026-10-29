@@ -67,7 +67,7 @@ func (h *Handler) getClientIP(c *gin.Context) string {
 
 func (h *Handler) getClientRole(c *gin.Context) (bool, string) {
 	clientIP := h.getClientIP(c)
-	return h.tailscaleMgr.CheckClientRole(c.Request.Context(), clientIP)
+	return h.tailscaleMgr.CheckClientRole(c.Request.Context(), h.rolesMgr, clientIP)
 }
 
 func (h *Handler) UserRole(c *gin.Context) {
@@ -1056,6 +1056,7 @@ func (h *Handler) AddUser(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+	h.tailscaleMgr.InvalidateRoleCache()
 
 	c.JSON(http.StatusOK, gin.H{
 		"success":    true,
@@ -2182,6 +2183,7 @@ func (h *Handler) UpdateUserRole(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+	h.tailscaleMgr.InvalidateRoleCache()
 
 	c.JSON(http.StatusOK, gin.H{
 		"success":     true,
@@ -2224,6 +2226,7 @@ func (h *Handler) UpdateUserPermissions(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+	h.tailscaleMgr.InvalidateRoleCache()
 
 	c.JSON(http.StatusOK, gin.H{
 		"success":          true,

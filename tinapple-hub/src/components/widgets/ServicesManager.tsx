@@ -16,6 +16,7 @@ import {
 import { SpotlightCard } from '../reactbits/SpotlightCard';
 import HoldButton from '../reactbits/HoldButton';
 import { ServiceInfo } from '../../types/api';
+import { getServiceHost } from '../../services/api';
 import { AppBrandIcon } from '../common/AppBrandIcons';
 
 interface ServicesManagerProps {
@@ -89,7 +90,7 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({
   }, [services, isAdmin]);
 
   const getServiceUrl = (service: ServiceInfo): string | null => {
-    const host = typeof window !== 'undefined' ? window.location.hostname : '127.0.0.1';
+    const host = getServiceHost();
     const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
 
     const knownPorts: Record<string, number> = {

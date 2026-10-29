@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { getServiceHost } from '../../services/api';
 
 interface QBitInfo {
   online: boolean;
@@ -224,7 +225,7 @@ export const TransfersWidget: React.FC = () => {
 
           <div className="pt-2 flex justify-end">
             <a
-              href={`http://${typeof window !== 'undefined' ? window.location.hostname : 'localhost'}:8080`}
+              href={`http://${getServiceHost()}:8080`}
               target="_blank"
               rel="noreferrer"
               className="text-xs text-emerald-400 hover:text-emerald-300 font-mono flex items-center gap-1"

@@ -3,7 +3,7 @@ import { Search } from 'lucide-react';
 import { HomarrAppTile } from './HomarrAppTile';
 import { AppBrandIcon } from '../common/AppBrandIcons';
 import { SquishSwitch } from '../reactbits/SquishSwitch';
-import { api } from '../../services/api';
+import { api, getServiceHost } from '../../services/api';
 import {
   Cpu,
   HardDrive,
@@ -238,7 +238,7 @@ export const HomarrDownloadsWidget: React.FC = () => {
   };
 
   const totalDl = data.qbittorrent.dlSpeed + data.jdownloader.dlSpeed;
-  const currentHost = window.location.hostname;
+  const currentHost = getServiceHost();
 
   return (
     <div className="h-full rounded-2xl bg-slate-900/60 border border-white/[0.08] backdrop-blur-xl p-5 flex flex-col justify-between shadow-lg shadow-black/20 font-mono">
@@ -331,7 +331,7 @@ export const HomarrNetworkGuardWidget: React.FC<{ onOpenTailscale?: () => void }
     }
   };
 
-  const currentHost = window.location.hostname;
+  const currentHost = getServiceHost();
 
   return (
     <div className="h-full rounded-2xl bg-slate-900/60 border border-white/[0.08] backdrop-blur-xl p-5 flex flex-col justify-between shadow-lg shadow-black/20 font-mono">
@@ -466,7 +466,7 @@ export const HomarrSingleApplianceWidget: React.FC<HomarrSingleApplianceWidgetPr
   const isRunning = app?.status === 'running' || app?.running;
   const isInstalled = app?.installed;
   const port = app?.port || 0;
-  const currentHost = window.location.hostname;
+  const currentHost = getServiceHost();
   const webUrl = port > 0 ? `http://${currentHost}:${port}` : null;
   const accentColor = customColor || app?.accentColor || '#38bdf8';
 
@@ -573,7 +573,7 @@ export const HomarrSingleApplianceWidget: React.FC<HomarrSingleApplianceWidgetPr
 
 // 5. Homarr Jellyfin Media Server Widget
 export const HomarrMediaWidget: React.FC<{ onOpenGuide?: (g: string) => void }> = ({ onOpenGuide }) => {
-  const currentHost = window.location.hostname;
+  const currentHost = getServiceHost();
 
   return (
     <div className="h-full rounded-2xl bg-slate-900/60 border border-white/[0.08] backdrop-blur-xl p-5 flex flex-col justify-between shadow-lg shadow-black/20 font-mono">
@@ -627,7 +627,7 @@ export const HomarrMediaWidget: React.FC<{ onOpenGuide?: (g: string) => void }> 
 export const HomarrMangaWidget: React.FC = () => {
   const [mangaCount, setMangaCount] = useState<number>(0);
   const [online, setOnline] = useState<boolean>(true);
-  const host = typeof window !== 'undefined' ? window.location.hostname : '127.0.0.1';
+  const host = getServiceHost();
   const suwayomiWebUrl = `http://${host}:4567/`;
 
   useEffect(() => {
@@ -693,7 +693,7 @@ export const HomarrMangaWidget: React.FC = () => {
 
 // 7. Homarr Syncthing & TrueNAS Bridge Widget
 export const HomarrSyncVaultWidget: React.FC = () => {
-  const currentHost = window.location.hostname;
+  const currentHost = getServiceHost();
 
   return (
     <div className="h-full rounded-2xl bg-slate-900/60 border border-white/[0.08] backdrop-blur-xl p-5 flex flex-col justify-between shadow-lg shadow-black/20 font-mono">
@@ -795,7 +795,7 @@ export const HomarrHardwareWidget: React.FC<{ telemetry: TelemetrySnapshot }> = 
 
 // 9. Homarr Server Port Matrix Widget
 export const HomarrPortMatrixWidget: React.FC<{ onOpenTools?: () => void }> = ({ onOpenTools }) => {
-  const currentHost = window.location.hostname;
+  const currentHost = getServiceHost();
   const isHttps = window.location.protocol === 'https:';
 
   const ports = [
@@ -1040,10 +1040,7 @@ export const HomarrAppsGridWidget: React.FC<HomarrAppsGridWidgetProps> = ({
   const [colSpans, setColSpans] = useState<Record<string, 3 | 4 | 6 | 12>>({});
 
   const getHost = () => {
-    if (typeof window !== 'undefined') {
-      return window.location.hostname;
-    }
-    return '100.108.215.120';
+    return getServiceHost();
   };
 
   const getServiceCategory = (name: string): 'media' | 'downloads' | 'storage' | 'network' | 'system' | 'custom' => {

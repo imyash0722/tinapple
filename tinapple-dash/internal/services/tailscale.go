@@ -286,10 +286,18 @@ func isPrivateLAN(ip net.IP) bool {
 		(lan192 != nil && lan192.Contains(ip))
 }
 
-// CheckClientRole determines whether the given client IP is the system owner or a guest/shared peer.
+// InvalidateRoleCache clears the cached whois roles so permissions changes apply immediately.
+func (m *TailscaleManager) InvalidateRoleCache() {
+	m.mu.Lock()
+	m.roleCache = make(map[string]RoleCacheItem)
+	m.mu.Unlock()
+}
+
+// CheckClientRole determines whether the given client IP is the system owner/admin or a guest/shared peer.
 // Localhost and LAN IPs (home network) are considered owner access.
 // Tailscale IPs are dynamically inspected via tailscale whois to check user identity and sharee status.
-func (m *TailscaleManager) CheckClientRole(ctx context.Context, rawIP string) (isOwner bool, loginUser string) {
+// Configured roles in rolesMgr (such as admin or owner) are honored for all Tailscale nodes.
+func (m *TailscaleManager) CheckClientRole(ctx context.Context, rolesMgr *RolesManager, rawIP string) (isOwner bool, loginUser string) {
 	host := strings.TrimSpace(rawIP)
 	if h, _, err := net.SplitHostPort(host); err == nil {
 		host = h
@@ -343,15 +351,24 @@ func (m *TailscaleManager) CheckClientRole(ctx context.Context, rawIP string) (i
 
 				ownerEmail := os.Getenv("TINAPPLE_OWNER_EMAIL")
 				if ownerEmail == "" {
-					ownerEmail = "yatinrajesh77@gmail.com"
+					ownerEmail = "imyash0722@gmail.com"
 				}
 
-				// Owner criteria: not a shared node, and matches owner email or account prefix
-				owner := !isSharee && (strings.EqualFold(loginName, ownerEmail) || strings.HasPrefix(strings.ToLower(loginName), "yatinrajesh77@"))
 				userStr := loginName
 				if userStr == "" {
 					userStr = whois.Node.Hostinfo.Hostname
 				}
+
+				// Check roles manager config for role assignment (admin, owner, viewer)
+				role := "viewer"
+				if rolesMgr != nil {
+					role = rolesMgr.GetUserRole(loginName, ownerEmail)
+				}
+
+				// Owner/Admin criteria:
+				// 1. Role is explicitly "owner" or "admin" in rolesMgr
+				// 2. OR matches owner email (imyash0722@gmail.com, yatinrajesh77@gmail.com) and not a sharee
+				owner := (role == "owner" || role == "admin") || (!isSharee && (strings.EqualFold(loginName, ownerEmail) || strings.HasPrefix(strings.ToLower(loginName), "imyash0722@") || strings.HasPrefix(strings.ToLower(loginName), "yatinrajesh77@")))
 
 				m.mu.Lock()
 				if m.roleCache == nil {

@@ -42,6 +42,32 @@ export function getWsTerminalUrl(): string {
   return 'ws://100.108.215.120:8088/api/v1/terminal/ws';
 }
 
+export function getServiceHost(): string {
+  if (typeof window !== 'undefined') {
+    const customUrl = localStorage.getItem('tinapple_server_url');
+    if (customUrl) {
+      try {
+        const parsed = new URL(customUrl);
+        return parsed.hostname;
+      } catch {}
+    }
+    const h = window.location.hostname;
+    // *.ts.net domains have HSTS preloaded in modern browsers which breaks connecting to plain HTTP on secondary service ports (:8096, :4567, :8080).
+    // Standalone clients (Tauri desktop app, Android WebView, file://, dev port 1420) also use direct Tailscale IP.
+    if (!h || h.endsWith('.ts.net') || h === 'tauri.localhost' || (h === 'localhost' && window.location.port === '1420')) {
+      return '100.108.215.120';
+    }
+    return h;
+  }
+  return '100.108.215.120';
+}
+
+export function getServiceUrl(port: number, path: string = ''): string {
+  const host = getServiceHost();
+  const cleanPath = path ? (path.startsWith('/') ? path : `/${path}`) : '';
+  return `http://${host}:${port}${cleanPath}`;
+}
+
 const API_BASE = {
   toString: () => getApiBaseUrl(),
   valueOf: () => getApiBaseUrl(),

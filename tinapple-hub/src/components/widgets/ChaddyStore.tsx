@@ -26,7 +26,7 @@ import { ShinyText } from '../reactbits/ShinyText';
 import { StarBorder } from '../reactbits/StarBorder';
 import CircularCarousel, { CircularCarouselItem } from '../reactbits/CircularCarousel';
 import { AppBrandIcon } from '../common/AppBrandIcons';
-import { api } from '../../services/api';
+import { api, getServiceUrl } from '../../services/api';
 import { AppInfo, AppliancePackStatus } from '../../types/api';
 import { StoreTerminal } from './StoreTerminal';
 
@@ -675,6 +675,7 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({
   const [storeTab, setStoreTab] = useState<'packs' | 'apps'>('packs');
   const [apps, setApps] = useState<AppInfo[]>(FALLBACK_APPS);
   const [packs, setPacks] = useState<AppliancePackStatus[]>(FALLBACK_PACKS);
+  const [hasLoadedPacks, setHasLoadedPacks] = useState<boolean>(false);
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
   const [viewMode, setViewMode] = useState<'carousel' | 'grid'>('grid');
   const [loadingAction, setLoadingAction] = useState<Record<string, string>>({});
@@ -688,16 +689,25 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({
   const [actionError, setActionError] = useState<{ id: string; name?: string; message: string } | null>(null);
 
   const fetchApps = useCallback(async () => {
-    const list = await api.getApps();
-    if (list && list.length > 0) {
-      setApps(list);
+    try {
+      const list = await api.getApps();
+      if (list && list.length > 0) {
+        setApps(list);
+      }
+    } catch (e) {
+      console.warn('Failed to fetch apps:', e);
     }
   }, []);
 
   const fetchPacks = useCallback(async () => {
-    const list = await api.getPacks();
-    if (list && list.length > 0) {
-      setPacks(list);
+    try {
+      const list = await api.getPacks();
+      if (list && list.length > 0) {
+        setPacks(list);
+        setHasLoadedPacks(true);
+      }
+    } catch (e) {
+      console.warn('Failed to fetch packs:', e);
     }
   }, []);
 
@@ -721,10 +731,10 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({
       }).filter(Boolean) as AppInfo[];
 
       const totalCount = pack.totalCount || pack.apps.length;
-      const installedCount = (typeof pack.installedCount === 'number' && pack.installedCount > 0)
+      const installedCount = (typeof pack.installedCount === 'number' && hasLoadedPacks)
         ? pack.installedCount
-        : packApps.filter((a) => a.installed).length;
-      const runningCount = (typeof pack.runningCount === 'number' && pack.runningCount > 0)
+        : packApps.filter((a) => a.installed || a.status === 'running' || (a as any).running).length;
+      const runningCount = (typeof pack.runningCount === 'number' && hasLoadedPacks)
         ? pack.runningCount
         : packApps.filter((a) => a.status === 'running' || (a as any).running).length;
 
@@ -741,7 +751,7 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({
         appsStatus: packApps,
       };
     });
-  }, [packs, apps]);
+  }, [packs, apps, hasLoadedPacks]);
 
   const handlePackAction = async (packId: string, action: 'install' | 'configure' | 'start' | 'stop') => {
     setActionError(null);
@@ -800,11 +810,8 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({
     }
   };
 
-  const currentHost = typeof window !== 'undefined' ? window.location.hostname : '127.0.0.1';
-  const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
   const getAppUrl = (port: number) => {
-    const proto = (port === 8000 && isHttps) ? 'https' : 'http';
-    return `${proto}://${currentHost}:${port}`;
+    return getServiceUrl(port);
   };
 
   const handleAction = async (id: string, action: 'install' | 'uninstall' | 'start' | 'stop' | 'restart') => {
@@ -1117,6 +1124,11 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({
                       <span className="px-2.5 py-1 text-[11px] font-mono font-semibold rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 flex items-center gap-1.5 shadow-sm">
                         <span className="w-2 h-2 rounded-full bg-amber-400" />
                         PARTIAL • {pack.installedCount}/{pack.totalCount} READY
+                      </span>
+                    ) : !hasLoadedPacks ? (
+                      <span className="px-2.5 py-1 text-[11px] font-mono font-medium rounded-full bg-slate-800/80 text-slate-400 border border-slate-700/60 flex items-center gap-1.5 shadow-sm">
+                        <Loader2 className="w-2.5 h-2.5 animate-spin text-tinapple-gold" />
+                        CHECKING STATUS...
                       </span>
                     ) : (
                       <span className="px-2.5 py-1 text-[11px] font-mono font-medium rounded-full bg-slate-800/80 text-slate-400 border border-slate-700/60 flex items-center gap-1.5 shadow-sm">

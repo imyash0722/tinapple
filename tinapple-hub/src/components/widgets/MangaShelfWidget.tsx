@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BookOpen, ExternalLink, RefreshCw } from 'lucide-react';
+import { getServiceHost } from '../../services/api';
 
 interface MangaItem {
   id: string;
@@ -106,7 +107,7 @@ export const MangaShelfWidget: React.FC = () => {
   const currentList =
     activeTab === 'reading' ? readingList : activeTab === 'history' ? historyList : updatesList;
 
-  const currentHost = typeof window !== 'undefined' ? window.location.hostname : '192.168.99.62';
+  const currentHost = getServiceHost();
 
   return (
     <div className="tinapple-glass-card rounded-2xl bg-[#091124]/90 border border-[#1b2b52] p-5 backdrop-blur-xl shadow-xl space-y-4">
