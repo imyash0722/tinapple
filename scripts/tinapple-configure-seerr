@@ -574,25 +574,44 @@ if os.path.exists(seerr_cfg) and radarr_key and sonarr_key:
         }
         cfg['public']['initialized'] = has_user
 
-        # Fetch active Jellyfin libraries
+        # Fetch active Jellyfin libraries (all types: movies, tvshows, and unknown like YouTube)
         jf_libs = []
         try:
             vf = api_request('http://127.0.0.1:8096/Library/VirtualFolders', headers={'Authorization': f'MediaBrowser Token="{jf_token}"'})
             if isinstance(vf, list):
                 for f in vf:
-                    col_type = f.get('CollectionType')
-                    if col_type in ['movies', 'tvshows']:
-                        jf_libs.append({
-                            'id': f.get('ItemId'),
-                            'name': f.get('Name'),
-                            'enabled': True,
-                            'type': 'movie' if col_type == 'movies' else 'show'
-                        })
+                    col_type = f.get('CollectionType', '')
+                    if col_type == 'movies':
+                        lib_type = 'movie'
+                    elif col_type == 'tvshows':
+                        lib_type = 'show'
+                    else:
+                        lib_type = 'unknown'
+                    jf_libs.append({
+                        'id': f.get('ItemId'),
+                        'name': f.get('Name'),
+                        'enabled': True,
+                        'type': lib_type
+                    })
         except Exception:
             pass
 
         if has_user:
+            # Merge fetched libraries with existing ones to preserve any manually enabled entries
             existing_libs = cfg.get('jellyfin', {}).get('libraries', [])
+            if jf_libs:
+                # Build a map of existing libs by id so we can preserve enabled state
+                existing_map = {lib['id']: lib for lib in existing_libs}
+                merged_libs = []
+                for lib in jf_libs:
+                    existing = existing_map.get(lib['id'], {})
+                    merged_libs.append({
+                        'id': lib['id'],
+                        'name': lib['name'],
+                        'enabled': existing.get('enabled', True),
+                        'type': lib['type']
+                    })
+                jf_libs = merged_libs
             existing_key = cfg.get('jellyfin', {}).get('apiKey', '')
             cfg['jellyfin'] = {
                 'name': 'tinapple-server',
@@ -602,7 +621,7 @@ if os.path.exists(seerr_cfg) and radarr_key and sonarr_key:
                 'urlBase': '',
                 'externalHostname': 'http://pineapple-server:8096',
                 'jellyfinForgotPasswordUrl': '',
-                'libraries': jf_libs if jf_libs else existing_libs,
+                'libraries': jf_libs if jf_libs else existing_libs,  # all libraries including YouTube
                 'serverId': jf_server_id,
                 'apiKey': jf_token if jf_token else existing_key
             }
