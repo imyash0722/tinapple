@@ -191,6 +191,21 @@ func NewAppManager() *AppManager {
 			ConfigPath:  "/home/media/.config/qBittorrent/qBittorrent.conf",
 		},
 		{
+			ID:          "homarr",
+			Name:        "Homarr Dashboard Engine",
+			Description: "Customizable homelab dashboard engine with real-time integration widgets, ping telemetry, torrent monitors, and multi-user authentication.",
+			Tagline:     "Official upstream Homarr dashboard",
+			Category:    "system",
+			Package:     "homarr",
+			Unit:        "homarr.service",
+			Binary:      "docker",
+			Port:        7575,
+			Icon:        "homarr",
+			AccentColor: "#E65100",
+			ConfigPath:  "/var/lib/homarr/configs",
+			WebURL:      "http://{host}:7575",
+		},
+		{
 			ID:          "pinchflat",
 			Name:        "Pinchflat YouTube Manager",
 			Description: "Automated YouTube channel and playlist archiver with Kodi/Jellyfin NFO metadata, SponsorBlock integration, chapter markers, and automated media library indexing.",
@@ -1486,6 +1501,50 @@ WantedBy=multi-user.target
 	return nil
 }
 
+func installHomarr(m *AppManager) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+	defer cancel()
+
+	_ = m.runStreamCmd(ctx, "homarr", "systemctl", "enable", "--now", "docker")
+
+	_ = os.MkdirAll("/var/lib/homarr/configs", 0775)
+	_ = os.MkdirAll("/var/lib/homarr/icons", 0775)
+	_ = os.MkdirAll("/var/lib/homarr/data", 0775)
+
+	m.AppendLog("homarr", "info", "Pulling official Homarr dashboard container image (ghcr.io/ajnart/homarr:latest)...")
+	_ = m.runStreamCmd(ctx, "homarr", "docker", "pull", "ghcr.io/ajnart/homarr:latest")
+
+	serviceContent := `[Unit]
+Description=Homarr Dashboard Engine
+After=docker.service network.target
+Requires=docker.service
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=5
+ExecStartPre=-/usr/bin/docker stop homarr
+ExecStartPre=-/usr/bin/docker rm homarr
+ExecStart=/usr/bin/docker run --name homarr \
+  -p 7575:7575 \
+  -e TZ=Asia/Kolkata \
+  -v /var/lib/homarr/configs:/app/data/configs \
+  -v /var/lib/homarr/icons:/app/public/icons \
+  -v /var/lib/homarr/data:/data \
+  -v /var/run/docker.sock:/var/run/docker.sock:ro \
+  ghcr.io/ajnart/homarr:latest
+ExecStop=/usr/bin/docker stop homarr
+
+[Install]
+WantedBy=multi-user.target
+`
+	if err := os.WriteFile("/etc/systemd/system/homarr.service", []byte(serviceContent), 0644); err != nil {
+		return fmt.Errorf("failed to create homarr.service: %w", err)
+	}
+	_ = m.runStreamCmd(ctx, "homarr", "systemctl", "daemon-reload")
+	return nil
+}
+
 func (m *AppManager) AppendLog(appID, level, msg string) {
 	entry := InstallLogMessage{
 		Timestamp: time.Now().Format("15:04:05"),
@@ -1738,6 +1797,9 @@ func (m *AppManager) installUnlocked(id string) error {
 	case "filebrowser":
 		m.AppendLog(id, "info", "Downloading official FileBrowser Quantum binary release...")
 		installErr = installFilebrowser()
+	case "homarr":
+		m.AppendLog(id, "info", "Deploying official Homarr dashboard engine container...")
+		installErr = installHomarr(m)
 	case "pinchflat", "metube":
 		m.AppendLog(id, "info", "Deploying Pinchflat YouTube media manager container...")
 		installErr = installPinchflat(m)
@@ -2145,6 +2207,11 @@ func (m *AppManager) Uninstall(id string) error {
 		_ = os.RemoveAll("/opt/Sonarr")
 		_ = os.Remove("/usr/local/bin/sonarr")
 		_ = os.Remove("/etc/systemd/system/sonarr.service")
+	case "homarr":
+		_ = exec.Command("systemctl", "disable", "--now", "homarr.service").Run()
+		_ = exec.Command("docker", "stop", "homarr").Run()
+		_ = exec.Command("docker", "rm", "-f", "homarr").Run()
+		_ = os.Remove("/etc/systemd/system/homarr.service")
 	case "pinchflat", "metube":
 		_ = exec.Command("systemctl", "disable", "--now", "pinchflat.service").Run()
 		_ = exec.Command("docker", "stop", "pinchflat").Run()

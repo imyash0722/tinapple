@@ -28,6 +28,7 @@ import {
   HomarrTerminalWidget,
   HomarrJournalWidget,
   HomarrBookmarksWidget,
+  HomarrAppsGridWidget,
   CustomBookmarkItem,
 } from './HomarrWidgets';
 import { QuickConnectCard } from '../widgets/QuickConnectCard';
@@ -45,6 +46,16 @@ export interface HomarrWidgetDef {
 }
 
 const DEFAULT_WIDGETS: HomarrWidgetDef[] = [
+  {
+    id: 'homarr_apps_board',
+    title: 'Homarr Appliance Board',
+    description: 'Iconic Homarr service launcher with live ping dots, open ports, and direct WebUI launchers.',
+    icon: '🚀',
+    category: 'system',
+    colSpan: 12,
+    visible: true,
+    order: 0,
+  },
   {
     id: 'silicon_telemetry',
     title: 'Silicon Resource Monitor',
@@ -177,7 +188,7 @@ const DEFAULT_WIDGETS: HomarrWidgetDef[] = [
   },
 ];
 
-const STORAGE_KEY = 'tinapple_homarr_canvas_widgets_v4';
+const STORAGE_KEY = 'tinapple_homarr_canvas_widgets_v5';
 
 export interface HomarrCanvasProps {
   telemetry: TelemetrySnapshot;
@@ -200,6 +211,7 @@ export const HomarrCanvas: React.FC<HomarrCanvasProps> = ({
   isEditMode,
   setIsEditMode,
   isOwner,
+  onOpenAppSettings,
   onOpenTailscale,
   onOpenTerminal,
   onOpenTools,
@@ -371,6 +383,15 @@ export const HomarrCanvas: React.FC<HomarrCanvasProps> = ({
 
   const renderWidgetContent = (widgetId: string) => {
     switch (widgetId) {
+      case 'homarr_apps_board':
+        return (
+          <HomarrAppsGridWidget
+            services={services}
+            isEditMode={isEditMode}
+            onOpenSettings={onOpenAppSettings}
+            onOpenGuide={onOpenGuide}
+          />
+        );
       case 'silicon_telemetry':
         return <HomarrResourceWidget telemetry={telemetry} systemInfo={systemInfo} />;
       case 'digital_clock':

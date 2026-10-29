@@ -78,6 +78,34 @@ if [[ -f "${REPO_DIR}/scripts/tinapple-configure-seerr" ]]; then
   ssh "${TARGET_USER}@${TARGET_HOST}" "sudo install -Dm755 /tmp/tinapple-configure-seerr /usr/local/bin/tinapple-configure-seerr && rm -f /tmp/tinapple-configure-seerr"
 fi
 
+# Deploy hotspot, driver power-saving disables, and unmanaged interface configs
+if [[ -f "${REPO_DIR}/scripts/tinapple-hotspot-start.sh" ]]; then
+  scp -q "${REPO_DIR}/scripts/tinapple-hotspot-start.sh" "${TARGET_USER}@${TARGET_HOST}:/tmp/tinapple-hotspot-start.sh"
+  ssh "${TARGET_USER}@${TARGET_HOST}" "sudo install -Dm755 /tmp/tinapple-hotspot-start.sh /usr/local/bin/tinapple-hotspot-start.sh && rm -f /tmp/tinapple-hotspot-start.sh"
+fi
+if [[ -f "${REPO_DIR}/tinapple-service-network/systemd/tinapple-hotspot.service" ]]; then
+  scp -q "${REPO_DIR}/tinapple-service-network/systemd/tinapple-hotspot.service" "${TARGET_USER}@${TARGET_HOST}:/tmp/tinapple-hotspot.service"
+  ssh "${TARGET_USER}@${TARGET_HOST}" "sudo install -Dm644 /tmp/tinapple-hotspot.service /etc/systemd/system/tinapple-hotspot.service && rm -f /tmp/tinapple-hotspot.service && sudo systemctl daemon-reload"
+fi
+if [[ -f "${REPO_DIR}/tinapple-service-network/configs/80-hotspot-unmanaged.conf" ]]; then
+  scp -q "${REPO_DIR}/tinapple-service-network/configs/80-hotspot-unmanaged.conf" "${TARGET_USER}@${TARGET_HOST}:/tmp/80-hotspot-unmanaged.conf"
+  ssh "${TARGET_USER}@${TARGET_HOST}" "sudo install -Dm644 /tmp/80-hotspot-unmanaged.conf /etc/NetworkManager/conf.d/80-hotspot-unmanaged.conf && rm -f /tmp/80-hotspot-unmanaged.conf && sudo nmcli general reload 2>/dev/null || true"
+fi
+if [[ -f "${REPO_DIR}/tinapple-service-network/configs/8188eu.conf" ]]; then
+  scp -q "${REPO_DIR}/tinapple-service-network/configs/8188eu.conf" "${TARGET_USER}@${TARGET_HOST}:/tmp/8188eu.conf"
+  ssh "${TARGET_USER}@${TARGET_HOST}" "sudo install -Dm644 /tmp/8188eu.conf /etc/modprobe.d/8188eu.conf && rm -f /tmp/8188eu.conf"
+fi
+SYSCTL_CONF=""
+if [[ -f "${REPO_DIR}/tinapple-base/configs/sysctl.d/99-server-optimization.conf" ]]; then
+  SYSCTL_CONF="${REPO_DIR}/tinapple-base/configs/sysctl.d/99-server-optimization.conf"
+elif [[ -f "${REPO_DIR}/tinarchy-src/configs/sysctl/99-server-optimization.conf" ]]; then
+  SYSCTL_CONF="${REPO_DIR}/tinarchy-src/configs/sysctl/99-server-optimization.conf"
+fi
+if [[ -n "${SYSCTL_CONF}" ]]; then
+  scp -q "${SYSCTL_CONF}" "${TARGET_USER}@${TARGET_HOST}:/tmp/99-server-optimization.conf"
+  ssh "${TARGET_USER}@${TARGET_HOST}" "sudo install -Dm644 /tmp/99-server-optimization.conf /etc/sysctl.d/99-server-optimization.conf && rm -f /tmp/99-server-optimization.conf && sudo sysctl --system >/dev/null 2>&1 || true"
+fi
+
 # Deploy systemd lid and sleep configurations (headless 24/7 server mode)
 if [[ -f "${REPO_DIR}/tinapple-base/configs/logind.conf.d/tinapple-lid.conf" ]]; then
   scp -q "${REPO_DIR}/tinapple-base/configs/logind.conf.d/tinapple-lid.conf" "${TARGET_USER}@${TARGET_HOST}:/tmp/tinapple-lid.conf"

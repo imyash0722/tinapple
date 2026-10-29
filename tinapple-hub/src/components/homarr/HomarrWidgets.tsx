@@ -1,4 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Search } from 'lucide-react';
+import { HomarrAppTile } from './HomarrAppTile';
+import { AppBrandIcon } from '../common/AppBrandIcons';
 import {
   Cpu,
   HardDrive,
@@ -819,6 +822,194 @@ export const HomarrBookmarksWidget: React.FC<HomarrBookmarksWidgetProps> = ({
             No custom bookmarks yet. Enable Edit Mode to add your homelab portals.
           </div>
         )}
+      </div>
+    </div>
+  );
+};
+
+
+// 13. Homarr Appliance Board & Service Launcher Widget
+export interface HomarrAppsGridWidgetProps {
+  services: ServiceInfo[];
+  isEditMode: boolean;
+  onOpenSettings?: (app: any) => void;
+  onOpenGuide?: (guideId: string) => void;
+}
+
+export const HomarrAppsGridWidget: React.FC<HomarrAppsGridWidgetProps> = ({
+  services,
+  isEditMode,
+  onOpenSettings,
+  onOpenGuide,
+}) => {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [colSpans, setColSpans] = useState<Record<string, 3 | 4 | 6 | 12>>({});
+
+  const getHost = () => {
+    if (typeof window !== 'undefined') {
+      return window.location.hostname;
+    }
+    return '100.108.215.120';
+  };
+
+  const getServiceCategory = (name: string): 'media' | 'downloads' | 'storage' | 'network' | 'system' | 'custom' => {
+    const n = name.toLowerCase();
+    if (['jellyfin', 'seerr', 'jellyseerr', 'radarr', 'sonarr', 'bazarr', 'navidrome', 'pinchflat', 'metube'].some((k) => n.includes(k))) return 'media';
+    if (['qbittorrent', 'prowlarr', 'jdownloader', 'transmission'].some((k) => n.includes(k))) return 'downloads';
+    if (['suwayomi', 'syncyomi', 'manga'].some((k) => n.includes(k))) return 'media';
+    if (['syncthing', 'samba', 'smb', 'filebrowser', 'vaultwarden', 'couchdb', 'obsidian'].some((k) => n.includes(k))) return 'storage';
+    if (['adguard', 'tailscale', 'tor', 'privoxy', 'playit', 'wireguard', 'protonvpn'].some((k) => n.includes(k))) return 'network';
+    return 'system';
+  };
+
+  const getServicePort = (service: ServiceInfo): number => {
+    if (service.port && service.port > 0) return service.port;
+    const n = service.name.toLowerCase();
+    const portMap: Record<string, number> = {
+      jellyfin: 8096,
+      seerr: 5055,
+      jellyseerr: 5055,
+      radarr: 7878,
+      sonarr: 8989,
+      prowlarr: 9696,
+      bazarr: 6767,
+      qbittorrent: 8080,
+      'qbittorrent-nox': 8080,
+      suwayomi: 4567,
+      'suwayomi-server': 4567,
+      syncyomi: 8282,
+      navidrome: 4533,
+      pinchflat: 8945,
+      adguard: 3000,
+      adguardhome: 3000,
+      vaultwarden: 8000,
+      filebrowser: 8082,
+      syncthing: 8384,
+      couchdb: 5984,
+      minecraft: 25565,
+      homarr: 7575,
+    };
+    return portMap[n] || 0;
+  };
+
+  const getServiceUrl = (service: ServiceInfo, port: number): string => {
+    if (service.webUrl) return service.webUrl;
+    if (port > 0) {
+      const proto = typeof window !== 'undefined' ? window.location.protocol : 'http:';
+      return `${proto}//${getHost()}:${port}`;
+    }
+    return `http://${getHost()}:8088/`;
+  };
+
+  const filteredServices = useMemo(() => {
+    return services.filter((s) => {
+      const cat = getServiceCategory(s.name);
+      const matchesCat = categoryFilter === 'all' || cat === categoryFilter;
+      const q = searchQuery.toLowerCase().trim();
+      const matchesSearch =
+        !q ||
+        s.name.toLowerCase().includes(q) ||
+        (s.description && s.description.toLowerCase().includes(q));
+      return matchesCat && matchesSearch;
+    });
+  }, [services, categoryFilter, searchQuery]);
+
+  const activeCount = services.filter((s) => s.activeState === 'active' || s.running).length;
+
+  const categories = [
+    { id: 'all', label: 'All Appliances' },
+    { id: 'media', label: '🎬 Media' },
+    { id: 'downloads', label: '📥 Downloads' },
+    { id: 'storage', label: '🗄️ Storage & Sync' },
+    { id: 'network', label: '🛡️ Network & Mesh' },
+    { id: 'system', label: '⚙️ System' },
+  ];
+
+  return (
+    <div className="h-full rounded-2xl bg-slate-900/40 border border-white/[0.08] backdrop-blur-xl p-4 sm:p-6 shadow-xl space-y-4">
+      {/* Board Header & Controls */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-white/[0.06]">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-xl shrink-0">
+            🚀
+          </div>
+          <div>
+            <h3 className="font-bold text-white text-sm tracking-wide uppercase font-mono flex items-center gap-2">
+              <span>Homarr Appliance Board</span>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                {activeCount}/{services.length} Online
+              </span>
+            </h3>
+            <p className="text-[11px] text-zinc-400 font-mono mt-0.5">
+              Authentic Homarr app tiles with live service pings, direct ports, and settings launchers.
+            </p>
+          </div>
+        </div>
+
+        {/* Quick Search Bar */}
+        <div className="relative w-full sm:w-64">
+          <input
+            type="text"
+            placeholder="Filter apps & services..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-8 pr-3 py-1.5 rounded-xl bg-slate-950/80 border border-white/10 text-xs font-mono text-white placeholder-zinc-500 focus:outline-none focus:border-tinapple-gold"
+          />
+          <Search className="w-3.5 h-3.5 text-zinc-500 absolute left-2.5 top-1/2 -translate-y-1/2" />
+        </div>
+      </div>
+
+      {/* Category Filter Pills */}
+      <div className="flex items-center gap-2 overflow-x-auto scrollbar-none pb-1">
+        {categories.map((c) => (
+          <button
+            key={c.id}
+            onClick={() => setCategoryFilter(c.id)}
+            className={`px-3 py-1 rounded-xl text-xs font-mono font-semibold whitespace-nowrap transition-all active:scale-95 shrink-0 ${
+              categoryFilter === c.id
+                ? 'bg-tinapple-gold text-slate-950 shadow-md shadow-tinapple-gold/20 font-bold'
+                : 'bg-slate-800/60 hover:bg-slate-800 text-zinc-400 hover:text-white border border-white/[0.06]'
+            }`}
+          >
+            {c.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Grid of HomarrAppTiles */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5">
+        {filteredServices.map((svc) => {
+          const port = getServicePort(svc);
+          const cat = getServiceCategory(svc.name);
+          const url = getServiceUrl(svc, port);
+          const span = colSpans[svc.name] || 3;
+
+          return (
+            <HomarrAppTile
+              key={svc.name}
+              id={svc.name}
+              name={svc.name}
+              tagline={svc.description || `${cat.toUpperCase()} Appliance Daemon`}
+              category={cat}
+              icon={<AppBrandIcon id={svc.name.toLowerCase()} size={30} />}
+              url={url}
+              port={port > 0 ? port : undefined}
+              unit={svc.unit || `${svc.name}.service`}
+              activeState={svc.activeState === 'active' || svc.running ? 'active' : svc.activeState === 'failed' ? 'failed' : 'inactive'}
+              isEditMode={isEditMode}
+              colSpan={span}
+              onOpenSettings={onOpenSettings ? () => onOpenSettings(svc) : undefined}
+              onToggleColSpan={() => {
+                setColSpans((prev) => ({
+                  ...prev,
+                  [svc.name]: span === 3 ? 6 : 3,
+                }));
+              }}
+            />
+          );
+        })}
       </div>
     </div>
   );

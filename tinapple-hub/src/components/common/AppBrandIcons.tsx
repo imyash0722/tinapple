@@ -8,6 +8,11 @@ export interface BrandConfig {
 }
 
 export const APP_BRAND_CONFIG: Record<string, BrandConfig> = {
+  homarr: {
+    name: 'Homarr',
+    iconPath: '/icons/homarr.svg',
+    accentColor: '#E65100',
+  },
   jellyfin: {
     name: 'Jellyfin',
     iconPath: '/icons/jellyfin.svg',

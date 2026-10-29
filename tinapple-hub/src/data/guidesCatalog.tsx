@@ -11,6 +11,7 @@ import {
   Sparkles,
   Download,
   Sliders,
+  LayoutGrid,
 } from 'lucide-react';
 
 export interface GuideArticle {
@@ -547,6 +548,54 @@ export const GUIDES_CATALOG: GuideArticle[] = [
       {
         title: 'Transcoding Cache Settings',
         description: 'Configured in /etc/navidrome/navidrome.toml with TranscodingCacheSize = "2GB" for instant song buffering over cellular data.',
+      },
+    ],
+  },
+  {
+    id: 'homarr',
+    title: 'Homarr Dashboard & Service Canvas',
+    subtitle: 'Customizable grid launcher, real-time service pings, and upstream dashboard',
+    category: 'cloud',
+    icon: <LayoutGrid className="w-5 h-5 text-amber-400" />,
+    accentColor: '#f59e0b',
+    endpoints: [
+      { label: 'Tinapple Hub Canvas Board', value: 'http://100.108.215.120:8088 (Dashboard Tab)' },
+      { label: 'Upstream Homarr Container', value: 'http://100.108.215.120:7575' },
+      { label: 'Config Directory', value: '/opt/homarr/configs' },
+      { label: 'Data Directory', value: '/opt/homarr/data' },
+    ],
+    steps: [
+      {
+        title: 'Interactive Canvas Board in Tinapple Hub',
+        description: 'Tinapple Hub integrates an authentic Homarr Canvas Board directly on the main Dashboard tab. Each service tile displays live ping indicators, direct ports, and quick launch triggers without needing extra authentication.',
+        code: 'http://100.108.215.120:8088',
+      },
+      {
+        title: 'Deploy Upstream Homarr Container Package',
+        description: 'If you want full customization with official Homarr widgets (calendar, torrent trackers, weather, custom iframe dashboards), install the Homarr appliance package directly from the Chaddy App Store or via terminal.',
+        code: 'sudo systemctl start homarr',
+        tip: 'Docker container ghcr.io/ajnart/homarr:latest will start on port 7575 with persistent volume mounts in /opt/homarr.',
+      },
+      {
+        title: 'Add & Reorder Service Tiles',
+        description: 'In the Hub Dashboard, use the Homarr widget controls or Settings modal to reorder, pin, or hide application tiles. To add custom services into the upstream container, open port 7575 and click the + icon in edit mode.',
+        code: 'http://100.108.215.120:7575',
+      },
+    ],
+    clientApps: [
+      { name: 'Tinapple Dashboard Hub', platform: 'Responsive Web / PWA', link: 'http://100.108.215.120:8088', badge: 'Active' },
+      { name: 'Upstream Homarr WebUI', platform: 'Containerized Web (Port 7575)', link: 'http://100.108.215.120:7575' },
+      { name: 'Homarr GitHub Repo', platform: 'Open Source', link: 'https://github.com/ajnart/homarr' },
+    ],
+    specialConfigs: [
+      {
+        title: 'Systemd Container Wrapper Management',
+        description: 'The upstream Homarr package is wrapped in a robust systemd service (/etc/systemd/system/homarr.service) with auto-restart, container pruning, and persistent data binding in /opt/homarr.',
+        code: 'systemctl status homarr',
+      },
+      {
+        title: 'Local Canvas Persistence',
+        description: 'The Hub Homarr Canvas layout and custom tiles are saved locally in the browser under tinapple_homarr_canvas_widgets_v5 for instant zero-latency loading.',
       },
     ],
   },

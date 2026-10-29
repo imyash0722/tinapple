@@ -64,6 +64,22 @@ const FALLBACK_APPS: AppInfo[] = [
     status: 'not_installed',
   },
   {
+    id: 'homarr',
+    name: 'Homarr Dashboard Engine',
+    tagline: 'Customizable homelab dashboard & app portal',
+    description: 'Upstream Homarr dashboard engine with real-time service integrations, ping status, torrent/media widgets, and multi-user authentication.',
+    category: 'system',
+    package: 'homarr',
+    unit: 'homarr.service',
+    binary: 'docker',
+    port: 7575,
+    icon: 'homarr',
+    accentColor: '#E65100',
+    installed: false,
+    running: false,
+    status: 'not_installed',
+  },
+  {
     id: 'pinchflat',
     name: 'Pinchflat YouTube Manager',
     tagline: 'Automated YouTube channel archiver & Jellyfin media sync',
@@ -1566,6 +1582,7 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({
                         qbittorrent: 'servarr',
                         playit: 'tailscale',
                         protonvpn: 'tailscale',
+                        homarr: 'homarr',
                       };
                       onOpenGuide(guideMap[selectedApp.id] || 'jellyfin');
                     }}
@@ -1732,6 +1749,7 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({
                             qbittorrent: 'servarr',
                             playit: 'tailscale',
                             protonvpn: 'tailscale',
+                            homarr: 'homarr',
                           };
                           onOpenGuide(guideMap[app.id] || 'jellyfin');
                         }}
