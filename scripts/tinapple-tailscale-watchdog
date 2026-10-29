@@ -2,8 +2,12 @@
 # ==============================================================================
 # tinapple Resilient Tailscale Connection Watchdog & Self-Healing Auto-Restart
 # Monitors Tailscale daemon and coordination health. If connectivity fails
-# continuously for more than 5 minutes (300 seconds), attempts soft recovery
-# and automatically restarts the system to restore remote access.
+# continuously for more than 5 minutes (300 seconds) WHILE Wi-Fi / Internet
+# is active, attempts soft recovery and automatically restarts the system.
+#
+# NOTE: If Wi-Fi is disconnected or upstream Internet is offline ("lack of wifi"),
+# the watchdog intentionally suppresses restarts to prevent bootlooping during
+# nighttime router shutdowns, power cuts, or ISP outages.
 # ==============================================================================
 set -u
 
@@ -44,6 +48,24 @@ set_reboot_count() {
   echo "${count}" > "${REBOOT_COUNT_FILE}" 2>/dev/null || true
 }
 
+is_local_network_connected() {
+  # Check if Wi-Fi or Ethernet device is in 'connected' state
+  local dev_state
+  dev_state=$(nmcli -t -f TYPE,STATE device 2>/dev/null | awk -F: '($1=="wifi" || $1=="ethernet") && $2=="connected"{print $1; exit}')
+  [[ -n "${dev_state}" ]]
+}
+
+is_wan_reachable() {
+  # Check if external internet is reachable via global DNS or connectivity check
+  if ping -c 1 -W 2 1.1.1.1 >/dev/null 2>&1 || ping -c 1 -W 2 8.8.8.8 >/dev/null 2>&1; then
+    return 0
+  fi
+  if curl -s -m 2 -o /dev/null http://connectivitycheck.gstatic.com/generate_204 2>/dev/null; then
+    return 0
+  fi
+  return 1
+}
+
 is_tailscale_healthy() {
   # 1. Check if tailscaled service is running
   if ! systemctl is-active --quiet tailscaled; then
@@ -80,6 +102,27 @@ while true; do
     continue
   fi
 
+  # 1. First check: Is Wi-Fi / local network connected?
+  if ! is_local_network_connected; then
+    if [[ -f "${FAIL_FILE}" ]]; then
+      log "INFO" "[WIFI_DOWN] Wi-Fi is disconnected (lack of Wi-Fi detected). Pausing restart timer to avoid rebooting during Wi-Fi outage."
+      rm -f "${FAIL_FILE}" "${RESTART_FLAG}"
+    fi
+    sleep "${CHECK_INTERVAL}"
+    continue
+  fi
+
+  # 2. Second check: Is upstream WAN / Internet reachable?
+  if ! is_wan_reachable; then
+    if [[ -f "${FAIL_FILE}" ]]; then
+      log "INFO" "[WAN_DOWN] Wi-Fi connected but upstream Internet is unreachable. Pausing restart timer to avoid rebooting during ISP outage."
+      rm -f "${FAIL_FILE}" "${RESTART_FLAG}"
+    fi
+    sleep "${CHECK_INTERVAL}"
+    continue
+  fi
+
+  # 3. Third check: Wi-Fi and WAN are healthy. Check Tailscale!
   CURRENT_TIME=$(date +%s)
 
   if is_tailscale_healthy; then
@@ -95,14 +138,15 @@ while true; do
       set_reboot_count 0
     fi
   else
+    # Tailscale is failing EVEN THOUGH Wi-Fi and Internet are functional!
     if [[ ! -f "${FAIL_FILE}" ]]; then
       echo "${CURRENT_TIME}" > "${FAIL_FILE}"
-      log "WARN" "[ALERT] Tailscale health check failed. Starting ${MAX_FAIL_SECONDS}s failure countdown."
+      log "WARN" "[ALERT] Tailscale health check failed while Wi-Fi/Internet is active. Starting ${MAX_FAIL_SECONDS}s failure countdown."
     else
       FAILED_SINCE=$(cat "${FAIL_FILE}" 2>/dev/null || echo "${CURRENT_TIME}")
       ELAPSED=$(( CURRENT_TIME - FAILED_SINCE ))
 
-      log "WARN" "Tailscale down for ${ELAPSED}s / ${MAX_FAIL_SECONDS}s."
+      log "WARN" "Tailscale down for ${ELAPSED}s / ${MAX_FAIL_SECONDS}s (Wi-Fi/WAN active)."
 
       # Level 1: Soft recovery at 2 minutes
       if (( ELAPSED >= SOFT_RECOVERY_SECONDS )) && [[ ! -f "${RESTART_FLAG}" ]]; then
@@ -118,7 +162,7 @@ while true; do
         if (( REBOOT_COUNT < MAX_CONSECUTIVE_REBOOTS )); then
           NEXT_COUNT=$(( REBOOT_COUNT + 1 ))
           set_reboot_count "${NEXT_COUNT}"
-          log "CRIT" "[CRITICAL] Tailscale down for ${ELAPSED}s (exceeded ${MAX_FAIL_SECONDS}s). Triggering auto-reboot (attempt ${NEXT_COUNT}/${MAX_CONSECUTIVE_REBOOTS})..."
+          log "CRIT" "[CRITICAL] Tailscale down for ${ELAPSED}s while Internet is active (exceeded ${MAX_FAIL_SECONDS}s). Triggering auto-reboot (attempt ${NEXT_COUNT}/${MAX_CONSECUTIVE_REBOOTS})..."
           sync
           systemctl reboot
           exit 0
