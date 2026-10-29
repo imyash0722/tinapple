@@ -1,0 +1,92 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# tinapple-install-syncyomi
+# SyncYomi Installer & Daemon Setup Script for Tinapple OS
+# Invokes tinapple-master-install first, then downloads/installs SyncYomi.
+# ==============================================================================
+set -euo pipefail
+
+# 1. Ensure master pre-flight checks pass
+if command -v tinapple-master-install &>/dev/null; then
+    tinapple-master-install
+elif [ -f "$(dirname "${BASH_SOURCE[0]}")/tinapple-master-install" ]; then
+    "$(dirname "${BASH_SOURCE[0]}")/tinapple-master-install"
+fi
+
+if [ "$(id -u)" -ne 0 ]; then
+    echo "❌ This installer must be run as root (or with sudo)."
+    exit 1
+fi
+
+echo "📦 Installing SyncYomi..."
+
+# 2. Check if already installed
+if command -v syncyomi >/dev/null 2>&1; then
+    echo "✅ SyncYomi binary already installed at $(command -v syncyomi)"
+else
+    echo "🔍 Installing official SyncYomi package from GitHub releases..."
+    ARCH_PKG="https://github.com/syncyomi/syncyomi/releases/download/v1.7.4/syncyomi_1.7.4_linux_amd64.pkg.tar.zst"
+    TMP_PKG=$(mktemp /tmp/syncyomi-XXXXXX.pkg.tar.zst)
+    
+    if curl -sSL "$ARCH_PKG" -o "$TMP_PKG" && [ -s "$TMP_PKG" ]; then
+        pacman -U --noconfirm "$TMP_PKG"
+        rm -f "$TMP_PKG"
+    else
+        rm -f "$TMP_PKG"
+        TAR_URL="https://github.com/syncyomi/syncyomi/releases/download/v1.7.4/syncyomi_1.7.4_linux_x86_64.tar.gz"
+        TMP_DIR=$(mktemp -d /tmp/syncyomi-XXXXXX)
+        curl -sSL "$TAR_URL" -o "$TMP_DIR/syncyomi.tar.gz"
+        tar -xzf "$TMP_DIR/syncyomi.tar.gz" -C "$TMP_DIR"
+        install -Dm755 "$TMP_DIR/syncyomi" /usr/local/bin/syncyomi
+        rm -rf "$TMP_DIR"
+    fi
+
+    if ! command -v syncyomi >/dev/null 2>&1 && [ ! -f /usr/local/bin/syncyomi ]; then
+        echo "❌ Failed to download or install SyncYomi."
+        exit 1
+    fi
+fi
+
+# 3. Create dedicated system user & group
+if ! id -u syncyomi >/dev/null 2>&1; then
+    echo "👤 Creating system user and group 'syncyomi'..."
+    useradd -r -s /usr/bin/nologin -d /var/lib/syncyomi -m syncyomi || true
+fi
+
+# 4. Setup State Directory and default config
+mkdir -p /var/lib/syncyomi
+if [ ! -f /var/lib/syncyomi/config.toml ]; then
+    echo "⚙️ Creating default config at /var/lib/syncyomi/config.toml..."
+    cat <<'CONF' > /var/lib/syncyomi/config.toml
+host = "0.0.0.0"
+port = 8282
+databaseType = "sqlite"
+CONF
+fi
+chown -R syncyomi:syncyomi /var/lib/syncyomi
+chmod 750 /var/lib/syncyomi
+
+# 5. Install systemd service
+BIN_PATH="$(command -v syncyomi || echo '/usr/local/bin/syncyomi')"
+cat <<EOF > /etc/systemd/system/syncyomi.service
+[Unit]
+Description=SyncYomi Manga Sync Server
+After=network.target
+
+[Service]
+Type=simple
+User=syncyomi
+Group=syncyomi
+WorkingDirectory=/var/lib/syncyomi
+ExecStart=${BIN_PATH}
+Restart=always
+RestartSec=5
+Environment=PORT=8282
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+systemctl daemon-reload
+systemctl enable --now syncyomi.service
+echo "🚀 syncyomi.service is active and enabled on port 8282."

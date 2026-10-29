@@ -1122,14 +1122,47 @@ WantedBy=multi-user.target
 		return fmt.Errorf("failed to create bbctl.service: %w", err)
 	}
 
-	beeperCtlScript := "/mnt/shared/projects/tinapple/tinarchy-src/configs/scripts/beeper-ctl.sh"
-	if _, err := os.Stat(beeperCtlScript); err == nil {
-		_ = exec.Command("install", "-m", "755", beeperCtlScript, "/usr/local/bin/beeper").Run()
+	beeperCandidates := []string{
+		"/usr/local/bin/beeper-ctl",
+		"/usr/local/bin/beeper",
+		"/mnt/shared/projects/tinapple/scripts/beeper-ctl",
+		"/mnt/shared/projects/tinapple/tinarchy-src/configs/scripts/beeper-ctl.sh",
+	}
+	for _, p := range beeperCandidates {
+		if _, err := os.Stat(p); err == nil && p != "/usr/local/bin/beeper" {
+			_ = exec.Command("install", "-m", "755", p, "/usr/local/bin/beeper").Run()
+			break
+		}
 	}
 
 	m.AppendLog("beeper", "command", "$ systemctl daemon-reload")
 	_ = m.runStreamCmd(ctx, "beeper", "systemctl", "daemon-reload")
 	return nil
+}
+
+func installSyncyomi(m *AppManager) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	defer cancel()
+
+	scriptCandidates := []string{
+		"/usr/local/bin/tinapple-install-syncyomi",
+		"/usr/bin/tinapple-install-syncyomi",
+		"/mnt/shared/projects/tinapple/scripts/tinapple-install-syncyomi",
+		"/mnt/shared/projects/tinapple/tinarchy-src/configs/scripts/install-syncyomi.sh",
+	}
+	var scriptPath string
+	for _, p := range scriptCandidates {
+		if _, err := os.Stat(p); err == nil {
+			scriptPath = p
+			break
+		}
+	}
+	if scriptPath != "" {
+		return m.runStreamCmd(ctx, "syncyomi", scriptPath)
+	}
+
+	primaryUser, _ := getSystemPrimaryUser()
+	return m.runStreamCmd(ctx, "syncyomi", "sudo", "-u", primaryUser, "paru", "-S", "--noconfirm", "--needed", "--skipreview", "syncyomi-bin")
 }
 
 func installFilebrowser() error {
@@ -1642,6 +1675,30 @@ func (m *AppManager) GetPack(id string) (*AppliancePackStatus, error) {
 	return &status, nil
 }
 
+func (m *AppManager) ensureMasterPreflight(ctx context.Context, id string) error {
+	masterScripts := []string{
+		"/usr/local/bin/tinapple-master-install",
+		"/usr/bin/tinapple-master-install",
+		"/mnt/shared/projects/tinapple/scripts/tinapple-master-install",
+	}
+	var scriptPath string
+	for _, p := range masterScripts {
+		if _, err := os.Stat(p); err == nil {
+			scriptPath = p
+			break
+		}
+	}
+	if scriptPath != "" {
+		m.AppendLog(id, "info", ">>> Executing master installer pre-flight check...")
+		if err := m.runStreamCmd(ctx, id, scriptPath); err != nil {
+			m.AppendLog(id, "warn", fmt.Sprintf("Notice during pre-flight: %v", err))
+		}
+	} else {
+		cleanStalePacmanLock()
+	}
+	return nil
+}
+
 func (m *AppManager) Install(id string) error {
 	m.operationMu.Lock()
 	defer m.operationMu.Unlock()
@@ -1658,6 +1715,10 @@ func (m *AppManager) installUnlocked(id string) error {
 
 	m.SetInstallState("running", id, app.Name)
 	m.AppendLog(id, "command", fmt.Sprintf(">>> Initiating deployment pipeline for %s (%s)...", app.Name, id))
+
+	preCtx, preCancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	_ = m.ensureMasterPreflight(preCtx, id)
+	preCancel()
 
 	var installErr error
 	switch id {
@@ -1685,6 +1746,9 @@ func (m *AppManager) installUnlocked(id string) error {
 	case "beeper":
 		m.AppendLog(id, "info", "Fetching official Beeper Bridge Manager (bbctl) release from GitHub...")
 		installErr = installBeeper(m)
+	case "syncyomi":
+		m.AppendLog(id, "info", "Deploying SyncYomi manga synchronization bridge...")
+		installErr = installSyncyomi(m)
 	case "protonvpn":
 		cleanStalePacmanLock()
 		m.AppendLog(id, "info", "Installing Proton VPN CLI, split-tunneling daemon & WireGuard tools...")
@@ -1779,6 +1843,10 @@ func (m *AppManager) InstallPack(id string) error {
 
 	m.SetInstallState("running", id, pack.Name)
 	m.AppendLog(id, "command", fmt.Sprintf(">>> Initiating deployment pipeline for pack %s (%d apps)...", pack.Name, len(pack.Apps)))
+
+	preCtx, preCancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	_ = m.ensureMasterPreflight(preCtx, id)
+	preCancel()
 
 	for i, appID := range pack.Apps {
 		m.mu.RLock()

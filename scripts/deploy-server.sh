@@ -48,8 +48,18 @@ echo -e "${GREEN}✓ Binary compiled successfully ($(ls -lh bin/tinapple-dash | 
 echo -e "${CYAN}[4/5] Deploying assets and binary to server...${NC}"
 ssh "${TARGET_USER}@${TARGET_HOST}" "sudo systemctl stop tinapple-dash.service"
 scp -q bin/tinapple-dash "${TARGET_USER}@${TARGET_HOST}:/tmp/tinapple-dash"
-ssh "${TARGET_USER}@${TARGET_HOST}" "sudo cp /tmp/tinapple-dash /usr/bin/tinapple-dash && sudo chmod 755 /usr/bin/tinapple-dash && rm -f /tmp/tinapple-dash"
+ssh "${TARGET_USER}@${TARGET_HOST}" "sudo cp /tmp/tinapple-dash /usr/bin/tinapple-dash && sudo cp /tmp/tinapple-dash /usr/local/bin/tinapple-dash && sudo chmod 755 /usr/bin/tinapple-dash /usr/local/bin/tinapple-dash && rm -f /tmp/tinapple-dash"
 tar -C "${REPO_DIR}/tinapple-dash/web/dist" -cf - . | ssh "${TARGET_USER}@${TARGET_HOST}" "sudo tar -C /usr/share/tinapple-dash/web/dist -xf -"
+
+# Deploy installer suite scripts
+for script in tinapple-master-install tinapple-install-app tinapple-install-pack tinapple-install-syncyomi tinapple-configure-seerr beeper-ctl tinapple-update tinapple-display-sleep; do
+  if [[ -f "${REPO_DIR}/scripts/${script}" ]]; then
+    scp -q "${REPO_DIR}/scripts/${script}" "${TARGET_USER}@${TARGET_HOST}:/tmp/${script}"
+    ssh "${TARGET_USER}@${TARGET_HOST}" "sudo install -Dm755 /tmp/${script} /usr/local/bin/${script} && rm -f /tmp/${script}"
+  fi
+done
+# Ensure /usr/local/bin/beeper symlink
+ssh "${TARGET_USER}@${TARGET_HOST}" "sudo ln -sf /usr/local/bin/beeper-ctl /usr/local/bin/beeper 2>/dev/null || true"
 
 if [[ -f "${REPO_DIR}/scripts/tinapple-wifi-watchdog" && -f "${REPO_DIR}/scripts/tinapple-wifi-watchdog.service" ]]; then
   scp -q "${REPO_DIR}/scripts/tinapple-wifi-watchdog" "${TARGET_USER}@${TARGET_HOST}:/tmp/tinapple-wifi-watchdog"

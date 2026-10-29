@@ -561,6 +561,17 @@ if os.path.exists(seerr_cfg) and radarr_key and sonarr_key:
                 conn.close()
             except Exception:
                 pass
+        cfg.setdefault('network', {})
+        cfg['network']['proxy'] = {
+            'enabled': True,
+            'hostname': '127.0.0.1',
+            'port': 8118,
+            'useSsl': False,
+            'user': '',
+            'password': '',
+            'bypassFilter': '',
+            'bypassLocalAddresses': True
+        }
         cfg['public']['initialized'] = has_user
 
         # Fetch active Jellyfin libraries
@@ -581,17 +592,19 @@ if os.path.exists(seerr_cfg) and radarr_key and sonarr_key:
             pass
 
         if has_user:
+            existing_libs = cfg.get('jellyfin', {}).get('libraries', [])
+            existing_key = cfg.get('jellyfin', {}).get('apiKey', '')
             cfg['jellyfin'] = {
                 'name': 'tinapple-server',
                 'ip': '127.0.0.1',
                 'port': 8096,
                 'useSsl': False,
                 'urlBase': '',
-                'externalHostname': '',
+                'externalHostname': 'http://pineapple-server:8096',
                 'jellyfinForgotPasswordUrl': '',
-                'libraries': jf_libs,
+                'libraries': jf_libs if jf_libs else existing_libs,
                 'serverId': jf_server_id,
-                'apiKey': jf_token
+                'apiKey': jf_token if jf_token else existing_key
             }
         else:
             if 'jellyfin' in cfg:

@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# tinapple-install-pack
+# Unified CLI installer for any Tinapple Appliance Pack.
+# Runs tinapple-master-install first, then dispatches the pack orchestrator.
+# ==============================================================================
+set -euo pipefail
+
+PACK_ID="${1:-}"
+if [ -z "$PACK_ID" ]; then
+    echo "Usage: tinapple-install-pack <pack_id>"
+    echo "Examples: tinapple-install-pack seerr-stack | manga-suite | manga-syncyomi | privacy-shield | truenas-vault"
+    exit 1
+fi
+
+# 1. Run master pre-flight check
+if command -v tinapple-master-install &>/dev/null; then
+    tinapple-master-install
+elif [ -f "$(dirname "${BASH_SOURCE[0]}")/tinapple-master-install" ]; then
+    "$(dirname "${BASH_SOURCE[0]}")/tinapple-master-install"
+fi
+
+# 2. Trigger installation via local tinapple-dash if running
+if systemctl is-active --quiet tinapple-dash.service 2>/dev/null; then
+    echo ">>> Triggering deployment via tinapple-dash API for pack ${PACK_ID}..."
+    RES=$(curl -s -X POST "http://127.0.0.1:8088/api/v1/packs/${PACK_ID}/install" || true)
+    if echo "$RES" | grep -q '"status":"installed"'; then
+        echo "✅ Pack ${PACK_ID} installed successfully via appliance orchestrator."
+        exit 0
+    else
+        echo "⚠️  Appliance API response: $RES"
+    fi
+fi
+
+# 3. Direct dispatch for pack apps
+case "$PACK_ID" in
+    manga-suite)
+        tinapple-install-app suwayomi
+        ;;
+    manga-syncyomi)
+        tinapple-install-app suwayomi
+        tinapple-install-app syncyomi
+        ;;
+    gaming-anvil)
+        tinapple-install-app minecraft
+        tinapple-install-app playit
+        ;;
+    privacy-shield)
+        tinapple-install-app tailscale
+        tinapple-install-app adguard
+        tinapple-install-app protonvpn
+        tinapple-install-app tor
+        ;;
+    *)
+        echo "Pack ${PACK_ID} passed pre-flight."
+        ;;
+esac
+
+echo "✅ Pack ${PACK_ID} setup finished."

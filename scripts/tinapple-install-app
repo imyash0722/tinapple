@@ -1,0 +1,73 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# tinapple-install-app
+# Unified CLI installer for any Tinapple homelab application.
+# Runs tinapple-master-install first, then dispatches the app installer.
+# ==============================================================================
+set -euo pipefail
+
+APP_ID="${1:-}"
+if [ -z "$APP_ID" ]; then
+    echo "Usage: tinapple-install-app <app_id>"
+    echo "Examples: tinapple-install-app jellyfin | syncyomi | radarr | filebrowser"
+    exit 1
+fi
+
+# 1. Run master pre-flight check
+if command -v tinapple-master-install &>/dev/null; then
+    tinapple-master-install
+elif [ -f "$(dirname "${BASH_SOURCE[0]}")/tinapple-master-install" ]; then
+    "$(dirname "${BASH_SOURCE[0]}")/tinapple-master-install"
+fi
+
+# 2. Trigger installation via local tinapple-dash if running
+if systemctl is-active --quiet tinapple-dash.service 2>/dev/null; then
+    echo ">>> Triggering deployment via tinapple-dash API for ${APP_ID}..."
+    RES=$(curl -s -X POST "http://127.0.0.1:8088/api/v1/apps/${APP_ID}/install" || true)
+    if echo "$RES" | grep -q '"status":"installed"'; then
+        echo "✅ ${APP_ID} installed successfully via appliance orchestrator."
+        exit 0
+    else
+        echo "⚠️  Appliance API response: $RES"
+        echo "Falling back to standalone installer routine..."
+    fi
+fi
+
+# 3. Direct standalone fallback
+PRIMARY_USER="pineapple"
+if id -u tinapple &>/dev/null; then PRIMARY_USER="tinapple"; fi
+
+case "$APP_ID" in
+    syncyomi)
+        if [ -x /usr/local/bin/tinapple-install-syncyomi ]; then
+            /usr/local/bin/tinapple-install-syncyomi
+        elif [ -x "$(dirname "${BASH_SOURCE[0]}")/tinapple-install-syncyomi" ]; then
+            "$(dirname "${BASH_SOURCE[0]}")/tinapple-install-syncyomi"
+        fi
+        ;;
+    beeper)
+        curl -fsSL https://github.com/beeper/bridge-manager/releases/latest/download/bbctl-linux-amd64 -o /usr/local/bin/bbctl
+        chmod 755 /usr/local/bin/bbctl
+        ;;
+    playit)
+        curl -fsSL https://github.com/playit-cloud/playit-agent/releases/latest/download/playit-linux-amd64 -o /usr/local/bin/playit
+        chmod 755 /usr/local/bin/playit
+        ;;
+    filebrowser)
+        TMP=$(mktemp -d)
+        curl -fsSL https://github.com/filebrowser/filebrowser/releases/latest/download/linux-amd64-filebrowser.tar.gz -o "$TMP/fb.tar.gz"
+        tar -xzf "$TMP/fb.tar.gz" -C "$TMP"
+        install -Dm755 "$TMP/filebrowser" /usr/local/bin/filebrowser
+        rm -rf "$TMP"
+        ;;
+    *)
+        # Pacman / Paru fallback
+        if ! pacman -S --noconfirm --needed "$APP_ID" 2>/dev/null; then
+            echo "Pacman failed, installing via paru AUR helper..."
+            sudo -u "$PRIMARY_USER" paru -S --noconfirm --needed --skipreview "$APP_ID" || \
+            sudo -u "$PRIMARY_USER" paru -S --noconfirm --needed --skipreview "${APP_ID}-bin"
+        fi
+        ;;
+esac
+
+echo "✅ Deployment completed for ${APP_ID}."
