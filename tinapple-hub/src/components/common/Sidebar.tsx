@@ -640,8 +640,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </button>
 
         <button
-          onClick={() => onOpenGuides()}
-          className="flex-1 flex flex-col items-center justify-center py-1 px-1 rounded-xl text-purple-400 hover:text-purple-300 transition-all active:scale-95"
+          onClick={() => handleSelectTab('guides')}
+          className={`flex-1 flex flex-col items-center justify-center py-1 px-1 rounded-xl transition-all active:scale-95 ${
+            activeTab === 'guides'
+              ? 'text-tinapple-gold font-bold scale-105'
+              : 'text-zinc-400 hover:text-zinc-200'
+          }`}
         >
           <BookOpen className="w-5 h-5 mb-0.5" />
           <span className="text-[10px] font-mono">Guides</span>

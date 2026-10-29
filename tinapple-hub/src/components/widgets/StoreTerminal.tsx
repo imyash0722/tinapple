@@ -136,7 +136,7 @@ export const StoreTerminal: React.FC = () => {
   };
 
   return (
-    <div className="mt-8 rounded-2xl bg-[#090b10] border border-tinapple-border/90 shadow-2xl overflow-hidden backdrop-blur-xl">
+    <div id="store-terminal-view" className="mt-8 rounded-2xl bg-[#090b10] border border-tinapple-border/90 shadow-2xl overflow-hidden backdrop-blur-xl">
       {/* Terminal Title Bar */}
       <div className="px-4 py-3 bg-[#11141d] border-b border-tinapple-border flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">

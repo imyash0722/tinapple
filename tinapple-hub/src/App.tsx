@@ -44,6 +44,7 @@ import { TransfersWidget } from './components/widgets/TransfersWidget';
 import { MangaShelfWidget } from './components/widgets/MangaShelfWidget';
 import { TorPrivacyWidget } from './components/widgets/TorPrivacyWidget';
 import { HomarrCanvas } from './components/homarr/HomarrCanvas';
+import { GuidesPage } from './components/widgets/GuidesPage';
 
 // High-speed lazy-loaded modals (reduces initial dashboard bundle size by >60%)
 const AppearanceModal = lazy(() => import('./components/common/AppearanceModal').then((m) => ({ default: m.AppearanceModal })));
@@ -71,6 +72,10 @@ export const App: React.FC = () => {
   const [requestedTab] = useState(() => {
     const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
     return params.get('tab');
+  });
+  const [requestedGuide] = useState(() => {
+    const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
+    return params.get('guide');
   });
   const [selectedTab, setActiveTab] = useState<string | null>(requestedTab);
   const forceWelcome = requestedTab === 'welcome';
@@ -183,11 +188,17 @@ export const App: React.FC = () => {
   const [webTerminalOpen, setWebTerminalOpen] = useState<boolean>(false);
   const [serverToolsOpen, setServerToolsOpen] = useState<boolean>(false);
   const [settingsModalApp, setSettingsModalApp] = useState<{ id: string; name?: string } | null>(null);
-  const [selectedGuideId, setSelectedGuideId] = useState<string | null>('jellyfin');
+  const [selectedGuideId, setSelectedGuideId] = useState<string | null>(requestedGuide || 'jellyfin');
 
   const handleOpenGuide = (guideId?: string) => {
     if (guideId) setSelectedGuideId(guideId);
-    setGuidesOpen(true);
+    setActiveTab('guides');
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      url.searchParams.set('tab', 'guides');
+      if (guideId) url.searchParams.set('guide', guideId);
+      window.history.replaceState({}, '', url.toString());
+    }
   };
 
   const [isSyncing, setIsSyncing] = useState(false);
@@ -537,7 +548,7 @@ export const App: React.FC = () => {
             <div className="md:hidden flex items-center gap-2 min-w-0">
               <span className="text-lg shrink-0">🍎</span>
               <span className="font-mono font-bold text-sm text-white capitalize truncate max-w-[120px] sm:max-w-xs">
-                {activeTab === 'store' ? 'App Store' : activeTab}
+                {activeTab === 'store' ? 'App Store' : activeTab === 'guides' ? 'Guides' : activeTab}
               </span>
             </div>
 
@@ -547,7 +558,7 @@ export const App: React.FC = () => {
               <span className="text-xs text-zinc-600 shrink-0">/</span>
               <div className="flex items-center gap-2 min-w-0">
                 <span className="text-sm font-mono font-black text-white capitalize truncate">
-                  {activeTab === 'store' ? 'App Store & Packs' : activeTab}
+                  {activeTab === 'store' ? 'App Store & Packs' : activeTab === 'guides' ? 'Appliance Guides' : activeTab}
                 </span>
                 <span className="hidden 2xl:inline-flex text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/[0.05] border border-white/10 text-tinapple-gold font-bold whitespace-nowrap">
                   {systemInfo.sessionMode === 'headless' ? 'Headless Server' : 'Niri Desktop'}
@@ -732,6 +743,21 @@ export const App: React.FC = () => {
                 isAdmin={isOwner}
                 onOpenGuide={handleOpenGuide}
                 onOpenSettings={(appId, name) => setSettingsModalApp({ id: appId, name })}
+              />
+            </motion.div>
+          )}
+
+          {activeTab === 'guides' && (
+            <motion.div
+              key="guides"
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -14 }}
+              transition={{ duration: 0.25, ease: 'easeOut' }}
+            >
+              <GuidesPage
+                initialGuideId={selectedGuideId}
+                onSelectGuide={(id) => setSelectedGuideId(id)}
               />
             </motion.div>
           )}

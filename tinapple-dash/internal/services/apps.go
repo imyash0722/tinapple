@@ -1599,6 +1599,12 @@ func (m *AppManager) runStreamCmd(ctx context.Context, appID string, name string
 }
 
 func (m *AppManager) ListPacks() []AppliancePackStatus {
+	apps := m.ListApps()
+	appMap := make(map[string]AppStatus, len(apps))
+	for _, a := range apps {
+		appMap[a.ID] = a
+	}
+
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
@@ -1615,8 +1621,7 @@ func (m *AppManager) ListPacks() []AppliancePackStatus {
 		runningCount := 0
 
 		for _, appID := range pack.Apps {
-			if def, exists := m.apps[appID]; exists {
-				st := m.inspectApp(def)
+			if st, exists := appMap[appID]; exists {
 				status.AppsStatus = append(status.AppsStatus, st)
 				if st.Installed {
 					installedCount++
@@ -1638,6 +1643,12 @@ func (m *AppManager) ListPacks() []AppliancePackStatus {
 }
 
 func (m *AppManager) GetPack(id string) (*AppliancePackStatus, error) {
+	apps := m.ListApps()
+	appMap := make(map[string]AppStatus, len(apps))
+	for _, a := range apps {
+		appMap[a.ID] = a
+	}
+
 	m.mu.RLock()
 	pack, ok := m.packs[id]
 	m.mu.RUnlock()
@@ -1655,8 +1666,7 @@ func (m *AppManager) GetPack(id string) (*AppliancePackStatus, error) {
 	runningCount := 0
 
 	for _, appID := range pack.Apps {
-		if def, exists := m.apps[appID]; exists {
-			st := m.inspectApp(def)
+		if st, exists := appMap[appID]; exists {
 			status.AppsStatus = append(status.AppsStatus, st)
 			if st.Installed {
 				installedCount++

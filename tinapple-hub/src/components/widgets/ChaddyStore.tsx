@@ -719,6 +719,9 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({
     try {
       let res: { ok: boolean; error?: string } = { ok: false };
       if (action === 'install') {
+        setTimeout(() => {
+          document.getElementById('store-terminal-view')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 150);
         res = await api.installPack(packId);
         if (res.ok) {
           confetti({
@@ -1254,11 +1257,13 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({
                           const packGuideMap: Record<string, string> = {
                             'seerr-stack': 'seerr',
                             'manga-suite': 'syncyomi',
+                            'manga-syncyomi': 'syncyomi',
                             'privacy-shield': 'tailscale',
                             'audiophile-cloud': 'navidrome',
                             'cloud-vault': 'vaultwarden',
                             'second-brain': 'obsidian',
                             'gaming-anvil': 'tailscale',
+                            'truenas-vault': 'syncthing',
                           };
                           onOpenGuide(packGuideMap[pack.id] || 'jellyfin');
                         }}
@@ -1363,6 +1368,68 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({
                           <ExternalLink className="w-3 h-3" />
                           FileBrowser (:8082)
                         </a>
+                      )}
+                      {pack.id === 'manga-syncyomi' && (
+                        <>
+                          <a
+                            href={getAppUrl(8282)}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="flex items-center gap-1 px-3 py-2 rounded-xl bg-pink-500/20 hover:bg-pink-500/30 text-pink-200 border border-pink-500/40 text-xs font-mono font-bold transition-all shadow-sm"
+                            title="Open SyncYomi Sync Bridge WebUI"
+                          >
+                            <ExternalLink className="w-3 h-3" />
+                            SyncYomi (:8282)
+                          </a>
+                          <a
+                            href={getAppUrl(4567)}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="flex items-center gap-1 px-3 py-2 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-200 border border-rose-500/40 text-xs font-mono font-bold transition-all shadow-sm"
+                            title="Open Suwayomi Manga Reader"
+                          >
+                            <ExternalLink className="w-3 h-3" />
+                            Suwayomi (:4567)
+                          </a>
+                          <a
+                            href="/download/tsumiru"
+                            download="tsumiru-client.apk"
+                            className="flex items-center gap-1 px-3 py-2 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-200 border border-purple-500/40 text-xs font-mono font-bold transition-all shadow-sm"
+                            title="Download Tsumiru Android APK"
+                          >
+                            <Download className="w-3 h-3" />
+                            Tsumiru APK
+                          </a>
+                        </>
+                      )}
+                      {pack.id === 'truenas-vault' && (
+                        <>
+                          <a
+                            href={getAppUrl(8082)}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="flex items-center gap-1 px-3 py-2 rounded-xl bg-sky-500/20 hover:bg-sky-500/30 text-sky-200 border border-sky-500/40 text-xs font-mono font-bold transition-all shadow-sm"
+                            title="Open FileBrowser Quantum File Manager"
+                          >
+                            <ExternalLink className="w-3 h-3" />
+                            FileBrowser (:8082)
+                          </a>
+                          <a
+                            href={getAppUrl(8384)}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="flex items-center gap-1 px-3 py-2 rounded-xl bg-blue-500/20 hover:bg-blue-500/30 text-blue-200 border border-blue-500/40 text-xs font-mono font-bold transition-all shadow-sm"
+                            title="Open Syncthing P2P Folder Sync"
+                          >
+                            <ExternalLink className="w-3 h-3" />
+                            Syncthing (:8384)
+                          </a>
+                        </>
+                      )}
+                      {pack.id === 'gaming-anvil' && (
+                        <div className="flex items-center gap-1 px-3 py-2 rounded-xl bg-emerald-500/20 text-emerald-200 border border-emerald-500/40 text-xs font-mono font-bold shadow-sm">
+                          <span>PaperMC (:25565)</span>
+                        </div>
                       )}
                     </div>
                   )}
