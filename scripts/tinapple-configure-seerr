@@ -4,14 +4,30 @@ import sys
 import re
 import time
 import json
+import sqlite3
 import urllib.request
+import urllib.parse
 import urllib.error
 import subprocess
 
 print("=== [Tinapple Automator] Configuring Full Seerr & Servarr Media Stack ===")
 
-# 1. Setup Media Directory & Permissions
-media_dirs = ['movies', 'shows', 'music', 'downloads', 'youtube', 'youtube-music', 'manga']
+# 1. Setup Media Directory Structure & Permissions
+media_dirs = [
+    'movies',
+    'shows',
+    'anime',
+    'kdrama',
+    'music',
+    'downloads',
+    'downloads/complete',
+    'downloads/incomplete',
+    'downloads/radarr',
+    'downloads/sonarr',
+    'youtube',
+    'youtube-music',
+    'manga'
+]
 for d in media_dirs:
     p = os.path.join('/srv/media', d)
     os.makedirs(p, exist_ok=True)
@@ -20,8 +36,36 @@ subprocess.run(['chown', '-R', 'root:media', '/srv/media'], check=False)
 subprocess.run(['chmod', '-R', '775', '/srv/media'], check=False)
 subprocess.run(['chmod', '-R', 'g+s', '/srv/media'], check=False)
 
-for u in ['jellyfin', 'qbt', 'pineapple']:
-    subprocess.run(['usermod', '-aG', 'media', u], check=False)
+for u in ['jellyfin', 'qbt', 'tinapple', 'seerr', 'bazarr', 'root', 'pineapple']:
+    res = subprocess.run(['id', u], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    if res.returncode == 0:
+        subprocess.run(['usermod', '-aG', 'media', u], check=False)
+
+# Backward-compatibility symlinks in user storage folders
+for home in ['/home/tin/storage', '/home/tinapple/storage']:
+    try:
+        os.makedirs(home, exist_ok=True)
+        links = [
+            ('Movies', '/srv/media/movies'),
+            ('Shows', '/srv/media/shows'),
+            ('Anime', '/srv/media/anime'),
+            ('KDrama', '/srv/media/kdrama'),
+            ('Downloads', '/srv/media/downloads'),
+            ('Music', '/srv/media/music'),
+            ('Manga', '/srv/media/manga'),
+            ('YouTube', '/srv/media/youtube')
+        ]
+        for name, target in links:
+            link_path = os.path.join(home, name)
+            if os.path.islink(link_path) or not os.path.exists(link_path):
+                try:
+                    if os.path.islink(link_path):
+                        os.unlink(link_path)
+                    os.symlink(target, link_path)
+                except Exception:
+                    pass
+    except Exception:
+        pass
 
 print("[✓] /srv/media directories and permissions configured (group: media)")
 
@@ -40,30 +84,109 @@ radarr_key = extract_xml_key('/var/lib/radarr/config.xml')
 sonarr_key = extract_xml_key('/var/lib/sonarr/config.xml')
 prowlarr_key = extract_xml_key('/var/lib/prowlarr/config.xml')
 
-print(f"[✓] Detected API Keys - Radarr: {bool(radarr_key)}, Sonarr: {bool(sonarr_key)}, Prowlarr: {bool(prowlarr_key)}")
-
-# 3. Configure qBittorrent
-qbt_conf = '/var/lib/qbittorrent/.config/qBittorrent/qBittorrent.conf'
-if os.path.exists(qbt_conf):
+# Extract Jellyfin API key and serverId
+jf_token = None
+jf_server_id = "61e4d7bd898a4164acd566571fa0c377"
+jf_db = '/var/lib/jellyfin/data/jellyfin.db'
+if os.path.exists(jf_db):
     try:
-        with open(qbt_conf, 'r') as f:
-            q_txt = f.read()
-        if 'adminadmin' not in q_txt:
-            pwd_line = r'WebUI\Password_PBKDF2=@ByteArray(u3i9EWvqTPau8Hr2aZRWeA==:amesvS18L44YdaFV6BKnCDIXS35lKaam1uaxLqT7wAA0e9wx6fhKHzB7kvQiWOrGrlpW0ZwMB0Mp8tpCyxB9Fw==)'
-            if 'WebUI\\Password_PBKDF2' in q_txt:
-                lines = [l if not l.startswith('WebUI\\Password_PBKDF2=') else pwd_line for l in q_txt.splitlines()]
-                q_txt = '\n'.join(lines) + '\n'
-            else:
-                q_txt += f'\n[Preferences]\n{pwd_line}\nWebUI\\Username=admin\n'
-            with open(qbt_conf, 'w') as f:
-                f.write(q_txt)
-            subprocess.run(['systemctl', 'restart', 'qbittorrent-nox'], check=False)
-            time.sleep(1)
-        print("[✓] qBittorrent authenticated and ready on port 8080")
-    except Exception as e:
-        print(f"[!] qBittorrent config notice: {e}")
+        conn = sqlite3.connect(jf_db)
+        cursor = conn.cursor()
+        cursor.execute("SELECT AccessToken FROM ApiKeys WHERE Name='Seerr' LIMIT 1")
+        row = cursor.fetchone()
+        if row:
+            jf_token = row[0]
+        else:
+            cursor.execute("SELECT AccessToken FROM ApiKeys LIMIT 1")
+            row2 = cursor.fetchone()
+            if row2:
+                jf_token = row2[0]
+        conn.close()
+    except Exception:
+        pass
 
-# 4. Helper for JSON requests
+if not jf_token:
+    jf_token = "ff90108951c640c08b04dad16bf18a64"
+
+print(f"[✓] Detected API Keys - Radarr: {bool(radarr_key)}, Sonarr: {bool(sonarr_key)}, Prowlarr: {bool(prowlarr_key)}, Jellyfin: {bool(jf_token)}")
+
+# 3. FlareSolverr NSS certificate and runtime setup
+try:
+    pki_dir = '/opt/flaresolverr/.pki/nssdb'
+    if not os.path.exists(pki_dir):
+        os.makedirs(pki_dir, exist_ok=True)
+        subprocess.run(['chown', '-R', 'flaresolverr:flaresolverr', '/opt/flaresolverr/.pki'], check=False)
+        subprocess.run(['certutil', '-d', f'sql:{pki_dir}', '-N', '--empty-password'], check=False)
+
+    # Ensure clean shared library symlinks for headless Chrome
+    internal_dir = '/opt/flaresolverr/_internal'
+    if os.path.isdir(internal_dir):
+        for lib in ['libnspr4.so', 'libnss3.so', 'libnssutil3.so', 'libsmime3.so', 'libssl3.so']:
+            sys_lib = os.path.join('/usr/lib', lib)
+            dest_lib = os.path.join(internal_dir, lib)
+            if os.path.exists(sys_lib) and not (os.path.islink(dest_lib) and os.readlink(dest_lib) == sys_lib):
+                try:
+                    if os.path.exists(dest_lib) and not os.path.islink(dest_lib):
+                        os.rename(dest_lib, dest_lib + '.bak')
+                    elif os.path.islink(dest_lib):
+                        os.unlink(dest_lib)
+                    os.symlink(sys_lib, dest_lib)
+                except Exception:
+                    pass
+except Exception as e:
+    print(f"[!] FlareSolverr setup notice: {e}")
+
+# 4. Configure qBittorrent
+qbt_configs = [
+    '/home/tinapple/.config/qBittorrent/qBittorrent.conf',
+    '/var/lib/qbittorrent/.config/qBittorrent/qBittorrent.conf'
+]
+pwd_line = 'WebUI\\Password_PBKDF2=@ByteArray(u3i9EWvqTPau8Hr2aZRWeA==:amesvS18L44YdaFV6BKnCDIXS35lKaam1uaxLqT7wAA0e9wx6fhKHzB7kvQiWOrGrlpW0ZwMB0Mp8tpCyxB9Fw==)\n'
+
+for conf in qbt_configs:
+    if os.path.exists(conf):
+        try:
+            with open(conf, 'r') as f:
+                lines = f.readlines()
+            new_lines = []
+            has_user = False
+            has_pwd = False
+            for line in lines:
+                s = line.strip()
+                if s.startswith('Session\\DefaultSavePath='):
+                    new_lines.append('Session\\DefaultSavePath=/srv/media/downloads/\n')
+                elif s.startswith('Session\\TempPath='):
+                    new_lines.append('Session\\TempPath=/srv/media/downloads/incomplete/\n')
+                elif s.startswith('WebUI\\Password_PBKDF2='):
+                    new_lines.append(pwd_line)
+                    has_pwd = True
+                elif s.startswith('WebUI\\Username='):
+                    new_lines.append('WebUI\\Username=admin\n')
+                    has_user = True
+                elif s.startswith('WebUI\\Port='):
+                    new_lines.append('WebUI\\Port=8080\n')
+                elif s.startswith('WebUI\\LocalHostAuth='):
+                    new_lines.append('WebUI\\LocalHostAuth=false\n')
+                elif s.startswith('WebUI\\AuthSubnetWhitelist='):
+                    new_lines.append('WebUI\\AuthSubnetWhitelist=127.0.0.1/32, 192.168.0.0/16, 10.0.0.0/8, 172.16.0.0/12, 100.64.0.0/10\n')
+                elif s.startswith('WebUI\\AuthSubnetWhitelistEnabled='):
+                    new_lines.append('WebUI\\AuthSubnetWhitelistEnabled=true\n')
+                else:
+                    new_lines.append(line)
+
+            if not has_user:
+                new_lines.append('WebUI\\Username=admin\n')
+            if not has_pwd:
+                new_lines.append(pwd_line)
+
+            with open(conf, 'w') as f:
+                f.writelines(new_lines)
+            subprocess.run(['systemctl', 'restart', 'qbittorrent-nox'], check=False)
+            print(f"[✓] qBittorrent configured & restarted ({conf})")
+        except Exception as e:
+            print(f"[!] qBittorrent config notice for {conf}: {e}")
+
+# 5. Helper for JSON API Requests
 def api_request(url, method='GET', data=None, headers=None):
     hdrs = {'Content-Type': 'application/json'}
     if headers:
@@ -71,7 +194,7 @@ def api_request(url, method='GET', data=None, headers=None):
     body = json.dumps(data).encode() if data is not None else None
     req = urllib.request.Request(url, data=body, headers=hdrs, method=method)
     try:
-        with urllib.request.urlopen(req, timeout=10) as resp:
+        with urllib.request.urlopen(req, timeout=12) as resp:
             content = resp.read().decode()
             return json.loads(content) if content else {}
     except urllib.error.HTTPError as e:
@@ -79,56 +202,120 @@ def api_request(url, method='GET', data=None, headers=None):
     except Exception as e:
         return {'error': str(e)}
 
-# 5. Radarr: Root Folder & qBittorrent Client
+# 6. Radarr: Root Folder & qBittorrent Download Client
 if radarr_key:
     rf = api_request('http://127.0.0.1:7878/api/v3/rootfolder', headers={'X-Api-Key': radarr_key})
-    if isinstance(rf, list) and not any(r.get('path') == '/srv/media/movies' for r in rf):
+    has_movies = False
+    if isinstance(rf, list):
+        for r in rf:
+            p = r.get('path')
+            if p == '/srv/media/movies':
+                has_movies = True
+            elif p == '/home/tin/storage/Movies':
+                api_request(f"http://127.0.0.1:7878/api/v3/rootfolder/{r['id']}", method='DELETE', headers={'X-Api-Key': radarr_key})
+    if not has_movies:
         api_request('http://127.0.0.1:7878/api/v3/rootfolder', method='POST', data={'path': '/srv/media/movies'}, headers={'X-Api-Key': radarr_key})
         print("[✓] Radarr root folder configured: /srv/media/movies")
 
     dc = api_request('http://127.0.0.1:7878/api/v3/downloadclient', headers={'X-Api-Key': radarr_key})
-    if isinstance(dc, list) and not any(d.get('name') == 'qBittorrent' for d in dc):
-        schemas = api_request('http://127.0.0.1:7878/api/v3/downloadclient/schema', headers={'X-Api-Key': radarr_key})
-        if isinstance(schemas, list):
-            q_schema = next((s for s in schemas if s.get('implementation') == 'QBittorrent'), None)
-            if q_schema:
-                q_schema['enable'] = True
-                q_schema['name'] = 'qBittorrent'
-                for f in q_schema['fields']:
-                    if f['name'] == 'host': f['value'] = '127.0.0.1'
-                    elif f['name'] == 'port': f['value'] = 8080
-                    elif f['name'] == 'username': f['value'] = 'admin'
-                    elif f['name'] == 'password': f['value'] = 'adminadmin'
-                    elif f['name'] == 'movieCategory': f['value'] = 'radarr'
-                api_request('http://127.0.0.1:7878/api/v3/downloadclient', method='POST', data=q_schema, headers={'X-Api-Key': radarr_key})
-                print("[✓] Radarr download client connected: qBittorrent (:8080)")
+    q_client = next((d for d in dc if d.get('name') == 'qBittorrent'), None) if isinstance(dc, list) else None
+    schemas = api_request('http://127.0.0.1:7878/api/v3/downloadclient/schema', headers={'X-Api-Key': radarr_key})
+    q_schema = next((s for s in schemas if s.get('implementation') == 'QBittorrent'), None) if isinstance(schemas, list) else None
 
-# 6. Sonarr: Root Folder & qBittorrent Client
+    if q_schema:
+        target = q_client if q_client else q_schema
+        target['enable'] = True
+        target['name'] = 'qBittorrent'
+        target['priority'] = 1
+        for f in target.get('fields', []):
+            if f['name'] == 'host': f['value'] = '127.0.0.1'
+            elif f['name'] == 'port': f['value'] = 8080
+            elif f['name'] == 'username': f['value'] = 'admin'
+            elif f['name'] == 'password': f['value'] = 'adminadmin'
+            elif f['name'] == 'movieCategory': f['value'] = 'radarr'
+
+        if q_client:
+            api_request(f"http://127.0.0.1:7878/api/v3/downloadclient/{q_client['id']}", method='PUT', data=target, headers={'X-Api-Key': radarr_key})
+            print("[✓] Radarr download client updated: qBittorrent (:8080)")
+        else:
+            api_request('http://127.0.0.1:7878/api/v3/downloadclient', method='POST', data=target, headers={'X-Api-Key': radarr_key})
+            print("[✓] Radarr download client created: qBittorrent (:8080)")
+
+# 7. Sonarr: Root Folders & qBittorrent Download Client
 if sonarr_key:
     rf = api_request('http://127.0.0.1:8989/api/v3/rootfolder', headers={'X-Api-Key': sonarr_key})
-    if isinstance(rf, list) and not any(r.get('path') == '/srv/media/shows' for r in rf):
-        api_request('http://127.0.0.1:8989/api/v3/rootfolder', method='POST', data={'path': '/srv/media/shows'}, headers={'X-Api-Key': sonarr_key})
-        print("[✓] Sonarr root folder configured: /srv/media/shows")
+    existing_paths = set()
+    if isinstance(rf, list):
+        for r in rf:
+            p = r.get('path')
+            if p == '/home/tin/storage/Shows':
+                api_request(f"http://127.0.0.1:8989/api/v3/rootfolder/{r['id']}", method='DELETE', headers={'X-Api-Key': sonarr_key})
+            else:
+                existing_paths.add(p)
+
+    for p in ['/srv/media/shows', '/srv/media/anime', '/srv/media/kdrama']:
+        if p not in existing_paths:
+            api_request('http://127.0.0.1:8989/api/v3/rootfolder', method='POST', data={'path': p}, headers={'X-Api-Key': sonarr_key})
+            print(f"[✓] Sonarr root folder added: {p}")
 
     dc = api_request('http://127.0.0.1:8989/api/v3/downloadclient', headers={'X-Api-Key': sonarr_key})
-    if isinstance(dc, list) and not any(d.get('name') == 'qBittorrent' for d in dc):
-        schemas = api_request('http://127.0.0.1:8989/api/v3/downloadclient/schema', headers={'X-Api-Key': sonarr_key})
-        if isinstance(schemas, list):
-            q_schema = next((s for s in schemas if s.get('implementation') == 'QBittorrent'), None)
-            if q_schema:
-                q_schema['enable'] = True
-                q_schema['name'] = 'qBittorrent'
-                for f in q_schema['fields']:
-                    if f['name'] == 'host': f['value'] = '127.0.0.1'
-                    elif f['name'] == 'port': f['value'] = 8080
-                    elif f['name'] == 'username': f['value'] = 'admin'
-                    elif f['name'] == 'password': f['value'] = 'adminadmin'
-                    elif f['name'] == 'tvCategory': f['value'] = 'sonarr'
-                api_request('http://127.0.0.1:8989/api/v3/downloadclient', method='POST', data=q_schema, headers={'X-Api-Key': sonarr_key})
-                print("[✓] Sonarr download client connected: qBittorrent (:8080)")
+    q_client = next((d for d in dc if d.get('name') == 'qBittorrent'), None) if isinstance(dc, list) else None
+    schemas = api_request('http://127.0.0.1:8989/api/v3/downloadclient/schema', headers={'X-Api-Key': sonarr_key})
+    q_schema = next((s for s in schemas if s.get('implementation') == 'QBittorrent'), None) if isinstance(schemas, list) else None
 
-# 7. Prowlarr: Applications & Trackers
+    if q_schema:
+        target = q_client if q_client else q_schema
+        target['enable'] = True
+        target['name'] = 'qBittorrent'
+        target['priority'] = 1
+        for f in target.get('fields', []):
+            if f['name'] == 'host': f['value'] = '127.0.0.1'
+            elif f['name'] == 'port': f['value'] = 8080
+            elif f['name'] == 'username': f['value'] = 'admin'
+            elif f['name'] == 'password': f['value'] = 'adminadmin'
+            elif f['name'] == 'tvCategory': f['value'] = 'sonarr'
+
+        if q_client:
+            api_request(f"http://127.0.0.1:8989/api/v3/downloadclient/{q_client['id']}", method='PUT', data=target, headers={'X-Api-Key': sonarr_key})
+            print("[✓] Sonarr download client updated: qBittorrent (:8080)")
+        else:
+            api_request('http://127.0.0.1:8989/api/v3/downloadclient', method='POST', data=target, headers={'X-Api-Key': sonarr_key})
+            print("[✓] Sonarr download client created: qBittorrent (:8080)")
+
+# 8. Prowlarr: Applications, FlareSolverr Proxy, and Indexers
 if prowlarr_key and radarr_key and sonarr_key:
+    # 8.1 FlareSolverr Proxy Tag and Definition
+    tags = api_request('http://127.0.0.1:9696/api/v1/tag', headers={'X-Api-Key': prowlarr_key})
+    flaresolverr_tag_id = None
+    if isinstance(tags, list):
+        for t in tags:
+            if t.get('label') == 'flaresolverr':
+                flaresolverr_tag_id = t.get('id')
+                break
+    if not flaresolverr_tag_id:
+        new_tag = api_request('http://127.0.0.1:9696/api/v1/tag', method='POST', data={'label': 'flaresolverr'}, headers={'X-Api-Key': prowlarr_key})
+        flaresolverr_tag_id = new_tag.get('id')
+
+    proxies = api_request('http://127.0.0.1:9696/api/v1/indexerproxy', headers={'X-Api-Key': prowlarr_key})
+    has_flaresolverr = False
+    if isinstance(proxies, list):
+        has_flaresolverr = any(p.get('implementation') == 'FlareSolverr' for p in proxies)
+
+    if not has_flaresolverr:
+        proxy_schemas = api_request('http://127.0.0.1:9696/api/v1/indexerproxy/schema', headers={'X-Api-Key': prowlarr_key})
+        if isinstance(proxy_schemas, list):
+            fs_sch = next((s for s in proxy_schemas if s.get('implementation') == 'FlareSolverr'), None)
+            if fs_sch:
+                fs_sch['name'] = 'FlareSolverr'
+                if flaresolverr_tag_id:
+                    fs_sch['tags'] = [flaresolverr_tag_id]
+                for f in fs_sch.get('fields', []):
+                    if f['name'] == 'host': f['value'] = 'http://localhost:8191/'
+                    elif f['name'] == 'requestTimeout': f['value'] = 60
+                api_request('http://127.0.0.1:9696/api/v1/indexerproxy', method='POST', data=fs_sch, headers={'X-Api-Key': prowlarr_key})
+                print("[✓] Prowlarr configured FlareSolverr proxy (:8191)")
+
+    # 8.2 Applications Linking
     apps = api_request('http://127.0.0.1:9696/api/v1/applications', headers={'X-Api-Key': prowlarr_key})
     if isinstance(apps, list):
         schemas = api_request('http://127.0.0.1:9696/api/v1/applications/schema', headers={'X-Api-Key': prowlarr_key})
@@ -138,30 +325,55 @@ if prowlarr_key and radarr_key and sonarr_key:
                 if rs:
                     rs['enable'] = True
                     rs['name'] = 'Radarr'
+                    rs['syncLevel'] = 'fullSync'
                     for f in rs['fields']:
                         if f['name'] == 'prowlarrUrl': f['value'] = 'http://localhost:9696'
                         elif f['name'] == 'baseUrl': f['value'] = 'http://localhost:7878'
                         elif f['name'] == 'apiKey': f['value'] = radarr_key
                     api_request('http://127.0.0.1:9696/api/v1/applications', method='POST', data=rs, headers={'X-Api-Key': prowlarr_key})
                     print("[✓] Prowlarr linked to Radarr (:7878)")
+
             if not any(a.get('name') == 'Sonarr' for a in apps):
                 ss = next((s for s in schemas if s.get('implementation') == 'Sonarr'), None)
                 if ss:
                     ss['enable'] = True
                     ss['name'] = 'Sonarr'
+                    ss['syncLevel'] = 'fullSync'
                     for f in ss['fields']:
                         if f['name'] == 'prowlarrUrl': f['value'] = 'http://localhost:9696'
                         elif f['name'] == 'baseUrl': f['value'] = 'http://localhost:8989'
                         elif f['name'] == 'apiKey': f['value'] = sonarr_key
+                        elif f['name'] == 'syncAnimeStandardFormatSearch': f['value'] = True
                     api_request('http://127.0.0.1:9696/api/v1/applications', method='POST', data=ss, headers={'X-Api-Key': prowlarr_key})
                     print("[✓] Prowlarr linked to Sonarr (:8989)")
 
-    # Add popular public trackers
+    # 8.3 Specialized Indexers: Movies, TV, Anime, and K-Drama
+    target_trackers = [
+        # Movies & Popular
+        'YTS',
+        'The Pirate Bay',
+        'Torrent Downloads',
+        'Knaben',
+        # Anime & Japanese Media
+        'Nyaa.si',
+        'Anime Tosho',
+        'Tokyo Toshokan',
+        'SubsPlease',
+        'Shana Project'
+    ]
+
     indexers = api_request('http://127.0.0.1:9696/api/v1/indexer', headers={'X-Api-Key': prowlarr_key})
-    existing = [i.get('name') for i in indexers] if isinstance(indexers, list) else []
+    existing = {i.get('name'): i for i in indexers} if isinstance(indexers, list) else {}
+
+    # Prune known broken indexers if present
+    for bad in ['TorrentDownload']:
+        if bad in existing:
+            api_request(f"http://127.0.0.1:9696/api/v1/indexer/{existing[bad]['id']}", method='DELETE', headers={'X-Api-Key': prowlarr_key})
+            print(f"[✓] Removed deprecated indexer: {bad}")
+
     idx_schemas = api_request('http://127.0.0.1:9696/api/v1/indexer/schema', headers={'X-Api-Key': prowlarr_key})
     if isinstance(idx_schemas, list):
-        for name in ['YTS', 'Nyaa.si', 'The Pirate Bay', 'LimeTorrents']:
+        for name in target_trackers:
             if name not in existing:
                 sch = next((s for s in idx_schemas if s.get('name') == name), None)
                 if sch:
@@ -171,7 +383,11 @@ if prowlarr_key and radarr_key and sonarr_key:
                     if 'error' not in res:
                         print(f"[✓] Prowlarr added tracker: {name}")
 
-# 8. Bazarr Configuration
+    # Trigger Prowlarr Application Indexer Sync to propagate to Radarr & Sonarr
+    api_request('http://127.0.0.1:9696/api/v1/command', method='POST', data={'name': 'ApplicationIndexerSync'}, headers={'X-Api-Key': prowlarr_key})
+    print("[✓] Prowlarr synced indexers to Radarr & Sonarr")
+
+# 9. Bazarr Configuration
 bazarr_cfg = '/var/lib/bazarr/config/config.yaml'
 if os.path.exists(bazarr_cfg) and radarr_key and sonarr_key:
     try:
@@ -188,18 +404,42 @@ if os.path.exists(bazarr_cfg) and radarr_key and sonarr_key:
     except Exception as e:
         print(f"[!] Bazarr notice: {e}")
 
-# 9. Jellyseerr Configuration
+# 10. Jellyfin Library Configuration
+if jf_token:
+    jf_headers = {'Authorization': f'MediaBrowser Token="{jf_token}"'}
+    folders = api_request('http://127.0.0.1:8096/Library/VirtualFolders', headers=jf_headers)
+    existing_folders = {f.get('Name'): f for f in folders} if isinstance(folders, list) else {}
+
+    # Ensure /srv/media/movies is in Movies
+    if 'Movies' in existing_folders and '/srv/media/movies' not in existing_folders['Movies'].get('Locations', []):
+        api_request('http://127.0.0.1:8096/Library/VirtualFolders/Paths', method='POST', data={'Name': 'Movies', 'Path': '/srv/media/movies'}, headers=jf_headers)
+
+    # Ensure /srv/media/shows is in Shows
+    if 'Shows' in existing_folders and '/srv/media/shows' not in existing_folders['Shows'].get('Locations', []):
+        api_request('http://127.0.0.1:8096/Library/VirtualFolders/Paths', method='POST', data={'Name': 'Shows', 'Path': '/srv/media/shows'}, headers=jf_headers)
+
+    # Create Anime Library if needed
+    if 'Anime' not in existing_folders:
+        u = 'http://127.0.0.1:8096/Library/VirtualFolders?' + urllib.parse.urlencode({'name': 'Anime', 'collectionType': 'tvshows', 'paths': '/srv/media/anime'})
+        api_request(u, method='POST', headers=jf_headers)
+
+    # Create K-Drama Library if needed
+    if 'K-Drama' not in existing_folders and 'KDrama' not in existing_folders:
+        u = 'http://127.0.0.1:8096/Library/VirtualFolders?' + urllib.parse.urlencode({'name': 'K-Drama', 'collectionType': 'tvshows', 'paths': '/srv/media/kdrama'})
+        api_request(u, method='POST', headers=jf_headers)
+    print("[✓] Jellyfin libraries verified (Movies, Shows, Anime, K-Drama)")
+
+# 11. Jellyseerr Configuration
 seerr_cfg = '/var/lib/seerr/settings.json'
 if os.path.exists(seerr_cfg) and radarr_key and sonarr_key:
     try:
         with open(seerr_cfg, 'r') as f:
             cfg = json.load(f)
-        # Only mark initialized if an admin user already exists in Seerr database
+
         has_user = False
         db_path = '/var/lib/seerr/db/db.sqlite3'
         if os.path.exists(db_path):
             try:
-                import sqlite3
                 conn = sqlite3.connect(db_path)
                 c = conn.cursor()
                 c.execute("SELECT count(*) FROM user")
@@ -208,69 +448,101 @@ if os.path.exists(seerr_cfg) and radarr_key and sonarr_key:
             except Exception:
                 pass
         cfg['public']['initialized'] = has_user
+
+        # Fetch active Jellyfin libraries
+        jf_libs = []
+        try:
+            vf = api_request('http://127.0.0.1:8096/Library/VirtualFolders', headers={'Authorization': f'MediaBrowser Token="{jf_token}"'})
+            if isinstance(vf, list):
+                for f in vf:
+                    col_type = f.get('CollectionType')
+                    if col_type in ['movies', 'tvshows']:
+                        jf_libs.append({
+                            'id': f.get('ItemId'),
+                            'name': f.get('Name'),
+                            'enabled': True,
+                            'type': 'movie' if col_type == 'movies' else 'show'
+                        })
+        except Exception:
+            pass
+
         if has_user:
             cfg['jellyfin'] = {
-                'name': 'pineapple',
+                'name': 'tinapple-server',
                 'ip': '127.0.0.1',
                 'port': 8096,
                 'useSsl': False,
                 'urlBase': '',
-                'externalHostname': 'http://pineapple-server:8096',
-                'libraries': [],
-                'serverId': '5e0ad999bdf243dda8b63664bd21e08f',
-                'apiKey': ''
+                'externalHostname': '',
+                'jellyfinForgotPasswordUrl': '',
+                'libraries': jf_libs,
+                'serverId': jf_server_id,
+                'apiKey': jf_token
             }
         else:
             if 'jellyfin' in cfg:
                 cfg['jellyfin']['ip'] = ''
+
         cfg['radarr'] = [{
-            'id': 1,
+            'id': 0,
             'name': 'Radarr',
             'hostname': '127.0.0.1',
             'port': 7878,
             'apiKey': radarr_key,
             'useSsl': False,
+            'baseUrl': '',
             'activeProfileId': 1,
-            'activeProfileName': 'HD - 720p/1080p',
+            'activeProfileName': 'Any',
             'activeDirectory': '/srv/media/movies',
             'is4k': False,
-            'minimumAvailability': 'Announced',
+            'minimumAvailability': 'released',
+            'tags': [],
             'isDefault': True,
-            'externalUrl': 'http://pineapple-server:7878',
             'syncEnabled': True,
-            'preventSearch': False
+            'preventSearch': False,
+            'externalUrl': ''
         }]
+
         cfg['sonarr'] = [{
-            'id': 1,
+            'id': 0,
             'name': 'Sonarr',
             'hostname': '127.0.0.1',
             'port': 8989,
             'apiKey': sonarr_key,
             'useSsl': False,
+            'baseUrl': '',
             'activeProfileId': 1,
-            'activeProfileName': 'HD - 720p/1080p',
+            'activeProfileName': 'Any',
             'activeDirectory': '/srv/media/shows',
             'activeLanguageProfileId': 1,
+            'activeAnimeProfileId': 1,
+            'activeAnimeProfileName': 'Any',
+            'activeAnimeDirectory': '/srv/media/anime',
+            'activeAnimeLanguageProfileId': None,
+            'animeTags': [],
             'is4k': False,
+            'enableSeasonFolders': True,
+            'tags': [],
             'isDefault': True,
-            'externalUrl': 'http://pineapple-server:8989',
             'syncEnabled': True,
-            'preventSearch': False
+            'preventSearch': False,
+            'externalUrl': ''
         }]
+
         with open(seerr_cfg, 'w') as f:
             json.dump(cfg, f, indent=2)
+
         subprocess.run(['systemctl', 'restart', 'seerr'], check=False)
         print("[✓] Jellyseerr configured & linked to Jellyfin, Radarr, and Sonarr")
     except Exception as e:
         print(f"[!] Jellyseerr notice: {e}")
 
-# 10. Pinchflat YouTube Media Manager & Jellyfin Library Setup
+# 12. Pinchflat YouTube Media Manager & Jellyfin Library Setup
 try:
     os.makedirs('/srv/media/youtube', exist_ok=True)
     os.makedirs('/var/lib/pinchflat', exist_ok=True)
     subprocess.run(['systemctl', 'enable', '--now', 'pinchflat'], check=False)
     
-    # Setup Jellyfin YouTube library directory & options
     jellyfin_yt_dir = '/var/lib/jellyfin/root/default/YouTube'
     os.makedirs(jellyfin_yt_dir, exist_ok=True)
     yt_symlink = os.path.join(jellyfin_yt_dir, 'YouTube')

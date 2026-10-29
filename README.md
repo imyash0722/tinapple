@@ -379,16 +379,21 @@ Tinapple integrates a headless zero-touch media automation pipeline linking Jell
 
 ### Automated Orchestration Script (`tinapple-configure-seerr`)
 The pipeline is fully automated via `/usr/local/bin/tinapple-configure-seerr` (source: [`scripts/tinapple-configure-seerr`](scripts/tinapple-configure-seerr)):
-1. **Filesystem Hierarchy**: Pre-provisions `/srv/media/{movies,shows,music,downloads,youtube,youtube-music,manga}` with group `media` and `2775` (`g+s`) sticky permissions.
-2. **qBittorrent WebUI**: Sets permanent credentials (`admin` / `adminadmin`) and opens authenticated REST API access on port 8080.
-3. **Radarr & Sonarr Root Folders & Clients**:
-   - Configures `/srv/media/movies` in Radarr and links qBittorrent download client.
-   - Configures `/srv/media/shows` in Sonarr and links qBittorrent download client.
-4. **Prowlarr Tracker Sync**:
-   - Links Radarr and Sonarr applications into Prowlarr.
-   - Automatically adds public indexers (YTS, Nyaa.si, The Pirate Bay, LimeTorrents) and syncs Torznab indexers into Radarr & Sonarr.
-5. **Bazarr Subtitles**: Links Radarr and Sonarr API keys in `/var/lib/bazarr/config/config.yaml` for multi-language subtitle fetching.
-6. **Jellyseerr Discovery**: Configures `/var/lib/seerr/settings.json` with Jellyfin server `pineapple` (`:8096`), linking Radarr & Sonarr discovery profiles.
+1. **Filesystem Hierarchy**: Pre-provisions `/srv/media/{movies,shows,anime,kdrama,music,downloads,downloads/complete,downloads/incomplete,downloads/radarr,downloads/sonarr,youtube,youtube-music,manga}` with group `media` and `2775` (`g+s`) sticky permissions. All daemon users (`jellyfin`, `qbt`, `tinapple`, `seerr`, `bazarr`) are verified in the `media` group. Backward-compatibility symlinks in `~/storage` point to the unified `/srv/media` directory.
+2. **qBittorrent WebUI**: Sets credentials (`admin` / `adminadmin`) on port 8080 with default save path `/srv/media/downloads/`, temporary incomplete folder `/srv/media/downloads/incomplete/`, and subnet whitelisting for trusted local and Tailscale networks.
+3. **FlareSolverr Anti-Bot Bypass**: Connects FlareSolverr (`:8191`) as an indexer proxy with tag `flaresolverr`, ensuring Cloudflare Turnstile and challenge-protected trackers are solved automatically for indexers.
+4. **Radarr & Sonarr Root Folders & Clients**:
+   - Configures `/srv/media/movies` in Radarr and links qBittorrent download client with category `radarr`.
+   - Configures `/srv/media/shows`, `/srv/media/anime`, and `/srv/media/kdrama` in Sonarr and links qBittorrent download client with category `sonarr`.
+5. **Prowlarr Tracker Sync**:
+   - Links Radarr and Sonarr applications into Prowlarr with full synchronization (`fullSync`).
+   - Automatically synchronizes popular movie and TV indexers: YTS, The Pirate Bay, Torrent Downloads, and Knaben.
+   - Automatically synchronizes specialized Anime indexers: Nyaa.si, Anime Tosho, Tokyo Toshokan, SubsPlease, and Shana Project.
+   - Automatically covers K-Drama and Asian live action releases via Nyaa.si (East Asian Live Action section), Torrent Downloads, The Pirate Bay, and Knaben.
+   - Removes deprecated or non-functional indexers and executes `ApplicationIndexerSync` so indexers instantly populate in Radarr and Sonarr.
+6. **Bazarr Subtitles**: Links Radarr and Sonarr API keys in `/var/lib/bazarr/config/config.yaml` for multi-language subtitle fetching across all media libraries.
+7. **Jellyfin Media Libraries**: Maps `/srv/media/movies` into Movies, `/srv/media/shows` into Shows, and registers dedicated libraries for Anime (`/srv/media/anime`) and K-Drama (`/srv/media/kdrama`).
+8. **Jellyseerr Discovery Portal**: Configures `/var/lib/seerr/settings.json` linking Jellyfin (`127.0.0.1:8096`), Radarr (`/srv/media/movies`), and Sonarr (`/srv/media/shows` and `/srv/media/anime`) for one-click discovery and request automation.
 
 ---
 
