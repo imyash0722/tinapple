@@ -38,6 +38,7 @@ export interface SidebarProps {
   onOpenGuides: () => void;
   onOpenAppearance: () => void;
   onOpenTailscale: () => void;
+  onOpenProton?: () => void;
   onOpenTerminal?: () => void;
   onOpenTools?: () => void;
   onRunUpdate: () => void;
@@ -64,6 +65,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenGuides,
   onOpenAppearance,
   onOpenTailscale,
+  onOpenProton,
   onOpenTerminal,
   onOpenTools,
   onRunUpdate,
@@ -371,6 +373,34 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 </div>
               )}
             </button>
+
+            {/* Proton Privacy Exit Node */}
+            {onOpenProton && (
+              <button
+                onClick={() => {
+                  onOpenProton();
+                  setMobileOpen(false);
+                }}
+                title="Proton VPN Privacy Exit Node (Swiss WireGuard & Media Bypass)"
+                className={`transition-all group ${
+                  isCollapsed
+                    ? 'w-12 h-12 mx-auto flex items-center justify-center rounded-2xl text-zinc-400 hover:text-[#a48eff] hover:bg-purple-500/10 border border-transparent p-0'
+                    : 'w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-mono text-zinc-400 hover:text-[#a48eff] hover:bg-purple-500/10 border border-transparent'
+                }`}
+              >
+                <div className="w-5 h-5 shrink-0 flex items-center justify-center rounded-lg bg-purple-500/20 text-[#a48eff] group-hover:scale-110 transition-transform text-xs font-bold">
+                  🛡️
+                </div>
+                {!isCollapsed && (
+                  <div className="flex items-center justify-between w-full">
+                    <span className="font-semibold text-xs">Proton Exit</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-purple-500/20 text-purple-300 font-bold">
+                      Swiss
+                    </span>
+                  </div>
+                )}
+              </button>
+            )}
 
             {/* Interactive Web Terminal */}
             {onOpenTerminal && (

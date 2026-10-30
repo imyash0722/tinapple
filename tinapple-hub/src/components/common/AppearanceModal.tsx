@@ -22,6 +22,7 @@ import {
 } from '../../theme/appearance';
 import { api } from '../../services/api';
 import { WallpaperItem } from '../../types/api';
+import { SquishSwitch } from '../reactbits/SquishSwitch';
 
 export { BUNDLED_WALLPAPERS, THEME_PALETTES } from '../../theme/appearance';
 
@@ -238,19 +239,18 @@ export const AppearanceModal: React.FC<AppearanceModalProps> = ({
     label: string,
     description?: string
   ) => (
-    <label className="flex items-center justify-between gap-4 py-3 cursor-pointer">
+    <div className="flex items-center justify-between gap-4 py-3">
       <span>
         <span className="block text-sm text-zinc-200">{label}</span>
         {description && <span className="block mt-1 text-xs text-zinc-400">{description}</span>}
       </span>
-      <input
-        type="checkbox"
-        role="switch"
+      <SquishSwitch
         checked={settings[key]}
-        onChange={(event) => update({ [key]: event.target.checked })}
-        className="h-5 w-5 shrink-0 accent-tinapple-gold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-tinapple-gold"
+        onChange={(val) => update({ [key]: val })}
+        variant="amber"
+        size="sm"
       />
-    </label>
+    </div>
   );
 
   return (

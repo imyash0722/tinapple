@@ -13,7 +13,6 @@ import {
   ZoomIn,
   ZoomOut,
   Target,
-  Magnet,
   Layers,
   Sliders,
   Sparkles,
@@ -265,6 +264,7 @@ export interface HomarrCanvasProps {
   isOwner: boolean;
   onOpenAppSettings?: (app: any) => void;
   onOpenTailscale: () => void;
+  onOpenProton?: () => void;
   onOpenTerminal?: () => void;
   onOpenTools?: () => void;
   onOpenGuide: (guideId: string) => void;
@@ -279,13 +279,14 @@ export const HomarrCanvas: React.FC<HomarrCanvasProps> = ({
   isOwner,
   onOpenAppSettings,
   onOpenTailscale,
+  onOpenProton,
   onOpenTerminal,
   onOpenTools,
   onOpenGuide,
 }) => {
   // 1. Layout Mode & Widgets State
   const [layoutMode, setLayoutMode] = useState<CanvasLayoutMode>('canvas');
-  const [snapToGrid, setSnapToGrid] = useState<boolean>(true);
+  const snapToGrid = false; // Grid option removed: 100% fluid freeform canvas
 
   const [widgets, setWidgets] = useState<CanvasWidget[]>(() => {
     try {
@@ -293,9 +294,7 @@ export const HomarrCanvas: React.FC<HomarrCanvasProps> = ({
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed.widgets) && parsed.widgets.length > 0) {
-          const existingIds = new Set(parsed.widgets.map((w: any) => w.id));
-          const missing = DEFAULT_WIDGETS.filter((w) => !existingIds.has(w.id));
-          return [...parsed.widgets, ...missing];
+          return parsed.widgets;
         }
       }
     } catch {}
@@ -686,7 +685,7 @@ export const HomarrCanvas: React.FC<HomarrCanvasProps> = ({
       case 'transfers_rate':
         return <HomarrDownloadsWidget />;
       case 'network_guard':
-        return <HomarrNetworkGuardWidget onOpenTailscale={onOpenTailscale} />;
+        return <HomarrNetworkGuardWidget onOpenTailscale={onOpenTailscale} onOpenProton={onOpenProton} />;
       case 'media_server':
         return <HomarrMediaWidget onOpenGuide={onOpenGuide} />;
       case 'manga_shelf':
@@ -776,7 +775,20 @@ export const HomarrCanvas: React.FC<HomarrCanvasProps> = ({
 
         {/* Right: Floating Control Actions */}
         <div className="flex items-center flex-wrap gap-2 shrink-0 font-mono text-xs">
-          {/* Add Widget Button */}
+          {/* Add Individual Appliance Widget */}
+          <button
+            onClick={() => {
+              setCreatorOpen(true);
+              AndroidBridge.performHaptic('light');
+            }}
+            className="px-3.5 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 font-bold flex items-center gap-1.5 transition-all shadow-sm active:scale-95"
+            title="Add individual custom appliance widget (Jellyfin, Suwayomi, qBittorrent, Radarr, etc.)"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-tinapple-gold" />
+            <span>+ Appliance Widget</span>
+          </button>
+
+          {/* Add Other Widgets Button */}
           <button
             onClick={() => {
               setCreatorOpen(true);
@@ -838,18 +850,6 @@ export const HomarrCanvas: React.FC<HomarrCanvasProps> = ({
               title="Center / Reset View"
             >
               <Target className="w-3.5 h-3.5" />
-            </button>
-            <button
-              onClick={() => {
-                setSnapToGrid(!snapToGrid);
-                AndroidBridge.performHaptic('selection');
-              }}
-              className={`p-1.5 rounded-lg transition-colors ml-0.5 ${
-                snapToGrid ? 'text-tinapple-gold bg-amber-500/10' : 'text-zinc-500 hover:text-zinc-300'
-              }`}
-              title={`Snap to Grid (${GRID_SIZE}px): ${snapToGrid ? 'ON' : 'OFF'}`}
-            >
-              <Magnet className="w-3.5 h-3.5" />
             </button>
           </div>
 

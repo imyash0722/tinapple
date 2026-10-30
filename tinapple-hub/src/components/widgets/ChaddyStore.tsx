@@ -731,15 +731,20 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({
       }).filter(Boolean) as AppInfo[];
 
       const totalCount = pack.totalCount || pack.apps.length;
-      const installedCount = (typeof pack.installedCount === 'number' && hasLoadedPacks)
-        ? pack.installedCount
-        : packApps.filter((a) => a.installed || a.status === 'running' || (a as any).running).length;
-      const runningCount = (typeof pack.runningCount === 'number' && hasLoadedPacks)
-        ? pack.runningCount
-        : packApps.filter((a) => a.status === 'running' || (a as any).running).length;
+      const appsInstalledCount = packApps.filter((a) => a.installed || a.status === 'running' || (a as any).running).length;
+      const appsRunningCount = packApps.filter((a) => a.status === 'running' || (a as any).running).length;
 
-      const allInstalled = pack.allInstalled ?? (installedCount >= totalCount && totalCount > 0);
-      const allRunning = pack.allRunning ?? (runningCount >= totalCount && totalCount > 0);
+      const installedCount = Math.max(
+        typeof pack.installedCount === 'number' && hasLoadedPacks ? pack.installedCount : 0,
+        appsInstalledCount
+      );
+      const runningCount = Math.max(
+        typeof pack.runningCount === 'number' && hasLoadedPacks ? pack.runningCount : 0,
+        appsRunningCount
+      );
+
+      const allInstalled = pack.allInstalled || (installedCount >= totalCount && totalCount > 0);
+      const allRunning = pack.allRunning || (runningCount >= totalCount && totalCount > 0);
 
       return {
         ...pack,

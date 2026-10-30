@@ -3,7 +3,8 @@ import { Search } from 'lucide-react';
 import { HomarrAppTile } from './HomarrAppTile';
 import { AppBrandIcon } from '../common/AppBrandIcons';
 import { SquishSwitch } from '../reactbits/SquishSwitch';
-import { api, getServiceHost } from '../../services/api';
+import { ProtonModal } from '../common/ProtonModal';
+import { api, getServiceHost, getServiceUrl } from '../../services/api';
 import {
   Cpu,
   HardDrive,
@@ -31,6 +32,7 @@ import {
   Play,
   RotateCw,
   Smartphone,
+  Settings,
 } from 'lucide-react';
 import { TelemetrySnapshot, SystemInfo, ServiceInfo } from '../../types/api';
 
@@ -282,12 +284,14 @@ export const HomarrDownloadsWidget: React.FC = () => {
 };
 
 // 4. Homarr Tailscale Mesh & Privacy Guard Widget (Tor & Proton VPN Exit Controls)
-export const HomarrNetworkGuardWidget: React.FC<{ onOpenTailscale?: () => void }> = ({ onOpenTailscale }) => {
+export const HomarrNetworkGuardWidget: React.FC<{ onOpenTailscale?: () => void; onOpenProton?: () => void }> = ({ onOpenTailscale, onOpenProton }) => {
   const [torActive, setTorActive] = useState(false);
   const [isTogglingTor, setIsTogglingTor] = useState(false);
   const [protonActive, setProtonActive] = useState(false);
   const [protonDetails, setProtonDetails] = useState<string>('');
+  const [protonConfigured, setProtonConfigured] = useState<boolean>(false);
   const [isTogglingProton, setIsTogglingProton] = useState(false);
+  const [localProtonModalOpen, setLocalProtonModalOpen] = useState(false);
 
   useEffect(() => {
     fetch('/api/system/tor-exit')
@@ -299,6 +303,7 @@ export const HomarrNetworkGuardWidget: React.FC<{ onOpenTailscale?: () => void }
 
     api.getProtonStatus().then((res) => {
       setProtonActive(res.active);
+      setProtonConfigured(Boolean(res.configured || res.wireguard_config_exists || res.is_logged_in));
       if (res.details) setProtonDetails(res.details);
     }).catch(() => {});
   }, []);
@@ -322,12 +327,28 @@ export const HomarrNetworkGuardWidget: React.FC<{ onOpenTailscale?: () => void }
     try {
       const res = await api.toggleProtonStatus(nextState);
       setProtonActive(res.active);
-      // Re-fetch details
-      const updated = await api.getProtonStatus();
-      setProtonActive(updated.active);
-      if (updated.details) setProtonDetails(updated.details);
-    } catch {} finally {
+      if (res.details) setProtonDetails(res.details);
+      if (res.configured !== undefined) {
+        setProtonConfigured(Boolean(res.configured));
+      }
+      if (!res.active && nextState) {
+        // Automatically open setup modal if turning on unconfigured VPN
+        if (onOpenProton) {
+          onOpenProton();
+        } else {
+          setLocalProtonModalOpen(true);
+        }
+      }
+    } finally {
       setIsTogglingProton(false);
+    }
+  };
+
+  const openProtonSetup = () => {
+    if (onOpenProton) {
+      onOpenProton();
+    } else {
+      setLocalProtonModalOpen(true);
     }
   };
 
@@ -367,22 +388,49 @@ export const HomarrNetworkGuardWidget: React.FC<{ onOpenTailscale?: () => void }
 
         {/* Proton VPN Privacy Exit Node */}
         <div className="flex items-center justify-between p-2 rounded-xl bg-slate-800/50 border border-slate-700/60">
-          <div className="flex items-center gap-2 min-w-0">
-            <span className="text-sm shrink-0">🛡️</span>
+          <div
+            onClick={openProtonSetup}
+            className="flex items-center gap-2 min-w-0 cursor-pointer group flex-1 mr-2"
+            title="Click to configure Proton VPN and media unblocking"
+          >
+            <span className="text-sm shrink-0 group-hover:scale-110 transition-transform">🛡️</span>
             <div className="min-w-0">
-              <span className="text-white font-bold block truncate">Proton Privacy Exit</span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-white font-bold block truncate group-hover:text-[#a48eff] transition-colors">
+                  Proton Privacy Exit
+                </span>
+                {!protonConfigured && (
+                  <span className="px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 text-[9px] font-bold">
+                    SETUP
+                  </span>
+                )}
+              </div>
               <span className="text-[10px] text-zinc-400 block truncate">
-                {protonActive ? (protonDetails || 'Swiss WireGuard Active') : 'Swiss WireGuard & OpenVPN'}
+                {protonActive
+                  ? (protonDetails || 'Swiss WireGuard Active • All Media Routed')
+                  : protonConfigured
+                  ? (protonDetails || 'Configured • Ready to Connect')
+                  : 'Setup required • Click to configure WireGuard/Login'}
               </span>
             </div>
           </div>
-          <SquishSwitch
-            checked={protonActive}
-            onChange={handleToggleProton}
-            disabled={isTogglingProton}
-            variant="emerald"
-            size="sm"
-          />
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button
+              type="button"
+              onClick={openProtonSetup}
+              className="p-1 rounded-lg hover:bg-white/10 text-zinc-400 hover:text-white transition-colors"
+              title="Configure Proton VPN WireGuard & Account"
+            >
+              <Settings className="w-3.5 h-3.5" />
+            </button>
+            <SquishSwitch
+              checked={protonActive}
+              onChange={handleToggleProton}
+              disabled={isTogglingProton}
+              variant="purple"
+              size="sm"
+            />
+          </div>
         </div>
 
         {/* Tor Privacy Exit Node */}
@@ -398,7 +446,7 @@ export const HomarrNetworkGuardWidget: React.FC<{ onOpenTailscale?: () => void }
             checked={torActive}
             onChange={handleToggleTor}
             disabled={isTogglingTor}
-            variant="purple"
+            variant="amber"
             size="sm"
           />
         </div>
@@ -416,6 +464,16 @@ export const HomarrNetworkGuardWidget: React.FC<{ onOpenTailscale?: () => void }
           <ExternalLink className="w-3 h-3" />
         </a>
       </div>
+
+      <ProtonModal
+        isOpen={localProtonModalOpen}
+        onClose={() => setLocalProtonModalOpen(false)}
+        onStatusChange={(st) => {
+          setProtonActive(st.active);
+          setProtonConfigured(Boolean(st.configured || st.wireguard_config_exists || st.is_logged_in));
+          if (st.details) setProtonDetails(st.details);
+        }}
+      />
     </div>
   );
 };
@@ -439,9 +497,8 @@ export const HomarrSingleApplianceWidget: React.FC<HomarrSingleApplianceWidgetPr
 
   const fetchApp = async () => {
     try {
-      const res = await fetch(`/api/v1/apps/${appId}`);
-      if (res.ok) {
-        const data = await res.json();
+      const data = await api.getApp(appId);
+      if (data) {
         setApp(data);
       }
     } catch {}
@@ -456,7 +513,9 @@ export const HomarrSingleApplianceWidget: React.FC<HomarrSingleApplianceWidgetPr
   const handleAction = async (action: 'start' | 'stop' | 'restart') => {
     setActionBusy(action);
     try {
-      await fetch(`/api/v1/apps/${appId}/${action}`, { method: 'POST' });
+      if (action === 'start') await api.startApp(appId);
+      else if (action === 'stop') await api.stopApp(appId);
+      else if (action === 'restart') await api.restartApp(appId);
       await fetchApp();
     } finally {
       setActionBusy(null);
@@ -466,8 +525,7 @@ export const HomarrSingleApplianceWidget: React.FC<HomarrSingleApplianceWidgetPr
   const isRunning = app?.status === 'running' || app?.running;
   const isInstalled = app?.installed;
   const port = app?.port || 0;
-  const currentHost = getServiceHost();
-  const webUrl = port > 0 ? `http://${currentHost}:${port}` : null;
+  const webUrl = port > 0 ? getServiceUrl(port) : null;
   const accentColor = customColor || app?.accentColor || '#38bdf8';
 
   return (
@@ -1083,11 +1141,10 @@ export const HomarrAppsGridWidget: React.FC<HomarrAppsGridWidgetProps> = ({
     return portMap[n] || 0;
   };
 
-  const getServiceUrl = (service: ServiceInfo, port: number): string => {
+  const getAppWebUrl = (service: ServiceInfo, port: number): string => {
     if (service.webUrl) return service.webUrl;
     if (port > 0) {
-      const proto = typeof window !== 'undefined' ? window.location.protocol : 'http:';
-      return `${proto}//${getHost()}:${port}`;
+      return getServiceUrl(port);
     }
     return `http://${getHost()}:8088/`;
   };
@@ -1173,7 +1230,7 @@ export const HomarrAppsGridWidget: React.FC<HomarrAppsGridWidgetProps> = ({
         {filteredServices.map((svc) => {
           const port = getServicePort(svc);
           const cat = getServiceCategory(svc.name);
-          const url = getServiceUrl(svc, port);
+          const url = getAppWebUrl(svc, port);
           const span = colSpans[svc.name] || 3;
 
           return (

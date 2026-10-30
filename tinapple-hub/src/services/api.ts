@@ -1,4 +1,4 @@
-import { SystemInfo, TelemetrySnapshot, ServiceInfo, HardwareInfo, SessionMode, AppInfo, AppActionResult, InstallProgressState, InstallLogMessage, TailscaleStatus, AppliancePackStatus, WallpaperItem, OpenPortInfo, AppConfigDetails, MaintenanceResult, FailedUnitsResult, UserManagementData } from '../types/api';
+import { SystemInfo, TelemetrySnapshot, ServiceInfo, HardwareInfo, SessionMode, AppInfo, AppActionResult, InstallProgressState, InstallLogMessage, TailscaleStatus, AppliancePackStatus, WallpaperItem, OpenPortInfo, AppConfigDetails, MaintenanceResult, FailedUnitsResult, UserManagementData, ProtonStatus, ProtonWireGuardInfo } from '../types/api';
 
 export function getApiBaseUrl(): string {
   if (typeof window !== 'undefined') {
@@ -1076,27 +1076,89 @@ class ApiService {
     }
   }
 
-  async getProtonStatus(): Promise<{ active: boolean; status: string; details?: string }> {
+  async getProtonStatus(): Promise<ProtonStatus> {
     try {
       const res = await fetch(`${API_BASE}/system/proton-exit`);
-      if (!res.ok) return { active: false, status: 'stopped' };
+      if (!res.ok) return { active: false, status: 'stopped', configured: false };
       return await res.json();
     } catch {
-      return { active: false, status: 'stopped' };
+      return { active: false, status: 'stopped', configured: false };
     }
   }
 
-  async toggleProtonStatus(active: boolean): Promise<{ active: boolean; status: string; output?: string }> {
+  async toggleProtonStatus(active: boolean): Promise<ProtonStatus> {
     try {
       const res = await fetch(`${API_BASE}/system/proton-exit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ active }),
       });
-      if (!res.ok) return { active: false, status: 'stopped' };
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        return {
+          active: false,
+          status: 'stopped',
+          error: body?.message || body?.error || `Failed to toggle Proton VPN (HTTP ${res.status})`,
+        };
+      }
+      return await res.json();
+    } catch (e: any) {
+      return { active: false, status: 'stopped', error: e?.message || 'Network request failed' };
+    }
+  }
+
+  async protonSignIn(username: string, password: string, totp?: string): Promise<{ success: boolean; message?: string; needs_2fa?: boolean; active?: boolean }> {
+    try {
+      const res = await fetch(`${API_BASE}/system/proton/signin`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password, totp }),
+      });
+      const data = await res.json().catch(() => ({}));
+      return data;
+    } catch (e: any) {
+      return { success: false, message: e?.message || 'Failed to communicate with authentication service' };
+    }
+  }
+
+  async protonSignOut(): Promise<boolean> {
+    try {
+      const res = await fetch(`${API_BASE}/system/proton/signout`, { method: 'POST' });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  async protonGetWireGuard(): Promise<ProtonWireGuardInfo> {
+    try {
+      const res = await fetch(`${API_BASE}/system/proton/wireguard`);
+      if (!res.ok) return { exists: false };
       return await res.json();
     } catch {
-      return { active: false, status: 'stopped' };
+      return { exists: false };
+    }
+  }
+
+  async protonSetWireGuard(config: string, connectNow: boolean = true): Promise<ProtonStatus> {
+    try {
+      const res = await fetch(`${API_BASE}/system/proton/wireguard`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ config, connect_now: connectNow }),
+      });
+      return await res.json();
+    } catch (e: any) {
+      return { active: false, status: 'stopped', error: e?.message || 'Failed to save WireGuard config' };
+    }
+  }
+
+  async protonClearWireGuard(): Promise<boolean> {
+    try {
+      const res = await fetch(`${API_BASE}/system/proton/wireguard`, { method: 'DELETE' });
+      return res.ok;
+    } catch {
+      return false;
     }
   }
 

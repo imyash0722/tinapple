@@ -52,7 +52,7 @@ ssh "${TARGET_USER}@${TARGET_HOST}" "sudo cp /tmp/tinapple-dash /usr/bin/tinappl
 tar -C "${REPO_DIR}/tinapple-dash/web/dist" -cf - . | ssh "${TARGET_USER}@${TARGET_HOST}" "sudo tar -C /usr/share/tinapple-dash/web/dist -xf -"
 
 # Deploy installer suite scripts
-for script in tinapple-master-install tinapple-install-app tinapple-install-pack tinapple-install-syncyomi tinapple-configure-seerr beeper-ctl tinapple-update tinapple-display-sleep; do
+for script in tinapple-master-install tinapple-install-app tinapple-install-pack tinapple-install-syncyomi tinapple-configure-seerr beeper-ctl tinapple-update tinapple-display-sleep tinapple-proton; do
   if [[ -f "${REPO_DIR}/scripts/${script}" ]]; then
     scp -q "${REPO_DIR}/scripts/${script}" "${TARGET_USER}@${TARGET_HOST}:/tmp/${script}"
     ssh "${TARGET_USER}@${TARGET_HOST}" "sudo install -Dm755 /tmp/${script} /usr/local/bin/${script} && rm -f /tmp/${script}"

@@ -178,6 +178,12 @@ func SetupRoutes(r *gin.Engine, cfg *config.Manifest, svcMgr *services.SystemdMa
 		v1.POST("/system/tor-exit", h.ToggleTorStatus)
 		v1.GET("/system/proton-exit", h.GetProtonStatus)
 		v1.POST("/system/proton-exit", h.ToggleProtonStatus)
+		v1.GET("/system/proton/config", h.GetProtonStatus)
+		v1.POST("/system/proton/signin", h.ProtonSignIn)
+		v1.POST("/system/proton/signout", h.ProtonSignOut)
+		v1.GET("/system/proton/wireguard", h.GetProtonWireGuard)
+		v1.POST("/system/proton/wireguard", h.ProtonSetWireGuard)
+		v1.DELETE("/system/proton/wireguard", h.ProtonClearWireGuard)
 
 		// Wallpapers (Tinarchy style with video loops and custom upload)
 		v1.GET("/wallpapers", h.ListWallpapers)
@@ -918,6 +924,17 @@ func (h *Handler) GetTorStatus(c *gin.Context) {
 
 // GetProtonStatus returns whether Proton VPN exit node is active
 func (h *Handler) GetProtonStatus(c *gin.Context) {
+	if _, err := os.Stat("/usr/local/bin/tinapple-proton"); err == nil {
+		out, err := exec.Command("/usr/local/bin/tinapple-proton", "status").CombinedOutput()
+		if err == nil && len(out) > 0 {
+			var res map[string]interface{}
+			if json.Unmarshal(out, &res) == nil {
+				c.JSON(http.StatusOK, res)
+				return
+			}
+		}
+	}
+
 	out, _ := exec.Command("protonvpn", "status").CombinedOutput()
 	outStr := string(out)
 	active := strings.Contains(outStr, "Status: Connected") || strings.Contains(outStr, "Connected to")
@@ -940,9 +957,10 @@ func (h *Handler) GetProtonStatus(c *gin.Context) {
 	serverInfo = strings.TrimSuffix(serverInfo, " • ")
 
 	c.JSON(http.StatusOK, gin.H{
-		"active":  active,
-		"status":  status,
-		"details": serverInfo,
+		"active":     active,
+		"status":     status,
+		"configured": false,
+		"details":    serverInfo,
 	})
 }
 
@@ -954,6 +972,19 @@ func (h *Handler) ToggleProtonStatus(c *gin.Context) {
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
+	}
+
+	if _, err := os.Stat("/usr/local/bin/tinapple-proton"); err == nil {
+		action := "disconnect"
+		if req.Active {
+			action = "connect"
+		}
+		out, _ := exec.Command("/usr/local/bin/tinapple-proton", action).CombinedOutput()
+		var res map[string]interface{}
+		if json.Unmarshal(out, &res) == nil {
+			c.JSON(http.StatusOK, res)
+			return
+		}
 	}
 
 	var output string
@@ -990,6 +1021,111 @@ func (h *Handler) ToggleProtonStatus(c *gin.Context) {
 		"status": status,
 		"output": output,
 	})
+}
+
+// ProtonSignIn authenticates to Proton VPN using username and password (plus optional TOTP)
+func (h *Handler) ProtonSignIn(c *gin.Context) {
+	var req struct {
+		Username string `json:"username" binding:"required"`
+		Password string `json:"password" binding:"required"`
+		TOTP     string `json:"totp"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	args := []string{"signin", req.Username, req.Password}
+	if req.TOTP != "" {
+		args = append(args, req.TOTP)
+	}
+	out, err := exec.Command("/usr/local/bin/tinapple-proton", args...).CombinedOutput()
+	var res map[string]interface{}
+	if json.Unmarshal(out, &res) == nil {
+		if err != nil && res["success"] == false {
+			c.JSON(http.StatusBadRequest, res)
+			return
+		}
+		// If signin was successful, optionally auto-connect
+		if res["success"] == true {
+			connectOut, _ := exec.Command("/usr/local/bin/tinapple-proton", "connect").CombinedOutput()
+			var connectRes map[string]interface{}
+			if json.Unmarshal(connectOut, &connectRes) == nil {
+				c.JSON(http.StatusOK, connectRes)
+				return
+			}
+		}
+		c.JSON(http.StatusOK, res)
+		return
+	}
+	c.JSON(http.StatusInternalServerError, gin.H{"error": string(out)})
+}
+
+// ProtonSignOut logs out of Proton VPN CLI
+func (h *Handler) ProtonSignOut(c *gin.Context) {
+	out, _ := exec.Command("/usr/local/bin/tinapple-proton", "signout").CombinedOutput()
+	var res map[string]interface{}
+	if json.Unmarshal(out, &res) == nil {
+		c.JSON(http.StatusOK, res)
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"success": true, "message": "Signed out"})
+}
+
+// GetProtonWireGuard returns info about saved WireGuard profile
+func (h *Handler) GetProtonWireGuard(c *gin.Context) {
+	out, _ := exec.Command("/usr/local/bin/tinapple-proton", "get-wireguard").CombinedOutput()
+	var res map[string]interface{}
+	if json.Unmarshal(out, &res) == nil {
+		c.JSON(http.StatusOK, res)
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"exists": false})
+}
+
+// ProtonSetWireGuard updates /etc/wireguard/proton.conf
+func (h *Handler) ProtonSetWireGuard(c *gin.Context) {
+	var req struct {
+		Config     string `json:"config" binding:"required"`
+		ConnectNow bool   `json:"connect_now"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	cmd := exec.Command("/usr/local/bin/tinapple-proton", "set-wireguard")
+	cmd.Stdin = strings.NewReader(req.Config)
+	out, err := cmd.CombinedOutput()
+	var res map[string]interface{}
+	if json.Unmarshal(out, &res) == nil {
+		if err != nil || res["success"] == false {
+			c.JSON(http.StatusBadRequest, res)
+			return
+		}
+		if req.ConnectNow {
+			connectOut, _ := exec.Command("/usr/local/bin/tinapple-proton", "connect").CombinedOutput()
+			var connectRes map[string]interface{}
+			if json.Unmarshal(connectOut, &connectRes) == nil {
+				c.JSON(http.StatusOK, connectRes)
+				return
+			}
+		}
+		c.JSON(http.StatusOK, res)
+		return
+	}
+	c.JSON(http.StatusInternalServerError, gin.H{"error": string(out)})
+}
+
+// ProtonClearWireGuard removes /etc/wireguard/proton.conf
+func (h *Handler) ProtonClearWireGuard(c *gin.Context) {
+	out, _ := exec.Command("/usr/local/bin/tinapple-proton", "clear-wireguard").CombinedOutput()
+	var res map[string]interface{}
+	if json.Unmarshal(out, &res) == nil {
+		c.JSON(http.StatusOK, res)
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"success": true})
 }
 
 // ToggleTorStatus starts or stops tor.service

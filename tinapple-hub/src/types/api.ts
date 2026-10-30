@@ -293,5 +293,33 @@ export interface UserManagementData {
   hide_tor_exit_for_guests: boolean;
 }
 
+export interface ProtonStatus {
+  active: boolean;
+  status: 'running' | 'stopped' | 'unconfigured';
+  configured?: boolean;
+  tunnel_type?: 'wireguard' | 'proton_cli' | 'none';
+  wireguard_config_exists?: boolean;
+  is_logged_in?: boolean;
+  account_name?: string | null;
+  exit_ip?: string;
+  country?: string;
+  city?: string;
+  org?: string;
+  details?: string;
+  message?: string;
+  error?: string;
+  routed_services?: string[];
+  success?: boolean;
+}
+
+export interface ProtonWireGuardInfo {
+  exists: boolean;
+  address?: string;
+  dns?: string;
+  endpoint?: string;
+  error?: string;
+}
+
+
 
 

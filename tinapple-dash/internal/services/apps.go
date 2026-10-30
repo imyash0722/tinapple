@@ -825,18 +825,20 @@ func (m *AppManager) inspectAppFast(app AppDefinition, installedPkgs map[string]
 		isPkgInstalled = installedPkgs[app.Package]
 	}
 
-	if !binaryFound && !isPkgInstalled && app.ID != "minecraft" && app.ID != "niri" && app.ID != "playit" {
-		status.Installed = false
-		status.Status = "not_installed"
-		status.Config["port"] = strconv.Itoa(app.Port)
-		return status
-	}
-
 	props := getSystemdProperties(app.Unit)
 	loadState := props["LoadState"]
 	activeState := props["ActiveState"]
 	subState := props["SubState"]
 	unitFileState := props["UnitFileState"]
+
+	isSystemdAvailable := loadState == "loaded" || activeState == "active" || activeState == "activating"
+
+	if !binaryFound && !isPkgInstalled && !isSystemdAvailable && app.ID != "minecraft" && app.ID != "niri" && app.ID != "playit" {
+		status.Installed = false
+		status.Status = "not_installed"
+		status.Config["port"] = strconv.Itoa(app.Port)
+		return status
+	}
 
 	if loadState != "" {
 		status.LoadState = loadState
@@ -851,7 +853,7 @@ func (m *AppManager) inspectAppFast(app AppDefinition, installedPkgs map[string]
 		status.Enabled = true
 	}
 
-	if binaryFound || isPkgInstalled || loadState == "loaded" {
+	if binaryFound || isPkgInstalled || isSystemdAvailable {
 		status.Installed = true
 	}
 

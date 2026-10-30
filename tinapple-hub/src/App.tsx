@@ -57,6 +57,7 @@ const WebTerminalPage = lazy(() => import('./components/widgets/WebTerminalPage'
 const AppSettingsModal = lazy(() => import('./components/widgets/AppSettingsModal').then((m) => ({ default: m.AppSettingsModal })));
 const ServerToolsModal = lazy(() => import('./components/widgets/ServerToolsModal').then((m) => ({ default: m.ServerToolsModal })));
 const WelcomeInstaller = lazy(() => import('./components/installer/WelcomeInstaller').then((m) => ({ default: m.WelcomeInstaller })));
+const ProtonModal = lazy(() => import('./components/common/ProtonModal').then((m) => ({ default: m.ProtonModal })));
 
 import { api, MOCK_SYSTEM_INFO, MOCK_TELEMETRY, MOCK_SERVICES, MOCK_HARDWARE } from './services/api';
 import { SystemInfo, TelemetrySnapshot, ServiceInfo, HardwareInfo, SessionMode } from './types/api';
@@ -185,6 +186,7 @@ export const App: React.FC = () => {
   const [serviceLogs, setServiceLogs] = useState<string[]>([]);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [tailscaleOpen, setTailscaleOpen] = useState<boolean>(false);
+  const [protonModalOpen, setProtonModalOpen] = useState<boolean>(false);
   const [guidesOpen, setGuidesOpen] = useState<boolean>(false);
   const [webTerminalOpen, setWebTerminalOpen] = useState<boolean>(false);
   const [serverToolsOpen, setServerToolsOpen] = useState<boolean>(false);
@@ -514,6 +516,7 @@ export const App: React.FC = () => {
         onOpenGuides={() => handleOpenGuide('jellyfin')}
         onOpenAppearance={() => setAppearanceOpen(true)}
         onOpenTailscale={() => setTailscaleOpen(true)}
+        onOpenProton={() => setProtonModalOpen(true)}
         onOpenTerminal={() => setSelectedTab('terminal')}
         onOpenTools={() => setServerToolsOpen(true)}
         onRunUpdate={handleRunSystemUpdate}
@@ -693,6 +696,7 @@ export const App: React.FC = () => {
                   setAppSettingsOpen(true);
                 }}
                 onOpenTailscale={() => setTailscaleOpen(true)}
+                onOpenProton={() => setProtonModalOpen(true)}
                 onOpenTerminal={() => setSelectedTab('terminal')}
                 onOpenTools={() => setServerToolsOpen(true)}
                 onOpenGuide={handleOpenGuide}
@@ -860,6 +864,13 @@ export const App: React.FC = () => {
           <WebTerminalModal
             isOpen={webTerminalOpen}
             onClose={() => setWebTerminalOpen(false)}
+          />
+        )}
+
+        {protonModalOpen && (
+          <ProtonModal
+            isOpen={protonModalOpen}
+            onClose={() => setProtonModalOpen(false)}
           />
         )}
 

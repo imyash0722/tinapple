@@ -17,6 +17,7 @@ import {
   Info,
 } from 'lucide-react';
 import { api } from '../../services/api';
+import { SquishSwitch } from '../reactbits/SquishSwitch';
 import { AppConfigDetails } from '../../types/api';
 
 interface AppSettingsModalProps {
@@ -255,15 +256,12 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({
                         Automatically launch {displayName} when the server starts up.
                       </p>
                     </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={autostart}
-                        onChange={(e) => setAutostart(e.target.checked)}
-                        className="sr-only peer"
-                      />
-                      <div className="w-11 h-6 bg-white/[0.1] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
-                    </label>
+                    <SquishSwitch
+                      checked={autostart}
+                      onChange={setAutostart}
+                      variant="emerald"
+                      size="sm"
+                    />
                   </div>
 
                   {/* Option 3: CPU Weight / Resource Priority */}
@@ -307,15 +305,12 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({
                             Sets <code className="text-amber-300">&lt;ignorePerms&gt;true&lt;/ignorePerms&gt;</code> in config.xml to avoid POSIX/NTFS permission conflicts with Windows or TrueNAS SMB shares.
                           </p>
                         </div>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={ignorePerms}
-                            onChange={(e) => setIgnorePerms(e.target.checked)}
-                            className="sr-only peer"
-                          />
-                          <div className="w-11 h-6 bg-white/[0.1] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
-                        </label>
+                        <SquishSwitch
+                          checked={ignorePerms}
+                          onChange={setIgnorePerms}
+                          variant="amber"
+                          size="sm"
+                        />
                       </div>
                     </div>
                   )}

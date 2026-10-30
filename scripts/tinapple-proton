@@ -1,0 +1,343 @@
+#!/usr/bin/env python3
+"""
+Tinapple Proton VPN & Privacy Exit Manager
+Handles both WireGuard (.conf) direct tunnels and Proton VPN CLI authentication/connections.
+Guarantees full routing of all media services (Jellyfin, Suwayomi, qBittorrent, Servarrs)
+while safeguarding Tailscale mesh connectivity and local network/hotspot access.
+"""
+import sys
+import os
+import json
+import subprocess
+import asyncio
+import re
+
+WG_CONF = "/etc/wireguard/proton.conf"
+
+def run_cmd(cmd, timeout=12, input_data=None):
+    try:
+        p = subprocess.run(
+            cmd,
+            input=input_data,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            timeout=timeout
+        )
+        return p.returncode, p.stdout.strip(), p.stderr.strip()
+    except Exception as e:
+        return 1, "", str(e)
+
+def ensure_routing_safeguards():
+    """Ensure responses to Tailscale and LAN/Hotspot are never blackholed by the default VPN route."""
+    run_cmd(["ip", "rule", "add", "from", "192.168.4.1", "table", "main", "priority", "5260"])
+    run_cmd(["ip", "rule", "add", "from", "100.108.215.120", "table", "52", "priority", "5265"])
+    run_cmd(["ip", "rule", "add", "to", "100.64.0.0/10", "table", "52", "priority", "5268"])
+
+def get_public_ip():
+    try:
+        code, out, _ = run_cmd(["curl", "-s", "--max-time", "3", "https://ipinfo.io/json"])
+        if code == 0 and out.startswith("{"):
+            data = json.loads(out)
+            return {
+                "ip": data.get("ip", ""),
+                "country": data.get("country", ""),
+                "city": data.get("city", ""),
+                "org": data.get("org", "")
+            }
+    except Exception:
+        pass
+    code, out, _ = run_cmd(["curl", "-s", "--max-time", "3", "https://api.ipify.org"])
+    if code == 0 and out:
+        return {"ip": out, "country": "", "city": "", "org": ""}
+    return {"ip": "", "country": "", "city": "", "org": ""}
+
+def is_wg_active():
+    code, out, _ = run_cmd(["wg", "show", "proton"])
+    return code == 0 and len(out) > 0
+
+def is_proton_cli_active():
+    code, out, _ = run_cmd(["protonvpn", "status"])
+    return "Status: Connected" in out or "Connected to" in out
+
+def get_status():
+    ensure_routing_safeguards()
+    wg_active = is_wg_active()
+    cli_active = is_proton_cli_active()
+    active = wg_active or cli_active
+
+    tunnel_type = "none"
+    if wg_active:
+        tunnel_type = "wireguard"
+    elif cli_active:
+        tunnel_type = "proton_cli"
+
+    wg_exists = os.path.isfile(WG_CONF) and os.path.getsize(WG_CONF) > 20
+
+    account_name = None
+    is_logged_in = False
+    try:
+        from proton.vpn.cli.core.controller import Controller, Params
+        async def check_cli():
+            p = Params(verbose=False)
+            c = await Controller.create(params=p, click_ctx=None)
+            return c.is_logged_in, c.account_name
+        is_logged_in, account_name = asyncio.run(check_cli())
+    except Exception:
+        pass
+
+    configured = wg_exists or is_logged_in
+
+    details = "Disconnected"
+    ip_info = {"ip": "", "country": "", "city": "", "org": ""}
+    if active:
+        ip_info = get_public_ip()
+        loc = []
+        if ip_info["country"]: loc.append(ip_info["country"])
+        if ip_info["city"]: loc.append(ip_info["city"])
+        loc_str = " (" + ", ".join(loc) + ")" if loc else ""
+        details = f"Active via {tunnel_type.upper()} • IP: {ip_info['ip']}{loc_str}"
+    elif configured:
+        if wg_exists:
+            details = "Configured (WireGuard profile ready)"
+        else:
+            details = f"Configured (Proton Account: {account_name})"
+    else:
+        details = "Unconfigured • Sign in or add WireGuard profile"
+
+    return {
+        "active": active,
+        "status": "running" if active else ("stopped" if configured else "unconfigured"),
+        "configured": configured,
+        "tunnel_type": tunnel_type,
+        "wireguard_config_exists": wg_exists,
+        "is_logged_in": is_logged_in,
+        "account_name": account_name,
+        "exit_ip": ip_info["ip"],
+        "country": ip_info["country"],
+        "city": ip_info["city"],
+        "org": ip_info["org"],
+        "details": details,
+        "routed_services": [
+            "jellyfin",
+            "suwayomi",
+            "qbittorrent",
+            "radarr",
+            "sonarr",
+            "prowlarr",
+            "bazarr",
+            "pinchflat",
+            "navidrome"
+        ]
+    }
+
+def connect_vpn():
+    ensure_routing_safeguards()
+
+    # 1. Prefer WireGuard if config exists
+    if os.path.isfile(WG_CONF) and os.path.getsize(WG_CONF) > 20:
+        if is_wg_active():
+            return True, "WireGuard tunnel is already active"
+        code, out, err = run_cmd(["wg-quick", "up", "proton"], timeout=15)
+        # Add NAT forwarding for proton so any forwarded client also benefits
+        run_cmd(["iptables", "-t", "nat", "-A", "POSTROUTING", "-o", "proton", "-j", "MASQUERADE"])
+        if code == 0 or is_wg_active():
+            return True, "WireGuard connected successfully. All services routed into Proton."
+        return False, f"WireGuard connect failed: {err or out}"
+
+    # 2. Try Proton CLI if logged in
+    status = get_status()
+    if status["is_logged_in"]:
+        run_cmd(["systemctl", "start", "proton.VPN.service"])
+        code, out, err = run_cmd(["protonvpn", "connect", "--p2p"], timeout=25)
+        if code != 0:
+            code, out, err = run_cmd(["protonvpn", "connect"], timeout=25)
+        if is_proton_cli_active():
+            return True, "Proton VPN CLI connected successfully. All services routed into Proton."
+        return False, f"Proton VPN connect failed: {err or out}"
+
+    return False, "Proton VPN is not configured. Please paste a WireGuard config or sign in with your Proton account."
+
+def disconnect_vpn():
+    msg = []
+    if is_wg_active():
+        run_cmd(["iptables", "-t", "nat", "-D", "POSTROUTING", "-o", "proton", "-j", "MASQUERADE"])
+        code, out, err = run_cmd(["wg-quick", "down", "proton"])
+        msg.append("WireGuard disconnected")
+    if is_proton_cli_active():
+        code, out, err = run_cmd(["protonvpn", "disconnect"])
+        msg.append("Proton CLI disconnected")
+    if not msg:
+        msg.append("Already disconnected")
+    return True, ", ".join(msg)
+
+async def signin_cli(username, password, totp=None):
+    from proton.vpn.cli.core.controller import Controller, Params
+    p = Params(verbose=False)
+    c = await Controller.create(params=p, click_ctx=None)
+    try:
+        needs_2fa = await c.login(username, lambda: password)
+        if needs_2fa:
+            if totp and str(totp).strip():
+                success = await c.submit_2fa_code(str(totp).strip())
+                if not success:
+                    return False, "Invalid two-factor authentication code.", True
+            else:
+                return False, "Two-factor authentication code required.", True
+        return True, f"Successfully signed in as {c.account_name}", False
+    except Exception as e:
+        name = type(e).__name__
+        msg = str(e)
+        if "Authentication2FA" in name or "2FA" in msg:
+            return False, "Invalid two-factor authentication code.", True
+        if "Authentication" in name:
+            return False, "Invalid username or password.", False
+        return False, f"Authentication error: {msg or name}", False
+
+async def signout_cli():
+    from proton.vpn.cli.core.controller import Controller, Params
+    p = Params(verbose=False)
+    c = await Controller.create(params=p, click_ctx=None)
+    try:
+        await c.logout()
+        return True, "Successfully signed out from Proton VPN."
+    except Exception as e:
+        return False, str(e)
+
+def sanitize_and_save_wireguard(content: str):
+    if not content or "[Interface]" not in content or "[Peer]" not in content:
+        return False, "Invalid WireGuard config: missing [Interface] or [Peer] section."
+
+    # Parse and prepare config
+    lines = content.splitlines()
+    clean_lines = []
+    has_post_up = False
+    has_post_down = False
+
+    for line in lines:
+        stripped = line.strip()
+        if stripped.lower().startswith("postup"):
+            has_post_up = True
+        elif stripped.lower().startswith("postdown"):
+            has_post_down = True
+        clean_lines.append(line)
+
+    # Insert resilient routing safeguards if not already explicitly present
+    final_lines = []
+    in_interface = False
+    for line in clean_lines:
+        final_lines.append(line)
+        if line.strip().lower() == "[interface]":
+            in_interface = True
+        elif line.strip().startswith("[") and line.strip().lower() != "[interface]":
+            if in_interface and not has_post_up:
+                final_lines.insert(len(final_lines) - 1, "PostUp = iptables -t nat -A POSTROUTING -o %i -j MASQUERADE 2>/dev/null || true; ip rule add from 192.168.4.1 table main priority 5260 2>/dev/null || true; ip rule add from 100.108.215.120 table 52 priority 5265 2>/dev/null || true")
+                final_lines.insert(len(final_lines) - 1, "PostDown = iptables -t nat -D POSTROUTING -o %i -j MASQUERADE 2>/dev/null || true")
+                has_post_up = True
+            in_interface = False
+
+    if in_interface and not has_post_up:
+        final_lines.append("PostUp = iptables -t nat -A POSTROUTING -o %i -j MASQUERADE 2>/dev/null || true; ip rule add from 192.168.4.1 table main priority 5260 2>/dev/null || true; ip rule add from 100.108.215.120 table 52 priority 5265 2>/dev/null || true")
+        final_lines.append("PostDown = iptables -t nat -D POSTROUTING -o %i -j MASQUERADE 2>/dev/null || true")
+
+    os.makedirs("/etc/wireguard", exist_ok=True)
+    if is_wg_active():
+        run_cmd(["wg-quick", "down", "proton"])
+
+    with open(WG_CONF, "w") as f:
+        f.write("\n".join(final_lines) + "\n")
+    os.chmod(WG_CONF, 0o600)
+
+    return True, "WireGuard configuration saved successfully."
+
+def get_wireguard_info():
+    if not os.path.isfile(WG_CONF):
+        return {"exists": False}
+    try:
+        with open(WG_CONF, "r") as f:
+            content = f.read()
+        address = ""
+        dns = ""
+        endpoint = ""
+        for line in content.splitlines():
+            line = line.strip()
+            if line.lower().startswith("address"):
+                address = line.split("=", 1)[1].strip()
+            elif line.lower().startswith("dns"):
+                dns = line.split("=", 1)[1].strip()
+            elif line.lower().startswith("endpoint"):
+                endpoint = line.split("=", 1)[1].strip()
+        return {
+            "exists": True,
+            "address": address,
+            "dns": dns,
+            "endpoint": endpoint
+        }
+    except Exception as e:
+        return {"exists": False, "error": str(e)}
+
+def main():
+    if len(sys.argv) < 2:
+        print(json.dumps(get_status(), indent=2))
+        return
+
+    cmd = sys.argv[1].lower()
+
+    if cmd == "status":
+        print(json.dumps(get_status(), indent=2))
+
+    elif cmd == "connect":
+        ok, msg = connect_vpn()
+        st = get_status()
+        st["message"] = msg
+        st["success"] = ok
+        print(json.dumps(st, indent=2))
+        sys.exit(0 if ok else 1)
+
+    elif cmd == "disconnect":
+        ok, msg = disconnect_vpn()
+        st = get_status()
+        st["message"] = msg
+        st["success"] = ok
+        print(json.dumps(st, indent=2))
+
+    elif cmd == "signin":
+        if len(sys.argv) < 4:
+            print(json.dumps({"success": False, "error": "Usage: tinapple-proton signin <username> <password> [totp]"}))
+            sys.exit(1)
+        user = sys.argv[2]
+        pwd = sys.argv[3]
+        totp = sys.argv[4] if len(sys.argv) > 4 else None
+        ok, msg, needs_2fa = asyncio.run(signin_cli(user, pwd, totp))
+        res = {"success": ok, "message": msg, "needs_2fa": needs_2fa}
+        print(json.dumps(res, indent=2))
+        sys.exit(0 if ok else 1)
+
+    elif cmd == "signout":
+        ok, msg = asyncio.run(signout_cli())
+        print(json.dumps({"success": ok, "message": msg}))
+
+    elif cmd == "set-wireguard":
+        content = sys.stdin.read().strip()
+        ok, msg = sanitize_and_save_wireguard(content)
+        res = {"success": ok, "message": msg}
+        print(json.dumps(res, indent=2))
+        sys.exit(0 if ok else 1)
+
+    elif cmd == "get-wireguard":
+        print(json.dumps(get_wireguard_info(), indent=2))
+
+    elif cmd == "clear-wireguard":
+        if is_wg_active():
+            run_cmd(["wg-quick", "down", "proton"])
+        if os.path.exists(WG_CONF):
+            os.remove(WG_CONF)
+        print(json.dumps({"success": True, "message": "WireGuard configuration removed."}))
+
+    else:
+        print(json.dumps({"error": f"Unknown command: {cmd}"}))
+        sys.exit(1)
+
+if __name__ == "__main__":
+    main()
+
