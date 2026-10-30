@@ -96,7 +96,7 @@ export const App: React.FC = () => {
     const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
     return params.get('guide');
   });
-  const [selectedTab, setActiveTab] = useState<string | null>(requestedTab);
+  const [selectedTab, setSelectedTab] = useState<string | null>(requestedTab);
   const forceWelcome = requestedTab === 'welcome';
   const activeTab = selectedTab === 'welcome' && systemInfo.installed && !forceWelcome
     ? 'dashboard'
@@ -105,6 +105,11 @@ export const App: React.FC = () => {
   useEffect(() => {
     const handlePopState = () => {
       setViewingAppId(getInitialAppFromPath());
+      if (typeof window !== 'undefined') {
+        const params = new URLSearchParams(window.location.search);
+        const tab = params.get('tab');
+        if (tab) setSelectedTab(tab);
+      }
     };
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
@@ -420,7 +425,7 @@ export const App: React.FC = () => {
       const res = await api.runSystemUpdate();
       if (res.ok) {
         setActionMessage('System update running. Inspecting live console.');
-        setActiveTab('store');
+        handleSelectTab('store');
       } else {
         setActionMessage(res.error || 'System update failed to initiate.');
       }
@@ -749,7 +754,7 @@ export const App: React.FC = () => {
               transition={{ duration: 0.25, ease: 'easeOut' }}
             >
               <WelcomeInstaller
-                onOpenDashboard={() => setActiveTab('dashboard')}
+                onOpenDashboard={() => handleSelectTab('dashboard')}
               />
             </motion.div>
           )}
