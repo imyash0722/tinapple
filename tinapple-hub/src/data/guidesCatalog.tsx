@@ -137,6 +137,62 @@ export const GUIDES_CATALOG: GuideArticle[] = [
     ],
   },
   {
+    id: 'mautrix',
+    title: 'Mautrix Bridges & Element X',
+    subtitle: 'Self-hosted Matrix homeserver with WhatsApp, Signal, Telegram & ultra-fast Sliding Sync',
+    category: 'chat',
+    icon: <MessageSquare className="w-5 h-5 text-cyan-400" />,
+    accentColor: '#00b0ff',
+    htmlGuidePath: '/guides/mautrix.html',
+    endpoints: [
+      { label: 'Permanent MagicDNS', value: 'http://pineapple-server.taildb42a2.ts.net' },
+      { label: 'Tailscale IP Host', value: 'http://100.108.215.120' },
+      { label: 'Element Web Client', value: 'http://100.108.215.120/element/' },
+      { label: 'Sliding Sync Proxy', value: 'http://100.108.215.120:8009 (MSC3575)' },
+    ],
+    steps: [
+      {
+        title: 'Open Element X or Element Web',
+        description: 'Connect Element X on mobile/desktop by entering server URL http://100.108.215.120. Element X auto-discovers both the homeserver and the Sliding Sync proxy.',
+        code: 'http://100.108.215.120',
+        tip: 'Log in with user admin and password tinapple_admin_pass, or register a new username.',
+      },
+      {
+        title: 'Pair WhatsApp Bridge via QR Code',
+        description: 'Open a DM with @whatsappbot:tinapple.local and type "login". Scan the QR code with WhatsApp (Linked Devices ➔ Link a Device).',
+        code: '!wa login',
+      },
+      {
+        title: 'Pair Signal Bridge',
+        description: 'Open a DM with @signalbot:tinapple.local and type "login". Link via QR code in Signal (Linked Devices ➔ Link New Device).',
+        code: '!signal login',
+      },
+      {
+        title: 'Native Systemd Management',
+        description: 'Synapse homeserver, Sliding Sync proxy, and Mautrix bridges run 100% natively via systemd without Docker.',
+        code: 'systemctl status synapse matrix-sliding-sync mautrix-whatsapp mautrix-signal',
+      },
+    ],
+    clientApps: [
+      { name: 'Element X Android', platform: 'Android (Google Play)', link: 'https://play.google.com/store/apps/details?id=io.element.android.x' },
+      { name: 'Element X iOS', platform: 'iOS (App Store)', link: 'https://apps.apple.com/app/element-x/id6443586474' },
+      { name: 'Element Web', platform: 'Self-hosted Web', link: '/element/' },
+      { name: 'Element Desktop', platform: 'Linux / Mac / Windows', link: 'https://element.io/download' },
+    ],
+    specialConfigs: [
+      {
+        title: 'Native Services & Log Tailing',
+        description: 'Check bridge health or view live connection logs:',
+        code: 'journalctl -u mautrix-whatsapp.service -f',
+      },
+      {
+        title: 'Registering Additional Users',
+        description: 'Create new local Matrix accounts using the Synapse CLI registration tool:',
+        code: 'register_new_matrix_user -u myuser -p mypassword -c /etc/synapse/homeserver.yaml http://127.0.0.1:8008',
+      },
+    ],
+  },
+  {
     id: 'beeper',
     title: 'Beeper Matrix Bridges & Multi-Chat Unified Inbox',
     subtitle: 'Self-hosted iMessage, WhatsApp, Telegram, Signal, and Discord bridges',

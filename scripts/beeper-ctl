@@ -6,7 +6,7 @@
 
 set -euo pipefail
 
-BBCTL_BIN="${BBCTL_BIN:-/home/tin/.local/bin/bbctl}"
+BBCTL_BIN="${BBCTL_BIN:-/usr/local/bin/bbctl}"
 if ! command -v "$BBCTL_BIN" >/dev/null 2>&1; then
     if command -v bbctl >/dev/null 2>&1; then
         BBCTL_BIN="$(command -v bbctl)"
@@ -15,6 +15,13 @@ if ! command -v "$BBCTL_BIN" >/dev/null 2>&1; then
         exit 1
     fi
 fi
+
+sync_permissions() {
+    if [ -d "/home/pineapple/.config/bbctl" ]; then
+        chown -R pineapple:users /home/pineapple/.config/bbctl 2>/dev/null || true
+        chmod -R 750 /home/pineapple/.config/bbctl 2>/dev/null || true
+    fi
+}
 
 case "${1:-status}" in
     status)
@@ -26,14 +33,17 @@ case "${1:-status}" in
         ;;
     login)
         shift || true
-        exec "$BBCTL_BIN" login "$@"
+        "$BBCTL_BIN" login "$@"
+        sync_permissions
         ;;
     login-password)
         shift || true
-        exec "$BBCTL_BIN" login-password "$@"
+        "$BBCTL_BIN" login-password "$@"
+        sync_permissions
         ;;
     logout)
-        exec "$BBCTL_BIN" logout
+        "$BBCTL_BIN" logout
+        sync_permissions
         ;;
     whoami)
         exec "$BBCTL_BIN" whoami
