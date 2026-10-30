@@ -103,6 +103,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
       badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
     },
     {
+      id: 'guides',
+      label: 'Guides',
+      desc: 'Documentation & Stacks',
+      icon: <BookOpen className="w-5 h-5 shrink-0 text-purple-400" />,
+      badge: 'Docs',
+      badgeColor: 'bg-purple-500/20 text-purple-300 border-purple-500/30',
+    },
+    {
       id: 'hardware',
       label: 'Hardware',
       desc: 'Sensors & TPM',

@@ -193,9 +193,13 @@ export const UnifiedAppPage: React.FC<UnifiedAppPageProps> = ({
       .replace(/^\/app\//, '')
       .replace(/^\//, '');
     if (raw === 'vault') raw = 'vaultwarden';
-    if (raw === 'matrix' || raw === 'element' || raw === 'whatsapp' || raw === 'signal' || raw === 'telegram') raw = 'mautrix';
-    if (raw === 'suwayomi') raw = 'syncyomi';
-    if (raw === 'youtube') raw = 'pinchflat';
+    if (raw.includes('qbittorrent')) raw = 'qbittorrent';
+    if (raw.includes('syncthing')) raw = 'syncthing';
+    if (raw.includes('adguard')) raw = 'adguard';
+    if (raw.includes('jellyseerr') || raw.includes('seerr')) raw = 'seerr';
+    if (raw.includes('matrix') || raw.includes('element') || raw.includes('whatsapp') || raw.includes('signal') || raw.includes('telegram') || raw.includes('discord') || raw.includes('instagram')) raw = 'mautrix';
+    if (raw.includes('suwayomi') || raw.includes('manga') || raw.includes('tsumiru')) raw = 'syncyomi';
+    if (raw.includes('pinchflat') || raw.includes('youtube')) raw = 'pinchflat';
     return raw;
   }, [appId]);
 
@@ -234,15 +238,18 @@ export const UnifiedAppPage: React.FC<UnifiedAppPageProps> = ({
       try {
         const res = await api.getServices();
         if (!mounted) return;
-        const svc = res.services?.find(
-          (s) =>
+        const list = Array.isArray(res) ? res : (res as any)?.services || [];
+        const svc = list.find(
+          (s: any) =>
             s.id === cleanId ||
+            s.name === cleanId ||
             s.id === meta.unit ||
             s.unit === meta.unit ||
-            s.id.toLowerCase().includes(cleanId)
+            (s.id && s.id.toLowerCase().includes(cleanId)) ||
+            (s.name && s.name.toLowerCase().includes(cleanId))
         );
         if (svc) {
-          setServiceStatus(svc.status === 'active' || svc.status === 'running' ? 'active' : 'inactive');
+          setServiceStatus(svc.activeState === 'active' || svc.running || svc.status === 'active' ? 'active' : 'inactive');
         } else {
           setServiceStatus('active'); // fallback
         }

@@ -224,7 +224,11 @@ export const App: React.FC = () => {
   const [selectedGuideId, setSelectedGuideId] = useState<string | null>(requestedGuide || 'jellyfin');
 
   const handleOpenGuide = (guideId?: string) => {
-    const id = guideId || 'jellyfin';
+    if (!guideId || guideId === 'all') {
+      handleSelectTab('guides');
+      return;
+    }
+    const id = guideId;
     setSelectedGuideId(id);
     setViewingAppId(id);
     if (typeof window !== 'undefined') {
@@ -561,7 +565,7 @@ export const App: React.FC = () => {
         systemInfo={systemInfo}
         isEditMode={isEditMode}
         setIsEditMode={setIsEditMode}
-        onOpenGuides={() => handleOpenGuide('jellyfin')}
+        onOpenGuides={() => handleSelectTab('guides')}
         onOpenAppearance={() => setAppearanceOpen(true)}
         onOpenTailscale={() => setTailscaleOpen(true)}
         onOpenProton={() => setProtonModalOpen(true)}
@@ -668,7 +672,7 @@ export const App: React.FC = () => {
 
             {/* Interactive Guides Button */}
             <button
-              onClick={() => handleOpenGuide('jellyfin')}
+              onClick={() => handleSelectTab('guides')}
               className="hidden lg:flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl border border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 transition-all font-mono text-xs font-semibold shadow-sm active:scale-95"
               title="Interactive Setup Guides"
             >
