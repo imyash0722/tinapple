@@ -164,6 +164,13 @@ func main() {
 		r.GET("/", serveIndex)
 		r.NoRoute(func(c *gin.Context) {
 			path := c.Request.URL.Path
+
+			// Unified App & Guide routes: always serve Pineapple Hub React SPA
+			if strings.HasSuffix(path, "-guide") || strings.HasPrefix(path, "/app/") || strings.HasPrefix(path, "/guide/") {
+				serveIndex(c)
+				return
+			}
+
 			if strings.HasPrefix(path, "/tsumiru") || strings.HasPrefix(path, "/suwayomi") {
 				host := c.Request.Host
 				if colon := strings.Index(host, ":"); colon != -1 {

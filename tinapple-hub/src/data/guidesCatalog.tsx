@@ -52,6 +52,7 @@ export const GUIDES_CATALOG: GuideArticle[] = [
     accentColor: '#aa74e8',
     htmlGuidePath: '/guides/plezy.html',
     endpoints: [
+      { label: 'Tailscale HTTPS (No Port)', value: 'https://pineapple-server.taildb42a2.ts.net/jellyfin/' },
       { label: 'Permanent MagicDNS', value: 'http://pineapple-server.taildb42a2.ts.net:8096' },
       { label: 'Tailscale IP Host', value: 'http://100.108.215.120:8096' },
       { label: 'Local LAN Host', value: 'http://10.3.2.105:8096' },
@@ -88,6 +89,55 @@ export const GUIDES_CATALOG: GuideArticle[] = [
       {
         title: 'Plezy mpv Video Profile & Audio Bitstream',
         description: 'In Plezy Settings ➔ Player: set Hardware Decoding to "auto-safe". Under Audio, enable Passthrough to output multichannel Dolby Atmos and DTS-HD to home theater receivers.',
+      },
+    ],
+  },
+  {
+    id: 'qbittorrent',
+    title: 'qBittorrent-nox Automated Torrent Client',
+    subtitle: 'High-speed torrent client with Web UI, automated tags, categories, and Servarr integration',
+    category: 'media',
+    icon: <Download className="w-5 h-5 text-blue-400" />,
+    accentColor: '#3a75c4',
+    endpoints: [
+      { label: 'Tailscale HTTPS (No Port)', value: 'https://pineapple-server.taildb42a2.ts.net/qbittorrent/' },
+      { label: 'Tailscale IP Host', value: 'http://100.108.215.120:8080' },
+      { label: 'Permanent MagicDNS', value: 'http://pineapple-server.taildb42a2.ts.net:8080' },
+      { label: 'Downloads Directory', value: '/srv/media/downloads' },
+    ],
+    steps: [
+      {
+        title: 'Open qBittorrent Web UI',
+        description: 'Access the web client over encrypted Tailscale HTTPS with zero security warnings, or directly on port 8080.',
+        code: 'https://pineapple-server.taildb42a2.ts.net/qbittorrent/',
+        tip: 'Default login is admin with temporary password generated in system logs on initial start.',
+      },
+      {
+        title: 'Configure Speed Limits & Paths',
+        description: 'Verify default save path is set to /srv/media/downloads. Servarr apps (Radarr, Sonarr) automatically manage categories and move completed files.',
+        code: '/srv/media/downloads',
+      },
+      {
+        title: 'Check Proton VPN Privacy Routing',
+        description: 'When the Proton Privacy Exit is toggled ON, all torrent traffic is automatically routed through Proton VPN with zero DNS or IP leaks.',
+        code: 'tinapple-proton status',
+      },
+      {
+        title: 'Service Health & Monitoring',
+        description: 'Manage the native systemd service directly from terminal or system controls:',
+        code: 'systemctl status qbittorrent-nox.service',
+      },
+    ],
+    clientApps: [
+      { name: 'qBittorrent Controller', platform: 'Android (Google Play)', link: 'https://play.google.com/store/apps/details?id=com.lgallardo.qbittorrentclient' },
+      { name: 'qbit Manage', platform: 'Python / CLI', link: 'https://github.com/StuffAnThings/qbit_manage' },
+      { name: 'Web UI', platform: 'Cross-platform Web', link: '/qbittorrent/' },
+    ],
+    specialConfigs: [
+      {
+        title: 'Systemd Unit & Configuration Location',
+        description: 'Service configuration file is located at /var/lib/qbittorrent/.config/qBittorrent/qBittorrent.conf',
+        code: 'cat /var/lib/qbittorrent/.config/qBittorrent/qBittorrent.conf',
       },
     ],
   },
@@ -320,6 +370,49 @@ export const GUIDES_CATALOG: GuideArticle[] = [
         title: 'Ignore Permissions (ignorePerms) for Cross-OS Harmony',
         description: 'To avoid file permission conflicts between Linux POSIX and Windows/Android FAT/NTFS filesystems, ensure ignorePerms is enabled on shared folders:',
         code: '<ignorePerms>true</ignorePerms>',
+      },
+    ],
+  },
+  {
+    id: 'tor',
+    title: 'Tor Onion Router & Privacy Mesh',
+    subtitle: 'Onion routing, SOCKS5 privacy proxy, and hidden service hosting',
+    category: 'security',
+    icon: <ShieldCheck className="w-5 h-5 text-purple-400" />,
+    accentColor: '#7d4698',
+    htmlGuidePath: '/guides/tor.html',
+    endpoints: [
+      { label: 'SOCKS5 Proxy Host', value: '100.108.215.120:9050' },
+      { label: 'Tor Control Port', value: '127.0.0.1:9051' },
+      { label: 'Local SOCKS5', value: '127.0.0.1:9050' },
+    ],
+    steps: [
+      {
+        title: 'Verify Tor Daemon Status',
+        description: 'Ensure the native tor daemon is running and has bootstrapped to 100% on the Tor network.',
+        code: 'systemctl status tor.service',
+      },
+      {
+        title: 'Configure Client Applications with SOCKS5',
+        description: 'In your browser (Firefox) or applications, set SOCKS5 Proxy to 100.108.215.120 with port 9050. Enable "Proxy DNS when using SOCKS v5" to prevent DNS leaks.',
+        code: 'socks5://100.108.215.120:9050',
+      },
+      {
+        title: 'Check Your Onion IP',
+        description: 'Verify traffic is routing through Tor exit relays by querying the Tor Project check API:',
+        code: 'curl --socks5-hostname 127.0.0.1:9050 https://check.torproject.org/api/ip',
+      },
+    ],
+    clientApps: [
+      { name: 'Tor Browser Android', platform: 'Android (Google Play)', link: 'https://play.google.com/store/apps/details?id=org.torproject.torbrowser' },
+      { name: 'Tor Browser Desktop', platform: 'Linux / Mac / Windows', link: 'https://www.torproject.org/download/' },
+      { name: 'Orbot', platform: 'Android / iOS', link: 'https://orbot.app/' },
+    ],
+    specialConfigs: [
+      {
+        title: 'Tor Configuration Path',
+        description: 'Tor configuration file is located at /etc/tor/torrc with hidden service settings:',
+        code: 'cat /etc/tor/torrc',
       },
     ],
   },

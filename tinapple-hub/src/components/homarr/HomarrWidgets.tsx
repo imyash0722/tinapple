@@ -1248,6 +1248,7 @@ export const HomarrAppsGridWidget: React.FC<HomarrAppsGridWidgetProps> = ({
               isEditMode={isEditMode}
               colSpan={span}
               onOpenSettings={onOpenSettings ? () => onOpenSettings(svc) : undefined}
+              onOpenGuide={onOpenGuide ? () => onOpenGuide(svc.name) : undefined}
               onToggleColSpan={() => {
                 setColSpans((prev) => ({
                   ...prev,

@@ -25,6 +25,7 @@ import {
   BookOpen,
   ArrowUpCircle,
   Menu,
+  Lock,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -45,6 +46,7 @@ import { MangaShelfWidget } from './components/widgets/MangaShelfWidget';
 import { TorPrivacyWidget } from './components/widgets/TorPrivacyWidget';
 import { HomarrCanvas } from './components/homarr/HomarrCanvas';
 import { GuidesPage } from './components/widgets/GuidesPage';
+import { UnifiedAppPage } from './components/widgets/UnifiedAppPage';
 
 // High-speed lazy-loaded modals (reduces initial dashboard bundle size by >60%)
 const AppearanceModal = lazy(() => import('./components/common/AppearanceModal').then((m) => ({ default: m.AppearanceModal })));
@@ -71,6 +73,21 @@ import {
 
 export const App: React.FC = () => {
   const [systemInfo, setSystemInfo] = useState<SystemInfo>(MOCK_SYSTEM_INFO);
+
+  const getInitialAppFromPath = (): string | null => {
+    if (typeof window === 'undefined') return null;
+    const path = window.location.pathname.toLowerCase();
+    const matchGuide = path.match(/^\/([a-zA-Z0-9_-]+)-guide\/?$/);
+    if (matchGuide) return matchGuide[1];
+    const matchApp = path.match(/^\/(?:app|guide)\/([a-zA-Z0-9_-]+)\/?$/);
+    if (matchApp) return matchApp[1];
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('app')) return params.get('app');
+    if (params.get('guide') && params.get('tab') !== 'guides') return params.get('guide');
+    return null;
+  };
+
+  const [viewingAppId, setViewingAppId] = useState<string | null>(getInitialAppFromPath);
   const [requestedTab] = useState(() => {
     const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
     return params.get('tab');
@@ -84,6 +101,14 @@ export const App: React.FC = () => {
   const activeTab = selectedTab === 'welcome' && systemInfo.installed && !forceWelcome
     ? 'dashboard'
     : selectedTab || (systemInfo.installed ? 'dashboard' : 'welcome');
+
+  useEffect(() => {
+    const handlePopState = () => {
+      setViewingAppId(getInitialAppFromPath());
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
   const [settings, setSettings] = useState(loadSettings);
   const [appearanceOpen, setAppearanceOpen] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
@@ -194,13 +219,31 @@ export const App: React.FC = () => {
   const [selectedGuideId, setSelectedGuideId] = useState<string | null>(requestedGuide || 'jellyfin');
 
   const handleOpenGuide = (guideId?: string) => {
-    if (guideId) setSelectedGuideId(guideId);
-    setActiveTab('guides');
+    const id = guideId || 'jellyfin';
+    setSelectedGuideId(id);
+    setViewingAppId(id);
+    if (typeof window !== 'undefined') {
+      window.history.pushState({}, '', `/${id}-guide`);
+    }
+  };
+
+  const handleCloseAppPage = () => {
+    setViewingAppId(null);
+    if (typeof window !== 'undefined') {
+      window.history.pushState({}, '', '/');
+    }
+  };
+
+  const handleSelectTab = (tab: string) => {
+    setViewingAppId(null);
+    setSelectedTab(tab);
     if (typeof window !== 'undefined') {
       const url = new URL(window.location.href);
-      url.searchParams.set('tab', 'guides');
-      if (guideId) url.searchParams.set('guide', guideId);
-      window.history.replaceState({}, '', url.toString());
+      url.pathname = '/';
+      url.searchParams.set('tab', tab);
+      url.searchParams.delete('guide');
+      url.searchParams.delete('app');
+      window.history.pushState({}, '', url.toString());
     }
   };
 
@@ -504,7 +547,7 @@ export const App: React.FC = () => {
       {/* PERSISTENT COLLAPSIBLE SIDEBAR & MOBILE DRAWER */}
       <Sidebar
         activeTab={activeTab}
-        setActiveTab={setActiveTab}
+        setActiveTab={handleSelectTab}
         mobileOpen={mobileSidebarOpen}
         setMobileOpen={setMobileSidebarOpen}
         collapsed={desktopSidebarCollapsed}
@@ -551,8 +594,8 @@ export const App: React.FC = () => {
             {/* Mobile Brand Icon & Tab Title */}
             <div className="md:hidden flex items-center gap-2 min-w-0">
               <span className="text-lg shrink-0">🍎</span>
-              <span className="font-mono font-bold text-sm text-white capitalize truncate max-w-[120px] sm:max-w-xs">
-                {activeTab === 'store' ? 'App Store' : activeTab === 'guides' ? 'Guides' : activeTab === 'terminal' ? 'Terminal' : activeTab}
+              <span className="font-mono font-bold text-sm text-white capitalize truncate max-w-[140px] sm:max-w-xs">
+                {viewingAppId ? `${viewingAppId} Guide` : activeTab === 'store' ? 'App Store' : activeTab === 'guides' ? 'Guides' : activeTab === 'terminal' ? 'Terminal' : activeTab}
               </span>
             </div>
 
@@ -560,19 +603,37 @@ export const App: React.FC = () => {
             <div className="hidden md:flex items-center gap-2.5 min-w-0 shrink-0">
               <span className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500 shrink-0">Node</span>
               <span className="text-xs text-zinc-600 shrink-0">/</span>
-              <div className="flex items-center gap-2 min-w-0">
-                <span className="text-sm font-mono font-black text-white capitalize truncate">
-                  {activeTab === 'store' ? 'App Store & Packs' : activeTab === 'guides' ? 'Appliance Guides' : activeTab === 'terminal' ? 'Appliance Web Terminal' : activeTab}
-                </span>
-                <span className="hidden 2xl:inline-flex text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/[0.05] border border-white/10 text-tinapple-gold font-bold whitespace-nowrap">
-                  {systemInfo.sessionMode === 'headless' ? 'Headless Server' : 'Niri Desktop'}
-                </span>
-              </div>
+              {viewingAppId ? (
+                <div className="flex items-center gap-2 min-w-0">
+                  <button onClick={handleCloseAppPage} className="text-sm font-mono text-slate-400 hover:text-white transition-colors">
+                    Dashboard
+                  </button>
+                  <span className="text-xs text-zinc-600">/</span>
+                  <span className="text-sm font-mono font-black text-cyan-400 capitalize truncate">
+                    {viewingAppId} App & Guide
+                  </span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="text-sm font-mono font-black text-white capitalize truncate">
+                    {activeTab === 'store' ? 'App Store & Packs' : activeTab === 'guides' ? 'Appliance Guides' : activeTab === 'terminal' ? 'Appliance Web Terminal' : activeTab}
+                  </span>
+                  <span className="hidden 2xl:inline-flex text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/[0.05] border border-white/10 text-tinapple-gold font-bold whitespace-nowrap">
+                    {systemInfo.sessionMode === 'headless' ? 'Headless Server' : 'Niri Desktop'}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
 
           {/* Right: Live Telemetry Status & Quick Actions */}
           <div className="flex items-center justify-end gap-1.5 sm:gap-2 shrink-0">
+            {/* Tailscale Port 443 SSL Status Chip */}
+            <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-[11px] font-mono text-emerald-400">
+              <Lock className="w-3.5 h-3.5" />
+              <span className="hidden lg:inline">Tailscale HTTPS 443</span>
+            </div>
+
             {/* Live SSE Pulse Chip */}
             <div className="hidden 2xl:flex items-center gap-2 px-2.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[11px] font-mono text-emerald-300">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -662,7 +723,24 @@ export const App: React.FC = () => {
         }`}
       >
         <AnimatePresence mode="wait">
-          {activeTab === 'welcome' && (
+          {viewingAppId ? (
+            <motion.div
+              key={`unified-app-${viewingAppId}`}
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -14 }}
+              transition={{ duration: 0.25, ease: 'easeOut' }}
+            >
+              <UnifiedAppPage
+                appId={viewingAppId}
+                onBack={handleCloseAppPage}
+                onOpenLogs={(unit) => handleOpenLogs(unit)}
+                onOpenTerminal={() => setSelectedTab('terminal')}
+              />
+            </motion.div>
+          ) : (
+            <>
+              {activeTab === 'welcome' && (
             <motion.div
               key="welcome"
               initial={{ opacity: 0, y: 14 }}
@@ -831,6 +909,8 @@ export const App: React.FC = () => {
                 />
               </Suspense>
             </motion.div>
+          )}
+            </>
           )}
         </AnimatePresence>
       </main>

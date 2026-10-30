@@ -262,6 +262,21 @@ export const APP_BRAND_CONFIG: Record<string, BrandConfig> = {
     iconPath: '/icons/beeper.svg',
     accentColor: '#F43F5E',
   },
+  mautrix: {
+    name: 'Mautrix Bridges & Element X',
+    iconPath: '/icons/matrix.svg',
+    accentColor: '#00B0FF',
+  },
+  matrix: {
+    name: 'Matrix Synapse',
+    iconPath: '/icons/matrix.svg',
+    accentColor: '#00B0FF',
+  },
+  element: {
+    name: 'Element X',
+    iconPath: '/icons/matrix.svg',
+    accentColor: '#00B0FF',
+  },
   bbctl: {
     name: 'Beeper bbctl',
     iconPath: '/icons/beeper.svg',

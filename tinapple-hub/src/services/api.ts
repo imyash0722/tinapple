@@ -62,7 +62,35 @@ export function getServiceHost(): string {
   return '100.108.215.120';
 }
 
+export const SERVICE_PATH_MAP: Record<number, string> = {
+  8096: '/jellyfin/',
+  8080: '/qbittorrent/',
+  8000: '/vault/',
+  5055: '/seerr/',
+  4533: '/navidrome/',
+  8384: '/syncthing/',
+  3000: '/adguard/',
+  8945: '/pinchflat/',
+  6767: '/bazarr/',
+  8008: '/element/',
+};
+
 export function getServiceUrl(port: number, path: string = ''): string {
+  const subpath = SERVICE_PATH_MAP[port];
+  if (subpath) {
+    if (typeof window !== 'undefined' && window.location.protocol === 'https:') {
+      return `${subpath}${path ? path.replace(/^\//, '') : ''}`;
+    }
+    const host = getServiceHost();
+    return `https://${host}${subpath}${path ? path.replace(/^\//, '') : ''}`;
+  }
+
+  const host = getServiceHost();
+  const cleanPath = path ? (path.startsWith('/') ? path : `/${path}`) : '';
+  return `http://${host}:${port}${cleanPath}`;
+}
+
+export function getServiceDirectPortUrl(port: number, path: string = ''): string {
   const host = getServiceHost();
   const cleanPath = path ? (path.startsWith('/') ? path : `/${path}`) : '';
   return `http://${host}:${port}${cleanPath}`;

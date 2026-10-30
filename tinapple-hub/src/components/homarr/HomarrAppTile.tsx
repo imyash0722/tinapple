@@ -9,6 +9,7 @@ import {
   CheckCircle2,
   AlertCircle,
   HelpCircle,
+  BookOpen,
 } from 'lucide-react';
 
 export interface HomarrAppTileProps {
@@ -24,6 +25,7 @@ export interface HomarrAppTileProps {
   isEditMode: boolean;
   colSpan?: 3 | 4 | 6 | 12;
   onOpenSettings?: () => void;
+  onOpenGuide?: () => void;
   onToggleColSpan?: () => void;
   onRemove?: () => void;
 }
@@ -40,6 +42,7 @@ export const HomarrAppTile: React.FC<HomarrAppTileProps> = ({
   isEditMode,
   colSpan = 3,
   onOpenSettings,
+  onOpenGuide,
   onToggleColSpan,
   onRemove,
 }) => {
@@ -158,6 +161,16 @@ export const HomarrAppTile: React.FC<HomarrAppTileProps> = ({
               title={`Configure ${name} Service & Raw Config`}
             >
               <SettingsIcon className="w-3.5 h-3.5" />
+            </button>
+          )}
+
+          {onOpenGuide && (
+            <button
+              onClick={onOpenGuide}
+              className="p-1.5 rounded-lg bg-white/[0.04] hover:bg-cyan-500/20 text-zinc-400 hover:text-cyan-300 transition-colors"
+              title={`View ${name} Unified Guide & Endpoints`}
+            >
+              <BookOpen className="w-3.5 h-3.5" />
             </button>
           )}
 
