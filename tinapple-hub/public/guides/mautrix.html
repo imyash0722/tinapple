@@ -297,6 +297,8 @@
             text-transform: uppercase;
         }
         .tag-wa { background: rgba(37, 211, 102, 0.15); color: #25d366; border: 1px solid rgba(37, 211, 102, 0.3); }
+        .tag-ig { background: rgba(225, 48, 108, 0.15); color: #e1306c; border: 1px solid rgba(225, 48, 108, 0.3); }
+        .tag-dc { background: rgba(88, 101, 242, 0.15); color: #5865f2; border: 1px solid rgba(88, 101, 242, 0.3); }
         .tag-sig { background: rgba(58, 118, 240, 0.15); color: #3a76f0; border: 1px solid rgba(58, 118, 240, 0.3); }
         .tag-tg { background: rgba(34, 158, 217, 0.15); color: #229ed9; border: 1px solid rgba(34, 158, 217, 0.3); }
 
@@ -350,10 +352,10 @@
             <div class="header-icon">💬</div>
             <div class="header-info">
                 <h1>Mautrix Bridges & Element X <span class="badge-native">100% NATIVE SYSTEMD</span></h1>
-                <p>Personal Matrix ecosystem hosting WhatsApp, Signal & Telegram bridges with MSC3575 Sliding Sync for Element X.</p>
+                <p>Personal Matrix ecosystem hosting WhatsApp, Instagram & Discord bridges with MSC3575 Sliding Sync for Element X.</p>
                 <div class="header-actions">
-                    <a href="/element/" target="_blank" class="btn-action">🌐 Open Element Web</a>
-                    <a href="http://100.108.215.120:8008/_matrix/client/versions" target="_blank" class="btn-action">⚡ Homeserver API</a>
+                    <a href="/element/" target="_blank" class="btn-action">Open Element Web</a>
+                    <a href="/_matrix/client/versions" target="_blank" class="btn-action">Homeserver API</a>
                 </div>
             </div>
         </div>
@@ -362,28 +364,32 @@
         <div class="meta-grid">
             <div class="meta-box">
                 <div class="meta-label">Homeserver Base URL</div>
-                <div class="meta-val">http://100.108.215.120</div>
+                <div class="meta-val" id="homeserver-url">http://192.168.1.17</div>
             </div>
             <div class="meta-box">
                 <div class="meta-label">Sliding Sync Proxy (MSC3575)</div>
-                <div class="meta-val">Port 8009 (or Port 80 via Nginx)</div>
+                <div class="meta-val">Port 80 (Caddy Proxy)</div>
             </div>
             <div class="meta-box">
-                <div class="meta-label">WhatsApp Bridge Port</div>
-                <div class="meta-val">127.0.0.1:29318 <span class="tag-pill tag-wa">ACTIVE</span></div>
+                <div class="meta-label">WhatsApp Bridge</div>
+                <div class="meta-val">Port 29318 <span class="tag-pill tag-wa">ACTIVE</span></div>
             </div>
             <div class="meta-box">
-                <div class="meta-label">Signal Bridge Port</div>
-                <div class="meta-val">127.0.0.1:29328 <span class="tag-pill tag-sig">ACTIVE</span></div>
+                <div class="meta-label">Instagram Bridge</div>
+                <div class="meta-val">Port 29330 <span class="tag-pill tag-ig">ACTIVE</span></div>
+            </div>
+            <div class="meta-box">
+                <div class="meta-label">Discord Bridge</div>
+                <div class="meta-val">Port 29334 <span class="tag-pill tag-dc">ACTIVE</span></div>
             </div>
         </div>
 
         <!-- Element X Setup -->
         <div class="card">
-            <h2>📱 Connecting Element X (iOS, Android & Desktop)</h2>
+            <h2>Connecting Element X (iOS, Android & Desktop)</h2>
             <div class="step-block">
                 <div class="step-title">1. Download Element X</div>
-                <div class="step-desc">Element X is the next-generation Matrix client with ultra-fast Sliding Sync (MSC3575) and instant instant startup.</div>
+                <div class="step-desc">Element X is the next-generation Matrix client with ultra-fast Sliding Sync (MSC3575) and instant startup.</div>
                 <div class="client-grid">
                     <a href="https://play.google.com/store/apps/details?id=io.element.android.x" target="_blank" class="client-card">
                         <div class="client-icon">🤖</div>
@@ -412,15 +418,15 @@
             <div class="step-block">
                 <div class="step-title">2. Choose Server</div>
                 <div class="step-desc">When launching Element X, tap <strong>"Sign in"</strong>, then tap <strong>"Other"</strong> or <strong>"Change server"</strong>. Enter your server URL:</div>
-                <pre><code>http://100.108.215.120</code></pre>
+                <pre><code id="server-url-code">http://192.168.1.17</code></pre>
                 <div class="step-desc" style="margin-top: 8px;">Or use your Tailscale MagicDNS name:</div>
-                <pre><code>http://pineapple-server.taildb42a2.ts.net</code></pre>
-                <div class="step-desc" style="margin-top: 8px;">Element X will automatically query <code>/.well-known/matrix/client</code> and configure the Sliding Sync proxy URL automatically with zero manual steps!</div>
+                <pre><code>http://tinapple-server.tail3dee69.ts.net</code></pre>
+                <div class="step-desc" style="margin-top: 8px;">Element X automatically queries <code>/.well-known/matrix/client</code> and configures the Sliding Sync proxy URL automatically with zero manual configuration.</div>
             </div>
 
             <div class="step-block">
                 <div class="step-title">3. Log In or Create Account</div>
-                <div class="step-desc">Log in with the pre-provisioned administrator account or click <strong>"Create account"</strong>:</div>
+                <div class="step-desc">Log in with your administrator account or click <strong>"Create account"</strong>:</div>
                 <pre><code>Username: admin
 Password: tinapple_admin_pass
 Homeserver: tinapple.local</code></pre>
@@ -429,7 +435,7 @@ Homeserver: tinapple.local</code></pre>
 
         <!-- Pairing Bridges -->
         <div class="card">
-            <h2>🔗 Pairing Your Chat Bridges</h2>
+            <h2>Pairing Your Chat Bridges</h2>
 
             <!-- WhatsApp -->
             <div class="step-block">
@@ -438,56 +444,70 @@ Homeserver: tinapple.local</code></pre>
                     1. In Element / Element X, open a Direct Message (Start Chat) with <code>@whatsappbot:tinapple.local</code>.<br>
                     2. Send the message: <code>login</code><br>
                     3. The bot will reply with a QR code in the chat.<br>
-                    4. Open WhatsApp on your phone → <strong>Settings</strong> → <strong>Linked Devices</strong> → <strong>Link a Device</strong> and scan the QR code!<br>
-                    5. All your WhatsApp chats and contacts will immediately sync into Element X!
+                    4. Open WhatsApp on your phone: <strong>Settings</strong> &rarr; <strong>Linked Devices</strong> &rarr; <strong>Link a Device</strong> and scan the QR code.<br>
+                    5. All your WhatsApp conversations and contacts sync directly into your unified Element X inbox.
                 </div>
                 <pre><code>!wa login
-# Or simply type "login" directly to @whatsappbot:tinapple.local</code></pre>
+# Or type "login" directly to @whatsappbot:tinapple.local</code></pre>
             </div>
 
-            <!-- Signal -->
+            <!-- Instagram -->
             <div class="step-block">
-                <div class="step-title"><span class="tag-pill tag-sig">Signal</span> 2. Link Signal via QR Code or Phone</div>
+                <div class="step-title"><span class="tag-pill tag-ig">Instagram</span> 2. Link Instagram Direct</div>
                 <div class="step-desc">
-                    1. In Element / Element X, open a Direct Message with <code>@signalbot:tinapple.local</code>.<br>
+                    1. In Element / Element X, open a Direct Message with <code>@instagrambot:tinapple.local</code>.<br>
                     2. Send the message: <code>login</code><br>
-                    3. Scan the QR code in Signal on your mobile device (<strong>Settings → Linked Devices → Link New Device</strong>).<br>
-                    4. All your Signal encrypted conversations are now bridged into your unified Element X inbox!
+                    3. Follow the interactive prompts in the chat to enter your Instagram handle and password (or approve the 2FA login prompt on your phone).<br>
+                    4. All your Instagram Direct messages and media sync directly into Element X.
                 </div>
-                <pre><code>!signal login
-# Or type "login" directly to @signalbot:tinapple.local</code></pre>
+                <pre><code>login
+# Send "login" directly to @instagrambot:tinapple.local</code></pre>
             </div>
 
-            <!-- Telegram -->
+            <!-- Discord -->
             <div class="step-block">
-                <div class="step-title"><span class="tag-pill tag-tg">Telegram</span> 3. Link Telegram (Optional)</div>
+                <div class="step-title"><span class="tag-pill tag-dc">Discord</span> 3. Link Discord (User Puppeting or Bot)</div>
                 <div class="step-desc">
-                    Telegram requires a free developer API key (takes 30 seconds):<br>
-                    1. Visit <a href="https://my.telegram.org/apps" target="_blank" style="color:var(--primary);">my.telegram.org/apps</a> and log in.<br>
-                    2. Create an application to get your <code>api_id</code> and <code>api_hash</code>.<br>
-                    3. Add them to <code>/var/lib/mautrix-telegram/config.yaml</code> and run:
+                    1. In Element / Element X, open a Direct Message with <code>@discordbot:tinapple.local</code>.<br>
+                    2. For personal user account puppeting (bridging your own DMs and servers), send:<br>
+                    <code>login-token &lt;your_discord_user_token&gt;</code><br>
+                    3. Or for bot bridging into shared rooms, send: <code>login-bot &lt;bot_token&gt;</code>.<br>
+                    4. Your Discord direct messages, friend chats, and server channels will appear in Element X.
                 </div>
-                <pre><code>systemctl enable --now mautrix-telegram.service</code></pre>
-                <div class="step-desc" style="margin-top: 8px;">Then DM <code>@telegrambot:tinapple.local</code> and type <code>login</code>.</div>
+                <pre><code>login-token YOUR_DISCORD_TOKEN
+# Or type "help" to @discordbot:tinapple.local for all commands</code></pre>
             </div>
         </div>
 
         <!-- Service Management -->
         <div class="card">
-            <h2>⚙️ Native Systemd Management</h2>
-            <div class="step-desc">All services run natively on bare-metal Arch Linux under systemd with PostgreSQL storage — zero Docker containers:</div>
+            <h2>Native Systemd Management</h2>
+            <div class="step-desc">All services run natively on bare-metal Arch Linux under systemd with PostgreSQL storage:</div>
             <pre><code># Check Matrix Homeserver status
 systemctl status synapse.service
 
 # Check Sliding Sync Proxy (Element X)
 systemctl status matrix-sliding-sync.service
 
-# Check WhatsApp & Signal Bridges
-systemctl status mautrix-whatsapp.service mautrix-signal.service
+# Check WhatsApp, Instagram, and Discord Bridges
+systemctl status mautrix-whatsapp.service mautrix-instagram.service mautrix-discord.service
 
-# Tail live bridge logs
-journalctl -u mautrix-whatsapp.service -f</code></pre>
+# View live bridge logs
+journalctl -u mautrix-whatsapp.service -f
+journalctl -u mautrix-instagram.service -f
+journalctl -u mautrix-discord.service -f</code></pre>
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.location.origin) {
+                const hsEl = document.getElementById('homeserver-url');
+                const codeEl = document.getElementById('server-url-code');
+                if (hsEl) hsEl.textContent = window.location.origin;
+                if (codeEl) codeEl.textContent = window.location.origin;
+            }
+        });
+    </script>
 </body>
 </html>
