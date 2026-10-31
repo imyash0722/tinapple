@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mautrix Bridges & Element X Guide — Tinapple Matrix Stack</title>
+    <script>
+        // Universal Wallpaper & Pywal Sync Engine
+        const DB_NAME = 'PinedashStorage';
+        const STORE_NAME = 'wallpapers';
+
+        function openLocalDB() {
+            return new Promise((resolve, reject) => {
+                const req = indexedDB.open(DB_NAME, 1);
+                req.onupgradeneeded = () => req.result.createObjectStore(STORE_NAME);
+                req.onsuccess = () => resolve(req.result);
+                req.onerror = () => reject(req.error);
+            });
+        }
+
+        async function getLocalWallpaper(key = 'active_wallpaper') {
+            try {
+                const db = await openLocalDB();
+                return new Promise((resolve) => {
+                    const tx = db.transaction(STORE_NAME, 'readonly');
+                    const req = tx.objectStore(STORE_NAME).get(key);
+                    req.onsuccess = () => resolve(req.result);
+                    req.onerror = () => resolve(null);
+                });
+            } catch(e) { return null; }
+        }
+
+        function applyThemeAndColors(root, pywal) {
+            if (!pywal || !pywal.colors) return;
+            const pColor = pywal.colors.color4 || '#00b0ff';
+            const fg = pywal.special?.foreground || '#e0f7fa';
+            root.style.setProperty('--primary', pColor);
+            root.style.setProperty('--primary-glow', pColor + '40');
+            root.style.setProperty('--text', fg);
+            root.style.setProperty('--text-muted', 'rgba(224, 247, 250, 0.65)');
+            root.style.setProperty('--glass-border', pColor + '30');
+        }
+
+        (async function bootSync() {
+            const root = document.documentElement;
+            const savedTheme = localStorage.getItem('dashboard-theme') || 'glass';
+            root.setAttribute('data-theme', savedTheme);
+
+            try {
+                const pywalCache = localStorage.getItem('pywal-cache');
+                if (pywalCache) applyThemeAndColors(root, JSON.parse(pywalCache));
+                fetch('/api/pywal').then(r => r.ok ? r.json() : null).then(data => {
+                    if (data && data.colors) {
+                        localStorage.setItem('pywal-cache', JSON.stringify(data));
+                        applyThemeAndColors(root, data);
+                    }
+                }).catch(() => {});
+            } catch(e) {}
+        })();
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+        :root {
+            --bg: #0b0f19;
+            --glass: rgba(13, 20, 36, 0.85);
+            --glass-card: rgba(18, 27, 46, 0.78);
+            --glass-border: rgba(0, 176, 255, 0.25);
+            --primary: #00b0ff;
+            --primary-glow: rgba(0, 176, 255, 0.35);
+            --accent: #25d366;
+            --signal: #3a76f0;
+            --telegram: #229ed9;
+            --text: #f0f6fc;
+            --text-muted: rgba(240, 246, 252, 0.65);
+            --code-bg: rgba(6, 10, 18, 0.95);
+            --card-shadow: 0 16px 48px 0 rgba(0, 0, 0, 0.6);
+            --font-family: 'Inter', -apple-system, system-ui, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: var(--font-family);
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 36px 16px;
+            display: flex;
+            justify-content: center;
+            line-height: 1.6;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 960px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .header-card {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 32px;
+            box-shadow: var(--card-shadow);
+            backdrop-filter: blur(24px);
+            display: flex;
+            align-items: center;
+            gap: 26px;
+            flex-wrap: wrap;
+        }
+
+        .header-icon {
+            width: 72px;
+            height: 72px;
+            border-radius: 20px;
+            background: rgba(0, 176, 255, 0.16);
+            border: 1px solid rgba(0, 176, 255, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            box-shadow: 0 0 24px rgba(0, 176, 255, 0.3);
+        }
+
+        .header-info {
+            flex: 1;
+            min-width: 280px;
+        }
+
+        .header-info h1 {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #fff;
+            letter-spacing: -0.02em;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .badge-native {
+            background: rgba(0, 230, 118, 0.15);
+            color: #00e676;
+            border: 1px solid rgba(0, 230, 118, 0.35);
+            font-size: 0.72rem;
+            padding: 3px 9px;
+            border-radius: 8px;
+            font-family: var(--font-mono);
+            font-weight: 700;
+        }
+
+        .header-info p {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            margin-top: 6px;
+        }
+
+        .header-actions {
+            margin-top: 16px;
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .btn-action {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 18px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            font-family: var(--font-mono);
+            text-decoration: none;
+            transition: all 0.2s ease;
+            background: rgba(0, 176, 255, 0.15);
+            color: var(--primary);
+            border: 1px solid rgba(0, 176, 255, 0.4);
+        }
+
+        .btn-action:hover {
+            background: rgba(0, 176, 255, 0.25);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px var(--primary-glow);
+        }
+
+        .meta-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+            gap: 16px;
+        }
+
+        .meta-box {
+            background: var(--glass-card);
+            border: 1px solid var(--glass-border);
+            border-radius: 18px;
+            padding: 18px 20px;
+            backdrop-filter: blur(16px);
+        }
+
+        .meta-label {
+            font-size: 0.72rem;
+            font-family: var(--font-mono);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text-muted);
+        }
+
+        .meta-val {
+            font-size: 1.02rem;
+            font-weight: 700;
+            font-family: var(--font-mono);
+            color: #fff;
+            margin-top: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 22px;
+            padding: 28px;
+            box-shadow: var(--card-shadow);
+            backdrop-filter: blur(20px);
+        }
+
+        .card h2 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #fff;
+        }
+
+        .step-block {
+            margin-bottom: 22px;
+            padding-bottom: 22px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .step-block:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+
+        .step-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .step-desc {
+            font-size: 0.92rem;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+        }
+
+        pre {
+            background: var(--code-bg);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 14px 16px;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: #e2e8f0;
+            overflow-x: auto;
+            position: relative;
+        }
+
+        code {
+            font-family: var(--font-mono);
+            font-size: 0.85em;
+            padding: 2px 6px;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--primary);
+        }
+
+        .tag-pill {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            font-family: var(--font-mono);
+            text-transform: uppercase;
+        }
+        .tag-wa { background: rgba(37, 211, 102, 0.15); color: #25d366; border: 1px solid rgba(37, 211, 102, 0.3); }
+        .tag-sig { background: rgba(58, 118, 240, 0.15); color: #3a76f0; border: 1px solid rgba(58, 118, 240, 0.3); }
+        .tag-tg { background: rgba(34, 158, 217, 0.15); color: #229ed9; border: 1px solid rgba(34, 158, 217, 0.3); }
+
+        .client-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 14px;
+            margin-top: 14px;
+        }
+
+        .client-card {
+            background: var(--glass-card);
+            border: 1px solid var(--glass-border);
+            border-radius: 14px;
+            padding: 16px;
+            text-decoration: none;
+            color: inherit;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            transition: all 0.2s ease;
+        }
+
+        .client-card:hover {
+            transform: translateY(-2px);
+            border-color: var(--primary);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .client-icon {
+            font-size: 24px;
+        }
+
+        .client-info h4 {
+            font-size: 0.92rem;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .client-info p {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header-card">
+            <div class="header-icon">💬</div>
+            <div class="header-info">
+                <h1>Mautrix Bridges & Element X <span class="badge-native">100% NATIVE SYSTEMD</span></h1>
+                <p>Personal Matrix ecosystem hosting WhatsApp, Signal & Telegram bridges with MSC3575 Sliding Sync for Element X.</p>
+                <div class="header-actions">
+                    <a href="/element/" target="_blank" class="btn-action">🌐 Open Element Web</a>
+                    <a href="http://100.108.215.120:8008/_matrix/client/versions" target="_blank" class="btn-action">⚡ Homeserver API</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Endpoints Grid -->
+        <div class="meta-grid">
+            <div class="meta-box">
+                <div class="meta-label">Homeserver Base URL</div>
+                <div class="meta-val">http://100.108.215.120</div>
+            </div>
+            <div class="meta-box">
+                <div class="meta-label">Sliding Sync Proxy (MSC3575)</div>
+                <div class="meta-val">Port 8009 (or Port 80 via Nginx)</div>
+            </div>
+            <div class="meta-box">
+                <div class="meta-label">WhatsApp Bridge Port</div>
+                <div class="meta-val">127.0.0.1:29318 <span class="tag-pill tag-wa">ACTIVE</span></div>
+            </div>
+            <div class="meta-box">
+                <div class="meta-label">Signal Bridge Port</div>
+                <div class="meta-val">127.0.0.1:29328 <span class="tag-pill tag-sig">ACTIVE</span></div>
+            </div>
+        </div>
+
+        <!-- Element X Setup -->
+        <div class="card">
+            <h2>📱 Connecting Element X (iOS, Android & Desktop)</h2>
+            <div class="step-block">
+                <div class="step-title">1. Download Element X</div>
+                <div class="step-desc">Element X is the next-generation Matrix client with ultra-fast Sliding Sync (MSC3575) and instant instant startup.</div>
+                <div class="client-grid">
+                    <a href="https://play.google.com/store/apps/details?id=io.element.android.x" target="_blank" class="client-card">
+                        <div class="client-icon">🤖</div>
+                        <div class="client-info">
+                            <h4>Element X Android</h4>
+                            <p>Google Play Store / F-Droid</p>
+                        </div>
+                    </a>
+                    <a href="https://apps.apple.com/app/element-x/id6443586474" target="_blank" class="client-card">
+                        <div class="client-icon">🍏</div>
+                        <div class="client-info">
+                            <h4>Element X iOS</h4>
+                            <p>Apple App Store</p>
+                        </div>
+                    </a>
+                    <a href="/element/" target="_blank" class="client-card">
+                        <div class="client-icon">💻</div>
+                        <div class="client-info">
+                            <h4>Element Web</h4>
+                            <p>Self-hosted at /element/</p>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            <div class="step-block">
+                <div class="step-title">2. Choose Server</div>
+                <div class="step-desc">When launching Element X, tap <strong>"Sign in"</strong>, then tap <strong>"Other"</strong> or <strong>"Change server"</strong>. Enter your server URL:</div>
+                <pre><code>http://100.108.215.120</code></pre>
+                <div class="step-desc" style="margin-top: 8px;">Or use your Tailscale MagicDNS name:</div>
+                <pre><code>http://pineapple-server.taildb42a2.ts.net</code></pre>
+                <div class="step-desc" style="margin-top: 8px;">Element X will automatically query <code>/.well-known/matrix/client</code> and configure the Sliding Sync proxy URL automatically with zero manual steps!</div>
+            </div>
+
+            <div class="step-block">
+                <div class="step-title">3. Log In or Create Account</div>
+                <div class="step-desc">Log in with the pre-provisioned administrator account or click <strong>"Create account"</strong>:</div>
+                <pre><code>Username: admin
+Password: tinapple_admin_pass
+Homeserver: tinapple.local</code></pre>
+            </div>
+        </div>
+
+        <!-- Pairing Bridges -->
+        <div class="card">
+            <h2>🔗 Pairing Your Chat Bridges</h2>
+
+            <!-- WhatsApp -->
+            <div class="step-block">
+                <div class="step-title"><span class="tag-pill tag-wa">WhatsApp</span> 1. Link WhatsApp via QR Code</div>
+                <div class="step-desc">
+                    1. In Element / Element X, open a Direct Message (Start Chat) with <code>@whatsappbot:tinapple.local</code>.<br>
+                    2. Send the message: <code>login</code><br>
+                    3. The bot will reply with a QR code in the chat.<br>
+                    4. Open WhatsApp on your phone → <strong>Settings</strong> → <strong>Linked Devices</strong> → <strong>Link a Device</strong> and scan the QR code!<br>
+                    5. All your WhatsApp chats and contacts will immediately sync into Element X!
+                </div>
+                <pre><code>!wa login
+# Or simply type "login" directly to @whatsappbot:tinapple.local</code></pre>
+            </div>
+
+            <!-- Signal -->
+            <div class="step-block">
+                <div class="step-title"><span class="tag-pill tag-sig">Signal</span> 2. Link Signal via QR Code or Phone</div>
+                <div class="step-desc">
+                    1. In Element / Element X, open a Direct Message with <code>@signalbot:tinapple.local</code>.<br>
+                    2. Send the message: <code>login</code><br>
+                    3. Scan the QR code in Signal on your mobile device (<strong>Settings → Linked Devices → Link New Device</strong>).<br>
+                    4. All your Signal encrypted conversations are now bridged into your unified Element X inbox!
+                </div>
+                <pre><code>!signal login
+# Or type "login" directly to @signalbot:tinapple.local</code></pre>
+            </div>
+
+            <!-- Telegram -->
+            <div class="step-block">
+                <div class="step-title"><span class="tag-pill tag-tg">Telegram</span> 3. Link Telegram (Optional)</div>
+                <div class="step-desc">
+                    Telegram requires a free developer API key (takes 30 seconds):<br>
+                    1. Visit <a href="https://my.telegram.org/apps" target="_blank" style="color:var(--primary);">my.telegram.org/apps</a> and log in.<br>
+                    2. Create an application to get your <code>api_id</code> and <code>api_hash</code>.<br>
+                    3. Add them to <code>/var/lib/mautrix-telegram/config.yaml</code> and run:
+                </div>
+                <pre><code>systemctl enable --now mautrix-telegram.service</code></pre>
+                <div class="step-desc" style="margin-top: 8px;">Then DM <code>@telegrambot:tinapple.local</code> and type <code>login</code>.</div>
+            </div>
+        </div>
+
+        <!-- Service Management -->
+        <div class="card">
+            <h2>⚙️ Native Systemd Management</h2>
+            <div class="step-desc">All services run natively on bare-metal Arch Linux under systemd with PostgreSQL storage — zero Docker containers:</div>
+            <pre><code># Check Matrix Homeserver status
+systemctl status synapse.service
+
+# Check Sliding Sync Proxy (Element X)
+systemctl status matrix-sliding-sync.service
+
+# Check WhatsApp & Signal Bridges
+systemctl status mautrix-whatsapp.service mautrix-signal.service
+
+# Tail live bridge logs
+journalctl -u mautrix-whatsapp.service -f</code></pre>
+        </div>
+    </div>
+</body>
+</html>

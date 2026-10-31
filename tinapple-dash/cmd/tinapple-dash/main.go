@@ -148,6 +148,8 @@ func main() {
 			"/guide/navidrome":   "/guides/navidrome.html",
 			"/guide/syncyomi":    "/guides/syncyomi.html",
 			"/guide/beeper":      "/guides/beeper.html",
+			"/guide/mautrix":     "/guides/mautrix.html",
+			"/guide/matrix":      "/guides/mautrix.html",
 			"/guide/vaultwarden": "/guides/vaultwarden.html",
 			"/guide/syncthing":   "/guides/syncthing.html",
 			"/guide/obsidian":    "/guides/obsidian.html",

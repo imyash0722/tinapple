@@ -35,7 +35,9 @@ echo -e "${GREEN}✓ Connected successfully.${NC}"
 echo -e "${CYAN}[2/5] Compiling tinapple-hub frontend asset bundle...${NC}"
 cd "${REPO_DIR}/tinapple-hub"
 npm run build --silent
+mkdir -p "${REPO_DIR}/tinapple-dash/web/dist/guides"
 cp -r "${REPO_DIR}/tinapple-hub/dist/assets" "${REPO_DIR}/tinapple-hub/dist/index.html" "${REPO_DIR}/tinapple-dash/web/dist/"
+cp -r "${REPO_DIR}/tinapple-hub/dist/guides/." "${REPO_DIR}/tinapple-dash/web/dist/guides/"
 echo -e "${GREEN}✓ Frontend bundle compiled.${NC}"
 
 # 3. Build Backend Binary
