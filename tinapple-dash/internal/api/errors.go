@@ -486,7 +486,51 @@ You MUST return ONLY a valid, strict JSON object (no markdown code blocks, no ba
 	rawText = strings.TrimSpace(rawText)
 
 	var analysis AIErrorAnalysis
-	if err := json.Unmarshal([]byte(rawText), &analysis); err != nil {
+	var rawMap map[string]interface{}
+	if err := json.Unmarshal([]byte(rawText), &rawMap); err == nil {
+		// Flexible extraction
+		if src, ok := rawMap["source"].(string); ok && src != "" {
+			analysis.Source = src
+		} else {
+			analysis.Source = req.Error.Source + " (" + req.Error.Service + ")"
+		}
+
+		if cause, ok := rawMap["expectedCause"].(string); ok {
+			analysis.ExpectedCause = cause
+		}
+
+		if files, ok := rawMap["filesAffected"].([]interface{}); ok {
+			for _, f := range files {
+				if fStr, ok := f.(string); ok {
+					analysis.FilesAffected = append(analysis.FilesAffected, fStr)
+				}
+			}
+		}
+
+		if fmtErr, ok := rawMap["formattedError"].(string); ok && fmtErr != "" {
+			analysis.FormattedError = fmtErr
+		} else {
+			analysis.FormattedError = req.Error.Message
+		}
+
+		if remStr, ok := rawMap["suggestedRemediation"].(string); ok {
+			analysis.SuggestedRemediation = remStr
+		} else if remArr, ok := rawMap["suggestedRemediation"].([]interface{}); ok {
+			var lines []string
+			for _, r := range remArr {
+				if rStr, ok := r.(string); ok {
+					lines = append(lines, rStr)
+				}
+			}
+			analysis.SuggestedRemediation = strings.Join(lines, "\n")
+		}
+
+		if sev, ok := rawMap["severityAssessment"].(string); ok {
+			analysis.SeverityAssessment = sev
+		} else {
+			analysis.SeverityAssessment = req.Error.Severity
+		}
+	} else if err := json.Unmarshal([]byte(rawText), &analysis); err != nil {
 		// Fallback to structured text if JSON parsing fails
 		analysis = AIErrorAnalysis{
 			Source:               req.Error.Source + " (" + req.Error.Service + ")",
