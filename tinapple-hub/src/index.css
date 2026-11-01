@@ -46,6 +46,13 @@
   --glass-filter: blur(12px) saturate(110%);
 }
 
+html {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  text-size-adjust: 100%;
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
   margin: 0;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
@@ -54,6 +61,16 @@ body {
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overscroll-behavior-y: contain;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+}
+
+/* Mobile interactive responsiveness & touch target optimization */
+button, a, input, select, textarea {
+  touch-action: manipulation;
 }
 
 /* Optimized Tabular Numbers for Metrics, Clocks, Percentages & Data */

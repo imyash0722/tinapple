@@ -91,3 +91,5 @@ tinapple-chadwm/
 /wallpapers/*
 tinapple-hub/pnpm-lock.yaml
 tinapple-hub/pnpm-workspace.yaml
+graphify-out/
+**/graphify-out/
