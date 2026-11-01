@@ -244,13 +244,24 @@ func getMemInfo() map[string]interface{} {
 		return map[string]interface{}{"total": 0, "available": 0, "used_percent": 0}
 	}
 	
-	var total, available uint64
+	var total, available, buffers, cached, swapTotal, swapFree uint64
 	for _, line := range strings.Split(string(data), "\n") {
-		if strings.HasPrefix(line, "MemTotal:") {
-			fmt.Sscanf(line, "MemTotal: %d kB", &total)
-		}
-		if strings.HasPrefix(line, "MemAvailable:") {
-			fmt.Sscanf(line, "MemAvailable: %d kB", &available)
+		fields := strings.Fields(line)
+		if len(fields) >= 2 {
+			switch fields[0] {
+			case "MemTotal:":
+				fmt.Sscanf(fields[1], "%d", &total)
+			case "MemAvailable:":
+				fmt.Sscanf(fields[1], "%d", &available)
+			case "Buffers:":
+				fmt.Sscanf(fields[1], "%d", &buffers)
+			case "Cached:":
+				fmt.Sscanf(fields[1], "%d", &cached)
+			case "SwapTotal:":
+				fmt.Sscanf(fields[1], "%d", &swapTotal)
+			case "SwapFree:":
+				fmt.Sscanf(fields[1], "%d", &swapFree)
+			}
 		}
 	}
 	
@@ -258,11 +269,57 @@ func getMemInfo() map[string]interface{} {
 	if total > 0 {
 		usedPercent = float64(total-available) / float64(total) * 100
 	}
-	
+
+	var zramActive bool
+	var zramTotalBytes, zramUsedBytes uint64
+
+	// Parse /proc/swaps for live zram device usage
+	if swapData, err := os.ReadFile("/proc/swaps"); err == nil {
+		for _, line := range strings.Split(string(swapData), "\n") {
+			fields := strings.Fields(line)
+			if len(fields) >= 5 && strings.Contains(fields[0], "zram") {
+				var sizeKb, usedKb uint64
+				fmt.Sscanf(fields[2], "%d", &sizeKb)
+				fmt.Sscanf(fields[3], "%d", &usedKb)
+				zramActive = true
+				zramTotalBytes += sizeKb * 1024
+				zramUsedBytes += usedKb * 1024
+			}
+		}
+	}
+
+	// Fallback to /sys/block/zram0/disksize if zram block device exists
+	if !zramActive {
+		if disksizeData, err := os.ReadFile("/sys/block/zram0/disksize"); err == nil {
+			var sz uint64
+			if _, err := fmt.Sscanf(strings.TrimSpace(string(disksizeData)), "%d", &sz); err == nil && sz > 0 {
+				zramTotalBytes = sz
+			}
+		}
+	}
+
+	swapUsed := uint64(0)
+	if swapTotal > swapFree {
+		swapUsed = (swapTotal - swapFree) * 1024
+	}
+
+	usedBytes := uint64(0)
+	if total > available {
+		usedBytes = (total - available) * 1024
+	}
+
 	return map[string]interface{}{
 		"total_bytes":      total * 1024,
 		"available_bytes":  available * 1024,
+		"used_bytes":       usedBytes,
 		"used_percent":     usedPercent,
+		"buffers_bytes":    buffers * 1024,
+		"cached_bytes":     cached * 1024,
+		"swap_total_bytes": swapTotal * 1024,
+		"swap_used_bytes":  swapUsed,
+		"zram_active":      zramActive,
+		"zram_total_bytes": zramTotalBytes,
+		"zram_used_bytes":  zramUsedBytes,
 	}
 }
 

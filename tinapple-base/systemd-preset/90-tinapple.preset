@@ -3,6 +3,7 @@ enable tinapple-hw-detect.service
 enable tinapple-power-profile-apply.service
 enable tinapple-battery-daemon.service
 enable tinapple-thermal-daemon.service
+enable tinapple-zram.service
 enable tinapple-boot-apply.path
 enable tinapple-firstboot.service
 enable snapper-timeline.timer

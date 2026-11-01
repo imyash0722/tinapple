@@ -67,6 +67,8 @@ tinapple-dash/web/dist/tsumiru/
 tinapple-repo/packages/tinapple-dash/web/dist/tsumiru/
 
 # Packaged shell entry points are source, not compiled binaries.
+!tinapple-base/bin/
+!tinapple-base/bin/tinapple-zram
 !tinapple-firstboot/bin/
 !tinapple-firstboot/bin/tinapple-setup
 !tinapple-maintenance/bin/

@@ -1,0 +1,15 @@
+[Unit]
+Description=Tinapple Universal Adaptive ZRAM Swap
+Documentation=https://github.com/tinapple/tinapple-arch
+DefaultDependencies=no
+After=local-fs.target
+Before=swap.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/tinapple-zram start
+ExecStop=/usr/bin/tinapple-zram stop
+
+[Install]
+WantedBy=swap.target

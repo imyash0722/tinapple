@@ -27,8 +27,13 @@ export interface TelemetrySnapshot {
     usedBytes: number;
     freeBytes: number;
     usagePercent: number;
+    buffersBytes?: number;
+    cachedBytes?: number;
     swapTotalBytes: number;
     swapUsedBytes: number;
+    zramActive?: boolean;
+    zramTotalBytes?: number;
+    zramUsedBytes?: number;
   };
   disk: {
     totalBytes: number;

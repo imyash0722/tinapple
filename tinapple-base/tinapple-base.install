@@ -27,6 +27,7 @@ EOPAC
   systemctl enable tinapple-power-profile-apply.service >/dev/null 2>&1 || true
   systemctl enable tinapple-battery-daemon.service >/dev/null 2>&1 || true
   systemctl enable tinapple-thermal-daemon.service >/dev/null 2>&1 || true
+  systemctl enable tinapple-zram.service >/dev/null 2>&1 || true
 
   # Enable boot apply hook
   systemctl enable tinapple-boot-apply.path >/dev/null 2>&1 || true
@@ -79,6 +80,7 @@ pre_remove() {
   systemctl disable tinapple-power-profile-apply.service >/dev/null 2>&1 || true
   systemctl disable tinapple-battery-daemon.service >/dev/null 2>&1 || true
   systemctl disable tinapple-thermal-daemon.service >/dev/null 2>&1 || true
+  systemctl disable tinapple-zram.service >/dev/null 2>&1 || true
   systemctl disable tinapple-boot-apply.path >/dev/null 2>&1 || true
   systemctl disable tinapple-firstboot.service >/dev/null 2>&1 || true
   systemctl disable tinapple-nginx.service >/dev/null 2>&1 || true

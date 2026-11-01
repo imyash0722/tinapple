@@ -32,8 +32,10 @@ source=(
   systemd-preset/90-tinapple.preset
   bin/tinapple-boot-apply
   bin/tinapple-master-install
+  bin/tinapple-zram
+  systemd/tinapple-zram.service
 )
-sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP')
+sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP')
 
 package() {
   # Install pacman configuration template (avoid conflicting with pacman's /etc/pacman.conf)
@@ -56,6 +58,10 @@ package() {
 
   # Install master installer hook
   install -Dm755 bin/tinapple-master-install "$pkgdir/usr/bin/tinapple-master-install"
+
+  # Install universal adaptive zram swap script and service
+  install -Dm755 bin/tinapple-zram "$pkgdir/usr/bin/tinapple-zram"
+  install -Dm644 systemd/tinapple-zram.service "$pkgdir/usr/lib/systemd/system/tinapple-zram.service"
 
   # Create required directories
   install -dm755 "$pkgdir/etc/tinapple"

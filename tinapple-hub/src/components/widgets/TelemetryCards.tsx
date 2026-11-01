@@ -199,18 +199,26 @@ export const TelemetryCards: React.FC<TelemetryCardsProps> = ({ telemetry, syste
                 <div className="p-2 rounded-xl bg-tinapple-dark/60 border border-tinapple-border">
                   <span className="text-[10px] text-tinapple-muted block">BUFFERS</span>
                   <span className="text-xs font-semibold text-tinapple-green">
-                    {formatBytes(telemetry.memory.usedBytes * 0.4)}
+                    {formatBytes(telemetry.memory.buffersBytes ?? telemetry.memory.usedBytes * 0.4)}
                   </span>
                 </div>
                 <div className="p-2 rounded-xl bg-tinapple-dark/60 border border-tinapple-border">
                   <span className="text-[10px] text-tinapple-muted block">CACHED</span>
                   <span className="text-xs font-semibold text-tinapple-gold">
-                    {formatBytes(telemetry.memory.usedBytes * 0.6)}
+                    {formatBytes(telemetry.memory.cachedBytes ?? telemetry.memory.usedBytes * 0.6)}
                   </span>
                 </div>
                 <div className="p-2 rounded-xl bg-tinapple-dark/60 border border-tinapple-border">
-                  <span className="text-[10px] text-tinapple-muted block">ZRAM SWAP</span>
-                  <span className="text-xs font-semibold text-tinapple-text">0 B / 8 GB</span>
+                  <span className="text-[10px] text-tinapple-muted block">
+                    {telemetry.memory.zramActive ? 'ZRAM SWAP' : 'SWAP'}
+                  </span>
+                  <span className="text-xs font-semibold text-tinapple-text">
+                    {telemetry.memory.zramActive
+                      ? `${formatBytes(telemetry.memory.zramUsedBytes ?? 0)} / ${formatBytes(telemetry.memory.zramTotalBytes ?? 0)}`
+                      : telemetry.memory.swapTotalBytes > 0
+                        ? `${formatBytes(telemetry.memory.swapUsedBytes)} / ${formatBytes(telemetry.memory.swapTotalBytes)}`
+                        : '0 B / 0 B'}
+                  </span>
                 </div>
               </div>
             </div>

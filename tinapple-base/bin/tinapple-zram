@@ -1,0 +1,177 @@
+#!/usr/bin/env bash
+# tinapple-zram: Universal adaptive ZRAM swap manager
+# Designed to run on any Linux device, especially older legacy hardware.
+set -euo pipefail
+
+ZRAM_DEV="/dev/zram0"
+SYS_ZRAM="/sys/block/zram0"
+
+get_mem_total_mb() {
+  local mem_kb
+  mem_kb=$(awk '/MemTotal:/ {print $2}' /proc/meminfo)
+  echo $(( mem_kb / 1024 ))
+}
+
+get_cpu_cores() {
+  nproc 2>/dev/null || grep -c '^processor' /proc/cpuinfo || echo 1
+}
+
+choose_algorithm() {
+  local supported=""
+  if [[ -f "${SYS_ZRAM}/comp_algorithm" ]]; then
+    supported=$(cat "${SYS_ZRAM}/comp_algorithm")
+  fi
+
+  local cores
+  cores=$(get_cpu_cores)
+
+  # On legacy hardware (<= 2 cores or low-power CPUs), prefer lzo-rle or lz4
+  # to prevent high CPU utilization, thermal throttling, and latency.
+  # On 4+ core CPUs with modern architecture, prefer zstd for maximum compression ratio.
+  if (( cores >= 4 )) && [[ "$supported" == *"zstd"* ]]; then
+    echo "zstd"
+  elif [[ "$supported" == *"lzo-rle"* ]]; then
+    echo "lzo-rle"
+  elif [[ "$supported" == *"lz4"* ]]; then
+    echo "lz4"
+  elif [[ "$supported" == *"lzo"* ]]; then
+    echo "lzo"
+  else
+    # Fallback to kernel default
+    echo ""
+  fi
+}
+
+calculate_zram_mb() {
+  local mem_mb
+  mem_mb=$(get_mem_total_mb)
+
+  # Dynamic adaptive sizing:
+  # - Legacy/low RAM (<= 2GB): 100% of RAM (essential to prevent OOM)
+  # - Low-to-mid RAM (<= 4GB): 100% of RAM
+  # - Mid RAM (<= 8GB): 100% of RAM (capped at 8192 MB)
+  # - High RAM (> 8GB): 50% of RAM (capped at 16384 MB)
+  if (( mem_mb <= 2048 )); then
+    echo "$mem_mb"
+  elif (( mem_mb <= 4096 )); then
+    echo "$mem_mb"
+  elif (( mem_mb <= 8192 )); then
+    echo "$mem_mb"
+  else
+    local half=$(( mem_mb / 2 ))
+    if (( half > 16384 )); then
+      echo "16384"
+    else
+      echo "$half"
+    fi
+  fi
+}
+
+start_zram() {
+  # If already active in /proc/swaps, nothing to do
+  if grep -q "^${ZRAM_DEV}[[:space:]]" /proc/swaps 2>/dev/null; then
+    echo "tinapple-zram: ${ZRAM_DEV} is already active swap."
+    return 0
+  fi
+
+  # Ensure kernel module is loaded
+  if ! lsmod | grep -q "^zram[[:space:]]"; then
+    modprobe zram num_devices=1 2>/dev/null || modprobe zram 2>/dev/null || true
+  fi
+
+  if [[ ! -e "${SYS_ZRAM}" ]]; then
+    echo "tinapple-zram: Error: ${SYS_ZRAM} not found." >&2
+    return 1
+  fi
+
+  # Reset device if it was previously initialized
+  if [[ -f "${SYS_ZRAM}/disksize" ]] && [[ "$(cat "${SYS_ZRAM}/disksize")" -ne 0 ]]; then
+    swapoff "${ZRAM_DEV}" 2>/dev/null || true
+    echo 1 > "${SYS_ZRAM}/reset" 2>/dev/null || true
+  fi
+
+  # Set compression algorithm
+  local algo
+  algo=$(choose_algorithm)
+  if [[ -n "$algo" ]] && [[ -f "${SYS_ZRAM}/comp_algorithm" ]]; then
+    echo "$algo" > "${SYS_ZRAM}/comp_algorithm" 2>/dev/null || true
+  fi
+
+  # Set adaptive disksize
+  local target_mb
+  target_mb=$(calculate_zram_mb)
+  local size_bytes=$(( target_mb * 1024 * 1024 ))
+  echo "$size_bytes" > "${SYS_ZRAM}/disksize"
+
+  # Initialize swap signature
+  mkswap -L tinapple-zram "${ZRAM_DEV}" >/dev/null
+
+  # Enable swap with highest priority (32767) so compressed in-RAM swap
+  # is utilized before any physical disk/SSD swap partitions
+  swapon -p 32767 "${ZRAM_DEV}"
+
+  # Set optimal VM swappiness and disable page clustering for zram
+  sysctl -w vm.swappiness=150 >/dev/null 2>&1 || true
+  sysctl -w vm.page-cluster=0 >/dev/null 2>&1 || true
+
+  echo "tinapple-zram: Activated ${ZRAM_DEV} (${target_mb} MB, algo=$(cat "${SYS_ZRAM}/comp_algorithm" 2>/dev/null | grep -o '\[.*\]' || echo "$algo"), prio=32767)"
+}
+
+stop_zram() {
+  if grep -q "^${ZRAM_DEV}[[:space:]]" /proc/swaps 2>/dev/null; then
+    swapoff "${ZRAM_DEV}" 2>/dev/null || true
+  fi
+
+  if [[ -f "${SYS_ZRAM}/reset" ]]; then
+    echo 1 > "${SYS_ZRAM}/reset" 2>/dev/null || true
+  fi
+
+  # Restore standard page clustering
+  sysctl -w vm.page-cluster=3 >/dev/null 2>&1 || true
+
+  echo "tinapple-zram: Deactivated ${ZRAM_DEV}"
+}
+
+status_zram() {
+  if grep -q "^${ZRAM_DEV}[[:space:]]" /proc/swaps 2>/dev/null; then
+    echo "Active: yes"
+    echo "Device: ${ZRAM_DEV}"
+    if [[ -f "${SYS_ZRAM}/disksize" ]]; then
+      local bytes
+      bytes=$(cat "${SYS_ZRAM}/disksize")
+      echo "DiskSize: $(( bytes / 1024 / 1024 )) MB"
+    fi
+    if [[ -f "${SYS_ZRAM}/comp_algorithm" ]]; then
+      echo "Algorithm: $(cat "${SYS_ZRAM}/comp_algorithm")"
+    fi
+    if [[ -f "${SYS_ZRAM}/mm_stat" ]]; then
+      read -r orig compr mem_total _ < "${SYS_ZRAM}/mm_stat"
+      echo "OriginalData: $(( orig / 1024 )) KB"
+      echo "CompressedData: $(( compr / 1024 )) KB"
+      echo "MemUsedTotal: $(( mem_total / 1024 )) KB"
+    fi
+    awk -v dev="${ZRAM_DEV}" '$1 == dev {print "SwapUsage: " $4 " KB used of " $3 " KB (Priority " $5 ")"}' /proc/swaps
+  else
+    echo "Active: no"
+  fi
+}
+
+case "${1:-status}" in
+  start)
+    start_zram
+    ;;
+  stop)
+    stop_zram
+    ;;
+  restart)
+    stop_zram || true
+    start_zram
+    ;;
+  status)
+    status_zram
+    ;;
+  *)
+    echo "Usage: $0 {start|stop|restart|status}" >&2
+    exit 1
+    ;;
+esac
