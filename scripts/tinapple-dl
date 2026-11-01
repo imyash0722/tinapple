@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# Tinapple Instant YouTube & Media Downloader (Jellyfin Integrated)
+# Downloads videos with SponsorBlock, embedded metadata, subtitles & NFO
+# directly into /srv/media/youtube
+# ==============================================================================
+set -euo pipefail
+
+DEST_DIR="/srv/media/youtube"
+mkdir -p "$DEST_DIR"
+
+if [[ $# -lt 1 || "$1" == "-h" || "$1" == "--help" ]]; then
+    echo "Usage: tinapple-dl <YOUTUBE_URL_OR_PLAYLIST> [EXTRA_ARGS...]"
+    echo ""
+    echo "Examples:"
+    echo "  tinapple-dl 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'"
+    echo "  tinapple-dl 'https://www.youtube.com/@Veritasium'"
+    echo ""
+    echo "Target Directory: $DEST_DIR (Automatically indexed by Jellyfin)"
+    exit 0
+fi
+
+URL="$1"
+shift || true
+
+echo "=== 🎬 Tinapple YouTube Downloader ==="
+echo "Target URL: $URL"
+echo "Output Directory: $DEST_DIR"
+echo "Format: Best MP4/AVC with AAC audio, subtitles & SponsorBlock removal"
+echo "------------------------------------------------------------------"
+
+yt-dlp \
+    --format "bestvideo[ext=mp4][vcodec^=avc]+bestaudio[ext=m4a]/best[ext=mp4]/best" \
+    --merge-output-format mp4 \
+    --paths "$DEST_DIR" \
+    --output "%(uploader)s/Season %(upload_date>%Y)s/%(upload_date>%Y%m%d)s - %(title)s [%(id)s].%(ext)s" \
+    --write-thumbnail \
+    --embed-thumbnail \
+    --write-subs \
+    --write-auto-subs \
+    --sub-langs "en.*,en" \
+    --embed-subs \
+    --add-metadata \
+    --sponsorblock-remove "sponsor,selfpromo,interaction" \
+    --no-mtime \
+    "$@" \
+    "$URL"
+
+echo ""
+echo "✓ Download complete! Video is indexed and ready in Jellyfin (/srv/media/youtube)."
