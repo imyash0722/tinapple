@@ -16,7 +16,7 @@ import {
 import { SpotlightCard } from '../reactbits/SpotlightCard';
 import HoldButton from '../reactbits/HoldButton';
 import { ServiceInfo } from '../../types/api';
-import { getServiceHost } from '../../services/api';
+import { getServiceHost, getServiceUrl } from '../../services/api';
 import { AppBrandIcon } from '../common/AppBrandIcons';
 
 interface ServicesManagerProps {
@@ -89,34 +89,7 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({
     return Array.from(cats);
   }, [services, isAdmin]);
 
-  const getServiceUrl = (service: ServiceInfo): string | null => {
-    const host = getServiceHost();
-    const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
-
-    const knownPorts: Record<string, number> = {
-      jellyfin: 8096,
-      qbittorrent: 8080,
-      metube: 8085,
-      pinchflat: 8945,
-      youtube: 8945,
-      suwayomi: 4567,
-      'suwayomi-server': 4567,
-      navidrome: 4533,
-      syncthing: 8384,
-      adguard: 3000,
-      adguardhome: 3000,
-      vaultwarden: 8000,
-      filebrowser: 8081,
-      couchdb: 5984,
-      radarr: 7878,
-      sonarr: 8989,
-      prowlarr: 9696,
-      bazarr: 6767,
-      seerr: 5055,
-      jellyseerr: 5055,
-      syncyomi: 8282,
-    };
-
+  const getServiceAppUrl = (service: ServiceInfo): string | null => {
     const cleanName = service.name.toLowerCase().replace(/\.service$/, '').replace(/@.*$/, '');
     const nonWebServices = [
       'postgresql',
@@ -137,17 +110,14 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({
       'bbctl',
     ];
 
-    if (nonWebServices.includes(cleanName) && !knownPorts[cleanName]) {
+    if (nonWebServices.includes(cleanName)) {
       return null;
     }
 
-    const port = service.port || knownPorts[cleanName];
-    if (!port || port <= 0) return null;
-
-    if (cleanName === 'vaultwarden' && isHttps) {
-      return `https://${host}:${port}`;
-    }
-    return `http://${host}:${port}`;
+    const url = getServiceUrl(cleanName);
+    if (url && url !== '/') return url;
+    if (service.port && service.port > 0) return getServiceUrl(service.port);
+    return null;
   };
 
   return (
@@ -260,7 +230,7 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({
             const isActive = service.activeState === 'active' || service.running;
             const isInstalled = service.installed !== false && service.activeState !== 'not_installed';
             const isFailed = service.activeState === 'failed';
-            const serviceUrl = getServiceUrl(service);
+            const serviceUrl = getServiceAppUrl(service);
 
             return (
               <SpotlightCard
@@ -498,7 +468,7 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({
                 const isActive = service.activeState === 'active' || service.running;
                 const isInstalled = service.installed !== false && service.activeState !== 'not_installed';
                 const isFailed = service.activeState === 'failed';
-                const serviceUrl = getServiceUrl(service);
+                const serviceUrl = getServiceAppUrl(service);
 
                 return (
                   <tr key={service.name} className="hover:bg-tinapple-surface/40 transition-colors">

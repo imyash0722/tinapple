@@ -73,21 +73,60 @@ export const SERVICE_PATH_MAP: Record<number, string> = {
   8945: '/pinchflat/',
   6767: '/bazarr/',
   8008: '/element/',
+  4567: '/suwayomi/',
+  7878: '/radarr/',
+  8989: '/sonarr/',
+  9696: '/prowlarr/',
 };
 
-export function getServiceUrl(port: number, path: string = ''): string {
-  const subpath = SERVICE_PATH_MAP[port];
+export const SERVICE_NAME_PATH_MAP: Record<string, string> = {
+  jellyfin: '/jellyfin/',
+  qbittorrent: '/qbittorrent/',
+  vault: '/vault/',
+  vaultwarden: '/vault/',
+  seerr: '/seerr/',
+  jellyseerr: '/seerr/',
+  navidrome: '/navidrome/',
+  syncthing: '/syncthing/',
+  adguard: '/adguard/',
+  adguardhome: '/adguard/',
+  pinchflat: '/pinchflat/',
+  youtube: '/pinchflat/',
+  bazarr: '/bazarr/',
+  element: '/element/',
+  suwayomi: '/suwayomi/',
+  'suwayomi-server': '/suwayomi/',
+  syncyomi: '/suwayomi/',
+  tsumiru: '/tsumiru/',
+  radarr: '/radarr/',
+  sonarr: '/sonarr/',
+  prowlarr: '/prowlarr/',
+};
+
+export function getServiceUrl(portOrName: number | string, path: string = ''): string {
+  const cleanPath = path ? (path.startsWith('/') ? path.replace(/^\//, '') : path) : '';
+
+  let subpath: string | undefined;
+  if (typeof portOrName === 'string') {
+    const cleanName = portOrName.toLowerCase().replace(/\.service$/, '').replace(/@.*$/, '');
+    subpath = SERVICE_NAME_PATH_MAP[cleanName];
+  } else if (typeof portOrName === 'number') {
+    subpath = SERVICE_PATH_MAP[portOrName];
+  }
+
   if (subpath) {
-    if (typeof window !== 'undefined' && window.location.protocol === 'https:') {
-      return `${subpath}${path ? path.replace(/^\//, '') : ''}`;
+    if (typeof window !== 'undefined') {
+      return `${subpath}${cleanPath}`;
     }
     const host = getServiceHost();
-    return `https://${host}${subpath}${path ? path.replace(/^\//, '') : ''}`;
+    return `https://${host}${subpath}${cleanPath}`;
   }
 
   const host = getServiceHost();
-  const cleanPath = path ? (path.startsWith('/') ? path : `/${path}`) : '';
-  return `http://${host}:${port}${cleanPath}`;
+  if (typeof portOrName === 'number' && portOrName > 0) {
+    return `http://${host}:${portOrName}/${cleanPath}`;
+  }
+  return `/${cleanPath}`;
 }
 
 export function getServiceDirectPortUrl(port: number, path: string = ''): string {

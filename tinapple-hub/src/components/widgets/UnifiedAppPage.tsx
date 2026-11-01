@@ -143,17 +143,45 @@ const APP_METADATA_MAP: Record<
   },
   syncyomi: {
     unit: 'suwayomi-server.service',
-    path: 'http://100.108.215.120:4567',
+    path: '/suwayomi/',
     port: 4567,
     categoryName: 'Manga & Comics',
     description: 'Cloud manga reader and Mihon/Tachiyomi reading progress synchronization engine.',
   },
   suwayomi: {
     unit: 'suwayomi-server.service',
-    path: 'http://100.108.215.120:4567',
+    path: '/suwayomi/',
     port: 4567,
     categoryName: 'Manga & Comics',
     description: 'Cloud manga reader and Mihon/Tachiyomi reading progress synchronization engine.',
+  },
+  tsumiru: {
+    unit: 'suwayomi-server.service',
+    path: '/tsumiru/',
+    port: 4567,
+    categoryName: 'Manga & Comics',
+    description: 'Modern offline-first manga reader progressive web app and client.',
+  },
+  radarr: {
+    unit: 'radarr.service',
+    path: '/radarr/',
+    port: 7878,
+    categoryName: 'Movies & Servarr',
+    description: 'Automated movie download and management platform.',
+  },
+  sonarr: {
+    unit: 'sonarr.service',
+    path: '/sonarr/',
+    port: 8989,
+    categoryName: 'TV Shows & Anime',
+    description: 'Automated TV series and anime episode downloader and manager.',
+  },
+  prowlarr: {
+    unit: 'prowlarr.service',
+    path: '/prowlarr/',
+    port: 9696,
+    categoryName: 'Indexers & Torrents',
+    description: 'Indexer proxy integrating torrent and Usenet indexers with Servarr apps.',
   },
   tor: {
     unit: 'tor.service',
@@ -504,15 +532,15 @@ export const UnifiedAppPage: React.FC<UnifiedAppPageProps> = ({
             <span>Local Home Wi-Fi LAN</span>
             <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/[0.06]">OFFLINE</span>
           </div>
-          <div className="text-sm font-mono text-white truncate select-all">http://10.3.2.105:{meta.port}</div>
+          <div className="text-sm font-mono text-white truncate select-all">{`http://10.3.2.105${meta.path.startsWith('/') ? meta.path : `:${meta.port}`}`}</div>
           <div className="mt-2.5 flex items-center justify-between">
-            <span className="text-[11px] text-slate-400">Fast home network direct</span>
+            <span className="text-[11px] text-slate-400">LAN Reverse Proxy (No Port)</span>
             <button
-              onClick={() => handleCopy(`http://10.3.2.105:${meta.port}`)}
+              onClick={() => handleCopy(`http://10.3.2.105${meta.path.startsWith('/') ? meta.path : `:${meta.port}`}`)}
               className="p-1.5 rounded-lg bg-white/[0.06] hover:bg-white/[0.12] text-slate-300 hover:text-white transition-colors"
               title="Copy LAN address"
             >
-              {copiedText === `http://10.3.2.105:${meta.port}` ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+              {copiedText === `http://10.3.2.105${meta.path.startsWith('/') ? meta.path : `:${meta.port}`}` ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
             </button>
           </div>
         </div>

@@ -816,7 +816,7 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({
   };
 
   const getAppUrl = (port: number) => {
-    return getServiceUrl(port);
+    return getServiceUrl(selectedApp?.id || port);
   };
 
   const handleAction = async (id: string, action: 'install' | 'uninstall' | 'start' | 'stop' | 'restart') => {
@@ -1533,7 +1533,7 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({
                       className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-xs font-mono font-bold transition-all shadow-sm"
                     >
                       <ExternalLink className="w-3.5 h-3.5" />
-                      {selectedApp.id === 'suwayomi' ? 'Suwayomi Web (:4567)' : `Open WebUI (:${selectedApp.port})`}
+                      {selectedApp.id === 'suwayomi' ? 'Suwayomi Web' : 'Open WebUI'}
                     </a>
                     {selectedApp.id === 'suwayomi' && (
                       <a

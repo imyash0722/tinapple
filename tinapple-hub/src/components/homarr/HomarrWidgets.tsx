@@ -248,7 +248,7 @@ export const HomarrDownloadsWidget: React.FC = () => {
           <span>Active Transfers</span>
         </span>
         <a
-          href={`http://${currentHost}:8080`}
+          href={getServiceUrl(8080)}
           target="_blank"
           rel="noopener noreferrer"
           className="text-zinc-400 hover:text-white transition-colors"
@@ -453,7 +453,7 @@ export const HomarrNetworkGuardWidget: React.FC<{ onOpenTailscale?: () => void; 
       <div className="pt-2 border-t border-white/[0.06] flex items-center justify-between text-[11px] text-zinc-400 mt-2">
         <span>DNS Shield:</span>
         <a
-          href={`http://${currentHost}:3000`}
+          href={getServiceUrl(3000)}
           target="_blank"
           rel="noopener noreferrer"
           className="text-emerald-400 hover:underline flex items-center gap-1"
@@ -666,7 +666,7 @@ export const HomarrMediaWidget: React.FC<{ onOpenGuide?: (g: string) => void }> 
           </button>
         )}
         <a
-          href={`http://${currentHost}:8096`}
+          href={getServiceUrl(8096)}
           target="_blank"
           rel="noopener noreferrer"
           className="px-3 py-1 rounded-lg bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/40 text-purple-300 text-xs font-bold flex items-center gap-1 transition-all"
@@ -683,8 +683,7 @@ export const HomarrMediaWidget: React.FC<{ onOpenGuide?: (g: string) => void }> 
 export const HomarrMangaWidget: React.FC = () => {
   const [mangaCount, setMangaCount] = useState<number>(0);
   const [online, setOnline] = useState<boolean>(true);
-  const host = getServiceHost();
-  const suwayomiWebUrl = `http://${host}:4567/`;
+  const suwayomiWebUrl = getServiceUrl(4567);
 
   useEffect(() => {
     fetch('/api/widgets/manga')
@@ -785,7 +784,7 @@ export const HomarrSyncVaultWidget: React.FC = () => {
           <ExternalLink className="w-3 h-3" />
         </a>
         <a
-          href={`http://${currentHost}:8384`}
+          href={getServiceUrl(8384)}
           target="_blank"
           rel="noopener noreferrer"
           className="px-3 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 text-xs font-bold flex items-center gap-1 transition-all"
@@ -855,14 +854,14 @@ export const HomarrPortMatrixWidget: React.FC<{ onOpenTools?: () => void }> = ({
   const isHttps = window.location.protocol === 'https:';
 
   const ports = [
-    { name: 'Dash', port: 8088, path: `http://${currentHost}:8088`, color: 'text-tinapple-gold' },
-    { name: 'Media', port: 8096, path: `http://${currentHost}:8096`, color: 'text-purple-400' },
-    { name: 'Manga', port: 4567, path: `http://${currentHost}:4567`, color: 'text-amber-400' },
-    { name: 'Torrent', port: 8080, path: `http://${currentHost}:8080`, color: 'text-sky-400' },
-    { name: 'Sync', port: 8384, path: `http://${currentHost}:8384`, color: 'text-emerald-400' },
-    { name: 'Files', port: 8081, path: `http://${currentHost}:8081`, color: 'text-blue-400' },
-    { name: 'AdGuard', port: 3000, path: `http://${currentHost}:3000`, color: 'text-teal-400' },
-    { name: 'Vault', port: 8000, path: isHttps ? `https://${currentHost}:8000` : `http://${currentHost}:8000`, color: 'text-indigo-400' },
+    { name: 'Dash', port: 8088, path: '/', color: 'text-tinapple-gold' },
+    { name: 'Media', port: 8096, path: getServiceUrl(8096), color: 'text-purple-400' },
+    { name: 'Manga', port: 4567, path: getServiceUrl(4567), color: 'text-amber-400' },
+    { name: 'Torrent', port: 8080, path: getServiceUrl(8080), color: 'text-sky-400' },
+    { name: 'Sync', port: 8384, path: getServiceUrl(8384), color: 'text-emerald-400' },
+    { name: 'Seerr', port: 5055, path: getServiceUrl(5055), color: 'text-blue-400' },
+    { name: 'AdGuard', port: 3000, path: getServiceUrl(3000), color: 'text-teal-400' },
+    { name: 'Vault', port: 8000, path: getServiceUrl(8000), color: 'text-indigo-400' },
   ];
 
   return (
