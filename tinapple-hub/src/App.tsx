@@ -45,6 +45,7 @@ import { TransfersWidget } from './components/widgets/TransfersWidget';
 import { MangaShelfWidget } from './components/widgets/MangaShelfWidget';
 import { TorPrivacyWidget } from './components/widgets/TorPrivacyWidget';
 import { HomarrCanvas } from './components/homarr/HomarrCanvas';
+import { HomarrBoard } from './components/homarr/HomarrBoard';
 import { GuidesPage } from './components/widgets/GuidesPage';
 import { UnifiedAppPage } from './components/widgets/UnifiedAppPage';
 
@@ -101,6 +102,7 @@ export const App: React.FC = () => {
   const activeTab = selectedTab === 'welcome' && systemInfo.installed && !forceWelcome
     ? 'dashboard'
     : selectedTab || (systemInfo.installed ? 'dashboard' : 'welcome');
+  const isLandingPage = activeTab === 'dashboard' && !viewingAppId;
 
   useEffect(() => {
     const handlePopState = () => {
@@ -555,6 +557,7 @@ export const App: React.FC = () => {
 
       {/* PERSISTENT COLLAPSIBLE SIDEBAR & MOBILE DRAWER */}
       <Sidebar
+        isLandingPage={isLandingPage}
         activeTab={activeTab}
         setActiveTab={handleSelectTab}
         mobileOpen={mobileSidebarOpen}
@@ -581,154 +584,162 @@ export const App: React.FC = () => {
         rebootDeadline={rebootDeadline}
       />
 
-      {/* TOP COMMAND HEADER (CLEAN BREADCRUMB & STATUS BAR) */}
-      <header
-        className={`sticky top-0 z-20 w-full bg-[#050a16]/85 backdrop-blur-2xl border-b border-white/[0.08] shadow-lg shadow-black/20 transition-all duration-300 ${
-          desktopSidebarCollapsed ? 'md:pl-20' : 'md:pl-64'
-        }`}
-      >
-        <div className="w-full px-3 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-3">
-          {/* Left: Mobile Hamburger & Desktop Page Breadcrumb */}
-          <div className="flex items-center gap-2 sm:gap-3.5 min-w-0">
-            {/* Mobile Hamburger Toggle */}
-            <button
-              onClick={() => setMobileSidebarOpen(true)}
-              className="md:hidden p-2 rounded-xl bg-white/[0.05] border border-white/10 text-zinc-300 hover:text-white hover:bg-white/[0.08] transition-all"
-              title="Open Navigation Menu"
-              aria-label="Open Navigation Menu"
-            >
-              <Menu className="w-5 h-5" />
-            </button>
+      {/* TOP COMMAND HEADER (CLEAN BREADCRUMB & STATUS BAR - Only shown for subpages, Homarr Board has its own unified header) */}
+      {!isLandingPage && (
+        <header
+          className={`sticky top-0 z-20 w-full bg-[#050a16]/85 backdrop-blur-2xl border-b border-white/[0.08] shadow-lg shadow-black/20 transition-all duration-300 ${
+            desktopSidebarCollapsed ? 'md:pl-20' : 'md:pl-64'
+          }`}
+        >
+          <div className="w-full px-3 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-3">
+            {/* Left: Mobile Hamburger & Desktop Page Breadcrumb */}
+            <div className="flex items-center gap-2 sm:gap-3.5 min-w-0">
+              {/* Mobile Hamburger Toggle */}
+              <button
+                onClick={() => setMobileSidebarOpen(true)}
+                className="md:hidden p-2 rounded-xl bg-white/[0.05] border border-white/10 text-zinc-300 hover:text-white hover:bg-white/[0.08] transition-all"
+                title="Open Navigation Menu"
+                aria-label="Open Navigation Menu"
+              >
+                <Menu className="w-5 h-5" />
+              </button>
 
-            {/* Mobile Brand Icon & Tab Title */}
-            <div className="md:hidden flex items-center gap-2 min-w-0">
-              <span className="text-lg shrink-0">🍎</span>
-              <span className="font-mono font-bold text-sm text-white capitalize truncate max-w-[140px] sm:max-w-xs">
-                {viewingAppId ? `${viewingAppId} Guide` : activeTab === 'store' ? 'App Store' : activeTab === 'guides' ? 'Guides' : activeTab === 'terminal' ? 'Terminal' : activeTab}
-              </span>
+              {/* Mobile Brand Icon & Tab Title */}
+              <div className="md:hidden flex items-center gap-2 min-w-0">
+                <span className="text-lg shrink-0">🍎</span>
+                <span className="font-mono font-bold text-sm text-white capitalize truncate max-w-[140px] sm:max-w-xs">
+                  {viewingAppId ? `${viewingAppId} Guide` : activeTab === 'store' ? 'App Store' : activeTab === 'guides' ? 'Guides' : activeTab === 'terminal' ? 'Terminal' : activeTab}
+                </span>
+              </div>
+
+              {/* Desktop Page Title & Breadcrumb */}
+              <div className="hidden md:flex items-center gap-2.5 min-w-0 shrink-0">
+                <span className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500 shrink-0">Node</span>
+                <span className="text-xs text-zinc-600 shrink-0">/</span>
+                {viewingAppId ? (
+                  <div className="flex items-center gap-2 min-w-0">
+                    <button onClick={handleCloseAppPage} className="text-sm font-mono text-slate-400 hover:text-white transition-colors">
+                      Dashboard
+                    </button>
+                    <span className="text-xs text-zinc-600">/</span>
+                    <span className="text-sm font-mono font-black text-cyan-400 capitalize truncate">
+                      {viewingAppId} App & Guide
+                    </span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 min-w-0">
+                    <button onClick={() => handleSelectTab('dashboard')} className="text-sm font-mono text-slate-400 hover:text-white transition-colors">
+                      Dashboard
+                    </button>
+                    <span className="text-xs text-zinc-600">/</span>
+                    <span className="text-sm font-mono font-black text-white capitalize truncate">
+                      {activeTab === 'store' ? 'App Store & Packs' : activeTab === 'guides' ? 'Appliance Guides' : activeTab === 'terminal' ? 'Appliance Web Terminal' : activeTab}
+                    </span>
+                    <span className="hidden 2xl:inline-flex text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/[0.05] border border-white/10 text-tinapple-gold font-bold whitespace-nowrap">
+                      {systemInfo.sessionMode === 'headless' ? 'Headless Server' : 'Niri Desktop'}
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
 
-            {/* Desktop Page Title & Breadcrumb */}
-            <div className="hidden md:flex items-center gap-2.5 min-w-0 shrink-0">
-              <span className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500 shrink-0">Node</span>
-              <span className="text-xs text-zinc-600 shrink-0">/</span>
-              {viewingAppId ? (
-                <div className="flex items-center gap-2 min-w-0">
-                  <button onClick={handleCloseAppPage} className="text-sm font-mono text-slate-400 hover:text-white transition-colors">
-                    Dashboard
-                  </button>
-                  <span className="text-xs text-zinc-600">/</span>
-                  <span className="text-sm font-mono font-black text-cyan-400 capitalize truncate">
-                    {viewingAppId} App & Guide
-                  </span>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2 min-w-0">
-                  <span className="text-sm font-mono font-black text-white capitalize truncate">
-                    {activeTab === 'store' ? 'App Store & Packs' : activeTab === 'guides' ? 'Appliance Guides' : activeTab === 'terminal' ? 'Appliance Web Terminal' : activeTab}
-                  </span>
-                  <span className="hidden 2xl:inline-flex text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/[0.05] border border-white/10 text-tinapple-gold font-bold whitespace-nowrap">
-                    {systemInfo.sessionMode === 'headless' ? 'Headless Server' : 'Niri Desktop'}
-                  </span>
-                </div>
-              )}
+            {/* Right: Live Telemetry Status & Quick Actions */}
+            <div className="flex items-center justify-end gap-1.5 sm:gap-2 shrink-0">
+              {/* Tailscale Port 443 SSL Status Chip */}
+              <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-[11px] font-mono text-emerald-400">
+                <Lock className="w-3.5 h-3.5" />
+                <span className="hidden lg:inline">Tailscale HTTPS 443</span>
+              </div>
+
+              {/* Live SSE Pulse Chip */}
+              <div className="hidden 2xl:flex items-center gap-2 px-2.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[11px] font-mono text-emerald-300">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span>SSE Live</span>
+              </div>
+
+              {/* Tailscale VPN Chip */}
+              <button
+                onClick={() => setTailscaleOpen(true)}
+                className="hidden 2xl:flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/20 text-[11px] font-mono text-sky-300 transition-all cursor-pointer whitespace-nowrap"
+                title="Tailscale VPN Mesh Status"
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse" />
+                <span>Tailscale VPN</span>
+              </button>
+
+              {/* Full System Update Button */}
+              <button
+                onClick={handleRunSystemUpdate}
+                disabled={isUpdatingSystem}
+                className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 font-mono text-xs font-semibold transition-all shadow-sm active:scale-95 disabled:opacity-50"
+                title="Full System & Appliance Update (paru/pacman -Syu)"
+              >
+                <ArrowUpCircle className={`w-4 h-4 text-emerald-400 ${isUpdatingSystem ? 'animate-spin' : ''}`} />
+                <span className="hidden xl:inline">Update OS</span>
+              </button>
+
+              {/* Interactive Guides Button */}
+              <button
+                onClick={() => handleSelectTab('guides')}
+                className="hidden lg:flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl border border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 transition-all font-mono text-xs font-semibold shadow-sm active:scale-95"
+                title="Interactive Setup Guides"
+              >
+                <BookOpen className="w-4 h-4 text-purple-400" />
+                <span>Guides</span>
+              </button>
+
+              {/* Interactive Web Terminal */}
+              <button
+                onClick={() => setSelectedTab('terminal')}
+                className={actionButtonClass}
+                title="Interactive Web Terminal (PTY)"
+                aria-label="Interactive Web Terminal (PTY)"
+              >
+                <Terminal className="w-4 h-4 text-emerald-400" />
+              </button>
+
+              {/* Server Operations & Port Matrix */}
+              <button
+                onClick={() => setServerToolsOpen(true)}
+                className={actionButtonClass}
+                title="Port Matrix & Maintenance Tools"
+                aria-label="Port Matrix & Maintenance Tools"
+              >
+                <Wrench className="w-4 h-4 text-tinapple-gold" />
+              </button>
+
+              {/* Appearance / Wallpaper Modal Button */}
+              <button
+                onClick={() => setAppearanceOpen(true)}
+                className={actionButtonClass}
+                title="Appearance & Theme"
+                aria-label="Appearance & Theme"
+              >
+                <Palette className="w-4 h-4 text-sky-400" />
+              </button>
+
+              {/* Refresh telemetry */}
+              <button
+                onClick={handleRefresh}
+                disabled={isRefreshing}
+                className={actionButtonClass}
+                title="Refresh telemetry"
+                aria-label="Refresh telemetry"
+              >
+                <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin text-tinapple-gold' : ''}`} />
+              </button>
             </div>
           </div>
-
-          {/* Right: Live Telemetry Status & Quick Actions */}
-          <div className="flex items-center justify-end gap-1.5 sm:gap-2 shrink-0">
-            {/* Tailscale Port 443 SSL Status Chip */}
-            <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-[11px] font-mono text-emerald-400">
-              <Lock className="w-3.5 h-3.5" />
-              <span className="hidden lg:inline">Tailscale HTTPS 443</span>
-            </div>
-
-            {/* Live SSE Pulse Chip */}
-            <div className="hidden 2xl:flex items-center gap-2 px-2.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[11px] font-mono text-emerald-300">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span>SSE Live</span>
-            </div>
-
-            {/* Tailscale VPN Chip */}
-            <button
-              onClick={() => setTailscaleOpen(true)}
-              className="hidden 2xl:flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/20 text-[11px] font-mono text-sky-300 transition-all cursor-pointer whitespace-nowrap"
-              title="Tailscale VPN Mesh Status"
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse" />
-              <span>Tailscale VPN</span>
-            </button>
-
-            {/* Full System Update Button */}
-            <button
-              onClick={handleRunSystemUpdate}
-              disabled={isUpdatingSystem}
-              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 font-mono text-xs font-semibold transition-all shadow-sm active:scale-95 disabled:opacity-50"
-              title="Full System & Appliance Update (paru/pacman -Syu)"
-            >
-              <ArrowUpCircle className={`w-4 h-4 text-emerald-400 ${isUpdatingSystem ? 'animate-spin' : ''}`} />
-              <span className="hidden xl:inline">Update OS</span>
-            </button>
-
-            {/* Interactive Guides Button */}
-            <button
-              onClick={() => handleSelectTab('guides')}
-              className="hidden lg:flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl border border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 transition-all font-mono text-xs font-semibold shadow-sm active:scale-95"
-              title="Interactive Setup Guides"
-            >
-              <BookOpen className="w-4 h-4 text-purple-400" />
-              <span>Guides</span>
-            </button>
-
-            {/* Interactive Web Terminal */}
-            <button
-              onClick={() => setSelectedTab('terminal')}
-              className={actionButtonClass}
-              title="Interactive Web Terminal (PTY)"
-              aria-label="Interactive Web Terminal (PTY)"
-            >
-              <Terminal className="w-4 h-4 text-emerald-400" />
-            </button>
-
-            {/* Server Operations & Port Matrix */}
-            <button
-              onClick={() => setServerToolsOpen(true)}
-              className={actionButtonClass}
-              title="Port Matrix & Maintenance Tools"
-              aria-label="Port Matrix & Maintenance Tools"
-            >
-              <Wrench className="w-4 h-4 text-tinapple-gold" />
-            </button>
-
-            {/* Appearance / Wallpaper Modal Button */}
-            <button
-              onClick={() => setAppearanceOpen(true)}
-              className={actionButtonClass}
-              title="Appearance & Theme"
-              aria-label="Appearance & Theme"
-            >
-              <Palette className="w-4 h-4 text-sky-400" />
-            </button>
-
-            {/* Refresh telemetry */}
-            <button
-              onClick={handleRefresh}
-              disabled={isRefreshing}
-              className={actionButtonClass}
-              title="Refresh telemetry"
-              aria-label="Refresh telemetry"
-            >
-              <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin text-tinapple-gold' : ''}`} />
-            </button>
-          </div>
-        </div>
-        <span className="sr-only" role="status">{actionMessage}</span>
-      </header>
+          <span className="sr-only" role="status">{actionMessage}</span>
+        </header>
+      )}
 
       {/* MAIN SCREEN-FILLING BENTO DECK */}
       <main
-        className={`w-full max-w-full px-3 sm:px-6 pt-4 sm:pt-5 pb-[calc(7rem+env(safe-area-inset-bottom,0px))] md:pb-12 transition-all duration-300 ${
-          desktopSidebarCollapsed ? 'md:pl-24' : 'md:pl-72'
+        className={`w-full max-w-full transition-all duration-300 ${
+          isLandingPage
+            ? 'px-3 sm:px-6 lg:px-8 pt-4 sm:pt-6 pb-12'
+            : `px-3 sm:px-6 pt-4 sm:pt-5 pb-[calc(7rem+env(safe-area-inset-bottom,0px))] md:pb-12 ${desktopSidebarCollapsed ? 'md:pl-24' : 'md:pl-72'}`
         }`}
       >
         <AnimatePresence mode="wait">
@@ -771,7 +782,7 @@ export const App: React.FC = () => {
               exit={{ opacity: 0, y: -14 }}
               transition={{ duration: 0.25, ease: 'easeOut' }}
             >
-              <HomarrCanvas
+              <HomarrBoard
                 telemetry={telemetry}
                 systemInfo={systemInfo}
                 services={displayServices}
@@ -787,6 +798,11 @@ export const App: React.FC = () => {
                 onOpenTerminal={() => setSelectedTab('terminal')}
                 onOpenTools={() => setServerToolsOpen(true)}
                 onOpenGuide={handleOpenGuide}
+                onOpenAppearance={() => setAppearanceOpen(true)}
+                onOpenDrawer={() => setMobileSidebarOpen(true)}
+                onNavigateTab={handleSelectTab}
+                onRefresh={handleRefresh}
+                isRefreshing={isRefreshing}
               />
             </motion.div>
           )}

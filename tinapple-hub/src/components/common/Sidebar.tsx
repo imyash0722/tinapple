@@ -25,6 +25,7 @@ import {
 import { SystemInfo, ServiceInfo } from '../../types/api';
 
 export interface SidebarProps {
+  isLandingPage?: boolean;
   activeTab: string;
   setActiveTab: (tab: string) => void;
   mobileOpen: boolean;
@@ -52,6 +53,7 @@ export interface SidebarProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
+  isLandingPage = false,
   activeTab,
   setActiveTab,
   mobileOpen,
@@ -611,28 +613,30 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <>
-      {/* A. DESKTOP FIXED SIDEBAR */}
-      <aside
-        className={`hidden md:flex flex-col fixed top-0 bottom-0 left-0 z-30 bg-[#060c1c]/95 backdrop-blur-2xl border-r border-white/[0.08] shadow-2xl transition-all duration-300 ${
-          collapsed ? 'w-20' : 'w-64'
-        }`}
-      >
-        {renderSidebarContent(false)}
-      </aside>
+      {/* A. DESKTOP FIXED SIDEBAR (Hidden on full-page Homarr landing page) */}
+      {!isLandingPage && (
+        <aside
+          className={`hidden md:flex flex-col fixed top-0 bottom-0 left-0 z-30 bg-[#060c1c]/95 backdrop-blur-2xl border-r border-white/[0.08] shadow-2xl transition-all duration-300 ${
+            collapsed ? 'w-20' : 'w-64'
+          }`}
+        >
+          {renderSidebarContent(false)}
+        </aside>
+      )}
 
-      {/* B. MOBILE DRAWER OVERLAY */}
+      {/* B. DRAWER OVERLAY (Mobile always, Desktop when on landing page) */}
       {mobileOpen && (
         <div
-          className="md:hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-md animate-in fade-in duration-200"
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md animate-in fade-in duration-200"
           onClick={() => setMobileOpen(false)}
         />
       )}
 
-      {/* C. MOBILE DRAWER SLIDE-IN (Always full expanded view with close button) */}
+      {/* C. DRAWER SLIDE-IN (Slide-over drawer for landing page and mobile) */}
       <div
-        className={`md:hidden fixed inset-y-0 left-0 z-[51] w-72 max-w-[85vw] bg-[#060c1c]/98 backdrop-blur-3xl border-r border-white/10 shadow-2xl transition-transform duration-300 ease-out transform ${
+        className={`fixed inset-y-0 left-0 z-[51] w-72 max-w-[85vw] bg-[#060c1c]/98 backdrop-blur-3xl border-r border-white/10 shadow-2xl transition-transform duration-300 ease-out transform ${
           mobileOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
+        } ${!isLandingPage ? 'md:hidden' : ''}`}
       >
         {renderSidebarContent(true)}
       </div>
