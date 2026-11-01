@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getServiceHost } from '../../services/api';
+import { serviceRegistry } from '../../services/serviceRegistry';
 
 interface QBitInfo {
   online: boolean;
@@ -225,7 +226,7 @@ export const TransfersWidget: React.FC = () => {
 
           <div className="pt-2 flex justify-end">
             <a
-              href={`http://${getServiceHost()}:8080`}
+              href={serviceRegistry.resolveUrl('qbittorrent')}
               target="_blank"
               rel="noreferrer"
               className="text-xs text-emerald-400 hover:text-emerald-300 font-mono flex items-center gap-1"

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BookOpen, ExternalLink, RefreshCw } from 'lucide-react';
 import { getServiceHost } from '../../services/api';
+import { serviceRegistry } from '../../services/serviceRegistry';
 
 interface MangaItem {
   id: string;
@@ -191,10 +192,13 @@ export const MangaShelfWidget: React.FC = () => {
               subtitle = manga.latestChapter ? `New: ${manga.latestChapter}` : manga.source || 'Updated';
             }
 
+            const suwayomiBase = serviceRegistry.get('suwayomi')?.getOpenUrl() || `http://${currentHost}:4567/`;
+            const mangaUrl = `${suwayomiBase.replace(/\/$/, '')}/manga/${manga.id}`;
+
             return (
               <a
                 key={`${activeTab}-${manga.id}-${idx}`}
-                href={`http://${currentHost}:4567/manga/${manga.id}`}
+                href={mangaUrl}
                 target="_blank"
                 rel="noreferrer"
                 className="group relative flex-shrink-0 w-36 rounded-xl overflow-hidden bg-slate-950 border border-[#1b2b52] hover:border-orange-500/50 hover:shadow-xl transition-all cursor-pointer"
@@ -251,12 +255,12 @@ export const MangaShelfWidget: React.FC = () => {
               : 'Suwayomi is not running or has not been started. Launch Suwayomi to sync and read your personal manga library.'}
           </p>
           <a
-            href={`http://${currentHost}:4567`}
+            href={serviceRegistry.get('suwayomi')?.getOpenUrl() || `http://${currentHost}:4567`}
             target="_blank"
             rel="noreferrer"
             className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-orange-500/15 hover:bg-orange-500/25 text-orange-400 border border-orange-500/30 transition-colors"
           >
-            <span>Open Suwayomi Web (:4567)</span>
+            <span>Open Suwayomi Web</span>
             <ExternalLink className="w-3.5 h-3.5" />
           </a>
         </div>
@@ -268,7 +272,7 @@ export const MangaShelfWidget: React.FC = () => {
           Suwayomi Server • Port 4567
         </span>
         <a
-          href={`http://${currentHost}:4567/${activeTab === 'history' ? 'history' : activeTab === 'updates' ? 'updates' : 'library'}`}
+          href={`${(serviceRegistry.get('suwayomi')?.getOpenUrl() || `http://${currentHost}:4567/`).replace(/\/$/, '')}/${activeTab === 'history' ? 'history' : activeTab === 'updates' ? 'updates' : 'library'}`}
           target="_blank"
           rel="noreferrer"
           className="text-orange-400 hover:text-orange-300 font-mono font-medium flex items-center gap-1"

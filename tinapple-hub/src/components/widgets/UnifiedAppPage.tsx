@@ -24,6 +24,7 @@ import {
 import { GUIDES_CATALOG, GuideArticle } from '../../data/guidesCatalog';
 import { AppBrandIcon } from '../common/AppBrandIcons';
 import { api } from '../../services/api';
+import { serviceRegistry } from '../../services/serviceRegistry';
 
 interface UnifiedAppPageProps {
   appId: string;
@@ -355,11 +356,13 @@ export const UnifiedAppPage: React.FC<UnifiedAppPageProps> = ({
     }
   };
 
-  // Determine web launch URL (favoring clean HTTPS Tailscale path without port!)
+  // Determine web launch URL (favoring registered OOP canonical URL without duplicate slashes)
   const tailscaleHttpsUrl = useMemo(() => {
+    const reg = serviceRegistry.get(cleanId);
+    if (reg) return reg.getOpenUrl();
     if (meta.path.startsWith('http')) return meta.path;
     return `https://pineapple-server.taildb42a2.ts.net${meta.path}`;
-  }, [meta.path]);
+  }, [cleanId, meta.path]);
 
   const directPortUrl = `http://100.108.215.120:${meta.port}`;
   const magicDnsPortUrl = `http://pineapple-server.taildb42a2.ts.net:${meta.port}`;

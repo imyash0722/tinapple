@@ -3,6 +3,7 @@ import { AppBrandIcon } from '../common/AppBrandIcons';
 import { SquishSwitch } from '../reactbits/SquishSwitch';
 import { ProtonModal } from '../common/ProtonModal';
 import { api, getServiceHost, getServiceUrl } from '../../services/api';
+import { serviceRegistry } from '../../services/serviceRegistry';
 import {
   Cpu,
   HardDrive,
@@ -248,7 +249,7 @@ export const HomarrDownloadsWidget: React.FC = () => {
           <span>Active Transfers</span>
         </span>
         <a
-          href={getServiceUrl(8080)}
+          href={serviceRegistry.resolveUrl('qbittorrent')}
           target="_blank"
           rel="noopener noreferrer"
           className="text-zinc-400 hover:text-white transition-colors"
@@ -453,7 +454,7 @@ export const HomarrNetworkGuardWidget: React.FC<{ onOpenTailscale?: () => void; 
       <div className="pt-2 border-t border-white/[0.06] flex items-center justify-between text-[11px] text-zinc-400 mt-2">
         <span>DNS Shield:</span>
         <a
-          href={getServiceUrl(3000)}
+          href={serviceRegistry.resolveUrl('adguard')}
           target="_blank"
           rel="noopener noreferrer"
           className="text-emerald-400 hover:underline flex items-center gap-1"
@@ -523,7 +524,7 @@ export const HomarrSingleApplianceWidget: React.FC<HomarrSingleApplianceWidgetPr
   const isRunning = app?.status === 'running' || app?.running;
   const isInstalled = app?.installed;
   const port = app?.port || 0;
-  const webUrl = port > 0 ? getServiceUrl(port) : null;
+  const webUrl = serviceRegistry.get(appId)?.getOpenUrl() || (port > 0 ? getServiceUrl(port) : null);
   const accentColor = customColor || app?.accentColor || '#38bdf8';
 
   return (
@@ -666,7 +667,7 @@ export const HomarrMediaWidget: React.FC<{ onOpenGuide?: (g: string) => void }> 
           </button>
         )}
         <a
-          href={getServiceUrl(8096)}
+          href={serviceRegistry.resolveUrl('jellyfin')}
           target="_blank"
           rel="noopener noreferrer"
           className="px-3 py-1 rounded-lg bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/40 text-purple-300 text-xs font-bold flex items-center gap-1 transition-all"
@@ -683,7 +684,7 @@ export const HomarrMediaWidget: React.FC<{ onOpenGuide?: (g: string) => void }> 
 export const HomarrMangaWidget: React.FC = () => {
   const [mangaCount, setMangaCount] = useState<number>(0);
   const [online, setOnline] = useState<boolean>(true);
-  const suwayomiWebUrl = getServiceUrl(4567);
+  const suwayomiWebUrl = serviceRegistry.resolveUrl('suwayomi');
 
   useEffect(() => {
     fetch('/api/widgets/manga')
@@ -784,7 +785,7 @@ export const HomarrSyncVaultWidget: React.FC = () => {
           <ExternalLink className="w-3 h-3" />
         </a>
         <a
-          href={getServiceUrl(8384)}
+          href={serviceRegistry.resolveUrl('syncthing')}
           target="_blank"
           rel="noopener noreferrer"
           className="px-3 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 text-xs font-bold flex items-center gap-1 transition-all"
@@ -855,13 +856,13 @@ export const HomarrPortMatrixWidget: React.FC<{ onOpenTools?: () => void }> = ({
 
   const ports = [
     { name: 'Dash', port: 8088, path: '/', color: 'text-tinapple-gold' },
-    { name: 'Media', port: 8096, path: getServiceUrl(8096), color: 'text-purple-400' },
-    { name: 'Manga', port: 4567, path: getServiceUrl(4567), color: 'text-amber-400' },
-    { name: 'Torrent', port: 8080, path: getServiceUrl(8080), color: 'text-sky-400' },
-    { name: 'Sync', port: 8384, path: getServiceUrl(8384), color: 'text-emerald-400' },
-    { name: 'Seerr', port: 5055, path: getServiceUrl(5055), color: 'text-blue-400' },
-    { name: 'AdGuard', port: 3000, path: getServiceUrl(3000), color: 'text-teal-400' },
-    { name: 'Vault', port: 8000, path: getServiceUrl(8000), color: 'text-indigo-400' },
+    { name: 'Media', port: 8096, path: serviceRegistry.resolveUrl('jellyfin'), color: 'text-purple-400' },
+    { name: 'Manga', port: 4567, path: serviceRegistry.resolveUrl('suwayomi'), color: 'text-amber-400' },
+    { name: 'Torrent', port: 8080, path: serviceRegistry.resolveUrl('qbittorrent'), color: 'text-sky-400' },
+    { name: 'Sync', port: 8384, path: serviceRegistry.resolveUrl('syncthing'), color: 'text-emerald-400' },
+    { name: 'Seerr', port: 5055, path: serviceRegistry.resolveUrl('seerr'), color: 'text-blue-400' },
+    { name: 'AdGuard', port: 3000, path: serviceRegistry.resolveUrl('adguard'), color: 'text-teal-400' },
+    { name: 'Vault', port: 8000, path: serviceRegistry.resolveUrl('vaultwarden'), color: 'text-indigo-400' },
   ];
 
   return (

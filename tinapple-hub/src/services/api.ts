@@ -14,7 +14,7 @@ export function getApiBaseUrl(): string {
       (window.location.hostname === 'localhost' && window.location.port === '1420') ||
       window.location.hostname === '';
     if (isStandaloneClient) {
-      return 'http://100.67.207.60:8088/api/v1';
+      return 'http://100.108.215.120:8088/api/v1';
     }
   }
   return '/api/v1';
@@ -35,12 +35,12 @@ export function getWsTerminalUrl(): string {
       (window.location.hostname === 'localhost' && window.location.port === '1420') ||
       window.location.hostname === '';
     if (isStandaloneClient) {
-      return 'ws://100.67.207.60:8088/api/v1/terminal/ws';
+      return 'ws://100.108.215.120:8088/api/v1/terminal/ws';
     }
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     return `${protocol}//${window.location.host}/api/v1/terminal/ws`;
   }
-  return 'ws://100.67.207.60:8088/api/v1/terminal/ws';
+  return 'ws://100.108.215.120:8088/api/v1/terminal/ws';
 }
 
 export function getServiceHost(): string {
@@ -56,11 +56,11 @@ export function getServiceHost(): string {
     // *.ts.net domains have HSTS preloaded in modern browsers which breaks connecting to plain HTTP on secondary service ports (:8096, :4567, :8080).
     // Standalone clients (Tauri desktop app, Android WebView, file://, dev port 1420) also use direct Tailscale IP.
     if (!h || h.endsWith('.ts.net') || h === 'tauri.localhost' || (h === 'localhost' && window.location.port === '1420')) {
-      return '100.67.207.60';
+      return '100.108.215.120';
     }
     return h;
   }
-  return '100.67.207.60';
+  return '100.108.215.120';
 }
 
 export const SERVICE_PORT_MAP: Record<string, number> = {
@@ -143,25 +143,38 @@ export function getServiceUrl(portOrName: number | string, path: string = ''): s
     if (service) {
       const base = service.getOpenUrl();
       if (!path) return base;
-      const cleanPath = path.startsWith('/') ? path.slice(1) : path;
+      let cleanPath = path.startsWith('/') ? path.slice(1) : path;
+      cleanPath = cleanPath.replace(/\/+$/, '');
+      if (cleanPath === service.id || cleanPath === cleanName) {
+        return base;
+      }
       return base.endsWith('/') ? `${base}${cleanPath}` : `${base}/${cleanPath}`;
     }
     const subpath = SERVICE_NAME_PATH_MAP[cleanName];
     if (subpath) {
       const host = getServiceHost();
       const cleanSub = subpath.replace(/^\/|\/$/g, '');
-      const cleanPath = path ? (path.startsWith('/') ? path.slice(1) : path) : '';
-      if (typeof window !== 'undefined' && window.location.port !== '8088') {
-        return `/${cleanSub}/${cleanPath}`.replace(/\/+$/, '/');
+      let cleanPath = path ? (path.startsWith('/') ? path.slice(1) : path) : '';
+      cleanPath = cleanPath.replace(/\/+$/, '');
+      if (cleanPath === cleanSub || cleanPath === cleanName) {
+        cleanPath = '';
       }
-      return `http://${host}/${cleanSub}/${cleanPath}`.replace(/\/+$/, '/');
+      const suffix = cleanPath ? `/${cleanPath}` : '';
+      if (typeof window !== 'undefined' && window.location.port !== '8088') {
+        return `/${cleanSub}${suffix}`;
+      }
+      return `http://${host}/${cleanSub}${suffix}`;
     }
   } else if (typeof portOrName === 'number') {
     const service = serviceRegistry.getByPort(portOrName);
     if (service) {
       const base = service.getOpenUrl();
       if (!path) return base;
-      const cleanPath = path.startsWith('/') ? path.slice(1) : path;
+      let cleanPath = path.startsWith('/') ? path.slice(1) : path;
+      cleanPath = cleanPath.replace(/\/+$/, '');
+      if (cleanPath === service.id) {
+        return base;
+      }
       return base.endsWith('/') ? `${base}${cleanPath}` : `${base}/${cleanPath}`;
     }
     const host = getServiceHost();
@@ -1417,9 +1430,9 @@ class ApiService {
 
   getServerUrl(): string {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('tinapple_server_url') || 'http://100.67.207.60:8088';
+      return localStorage.getItem('tinapple_server_url') || 'http://100.108.215.120:8088';
     }
-    return 'http://100.67.207.60:8088';
+    return 'http://100.108.215.120:8088';
   }
 
   setServerUrl(url: string): void {

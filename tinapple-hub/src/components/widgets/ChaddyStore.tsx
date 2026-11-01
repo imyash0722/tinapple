@@ -27,6 +27,7 @@ import { StarBorder } from '../reactbits/StarBorder';
 import CircularCarousel, { CircularCarouselItem } from '../reactbits/CircularCarousel';
 import { AppBrandIcon } from '../common/AppBrandIcons';
 import { api, getServiceUrl } from '../../services/api';
+import { serviceRegistry } from '../../services/serviceRegistry';
 import { AppInfo, AppliancePackStatus } from '../../types/api';
 import { StoreTerminal } from './StoreTerminal';
 
@@ -816,6 +817,10 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({
   };
 
   const getAppUrl = (port: number) => {
+    if (selectedApp?.id) {
+      const registered = serviceRegistry.get(selectedApp.id);
+      if (registered) return registered.getOpenUrl();
+    }
     return getServiceUrl(selectedApp?.id || port);
   };
 

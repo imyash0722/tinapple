@@ -51,12 +51,17 @@ export const ProtonModal: React.FC<ProtonModalProps> = ({ isOpen, onClose, onSta
     setLoading(true);
     try {
       const [st, wg] = await Promise.all([
-        api.getProtonStatus(),
-        api.protonGetWireGuard(),
+        api.getProtonStatus().catch((e) => {
+          console.warn('Failed to fetch proton status:', e);
+          return null;
+        }),
+        api.protonGetWireGuard().catch(() => ({ exists: false })),
       ]);
-      setStatus(st);
-      setWgInfo(wg);
-      if (onStatusChange) onStatusChange(st);
+      if (st) {
+        setStatus(st);
+        if (onStatusChange) onStatusChange(st);
+      }
+      if (wg) setWgInfo(wg);
     } finally {
       setLoading(false);
     }

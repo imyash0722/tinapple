@@ -56,13 +56,13 @@ export class ApplianceService {
    * Otherwise resolves clean subpath for reverse proxies without double slashes.
    */
   getOpenUrl(currentOrigin?: string): string {
-    let hostname = '100.67.207.60';
+    let hostname = '100.108.215.120';
     let isDirectPortAccess = true;
 
     if (typeof window !== 'undefined' && window.location) {
       const h = window.location.hostname;
       if (!h || h.endsWith('.ts.net') || h === 'tauri.localhost' || (h === 'localhost' && window.location.port === '1420')) {
-        hostname = '100.67.207.60';
+        hostname = '100.108.215.120';
       } else {
         hostname = h;
       }
@@ -75,7 +75,7 @@ export class ApplianceService {
         const u = new URL(currentOrigin);
         hostname = u.hostname;
         if (hostname.endsWith('.ts.net')) {
-          hostname = '100.67.207.60';
+          hostname = '100.108.215.120';
         }
         isDirectPortAccess = u.port === '8088' || this.directPortPreferred;
       } catch {

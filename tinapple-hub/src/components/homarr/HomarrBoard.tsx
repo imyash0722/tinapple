@@ -158,26 +158,26 @@ interface CuratedAppliance {
 
 const CURATED_APPLIANCES: CuratedAppliance[] = [
   // Media & Streaming
-  { id: 'jellyfin', name: 'Jellyfin Media Server', tagline: 'Hardware Transcoding & 4K DirectPlay', category: 'media', icon: '🎬', port: 8096, subpath: '/jellyfin/', guideId: 'jellyfin' },
-  { id: 'seerr', name: 'Seerr Media Discovery', tagline: 'Automated 1-Click Requests & Approvals', category: 'media', icon: '👁️', port: 5055, subpath: '/seerr/', guideId: 'jellyseerr' },
-  { id: 'navidrome', name: 'Navidrome Music Server', tagline: 'Lossless Audio & Subsonic API Streaming', category: 'media', icon: '🎵', port: 4533, subpath: '/navidrome/', guideId: 'navidrome' },
-  { id: 'pinchflat', name: 'Pinchflat YouTube Stack', tagline: 'Automated YouTube Channel Archiver', category: 'media', icon: '📺', port: 8945, subpath: '/pinchflat/', guideId: 'pinchflat' },
-  { id: 'suwayomi', name: 'Suwayomi Manga Server', tagline: 'Keiyoushi Extensions & Tachiyomi Sync', category: 'media', icon: '📖', port: 4567, subpath: '/suwayomi/', guideId: 'suwayomi' },
-  { id: 'tsumiru', name: 'Tsumiru Reader', tagline: 'Offline Manga Reader & Desktop CanvasKit', category: 'media', icon: '📚', port: 4567, subpath: '/tsumiru/' },
+  { id: 'jellyfin', name: 'Jellyfin Media Server', tagline: 'Hardware Transcoding & 4K DirectPlay', category: 'media', icon: '🎬', port: 8096, subpath: '/jellyfin', guideId: 'jellyfin' },
+  { id: 'seerr', name: 'Seerr Media Discovery', tagline: 'Automated 1-Click Requests & Approvals', category: 'media', icon: '👁️', port: 5055, subpath: '/seerr', guideId: 'jellyseerr' },
+  { id: 'navidrome', name: 'Navidrome Music Server', tagline: 'Lossless Audio & Subsonic API Streaming', category: 'media', icon: '🎵', port: 4533, subpath: '/navidrome', guideId: 'navidrome' },
+  { id: 'pinchflat', name: 'Pinchflat YouTube Stack', tagline: 'Automated YouTube Channel Archiver', category: 'media', icon: '📺', port: 8945, subpath: '/pinchflat', guideId: 'pinchflat' },
+  { id: 'suwayomi', name: 'Suwayomi Manga Server', tagline: 'Keiyoushi Extensions & Tachiyomi Sync', category: 'media', icon: '📖', port: 4567, subpath: '/suwayomi', guideId: 'suwayomi' },
+  { id: 'tsumiru', name: 'Tsumiru Reader', tagline: 'Offline Manga Reader & Desktop CanvasKit', category: 'media', icon: '📚', port: 4567, subpath: '/tsumiru' },
 
   // Downloads & Automation
-  { id: 'qbittorrent', name: 'qBittorrent Headless', tagline: 'P2P BitTorrent Client & WebUI', category: 'downloads', icon: '📥', port: 8080, subpath: '/qbittorrent/', guideId: 'qbittorrent' },
-  { id: 'radarr', name: 'Radarr Movie Automator', tagline: 'Automated 4K/1080p Movie Indexer & Grabber', category: 'downloads', icon: '🍿', port: 7878, subpath: '/radarr/', guideId: 'radarr' },
-  { id: 'sonarr', name: 'Sonarr TV Series Automator', tagline: 'Automated Anime & TV Episode PVR', category: 'downloads', icon: '📺', port: 8989, subpath: '/sonarr/', guideId: 'sonarr' },
-  { id: 'prowlarr', name: 'Prowlarr Tracker Proxy', tagline: 'Unified Torrent & Usenet Indexer Proxy', category: 'downloads', icon: '🔍', port: 9696, subpath: '/prowlarr/', guideId: 'prowlarr' },
-  { id: 'bazarr', name: 'Bazarr Subtitles', tagline: 'Multilingual Automated Subtitle Matcher', category: 'downloads', icon: '💬', port: 6767, subpath: '/bazarr/', guideId: 'bazarr' },
+  { id: 'qbittorrent', name: 'qBittorrent Headless', tagline: 'P2P BitTorrent Client & WebUI', category: 'downloads', icon: '📥', port: 8080, subpath: '/qbittorrent', guideId: 'qbittorrent' },
+  { id: 'radarr', name: 'Radarr Movie Automator', tagline: 'Automated 4K/1080p Movie Indexer & Grabber', category: 'downloads', icon: '🍿', port: 7878, subpath: '/radarr', guideId: 'radarr' },
+  { id: 'sonarr', name: 'Sonarr TV Series Automator', tagline: 'Automated Anime & TV Episode PVR', category: 'downloads', icon: '📺', port: 8989, subpath: '/sonarr', guideId: 'sonarr' },
+  { id: 'prowlarr', name: 'Prowlarr Tracker Proxy', tagline: 'Unified Torrent & Usenet Indexer Proxy', category: 'downloads', icon: '🔍', port: 9696, subpath: '/prowlarr', guideId: 'prowlarr' },
+  { id: 'bazarr', name: 'Bazarr Subtitles', tagline: 'Multilingual Automated Subtitle Matcher', category: 'downloads', icon: '💬', port: 6767, subpath: '/bazarr', guideId: 'bazarr' },
 
   // Storage & Cloud
-  { id: 'syncthing', name: 'Syncthing Decentralized Sync', tagline: 'Continuous Bidirectional P2P Replication', category: 'storage', icon: '🔄', port: 8384, subpath: '/syncthing/', guideId: 'syncthing' },
-  { id: 'vaultwarden', name: 'Vaultwarden Password Vault', tagline: 'Encrypted Bitwarden Zero-Knowledge Cloud', category: 'storage', icon: '🔐', port: 8000, subpath: '/vault/', guideId: 'vaultwarden' },
+  { id: 'syncthing', name: 'Syncthing Decentralized Sync', tagline: 'Continuous Bidirectional P2P Replication', category: 'storage', icon: '🔄', port: 8384, subpath: '/syncthing', guideId: 'syncthing' },
+  { id: 'vaultwarden', name: 'Vaultwarden Password Vault', tagline: 'Encrypted Bitwarden Zero-Knowledge Cloud', category: 'storage', icon: '🔐', port: 8000, subpath: '/vault', guideId: 'vaultwarden' },
 
   // Network & Privacy
-  { id: 'adguard', name: 'AdGuard Home DNS', tagline: 'Network-wide DNS Tracker & Malware Blocker', category: 'network', icon: '🛡️', port: 3000, subpath: '/adguard/', guideId: 'adguard' },
+  { id: 'adguard', name: 'AdGuard Home DNS', tagline: 'Network-wide DNS Tracker & Malware Blocker', category: 'network', icon: '🛡️', port: 3000, subpath: '/adguard', guideId: 'adguard' },
   { id: 'tor', name: 'Tor Privacy Onion Proxy', tagline: 'Onion Routing & SOCKS5 Privacy Daemon', category: 'network', icon: '🧅', port: 9050, subpath: '/guides/tor.html', guideId: 'tor' },
 ];
 
@@ -478,14 +478,10 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
     // If matching apps exist, open the first matching app!
     if (filteredAppliances.length > 0) {
       const topApp = filteredAppliances[0];
-    if (filteredAppliances.length > 0) {
-      const topApp = filteredAppliances[0];
       const registeredApp = serviceRegistry.get(topApp.id);
       const url = registeredApp ? registeredApp.getOpenUrl() : (topApp.subpath || getServiceUrl(topApp.id));
       window.open(url, url.startsWith('/') && !url.startsWith('/guides/') ? '_self' : '_blank');
       setSearchQuery('');
-      return;
-    }
       return;
     }
     // Web search fallback

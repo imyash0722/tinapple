@@ -20,11 +20,32 @@ import {
   Share2,
 } from 'lucide-react';
 import { GUIDES_CATALOG, GuideArticle } from '../../data/guidesCatalog';
+import { serviceRegistry } from '../../services/serviceRegistry';
 
 interface GuidesPageProps {
   initialGuideId?: string | null;
   onSelectGuide?: (id: string) => void;
 }
+
+const resolveDynamicEndpointUrl = (url: string): string => {
+  if (!url || !url.startsWith('http')) return url;
+  try {
+    const parsed = new URL(url);
+    const currentHost = typeof window !== 'undefined' ? window.location.hostname : '100.67.207.60';
+    const port = parseInt(parsed.port, 10);
+    if (port) {
+      const service = serviceRegistry.getByPort(port);
+      if (service) return service.getOpenUrl();
+      if (parsed.hostname === '100.108.215.120' || parsed.hostname === '100.67.207.60') {
+        parsed.hostname = currentHost;
+        return parsed.toString();
+      }
+    }
+  } catch {
+    // fallback
+  }
+  return url;
+};
 
 export const GuidesPage: React.FC<GuidesPageProps> = ({
   initialGuideId,
@@ -215,7 +236,7 @@ export const GuidesPage: React.FC<GuidesPageProps> = ({
                   <div className="flex items-center gap-1 shrink-0">
                     {ep.value.startsWith('http') && (
                       <a
-                        href={ep.value}
+                        href={resolveDynamicEndpointUrl(ep.value)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="p-1.5 rounded-lg text-zinc-400 hover:text-sky-300 hover:bg-white/[0.06] transition-colors"
@@ -310,7 +331,7 @@ export const GuidesPage: React.FC<GuidesPageProps> = ({
                 {currentGuide.clientApps.map((ca, idx) => (
                   <a
                     key={idx}
-                    href={ca.link}
+                    href={resolveDynamicEndpointUrl(ca.link)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="p-4 rounded-2xl bg-slate-950/70 border border-white/[0.08] hover:border-emerald-500/40 hover:bg-slate-950/90 transition-all flex items-center justify-between gap-3 group active:scale-[0.99]"

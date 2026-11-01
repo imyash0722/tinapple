@@ -266,6 +266,12 @@ func SetupRoutes(r *gin.Engine, cfg *config.Manifest, svcMgr *services.SystemdMa
 	r.POST("/api/system/tor-exit", h.ToggleTorStatus)
 	r.GET("/api/system/proton-exit", h.GetProtonStatus)
 	r.POST("/api/system/proton-exit", h.ToggleProtonStatus)
+	r.GET("/api/system/proton/config", h.GetProtonStatus)
+	r.POST("/api/system/proton/signin", h.ProtonSignIn)
+	r.POST("/api/system/proton/signout", h.ProtonSignOut)
+	r.GET("/api/system/proton/wireguard", h.GetProtonWireGuard)
+	r.POST("/api/system/proton/wireguard", h.ProtonSetWireGuard)
+	r.DELETE("/api/system/proton/wireguard", h.ProtonClearWireGuard)
 
 	// Wallpaper APIs (compatible with v1 and legacy Tinarchy paths)
 	r.GET("/api/wallpapers", h.ListWallpapers)
