@@ -88,6 +88,57 @@ export const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const activeServicesCount = displayServices.filter((s) => s.activeState === 'active').length;
 
+  // Left-edge hover autohide timer ref
+  const closeTimerRef = React.useRef<NodeJS.Timeout | null>(null);
+
+  React.useEffect(() => {
+    return () => {
+      if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+    };
+  }, []);
+
+  const handleOpenDrawerFromHover = React.useCallback(() => {
+    if (isSidebarPinned) return;
+    if (closeTimerRef.current) {
+      clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+    }
+    setMobileOpen(true);
+  }, [isSidebarPinned, setMobileOpen]);
+
+  const handleDrawerMouseEnter = React.useCallback(() => {
+    if (closeTimerRef.current) {
+      clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+    }
+  }, []);
+
+  const handleDrawerMouseLeave = React.useCallback(() => {
+    if (isSidebarPinned) return;
+    if (closeTimerRef.current) {
+      clearTimeout(closeTimerRef.current);
+    }
+    closeTimerRef.current = setTimeout(() => {
+      setMobileOpen(false);
+    }, 320); // 320ms grace period for smooth departure
+  }, [isSidebarPinned, setMobileOpen]);
+
+  // Window-level proximity detection for desktop screen edge (clientX <= 20px)
+  React.useEffect(() => {
+    if (isSidebarPinned) return;
+
+    const handleWindowMouseMove = (e: MouseEvent) => {
+      if (e.clientX <= 20 && !mobileOpen) {
+        handleOpenDrawerFromHover();
+      }
+    };
+
+    window.addEventListener('mousemove', handleWindowMouseMove);
+    return () => {
+      window.removeEventListener('mousemove', handleWindowMouseMove);
+    };
+  }, [isSidebarPinned, mobileOpen, handleOpenDrawerFromHover]);
+
   const navItems = [
     {
       id: 'dashboard',
@@ -614,6 +665,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <>
+      {/* 0. LEFT-EDGE HOVER HOT ZONE (Desktop: Hover left edge to appear) */}
+      {!isSidebarPinned && (
+        <div
+          role="button"
+          tabIndex={-1}
+          aria-label="Hover left edge to open appliance navigation"
+          className="hidden md:block fixed top-0 bottom-0 left-0 w-5 z-40 group cursor-pointer"
+          onMouseEnter={handleOpenDrawerFromHover}
+          title="Hover left edge to open appliance navigation"
+        >
+          {/* Subtle indicator bar on edge proximity */}
+          <div className="absolute top-1/2 -translate-y-1/2 left-0 w-1.5 h-24 rounded-r-full bg-tinapple-gold/0 group-hover:bg-tinapple-gold/60 transition-all duration-300 pointer-events-none shadow-[0_0_12px_rgba(245,158,11,0.5)]" />
+        </div>
+      )}
+
       {/* A. DESKTOP FIXED SIDEBAR (Hidden on all tabs by default, shown only if pinned by user) */}
       {isSidebarPinned && !isLandingPage && (
         <aside
@@ -628,13 +694,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* B. DRAWER OVERLAY (Active on all tabs when drawer is open) */}
       {mobileOpen && (
         <div
-          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md animate-in fade-in duration-200"
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
           onClick={() => setMobileOpen(false)}
+          onMouseEnter={handleDrawerMouseLeave}
         />
       )}
 
-      {/* C. DRAWER SLIDE-IN (Slide-over drawer for all tabs) */}
+      {/* C. DRAWER SLIDE-IN (Slide-over drawer for all tabs with auto-hide on leave) */}
       <div
+        onMouseEnter={handleDrawerMouseEnter}
+        onMouseLeave={handleDrawerMouseLeave}
         className={`fixed inset-y-0 left-0 z-[51] w-72 max-w-[85vw] bg-[#060c1c]/98 backdrop-blur-3xl border-r border-white/10 shadow-2xl transition-transform duration-300 ease-out transform ${
           mobileOpen ? 'translate-x-0' : '-translate-x-full'
         } ${isSidebarPinned && !isLandingPage ? 'md:hidden' : ''}`}
