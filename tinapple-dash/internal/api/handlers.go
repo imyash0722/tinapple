@@ -2133,6 +2133,7 @@ func (h *Handler) WidgetManga(c *gin.Context) {
 }
 
 // ProxyMangaThumbnail proxies thumbnail requests to Suwayomi and sets proper image content-type
+// Fast-path: checks /var/lib/suwayomi/downloads/thumbnails/{id}.* directly from local SSD via sendfile(2)
 func (h *Handler) ProxyMangaThumbnail(c *gin.Context) {
 	isOwner, _ := h.getClientRole(c)
 	if !isOwner {
@@ -2141,8 +2142,25 @@ func (h *Handler) ProxyMangaThumbnail(c *gin.Context) {
 	}
 
 	id := c.Param("id")
+	if id == "" {
+		c.Status(http.StatusBadRequest)
+		return
+	}
+
+	// 1. Fast-Path: Serve directly from local disk cache if available (zero-copy sendfile)
+	cacheDir := "/var/lib/suwayomi/downloads/thumbnails"
+	for _, ext := range []string{".webp", ".jpg", ".jpeg", ".png", ".avif", ".gif"} {
+		localPath := filepath.Join(cacheDir, id+ext)
+		if fi, err := os.Stat(localPath); err == nil && !fi.IsDir() && fi.Size() > 0 {
+			c.Header("Cache-Control", "public, max-age=31536000, immutable")
+			c.File(localPath)
+			return
+		}
+	}
+
+	// 2. Slow-Path: Query Suwayomi directly to fetch and populate disk cache
 	targetURL := fmt.Sprintf("http://127.0.0.1:4567/api/v1/manga/%s/thumbnail", id)
-	client := &http.Client{Timeout: 5 * time.Second}
+	client := &http.Client{Timeout: 10 * time.Second}
 	req, err := http.NewRequestWithContext(c.Request.Context(), "GET", targetURL, nil)
 	if err != nil {
 		c.Status(http.StatusNotFound)
@@ -2179,7 +2197,7 @@ func (h *Handler) ProxyMangaThumbnail(c *gin.Context) {
 	}
 
 	c.Header("Content-Type", contentType)
-	c.Header("Cache-Control", "public, max-age=86400")
+	c.Header("Cache-Control", "public, max-age=31536000, immutable")
 	c.Data(http.StatusOK, contentType, bodyBytes)
 }
 

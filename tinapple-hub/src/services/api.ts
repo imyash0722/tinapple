@@ -14,7 +14,7 @@ export function getApiBaseUrl(): string {
       (window.location.hostname === 'localhost' && window.location.port === '1420') ||
       window.location.hostname === '';
     if (isStandaloneClient) {
-      return 'http://100.108.215.120:8088/api/v1';
+      return 'http://100.67.207.60:8088/api/v1';
     }
   }
   return '/api/v1';
@@ -35,12 +35,12 @@ export function getWsTerminalUrl(): string {
       (window.location.hostname === 'localhost' && window.location.port === '1420') ||
       window.location.hostname === '';
     if (isStandaloneClient) {
-      return 'ws://100.108.215.120:8088/api/v1/terminal/ws';
+      return 'ws://100.67.207.60:8088/api/v1/terminal/ws';
     }
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     return `${protocol}//${window.location.host}/api/v1/terminal/ws`;
   }
-  return 'ws://100.108.215.120:8088/api/v1/terminal/ws';
+  return 'ws://100.67.207.60:8088/api/v1/terminal/ws';
 }
 
 export function getServiceHost(): string {
@@ -56,12 +56,36 @@ export function getServiceHost(): string {
     // *.ts.net domains have HSTS preloaded in modern browsers which breaks connecting to plain HTTP on secondary service ports (:8096, :4567, :8080).
     // Standalone clients (Tauri desktop app, Android WebView, file://, dev port 1420) also use direct Tailscale IP.
     if (!h || h.endsWith('.ts.net') || h === 'tauri.localhost' || (h === 'localhost' && window.location.port === '1420')) {
-      return '100.108.215.120';
+      return '100.67.207.60';
     }
     return h;
   }
-  return '100.108.215.120';
+  return '100.67.207.60';
 }
+
+export const SERVICE_PORT_MAP: Record<string, number> = {
+  jellyfin: 8096,
+  qbittorrent: 8080,
+  vault: 8000,
+  vaultwarden: 8000,
+  seerr: 5055,
+  jellyseerr: 5055,
+  navidrome: 4533,
+  syncthing: 8384,
+  adguard: 3000,
+  adguardhome: 3000,
+  pinchflat: 8945,
+  youtube: 8945,
+  bazarr: 6767,
+  element: 8008,
+  suwayomi: 4567,
+  'suwayomi-server': 4567,
+  syncyomi: 4567,
+  tsumiru: 4567,
+  radarr: 7878,
+  sonarr: 8989,
+  prowlarr: 9696,
+};
 
 export const SERVICE_PATH_MAP: Record<number, string> = {
   8096: '/jellyfin/',
@@ -105,6 +129,14 @@ export const SERVICE_NAME_PATH_MAP: Record<string, string> = {
 };
 
 export function getServiceUrl(portOrName: number | string, path: string = ''): string {
+  // If path is a guide or absolute HTTP URL, return as-is
+  if (path && (path.startsWith('/guides/') || path.startsWith('http://') || path.startsWith('https://'))) {
+    return path;
+  }
+  if (typeof portOrName === 'string' && (portOrName.startsWith('/guides/') || portOrName.startsWith('http://') || portOrName.startsWith('https://'))) {
+    return portOrName;
+  }
+
   if (typeof portOrName === 'string') {
     const cleanName = portOrName.toLowerCase().replace(/\.service$/, '').replace(/@.*$/, '');
     const service = serviceRegistry.get(cleanName);
@@ -1385,9 +1417,9 @@ class ApiService {
 
   getServerUrl(): string {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('tinapple_server_url') || 'http://100.108.215.120:8088';
+      return localStorage.getItem('tinapple_server_url') || 'http://100.67.207.60:8088';
     }
-    return 'http://100.108.215.120:8088';
+    return 'http://100.67.207.60:8088';
   }
 
   setServerUrl(url: string): void {

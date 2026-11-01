@@ -163,7 +163,7 @@ const CURATED_APPLIANCES: CuratedAppliance[] = [
   { id: 'navidrome', name: 'Navidrome Music Server', tagline: 'Lossless Audio & Subsonic API Streaming', category: 'media', icon: '🎵', port: 4533, subpath: '/navidrome/', guideId: 'navidrome' },
   { id: 'pinchflat', name: 'Pinchflat YouTube Stack', tagline: 'Automated YouTube Channel Archiver', category: 'media', icon: '📺', port: 8945, subpath: '/pinchflat/', guideId: 'pinchflat' },
   { id: 'suwayomi', name: 'Suwayomi Manga Server', tagline: 'Keiyoushi Extensions & Tachiyomi Sync', category: 'media', icon: '📖', port: 4567, subpath: '/suwayomi/', guideId: 'suwayomi' },
-  { id: 'tsumiru', name: 'Tsumiru Reader', tagline: 'Offline Manga Reader & Desktop CanvasKit', category: 'media', icon: '📚', port: 0, subpath: '/tsumiru/' },
+  { id: 'tsumiru', name: 'Tsumiru Reader', tagline: 'Offline Manga Reader & Desktop CanvasKit', category: 'media', icon: '📚', port: 4567, subpath: '/tsumiru/' },
 
   // Downloads & Automation
   { id: 'qbittorrent', name: 'qBittorrent Headless', tagline: 'P2P BitTorrent Client & WebUI', category: 'downloads', icon: '📥', port: 8080, subpath: '/qbittorrent/', guideId: 'qbittorrent' },
@@ -478,9 +478,14 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
     // If matching apps exist, open the first matching app!
     if (filteredAppliances.length > 0) {
       const topApp = filteredAppliances[0];
+    if (filteredAppliances.length > 0) {
+      const topApp = filteredAppliances[0];
       const registeredApp = serviceRegistry.get(topApp.id);
       const url = registeredApp ? registeredApp.getOpenUrl() : (topApp.subpath || getServiceUrl(topApp.id));
-      window.open(url, url.startsWith('/') ? '_self' : '_blank');
+      window.open(url, url.startsWith('/') && !url.startsWith('/guides/') ? '_self' : '_blank');
+      setSearchQuery('');
+      return;
+    }
       return;
     }
     // Web search fallback

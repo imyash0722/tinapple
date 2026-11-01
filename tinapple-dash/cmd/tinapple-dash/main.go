@@ -203,7 +203,11 @@ func main() {
 					if colon := strings.Index(host, ":"); colon != -1 {
 						host = host[:colon]
 					}
-					c.Redirect(http.StatusFound, fmt.Sprintf("http://%s:%d/", host, port))
+					proto := "http"
+					if port == 8000 && (c.Request.TLS != nil || c.GetHeader("X-Forwarded-Proto") == "https") {
+						proto = "https"
+					}
+					c.Redirect(http.StatusFound, fmt.Sprintf("%s://%s:%d/", proto, host, port))
 					return
 				}
 			}

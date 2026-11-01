@@ -203,6 +203,8 @@ export const MangaShelfWidget: React.FC = () => {
                   <img
                     src={manga.thumbnailUrl}
                     alt={manga.title}
+                    loading="lazy"
+                    decoding="async"
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     onError={(e) => {
                       (e.target as HTMLImageElement).src = '/icons/suwayomi.png';

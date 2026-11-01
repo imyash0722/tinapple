@@ -56,11 +56,16 @@ export class ApplianceService {
    * Otherwise resolves clean subpath for reverse proxies without double slashes.
    */
   getOpenUrl(currentOrigin?: string): string {
-    let hostname = '100.108.215.120';
+    let hostname = '100.67.207.60';
     let isDirectPortAccess = true;
 
     if (typeof window !== 'undefined' && window.location) {
-      hostname = window.location.hostname;
+      const h = window.location.hostname;
+      if (!h || h.endsWith('.ts.net') || h === 'tauri.localhost' || (h === 'localhost' && window.location.port === '1420')) {
+        hostname = '100.67.207.60';
+      } else {
+        hostname = h;
+      }
       const port = window.location.port;
       // If accessed via port 8088 (tinapple-dash Go port), direct port is mandatory
       // because 8088 does not have reverse proxy path handlers for non-API routes.
@@ -69,6 +74,9 @@ export class ApplianceService {
       try {
         const u = new URL(currentOrigin);
         hostname = u.hostname;
+        if (hostname.endsWith('.ts.net')) {
+          hostname = '100.67.207.60';
+        }
         isDirectPortAccess = u.port === '8088' || this.directPortPreferred;
       } catch {
         // ignore

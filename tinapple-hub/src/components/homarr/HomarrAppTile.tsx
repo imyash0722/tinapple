@@ -78,7 +78,7 @@ export const HomarrAppTile: React.FC<HomarrAppTileProps> = ({
     // Don't trigger if clicked on an interactive element
     const target = e.target as HTMLElement;
     if (target.closest('button') || target.closest('a')) return;
-    window.open(url, url.startsWith('/') ? '_self' : '_blank');
+    window.open(url, url.startsWith('/') && !url.startsWith('/guides/') ? '_self' : '_blank');
   };
 
   return (
@@ -190,7 +190,7 @@ export const HomarrAppTile: React.FC<HomarrAppTileProps> = ({
 
           <a
             href={url}
-            target={url.startsWith('/') ? '_self' : '_blank'}
+            target={url.startsWith('/') && !url.startsWith('/guides/') ? '_self' : '_blank'}
             rel="noopener noreferrer"
             className="px-2.5 py-1 rounded-lg bg-white/[0.06] hover:bg-tinapple-gold hover:text-slate-950 border border-white/10 text-zinc-200 text-xs font-mono font-bold flex items-center gap-1 transition-all active:scale-95 shadow-sm"
           >

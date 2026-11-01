@@ -87,3 +87,5 @@ tinapple-installer/iso/airootfs/etc/tinapple/chaddy-store.yaml
 tinapple-chadwm/
 # External wallpaper repo: imyash0722/Wallpapers
 /wallpapers/*
+tinapple-hub/pnpm-lock.yaml
+tinapple-hub/pnpm-workspace.yaml
