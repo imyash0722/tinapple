@@ -75,6 +75,30 @@ import { CanvasWidget, CanvasLayoutMode, WidgetCategory } from '../../types/canv
 import { AndroidBridge } from '../../services/androidBridge';
 import { api, getServiceUrl } from '../../services/api';
 
+const DEFAULT_HOMARR_BOOKMARKS: CustomBookmarkItem[] = [
+  {
+    id: 'bm-github',
+    name: 'GitHub Repository',
+    url: 'https://github.com/imyash0722/tinapple',
+    icon: '🐙',
+    category: 'Development',
+  },
+  {
+    id: 'bm-arch',
+    name: 'Arch Linux Wiki',
+    url: 'https://wiki.archlinux.org',
+    icon: '🐧',
+    category: 'Reference',
+  },
+  {
+    id: 'bm-reddit-selfhosted',
+    name: 'r/selfhosted',
+    url: 'https://reddit.com/r/selfhosted',
+    icon: '🌐',
+    category: 'Community',
+  },
+];
+
 const BOARD_STORAGE_KEY = 'tinapple_homarr_board_widgets_v8';
 const SECTION_COLLAPSE_STORAGE_KEY = 'tinapple_homarr_sections_collapsed_v1';
 const VIEW_MODE_STORAGE_KEY = 'tinapple_homarr_view_mode';
@@ -513,6 +537,28 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
     });
   };
 
+  // 4b. Homelab Bookmarks State
+  const [boardBookmarks, setBoardBookmarks] = useState<CustomBookmarkItem[]>(() => {
+    try {
+      const saved = localStorage.getItem('tinapple_homelab_bookmarks_v1');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    return DEFAULT_HOMARR_BOOKMARKS;
+  });
+
+  const saveBookmarks = (newBookmarks: CustomBookmarkItem[]) => {
+    const list = Array.isArray(newBookmarks) ? newBookmarks : DEFAULT_HOMARR_BOOKMARKS;
+    setBoardBookmarks(list);
+    try {
+      localStorage.setItem('tinapple_homelab_bookmarks_v1', JSON.stringify(list));
+    } catch (e) {
+      console.error('Failed to save bookmarks', e);
+    }
+  };
+
   // Modals
   const [editingWidget, setEditingWidget] = useState<CanvasWidget | null>(null);
   const [creatorOpen, setCreatorOpen] = useState(false);
@@ -665,7 +711,30 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
       case 'node_journal':
         return <HomarrJournalWidget />;
       case 'homelab_bookmarks':
-        return <HomarrBookmarksWidget isEditMode={isEditMode} />;
+        return (
+          <HomarrBookmarksWidget
+            bookmarks={boardBookmarks}
+            isEditMode={isEditMode}
+            onAddBookmark={() => {
+              const name = window.prompt('Bookmark name:');
+              if (!name) return;
+              const url = window.prompt('Bookmark URL (e.g. https://...):');
+              if (!url) return;
+              const newBm: CustomBookmarkItem = {
+                id: `bm-${Date.now()}`,
+                name,
+                url,
+                icon: '🔗',
+              };
+              saveBookmarks([...boardBookmarks, newBm]);
+              AndroidBridge.performHaptic('medium');
+            }}
+            onDeleteBookmark={(id) => {
+              saveBookmarks(boardBookmarks.filter((b) => b.id !== id));
+              AndroidBridge.performHaptic('light');
+            }}
+          />
+        );
       case 'single_appliance':
         return (
           <HomarrSingleApplianceWidget

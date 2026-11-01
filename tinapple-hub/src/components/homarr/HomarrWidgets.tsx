@@ -998,28 +998,30 @@ export interface CustomBookmarkItem {
 }
 
 export interface HomarrBookmarksWidgetProps {
-  bookmarks: CustomBookmarkItem[];
-  isEditMode: boolean;
-  onAddBookmark: () => void;
-  onDeleteBookmark: (id: string) => void;
+  bookmarks?: CustomBookmarkItem[];
+  isEditMode?: boolean;
+  onAddBookmark?: () => void;
+  onDeleteBookmark?: (id: string) => void;
 }
 
 export const HomarrBookmarksWidget: React.FC<HomarrBookmarksWidgetProps> = ({
-  bookmarks,
-  isEditMode,
+  bookmarks = [],
+  isEditMode = false,
   onAddBookmark,
   onDeleteBookmark,
 }) => {
+  const safeBookmarks = Array.isArray(bookmarks) ? bookmarks : [];
+
   return (
     <div className="h-full rounded-2xl bg-slate-900/40 border border-white/[0.08] backdrop-blur-xl p-5 shadow-lg shadow-black/20 font-mono">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <span className="text-base">🔖</span>
           <h4 className="font-bold text-white text-sm tracking-wide uppercase">
-            Homelab Bookmarks & Web Services ({bookmarks.length})
+            Homelab Bookmarks & Web Services ({safeBookmarks.length})
           </h4>
         </div>
-        {isEditMode && (
+        {isEditMode && onAddBookmark && (
           <button
             onClick={onAddBookmark}
             className="px-3 py-1 rounded-xl bg-tinapple-gold hover:bg-amber-400 text-slate-950 font-mono text-xs font-bold flex items-center gap-1 shadow-md transition-all"
@@ -1031,7 +1033,7 @@ export const HomarrBookmarksWidget: React.FC<HomarrBookmarksWidgetProps> = ({
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-        {bookmarks.map((bm) => (
+        {safeBookmarks.map((bm) => (
           <div
             key={bm.id}
             className="group relative rounded-xl bg-slate-800/40 hover:bg-slate-800/80 border border-white/[0.06] hover:border-white/20 p-3 transition-all flex items-center justify-between gap-2"
@@ -1053,7 +1055,7 @@ export const HomarrBookmarksWidget: React.FC<HomarrBookmarksWidgetProps> = ({
               </div>
             </a>
 
-            {isEditMode && (
+            {isEditMode && onDeleteBookmark && (
               <button
                 onClick={() => onDeleteBookmark(bm.id)}
                 className="p-1 rounded-lg text-red-400 hover:text-red-300 hover:bg-red-500/20 opacity-0 group-hover:opacity-100 transition-opacity"
@@ -1065,7 +1067,7 @@ export const HomarrBookmarksWidget: React.FC<HomarrBookmarksWidgetProps> = ({
           </div>
         ))}
 
-        {bookmarks.length === 0 && !isEditMode && (
+        {safeBookmarks.length === 0 && !isEditMode && (
           <div className="col-span-full py-4 text-center text-xs text-zinc-500">
             No custom bookmarks yet. Enable Edit Mode to add your homelab portals.
           </div>
