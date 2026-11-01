@@ -82,7 +82,7 @@ export const App: React.FC = () => {
     const path = window.location.pathname.toLowerCase();
     const matchGuide = path.match(/^\/([a-zA-Z0-9_-]+)-guide\/?$/);
     if (matchGuide) return matchGuide[1];
-    const matchApp = path.match(/^\/(?:app|guide)\/([a-zA-Z0-9_-]+)\/?$/);
+    const matchApp = path.match(/^\/(?:app|guide|guides)\/([a-zA-Z0-9_-]+)\/?$/);
     if (matchApp) return matchApp[1];
     const params = new URLSearchParams(window.location.search);
     if (params.get('app')) return params.get('app');
@@ -92,7 +92,10 @@ export const App: React.FC = () => {
 
   const [viewingAppId, setViewingAppId] = useState<string | null>(getInitialAppFromPath);
   const [requestedTab] = useState(() => {
-    const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
+    if (typeof window === 'undefined') return null;
+    const path = window.location.pathname.toLowerCase();
+    if (path === '/guides' || path === '/guides/') return 'guides';
+    const params = new URLSearchParams(window.location.search);
     return params.get('tab');
   });
   const [requestedGuide] = useState(() => {
@@ -146,8 +149,11 @@ export const App: React.FC = () => {
 
     const scale = settings.uiScale || '100%';
     root.style.setProperty('--ui-scale', scale);
-    const zoomVal = parseInt(scale) / 100;
-    (document.body.style as any).zoom = zoomVal.toString();
+    // Reset body zoom so fixed modals, backdrops, and framer-motion coordinates aren't displaced
+    (document.body.style as any).zoom = '';
+    // Scale root font-size cleanly (Tailwind uses rem, scaling entire UI smoothly without breaking modals)
+    const basePx = (parseInt(scale, 10) / 100) * 16;
+    root.style.fontSize = `${basePx}px`;
 
     // Material 3 (M3) Matugen dynamic coloring for the entire dashboard
     let active = true;
@@ -237,7 +243,7 @@ export const App: React.FC = () => {
     setSelectedGuideId(id);
     setViewingAppId(id);
     if (typeof window !== 'undefined') {
-      window.history.pushState({}, '', `/${id}-guide`);
+      window.history.pushState({}, '', `/guides/${id}`);
     }
   };
 

@@ -219,12 +219,21 @@ func (h *Handler) GetFailedUnits(c *gin.Context) {
 	})
 }
 
-// GetKernelLogs returns recent kernel or journal alerts
+// GetKernelLogs returns recent kernel or journal alerts as both an array of lines and raw string
 func (h *Handler) GetKernelLogs(c *gin.Context) {
 	cmd := exec.Command("journalctl", "-p", "3", "-xb", "-n", "30", "--no-pager")
 	out, _ := cmd.CombinedOutput()
+	outStr := strings.TrimSpace(string(out))
+
+	var lines []string
+	if len(outStr) > 0 {
+		lines = strings.Split(outStr, "\n")
+	} else {
+		lines = []string{}
+	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"logs": string(out),
+		"logs": lines,
+		"raw":  outStr,
 	})
 }

@@ -2,6 +2,7 @@ package api
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -940,43 +941,66 @@ func (h *Handler) GetTorStatus(c *gin.Context) {
 
 // GetProtonStatus returns whether Proton VPN exit node is active
 func (h *Handler) GetProtonStatus(c *gin.Context) {
-	if _, err := os.Stat("/usr/local/bin/tinapple-proton"); err == nil {
-		out, err := exec.Command("/usr/local/bin/tinapple-proton", "status").CombinedOutput()
-		if err == nil && len(out) > 0 {
-			var res map[string]interface{}
-			if json.Unmarshal(out, &res) == nil {
-				c.JSON(http.StatusOK, res)
-				return
-			}
-		}
+	// 1. Direct kernel WireGuard interface detection (checks proton0 and proton interfaces)
+	wgOut, _ := exec.Command("wg", "show", "proton0").CombinedOutput()
+	wgActive := len(bytes.TrimSpace(wgOut)) > 0
+	if !wgActive {
+		wgOut, _ = exec.Command("wg", "show", "proton").CombinedOutput()
+		wgActive = len(bytes.TrimSpace(wgOut)) > 0
 	}
 
-	out, _ := exec.Command("protonvpn", "status").CombinedOutput()
-	outStr := string(out)
-	active := strings.Contains(outStr, "Status: Connected") || strings.Contains(outStr, "Connected to")
-	if !active {
-		active = exec.Command("systemctl", "is-active", "--quiet", "wg-quick@proton.service").Run() == nil
+	daemonActive := exec.Command("systemctl", "is-active", "--quiet", "proton.VPN.service").Run() == nil ||
+		exec.Command("systemctl", "is-active", "--quiet", "wg-quick@proton.service").Run() == nil
+
+	active := wgActive || daemonActive
+	configured := active
+
+	// Check if WireGuard profile exists
+	if _, err := os.Stat("/etc/wireguard/proton.conf"); err == nil {
+		configured = true
+	}
+
+	details := "Disconnected"
+	if active {
+		details = "Active via Swiss WireGuard (proton0) • Protected"
+		// Extract transfer stats or endpoint if available
+		wgStr := string(wgOut)
+		if idx := strings.Index(wgStr, "endpoint:"); idx != -1 {
+			endpointLine := strings.Split(wgStr[idx:], "\n")[0]
+			parts := strings.Fields(endpointLine)
+			if len(parts) >= 2 {
+				details = fmt.Sprintf("Active via Swiss WireGuard (%s) • Protected", parts[1])
+			}
+		}
+	} else if configured {
+		details = "Configured (WireGuard profile ready)"
+	} else {
+		details = "Unconfigured • Sign in or add WireGuard profile"
 	}
 
 	status := "stopped"
 	if active {
 		status = "running"
+	} else if !configured {
+		status = "unconfigured"
 	}
-
-	serverInfo := ""
-	for _, line := range strings.Split(outStr, "\n") {
-		trimmed := strings.TrimSpace(line)
-		if strings.HasPrefix(trimmed, "Server:") || strings.HasPrefix(trimmed, "IP:") || strings.HasPrefix(trimmed, "Country:") {
-			serverInfo += trimmed + " • "
-		}
-	}
-	serverInfo = strings.TrimSuffix(serverInfo, " • ")
 
 	c.JSON(http.StatusOK, gin.H{
 		"active":     active,
 		"status":     status,
-		"configured": false,
-		"details":    serverInfo,
+		"configured": configured,
+		"details":    details,
+		"routed_services": []string{
+			"jellyfin",
+			"suwayomi",
+			"qbittorrent",
+			"radarr",
+			"sonarr",
+			"prowlarr",
+			"bazarr",
+			"pinchflat",
+			"navidrome",
+		},
 	})
 }
 

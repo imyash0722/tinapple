@@ -20,6 +20,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { AppBrandIcon } from '../common/AppBrandIcons';
+import { serviceRegistry } from '../../services/serviceRegistry';
 import { CanvasWidget, WidgetCategory, WidgetType } from '../../types/canvas';
 
 interface WidgetCreatorModalProps {
@@ -49,28 +50,33 @@ interface ApplianceTemplate {
   port: number;
   category: WidgetCategory;
   accentColor: string;
+  openUrl?: string;
 }
 
-const APPLIANCES: ApplianceTemplate[] = [
-  { id: 'jellyfin', name: 'Jellyfin Media Server', tagline: 'Hardware Transcoding & 4K Streaming', icon: 'jellyfin', port: 8096, category: 'media', accentColor: '#AA5CC3' },
-  { id: 'qbittorrent', name: 'qBittorrent Headless', tagline: 'BitTorrent Engine & WebUI', icon: 'qbittorrent', port: 8080, category: 'storage', accentColor: '#3A75C4' },
-  { id: 'suwayomi', name: 'Suwayomi Manga Server', tagline: 'Keiyoushi Extensions & Mihon Sync', icon: 'suwayomi', port: 4567, category: 'media', accentColor: '#F43F5E' },
-  { id: 'radarr', name: 'Radarr Movie Automator', tagline: 'Automated 4K/1080p Movie Grabber', icon: 'radarr', port: 7878, category: 'media', accentColor: '#FFC230' },
-  { id: 'sonarr', name: 'Sonarr TV Series Automator', tagline: 'Automated TV & Anime PVR', icon: 'sonarr', port: 8989, category: 'media', accentColor: '#00C4FF' },
-  { id: 'prowlarr', name: 'Prowlarr Tracker Proxy', tagline: 'Unified Torrent & Usenet Indexer', icon: 'prowlarr', port: 9696, category: 'network', accentColor: '#F59E0B' },
-  { id: 'bazarr', name: 'Bazarr Subtitle Manager', tagline: 'Multilingual Subtitle Synchronizer', icon: 'bazarr', port: 6767, category: 'media', accentColor: '#8B5CF6' },
-  { id: 'seerr', name: 'Jellyseerr Media Discovery', tagline: '1-Click Requests & Approvals', icon: 'seerr', port: 5055, category: 'media', accentColor: '#6366F1' },
-  { id: 'pinchflat', name: 'Pinchflat YouTube Archiver', tagline: 'Automated Channel Downloader', icon: 'youtube', port: 8945, category: 'media', accentColor: '#EF4444' },
-  { id: 'navidrome', name: 'Navidrome Music Server', tagline: 'Lossless Subsonic Audio Streaming', icon: 'navidrome', port: 4533, category: 'media', accentColor: '#EA580C' },
-  { id: 'syncthing', name: 'Syncthing Continuous Sync', tagline: 'P2P Encrypted File Replication', icon: 'syncthing', port: 8384, category: 'storage', accentColor: '#0284C7' },
-  { id: 'filebrowser', name: 'FileBrowser Quantum', tagline: 'Web File Manager & Storage Vault', icon: 'filebrowser', port: 8081, category: 'storage', accentColor: '#10B981' },
-  { id: 'adguard', name: 'AdGuard Home DNS', tagline: 'Network-wide DNS & Ad Blocking', icon: 'adguard', port: 3000, category: 'network', accentColor: '#16A34A' },
-  { id: 'vaultwarden', name: 'Vaultwarden Password Vault', tagline: 'Bitwarden-Compatible Secure Vault', icon: 'vaultwarden', port: 8000, category: 'system', accentColor: '#2563EB' },
-  { id: 'protonvpn', name: 'Proton VPN Client', tagline: 'Swiss WireGuard & NetShield', icon: 'protonvpn', port: 0, category: 'network', accentColor: '#6D4AFF' },
-  { id: 'beeper', name: 'Beeper Matrix Bridge', tagline: 'Universal Unified Chat Engine', icon: 'beeper', port: 0, category: 'network', accentColor: '#8B5CF6' },
-  { id: 'samba', name: 'Samba SMB File Server', tagline: 'LAN Network Drive Sharing', icon: 'syncthing', port: 445, category: 'storage', accentColor: '#0EA5E9' },
-  { id: 'minecraft', name: 'Paper Minecraft Server', tagline: 'Purpur / Paper High-TPS Server', icon: 'minecraft', port: 25565, category: 'system', accentColor: '#84CC16' },
-];
+const CATEGORY_COLORS: Record<string, string> = {
+  media: '#AA5CC3',
+  downloads: '#3A75C4',
+  storage: '#0284C7',
+  network: '#16A34A',
+  system: '#2563EB',
+  telemetry: '#EAB308',
+  custom: '#6366F1',
+};
+
+const getRegisteredAppliances = (): ApplianceTemplate[] => {
+  return serviceRegistry.getAll().map((s) => ({
+    id: s.id,
+    name: s.displayName || s.name,
+    tagline: s.tagline || `${s.category} appliance service`,
+    icon: s.id,
+    port: s.port,
+    category: (s.category === 'downloads' ? 'storage' : s.category) as WidgetCategory,
+    accentColor: CATEGORY_COLORS[s.category] || '#6366F1',
+    openUrl: s.getOpenUrl(),
+  }));
+};
+
+const APPLIANCES: ApplianceTemplate[] = getRegisteredAppliances();
 
 const TEMPLATES: WidgetTemplate[] = [
   // Custom interactive widgets
@@ -241,6 +247,7 @@ export const WidgetCreatorModal: React.FC<WidgetCreatorModalProps> = ({
       customConfig: {
         appId: app.id,
         targetPort: app.port,
+        openUrl: app.openUrl || serviceRegistry.get(app.id)?.getOpenUrl(),
       },
     };
 

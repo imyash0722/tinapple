@@ -421,32 +421,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </button>
             )}
 
-            {/* Interactive Web Terminal */}
-            {onOpenTerminal && (
-              <button
-                onClick={() => {
-                  onOpenTerminal();
-                  setMobileOpen(false);
-                }}
-                title="Interactive Web Terminal (PTY bash shell)"
-                className={`transition-all group ${
-                  isCollapsed
-                    ? 'w-12 h-12 mx-auto flex items-center justify-center rounded-2xl text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 border border-transparent p-0'
-                    : 'w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-mono text-emerald-300 hover:text-emerald-200 hover:bg-emerald-500/10 border border-transparent'
-                }`}
-              >
-                <Terminal className="w-5 h-5 shrink-0 text-emerald-400 group-hover:scale-110 transition-transform" />
-                {!isCollapsed && (
-                  <div className="flex items-center justify-between w-full">
-                    <span className="font-semibold text-xs">Web Terminal</span>
-                    <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 font-bold">
-                      PTY
-                    </span>
-                  </div>
-                )}
-              </button>
-            )}
-
             {/* Server Operations & Port Matrix */}
             {onOpenTools && (
               <button

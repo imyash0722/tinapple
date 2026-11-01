@@ -124,9 +124,6 @@ func main() {
 	if _, err := os.Stat(filepath.Join(distDir, "index.html")); err == nil {
 		r.Static("/assets", filepath.Join(distDir, "assets"))
 		r.Static("/icons", filepath.Join(distDir, "icons"))
-		if _, err := os.Stat(filepath.Join(distDir, "guides")); err == nil {
-			r.Static("/guides", filepath.Join(distDir, "guides"))
-		}
 		if _, err := os.Stat(filepath.Join(distDir, "images")); err == nil {
 			r.Static("/images", filepath.Join(distDir, "images"))
 		}
@@ -139,36 +136,29 @@ func main() {
 			c.Header("Expires", "0")
 			c.File(filepath.Join(distDir, "index.html"))
 		}
-		guideMap := map[string]string{
-			"/guide/plezy":       "/guides/plezy.html",
-			"/guide/jellyfin":    "/guides/plezy.html",
-			"/guide/seerr":       "/guides/seerr.html",
-			"/guide/servarr":     "/guides/seerr.html",
-			"/guide/adguard":     "/guides/adguard.html",
-			"/guide/navidrome":   "/guides/navidrome.html",
-			"/guide/syncyomi":    "/guides/syncyomi.html",
-			"/guide/beeper":      "/guides/beeper.html",
-			"/guide/mautrix":     "/guides/mautrix.html",
-			"/guide/matrix":      "/guides/mautrix.html",
-			"/guide/vaultwarden": "/guides/vaultwarden.html",
-			"/guide/syncthing":   "/guides/syncthing.html",
-			"/guide/obsidian":    "/guides/obsidian.html",
-			"/guide/ssh":         "/guides/ssh.html",
-			"/guide/tor":         "/guides/tor.html",
-		}
-		for routePath, targetFile := range guideMap {
-			tgt := targetFile
-			r.GET(routePath, func(c *gin.Context) {
-				c.Redirect(http.StatusFound, tgt)
-			})
-		}
+
+		// Clean unified guides handling: serves static HTML if .html requested, otherwise React SPA
+		guidesDir := filepath.Join(distDir, "guides")
+		r.GET("/guides", serveIndex)
+		r.GET("/guides/*filepath", func(c *gin.Context) {
+			param := c.Param("filepath")
+			if strings.HasSuffix(param, ".html") {
+				target := filepath.Join(guidesDir, filepath.Clean(param))
+				if _, err := os.Stat(target); err == nil {
+					c.File(target)
+					return
+				}
+			}
+			serveIndex(c)
+		})
 
 		r.GET("/", serveIndex)
+
 		r.NoRoute(func(c *gin.Context) {
 			path := c.Request.URL.Path
 
 			// Unified App & Guide routes: always serve Pineapple Hub React SPA
-			if strings.HasSuffix(path, "-guide") || strings.HasPrefix(path, "/app/") || strings.HasPrefix(path, "/guide/") {
+			if strings.HasSuffix(path, "-guide") || strings.HasPrefix(path, "/app/") || strings.HasPrefix(path, "/guide/") || strings.HasPrefix(path, "/guides/") || path == "/guides" || path == "/guides/" {
 				serveIndex(c)
 				return
 			}

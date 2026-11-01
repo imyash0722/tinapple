@@ -16,6 +16,7 @@ import {
   Terminal,
 } from 'lucide-react';
 import { api } from '../../services/api';
+import { serviceRegistry } from '../../services/serviceRegistry';
 import { OpenPortInfo, MaintenanceResult, FailedUnitsResult } from '../../types/api';
 
 interface ServerToolsModalProps {
@@ -54,7 +55,14 @@ export const ServerToolsModal: React.FC<ServerToolsModalProps> = ({ isOpen, onCl
     try {
       const [failed, klogs] = await Promise.all([api.getFailedUnits(), api.getKernelLogs()]);
       setFailedUnits(failed || { units: [], count: 0 });
-      setKernelLogs(klogs || []);
+      const safeLogs = Array.isArray(klogs)
+        ? klogs
+        : typeof klogs === 'string'
+        ? (klogs as string).split('\n')
+        : (klogs as any)?.logs && Array.isArray((klogs as any).logs)
+        ? (klogs as any).logs
+        : [];
+      setKernelLogs(safeLogs);
     } catch {}
     setLoadingHealth(false);
   }, []);
@@ -242,19 +250,23 @@ export const ServerToolsModal: React.FC<ServerToolsModalProps> = ({ isOpen, onCl
                                 {p.process} {p.pid > 0 && <span className="text-zinc-600">({p.pid})</span>}
                               </td>
                               <td className="py-2.5 px-3 text-right">
-                                {p.webUrl ? (
-                                  <a
-                                    href={p.webUrl.startsWith('http') ? p.webUrl : `http://${typeof window !== 'undefined' ? window.location.hostname : '127.0.0.1'}${p.webUrl}`}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-tinapple-gold/15 hover:bg-tinapple-gold/25 text-tinapple-gold text-[11px] font-semibold transition-all border border-tinapple-gold/30"
-                                  >
-                                    <span>Open Web</span>
-                                    <ExternalLink className="w-3 h-3" />
-                                  </a>
-                                ) : (
-                                  <span className="text-zinc-600 text-[11px]">Internal</span>
-                                )}
+                                {(() => {
+                                  const resolvedUrl = serviceRegistry.getByPort(p.port)?.getOpenUrl() ||
+                                    (p.webUrl ? (p.webUrl.startsWith('http') ? p.webUrl : `http://${typeof window !== 'undefined' ? window.location.hostname : '127.0.0.1'}${p.webUrl}`) : null);
+                                  return resolvedUrl ? (
+                                    <a
+                                      href={resolvedUrl}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-tinapple-gold/15 hover:bg-tinapple-gold/25 text-tinapple-gold text-[11px] font-semibold transition-all border border-tinapple-gold/30"
+                                    >
+                                      <span>Open Web</span>
+                                      <ExternalLink className="w-3 h-3" />
+                                    </a>
+                                  ) : (
+                                    <span className="text-zinc-600 text-[11px]">Internal</span>
+                                  );
+                                })()}
                               </td>
                             </tr>
                           ))
@@ -405,8 +417,8 @@ export const ServerToolsModal: React.FC<ServerToolsModalProps> = ({ isOpen, onCl
                   Kernel & Hardware Journal Alerts (Priority ≤ 3)
                 </h4>
                 <div className="p-3 bg-black/60 border border-white/10 rounded-xl h-64 overflow-y-auto font-mono text-[11px] text-amber-300/90 whitespace-pre-wrap select-text leading-relaxed">
-                  {kernelLogs.length > 0 ? (
-                    kernelLogs.join('\n')
+                  {kernelLogs && (Array.isArray(kernelLogs) ? kernelLogs.length > 0 : String(kernelLogs).trim().length > 0) ? (
+                    Array.isArray(kernelLogs) ? kernelLogs.join('\n') : String(kernelLogs)
                   ) : (
                     <span className="text-zinc-500">No critical kernel alerts in current boot cycle.</span>
                   )}

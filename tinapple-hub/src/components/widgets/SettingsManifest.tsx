@@ -15,9 +15,11 @@ import {
   RefreshCw,
   Eye,
   EyeOff,
+  KeyRound,
 } from 'lucide-react';
 import { SpotlightCard } from '../reactbits/SpotlightCard';
 import { SquishSwitch } from '../reactbits/SquishSwitch';
+import { LightToggle } from '../reactbits/LightToggle';
 import HoldButton from '../reactbits/HoldButton';
 import { SystemInfo, SessionMode } from '../../types/api';
 import { TailscaleUserManager } from './TailscaleUserManager';
@@ -680,7 +682,7 @@ export const SettingsManifest: React.FC<SettingsManifestProps> = ({
                   Enables AVX-512 & BORE scheduler optimized package mirrors.
                 </span>
               </div>
-              <SquishSwitch checked={enableCachyOS} onChange={setEnableCachyOS} />
+              <LightToggle checked={enableCachyOS} onChange={setEnableCachyOS} labelOn="ENABLED" labelOff="DISABLED" />
             </div>
 
             <div className="flex items-center justify-between p-4 rounded-xl bg-tinapple-dark/60 border border-tinapple-border">
@@ -692,7 +694,7 @@ export const SettingsManifest: React.FC<SettingsManifestProps> = ({
                   Auto-adjusts battery health caps and quiet thermal fan curves.
                 </span>
               </div>
-              <SquishSwitch checked={enableEaseOfUse} onChange={setEnableEaseOfUse} />
+              <LightToggle checked={enableEaseOfUse} onChange={setEnableEaseOfUse} labelOn="ENABLED" labelOff="DISABLED" />
             </div>
           </div>
         </div>
@@ -704,7 +706,19 @@ export const SettingsManifest: React.FC<SettingsManifestProps> = ({
               <Lock className="w-4 h-4" />
               <span>4. Root & Administrator Security Credentials</span>
             </div>
-            <SquishSwitch checked={changePassword} onChange={setChangePassword} />
+            <button
+              type="button"
+              onClick={() => setChangePassword(!changePassword)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold flex items-center gap-1.5 transition-all border ${
+                changePassword
+                  ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 shadow-sm'
+                  : 'bg-white/[0.05] text-zinc-400 border-white/10 hover:text-white hover:bg-white/10'
+              }`}
+              title={changePassword ? 'Cancel password update' : 'Modify administrator password'}
+            >
+              <KeyRound className="w-3.5 h-3.5" />
+              <span>{changePassword ? 'Close Editor' : 'Update Password'}</span>
+            </button>
           </div>
 
           {changePassword && (
