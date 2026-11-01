@@ -22,11 +22,15 @@ import {
   Timer,
   Network,
   ShieldAlert,
+  Pin,
+  PinOff,
 } from 'lucide-react';
 import { SystemInfo, ServiceInfo } from '../../types/api';
 
 export interface SidebarProps {
   isLandingPage?: boolean;
+  isSidebarPinned?: boolean;
+  onTogglePin?: () => void;
   activeTab: string;
   setActiveTab: (tab: string) => void;
   mobileOpen: boolean;
@@ -55,6 +59,8 @@ export interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({
   isLandingPage = false,
+  isSidebarPinned = false,
+  onTogglePin,
   activeTab,
   setActiveTab,
   mobileOpen,
@@ -213,14 +219,26 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
             {/* Toggle / Close Buttons */}
             {isDrawer ? (
-              <button
-                onClick={() => setMobileOpen(false)}
-                className="p-2 rounded-xl text-zinc-400 hover:text-white hover:bg-white/[0.08] transition-colors"
-                title="Close Menu"
-                aria-label="Close Menu"
-              >
-                <X className="w-5 h-5" />
-              </button>
+              <div className="flex items-center gap-1">
+                {onTogglePin && (
+                  <button
+                    onClick={onTogglePin}
+                    className="p-1.5 rounded-xl text-zinc-400 hover:text-white hover:bg-white/[0.08] transition-colors"
+                    title={isSidebarPinned ? 'Unpin Sidebar (Hidden Drawer Mode)' : 'Pin Sidebar to Desktop'}
+                    aria-label={isSidebarPinned ? 'Unpin Sidebar' : 'Pin Sidebar'}
+                  >
+                    {isSidebarPinned ? <PinOff className="w-4 h-4 text-tinapple-gold" /> : <Pin className="w-4 h-4" />}
+                  </button>
+                )}
+                <button
+                  onClick={() => setMobileOpen(false)}
+                  className="p-1.5 rounded-xl text-zinc-400 hover:text-white hover:bg-white/[0.08] transition-colors"
+                  title="Close Menu (Esc)"
+                  aria-label="Close Menu"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
             ) : isCollapsed ? (
               <button
                 onClick={() => setCollapsed(false)}
@@ -596,8 +614,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <>
-      {/* A. DESKTOP FIXED SIDEBAR (Hidden on full-page Homarr landing page) */}
-      {!isLandingPage && (
+      {/* A. DESKTOP FIXED SIDEBAR (Hidden on all tabs by default, shown only if pinned by user) */}
+      {isSidebarPinned && !isLandingPage && (
         <aside
           className={`hidden md:flex flex-col fixed top-0 bottom-0 left-0 z-30 bg-[#060c1c]/95 backdrop-blur-2xl border-r border-white/[0.08] shadow-2xl transition-all duration-300 ${
             collapsed ? 'w-20' : 'w-64'
@@ -607,7 +625,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </aside>
       )}
 
-      {/* B. DRAWER OVERLAY (Mobile always, Desktop when on landing page) */}
+      {/* B. DRAWER OVERLAY (Active on all tabs when drawer is open) */}
       {mobileOpen && (
         <div
           className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md animate-in fade-in duration-200"
@@ -615,11 +633,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
         />
       )}
 
-      {/* C. DRAWER SLIDE-IN (Slide-over drawer for landing page and mobile) */}
+      {/* C. DRAWER SLIDE-IN (Slide-over drawer for all tabs) */}
       <div
         className={`fixed inset-y-0 left-0 z-[51] w-72 max-w-[85vw] bg-[#060c1c]/98 backdrop-blur-3xl border-r border-white/10 shadow-2xl transition-transform duration-300 ease-out transform ${
           mobileOpen ? 'translate-x-0' : '-translate-x-full'
-        } ${!isLandingPage ? 'md:hidden' : ''}`}
+        } ${isSidebarPinned && !isLandingPage ? 'md:hidden' : ''}`}
       >
         {renderSidebarContent(true)}
       </div>

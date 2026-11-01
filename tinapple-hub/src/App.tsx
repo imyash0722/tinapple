@@ -135,6 +135,50 @@ export const App: React.FC = () => {
   const [appearanceOpen, setAppearanceOpen] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [desktopSidebarCollapsed, setDesktopSidebarCollapsed] = useState(false);
+  const [isSidebarPinned, setIsSidebarPinned] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('tinapple_sidebar_pinned') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const handleTogglePinSidebar = () => {
+    setIsSidebarPinned((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('tinapple_sidebar_pinned', String(next));
+      } catch {}
+      return next;
+    });
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ctrl+B or Cmd+B to toggle navigation drawer
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') {
+        e.preventDefault();
+        setMobileSidebarOpen((prev) => !prev);
+      }
+      // [ key (Linear shortcut) when not typing
+      const activeTag = (document.activeElement?.tagName || '').toLowerCase();
+      const isInput =
+        activeTag === 'input' ||
+        activeTag === 'textarea' ||
+        (document.activeElement as HTMLElement)?.isContentEditable;
+      if (!isInput && e.key === '[') {
+        e.preventDefault();
+        setMobileSidebarOpen((prev) => !prev);
+      }
+      // Escape closes drawer
+      if (e.key === 'Escape' && mobileSidebarOpen) {
+        setMobileSidebarOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [mobileSidebarOpen]);
+
   const [colorStatus, setColorStatus] = useState('');
   const [storageStatus, setStorageStatus] = useState('');
 
@@ -578,6 +622,8 @@ export const App: React.FC = () => {
       {/* PERSISTENT COLLAPSIBLE SIDEBAR & MOBILE DRAWER */}
       <Sidebar
         isLandingPage={isLandingPage}
+        isSidebarPinned={isSidebarPinned}
+        onTogglePin={handleTogglePinSidebar}
         activeTab={activeTab}
         setActiveTab={handleSelectTab}
         mobileOpen={mobileSidebarOpen}
@@ -608,20 +654,22 @@ export const App: React.FC = () => {
       {!isLandingPage && (
         <header
           className={`sticky top-0 z-20 w-full bg-[#050a16]/85 backdrop-blur-2xl border-b border-white/[0.08] shadow-lg shadow-black/20 transition-all duration-300 ${
-            desktopSidebarCollapsed ? 'md:pl-20' : 'md:pl-64'
+            isSidebarPinned ? (desktopSidebarCollapsed ? 'md:pl-20' : 'md:pl-64') : ''
           }`}
         >
           <div className="w-full px-3 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-3">
-            {/* Left: Mobile Hamburger & Desktop Page Breadcrumb */}
+            {/* Left: Hamburger & Desktop Page Breadcrumb */}
             <div className="flex items-center gap-2 sm:gap-3.5 min-w-0">
-              {/* Mobile Hamburger Toggle */}
+              {/* Universal Hamburger Toggle (Full width on all tabs) */}
               <button
                 onClick={() => setMobileSidebarOpen(true)}
-                className="md:hidden p-2 rounded-xl bg-white/[0.05] border border-white/10 text-zinc-300 hover:text-white hover:bg-white/[0.08] transition-all"
-                title="Open Navigation Menu"
-                aria-label="Open Navigation Menu"
+                className={`p-2 sm:p-2.5 rounded-2xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 text-zinc-300 hover:text-white transition-all shadow-sm active:scale-95 shrink-0 ${
+                  isSidebarPinned ? 'md:hidden' : 'flex'
+                }`}
+                title="Open Appliance Navigation Drawer (Ctrl+B)"
+                aria-label="Open Appliance Navigation Drawer"
               >
-                <Menu className="w-5 h-5" />
+                <Menu className="w-5 h-5 text-tinapple-gold" />
               </button>
 
               {/* Mobile Brand Icon & Tab Title */}
@@ -757,9 +805,11 @@ export const App: React.FC = () => {
       {/* MAIN SCREEN-FILLING BENTO DECK */}
       <main
         className={`w-full max-w-full transition-all duration-300 ${
-          isLandingPage
+          isLandingPage || !isSidebarPinned
             ? 'px-3 sm:px-6 lg:px-8 pt-4 sm:pt-6 pb-12'
-            : `px-3 sm:px-6 pt-4 sm:pt-5 pb-[calc(7rem+env(safe-area-inset-bottom,0px))] md:pb-12 ${desktopSidebarCollapsed ? 'md:pl-24' : 'md:pl-72'}`
+            : `px-3 sm:px-6 pt-4 sm:pt-5 pb-[calc(7rem+env(safe-area-inset-bottom,0px))] md:pb-12 ${
+                desktopSidebarCollapsed ? 'md:pl-24' : 'md:pl-72'
+              }`
         }`}
       >
         <AnimatePresence mode="wait">
