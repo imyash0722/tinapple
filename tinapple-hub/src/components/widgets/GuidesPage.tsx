@@ -424,7 +424,7 @@ export const GuidesPage: React.FC<GuidesPageProps> = ({
             </div>
 
             {/* Section 3: Client Applications & Downloads Matrix */}
-            {currentGuide.clientApps.length > 0 && (
+            {currentGuide.clientApps && currentGuide.clientApps.length > 0 && (
               <div className="space-y-3 pt-2">
                 <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-300 flex items-center gap-2">
                   <Smartphone className="w-4 h-4 text-emerald-400" />
@@ -466,7 +466,7 @@ export const GuidesPage: React.FC<GuidesPageProps> = ({
             )}
 
             {/* Section 4: Special Configurations & Performance Tuning */}
-            {currentGuide.specialConfigs.length > 0 && (
+            {currentGuide.specialConfigs && currentGuide.specialConfigs.length > 0 && (
               <div className="space-y-3 pt-2">
                 <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-300 flex items-center gap-2">
                   <Sliders className="w-4 h-4 text-purple-400" />

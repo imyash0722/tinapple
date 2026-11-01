@@ -320,7 +320,7 @@ export const GuidesModal: React.FC<GuidesModalProps> = ({
             )}
 
             {/* Expert Tuning & Special Configurations */}
-            {currentGuide.specialConfigs.length > 0 && (
+            {currentGuide.specialConfigs && currentGuide.specialConfigs.length > 0 && (
               <div className="space-y-4 pt-2">
                 <h4 className="text-xs font-bold text-white uppercase tracking-wider font-mono flex items-center gap-2">
                   <Sliders className="w-4 h-4 text-purple-400" />

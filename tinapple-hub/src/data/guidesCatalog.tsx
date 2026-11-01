@@ -822,6 +822,12 @@ export const GUIDES_CATALOG: GuideArticle[] = [
     clientApps: [
       { name: 'Playit Portal', platform: 'Web Console', link: 'https://playit.gg' },
     ],
+    specialConfigs: [
+      {
+        title: 'Permanent Static Custom Domain',
+        description: 'Assign a custom sub-domain (.playit.gg or your own domain) in the Playit.gg web dashboard for zero-change game joins.',
+      },
+    ],
   },
   {
     id: 'jdownloader',
@@ -849,6 +855,12 @@ export const GUIDES_CATALOG: GuideArticle[] = [
     clientApps: [
       { name: 'MyJDownloader Web', platform: 'Browser', link: 'https://my.jdownloader.org' },
       { name: 'MyJDownloader Mobile', platform: 'Android & iOS', link: 'https://jdownloader.org/download/index' },
+    ],
+    specialConfigs: [
+      {
+        title: 'Auto-Extraction & RAR Password List',
+        description: 'Configure auto-extraction rules and encrypted archive passwords in the MyJDownloader web dashboard under Extension Settings ➔ Archive Extractor.',
+      },
     ],
   },
   {
@@ -878,6 +890,13 @@ export const GUIDES_CATALOG: GuideArticle[] = [
     clientApps: [
       { name: 'Windows Explorer', platform: 'Native Windows', link: '#' },
       { name: 'macOS Finder', platform: 'Native macOS', link: '#' },
+    ],
+    specialConfigs: [
+      {
+        title: 'Samba User & Password Credentials',
+        description: 'To add or change credentials for SMB file shares, run sudo smbpasswd -a tinapple on the server console.',
+        code: 'sudo smbpasswd -a tinapple',
+      },
     ],
   },
 ];
