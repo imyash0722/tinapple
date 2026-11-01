@@ -10,7 +10,51 @@ permissions:
   contents: write
 
 jobs:
+  build-clients:
+    name: "Build Multiplatform Client Apps (Android, Linux, Windows, macOS, iOS)"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: 'tinapple-hub/package-lock.json'
+
+      - name: Install frontend dependencies
+        working-directory: tinapple-hub
+        run: npm ci
+
+      - name: Build and Package Multi-Platform Client Apps
+        run: |
+          chmod +x ./scripts/build-desktop-releases.sh ./scripts/sign-apk.py
+          ./scripts/build-desktop-releases.sh
+
+      - name: Upload Client Release Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: tinapple-client-releases
+          path: out/releases/*
+
+      - name: Publish All Assets to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload ${{ github.ref_name }} out/releases/* --clobber
+
   build-tauri:
+    name: "Build Native Tauri Binaries"
+    continue-on-error: true
     strategy:
       fail-fast: false
       matrix:
@@ -52,7 +96,7 @@ jobs:
           npm run build
 
       - name: Build Tauri Desktop Apps
-        uses: tauri-apps/action@v0
+        uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -69,30 +113,3 @@ jobs:
           releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}
-
-  build-android:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      - name: Build and Package Android Companion APK
-        run: |
-          ./scripts/build-desktop-releases.sh
-
-      - name: Upload Android Release Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: tinapple-android-client
-          path: out/releases/tinapple-android-client.apk
