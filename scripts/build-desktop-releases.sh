@@ -50,17 +50,50 @@ if [[ ! -f "${REPO_DIR}/tinapple-android/keystore/release.key" ]]; then
     -subj "/CN=Tinapple Hub/O=Tinapple Appliance Platform/C=IN" >/dev/null 2>&1
 fi
 
+# Ensure PKCS12 keystore exists for v1/v2/v3 signing
+if [[ ! -f "${REPO_DIR}/tinapple-android/keystore/tinapple.p12" ]]; then
+  openssl pkcs12 -export \
+    -in "${REPO_DIR}/tinapple-android/keystore/release.crt" \
+    -inkey "${REPO_DIR}/tinapple-android/keystore/release.key" \
+    -out "${REPO_DIR}/tinapple-android/keystore/tinapple.p12" \
+    -name tinapple -passout pass:tinapple123 >/dev/null 2>&1 || true
+fi
+
 # Clean out old assets from template APK if present, then inject fresh assets
 zip -d "${REPO_DIR}/out/tinapple-client.apk" "assets/*" >/dev/null 2>&1 || true
 
-# Inject assets into template APK and sign
+# Inject assets into template APK
 cd "${REPO_DIR}/tinapple-android"
 zip -r "${REPO_DIR}/out/tinapple-client.apk" assets/ >/dev/null 2>&1 || true
-python3 "${REPO_DIR}/scripts/sign-apk.py" \
-  "${REPO_DIR}/out/tinapple-client.apk" \
-  "${OUT_DIR}/tinapple-android-client.apk" \
-  "${REPO_DIR}/tinapple-android/keystore/release.crt" \
-  "${REPO_DIR}/tinapple-android/keystore/release.key" >/dev/null
+
+# Sign with v1, v2, and v3 schemes (via uber-apk-signer or sign-apk.py fallback)
+UBER_SIGNER="${REPO_DIR}/scripts/bin/uber-apk-signer.jar"
+if command -v java &>/dev/null && [[ -f "${UBER_SIGNER}" ]]; then
+  TMP_SIGN_DIR="/tmp/tinapple-apk-sign-$$"
+  mkdir -p "${TMP_SIGN_DIR}"
+  java -jar "${UBER_SIGNER}" \
+    -a "${REPO_DIR}/out/tinapple-client.apk" \
+    --ks "${REPO_DIR}/tinapple-android/keystore/tinapple.p12" \
+    --ksPass tinapple123 --ksAlias tinapple --ksKeyPass tinapple123 \
+    --allowResign -o "${TMP_SIGN_DIR}" >/dev/null 2>&1 || true
+  
+  if ls "${TMP_SIGN_DIR}"/*-signed.apk &>/dev/null; then
+    cp "${TMP_SIGN_DIR}"/*-signed.apk "${OUT_DIR}/tinapple-android-client.apk"
+  else
+    python3 "${REPO_DIR}/scripts/sign-apk.py" \
+      "${REPO_DIR}/out/tinapple-client.apk" \
+      "${OUT_DIR}/tinapple-android-client.apk" \
+      "${REPO_DIR}/tinapple-android/keystore/release.crt" \
+      "${REPO_DIR}/tinapple-android/keystore/release.key" >/dev/null
+  fi
+  rm -rf "${TMP_SIGN_DIR}"
+else
+  python3 "${REPO_DIR}/scripts/sign-apk.py" \
+    "${REPO_DIR}/out/tinapple-client.apk" \
+    "${OUT_DIR}/tinapple-android-client.apk" \
+    "${REPO_DIR}/tinapple-android/keystore/release.crt" \
+    "${REPO_DIR}/tinapple-android/keystore/release.key" >/dev/null
+fi
 
 cp "${OUT_DIR}/tinapple-android-client.apk" "${REPO_DIR}/out/tinapple-client.apk"
 cp "${OUT_DIR}/tinapple-android-client.apk" "${REPO_DIR}/tinapple-dash/web/dist/tinapple-client.apk"
