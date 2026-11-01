@@ -50,9 +50,12 @@ if [[ ! -f "${REPO_DIR}/tinapple-android/keystore/release.key" ]]; then
     -subj "/CN=Tinapple Hub/O=Tinapple Appliance Platform/C=IN" >/dev/null 2>&1
 fi
 
+# Clean out old assets from template APK if present, then inject fresh assets
+zip -d "${REPO_DIR}/out/tinapple-client.apk" "assets/*" >/dev/null 2>&1 || true
+
 # Inject assets into template APK and sign
 cd "${REPO_DIR}/tinapple-android"
-zip -u -r "${REPO_DIR}/out/tinapple-client.apk" assets/ >/dev/null 2>&1 || true
+zip -r "${REPO_DIR}/out/tinapple-client.apk" assets/ >/dev/null 2>&1 || true
 python3 "${REPO_DIR}/scripts/sign-apk.py" \
   "${REPO_DIR}/out/tinapple-client.apk" \
   "${OUT_DIR}/tinapple-android-client.apk" \
