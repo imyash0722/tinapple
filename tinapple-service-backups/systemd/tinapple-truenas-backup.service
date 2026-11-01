@@ -1,0 +1,17 @@
+[Unit]
+Description=Tinapple TrueNAS Automated Snapshot & Archiving Engine
+Documentation=https://github.com/imyash0722/tinapple
+After=network.target local-fs.target
+Wants=syncthing.service
+
+[Service]
+Type=oneshot
+User=root
+ExecStart=/usr/local/bin/tinapple-truenas-backup
+StandardOutput=journal
+StandardError=journal
+Nice=19
+IOSchedulingClass=idle
+
+[Install]
+WantedBy=multi-user.target

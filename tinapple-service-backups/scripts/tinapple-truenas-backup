@@ -1,0 +1,81 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# Tinapple TrueNAS Vault - Automated Multi-Version Snapshot Engine
+# ==============================================================================
+set -euo pipefail
+
+SOURCE_DIR="/mnt/shared"
+ARCHIVE_BASE="/srv/truenas/archive/shared-snapshots"
+STATUS_FILE="/var/lib/tinapple/truenas-backup-status.json"
+RETENTION_DAYS=90
+
+TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+SNAPSHOT_NAME="snapshot_${TIMESTAMP}"
+TARGET_DIR="${ARCHIVE_BASE}/${SNAPSHOT_NAME}"
+CURRENT_LINK="${ARCHIVE_BASE}/current"
+
+echo "[TrueNAS Backup] Initiating point-in-time snapshot at $(date -Iseconds)"
+
+if [[ ! -d "$SOURCE_DIR" ]]; then
+    echo "[TrueNAS Backup] ERROR: Source directory $SOURCE_DIR does not exist!" >&2
+    exit 1
+fi
+
+mkdir -p "$ARCHIVE_BASE" "$(dirname "$STATUS_FILE")"
+
+# Execute rsync with hardlink deduplication against previous snapshot
+if [[ -L "$CURRENT_LINK" && -d "$CURRENT_LINK" ]]; then
+    echo "[TrueNAS Backup] Hardlinking unmodified files against previous snapshot ($CURRENT_LINK)..."
+    rsync -a --delete --link-dest="$CURRENT_LINK" \
+        --exclude=".stfolder" \
+        --exclude=".stversions" \
+        --exclude="*.tmp" \
+        "$SOURCE_DIR/" "$TARGET_DIR/"
+else
+    echo "[TrueNAS Backup] First initial baseline snapshot; copying all files..."
+    rsync -a \
+        --exclude=".stfolder" \
+        --exclude=".stversions" \
+        --exclude="*.tmp" \
+        "$SOURCE_DIR/" "$TARGET_DIR/"
+fi
+
+# Update atomic current symlink
+ln -sfn "$TARGET_DIR" "${CURRENT_LINK}.tmp"
+mv -fT "${CURRENT_LINK}.tmp" "$CURRENT_LINK"
+
+echo "[TrueNAS Backup] Snapshot created successfully: $SNAPSHOT_NAME"
+
+# Prune snapshots older than retention days
+echo "[TrueNAS Backup] Pruning snapshots older than $RETENTION_DAYS days..."
+find "$ARCHIVE_BASE" -maxdepth 1 -mindepth 1 -type d -name "snapshot_*" -mtime "+${RETENTION_DAYS}" -exec rm -rf {} + 2>/dev/null || true
+
+# Gather telemetry for dashboard
+SNAPSHOT_COUNT=$(find "$ARCHIVE_BASE" -maxdepth 1 -mindepth 1 -type d -name "snapshot_*" | wc -l)
+ARCHIVE_SIZE=$(du -sh "$ARCHIVE_BASE" 2>/dev/null | awk '{print $1}')
+SOURCE_SIZE=$(du -sh "$SOURCE_DIR" 2>/dev/null | awk '{print $1}')
+
+SNAPSHOT_LIST=$(find "$ARCHIVE_BASE" -maxdepth 1 -mindepth 1 -type d -name "snapshot_*" | sort -r | head -n 10 | while read -r snap; do
+    sname=$(basename "$snap")
+    ssize=$(du -sh "$snap" 2>/dev/null | awk '{print $1}')
+    sdate=$(stat -c '%y' "$snap" 2>/dev/null | cut -d'.' -f1)
+    echo "{\"name\": \"$sname\", \"size\": \"$ssize\", \"timestamp\": \"$sdate\"}"
+done | paste -sd, -)
+
+cat << JSON > "$STATUS_FILE"
+{
+  "service": "tinapple-truenas-backup",
+  "status": "success",
+  "last_backup": "$(date -Iseconds)",
+  "source_directory": "$SOURCE_DIR",
+  "source_size": "$SOURCE_SIZE",
+  "archive_directory": "$ARCHIVE_BASE",
+  "archive_size": "$ARCHIVE_SIZE",
+  "retention_days": $RETENTION_DAYS,
+  "total_snapshots": $SNAPSHOT_COUNT,
+  "latest_snapshot": "$SNAPSHOT_NAME",
+  "recent_snapshots": [$SNAPSHOT_LIST]
+}
+JSON
+
+echo "[TrueNAS Backup] Backup cycle finished. Total active snapshots: $SNAPSHOT_COUNT (Vault size: $ARCHIVE_SIZE)"

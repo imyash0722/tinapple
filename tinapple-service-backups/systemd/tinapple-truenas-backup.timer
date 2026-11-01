@@ -1,0 +1,11 @@
+[Unit]
+Description=Tinapple TrueNAS Hourly Snapshot Timer
+Documentation=https://github.com/imyash0722/tinapple
+
+[Timer]
+OnCalendar=hourly
+Persistent=true
+RandomizedDelaySec=5m
+
+[Install]
+WantedBy=timers.target

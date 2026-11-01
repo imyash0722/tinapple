@@ -1,0 +1,111 @@
+#!/usr/bin/env python3
+"""
+Tinapple Selective Mobile Pairing CLI
+Pairs an Android phone's Syncthing Device ID strictly to folder 'tinapple-sem3'
+across both Laptop and Server, ensuring large shared directories remain excluded.
+"""
+
+import sys
+import json
+import urllib.request
+
+LAPTOP_HOST = "127.0.0.1:8384"
+LAPTOP_KEY = "PpmFeYqtn6GMnAm4UUbrU4ysVzXCZFao"
+
+SERVER_HOST = "100.108.215.120:8384"
+SERVER_KEY = "iR72SrYU5JCEsoCw2SndV2beYL7DcKqm"
+
+FOLDER_ID = "tinapple-sem3"
+
+def get_config(host, key):
+    req = urllib.request.Request(f"http://{host}/rest/config", headers={"X-API-Key": key})
+    with urllib.request.urlopen(req, timeout=8) as r:
+        return json.loads(r.read().decode())
+
+def put_config(host, key, config):
+    data = json.dumps(config).encode("utf-8")
+    req = urllib.request.Request(f"http://{host}/rest/config", data=data, method="PUT", headers={
+        "X-API-Key": key,
+        "Content-Type": "application/json"
+    })
+    with urllib.request.urlopen(req, timeout=8) as r:
+        return r.status
+
+def pair_node(host, key, node_name, phone_id):
+    cfg = get_config(host, key)
+    
+    # 1. Add device if not present
+    existing_device_ids = {d["deviceID"] for d in cfg.get("devices", [])}
+    if phone_id not in existing_device_ids:
+        new_device = {
+            "deviceID": phone_id,
+            "name": "pineapple-phone",
+            "addresses": ["dynamic"],
+            "compression": "metadata",
+            "certName": "",
+            "introducer": False,
+            "skipIntroductionRemovals": False,
+            "introducedBy": "",
+            "paused": False,
+            "allowedNetworks": [],
+            "autoAcceptFolders": False,
+            "maxSendKbps": 0,
+            "maxRecvKbps": 0,
+            "ignoredFolders": [],
+            "maxRequestKiB": 0,
+            "untrusted": False,
+            "remoteGUIPort": 0,
+            "numConnections": 0,
+            "group": ""
+        }
+        cfg["devices"].append(new_device)
+        print(f"[{node_name}] Added device {phone_id[:7]}... to device directory")
+    
+    # 2. Attach device exclusively to tinapple-sem3
+    found_folder = False
+    for folder in cfg.get("folders", []):
+        if folder["id"] == FOLDER_ID:
+            found_folder = True
+            dev_ids = {d["deviceID"] for d in folder.get("devices", [])}
+            if phone_id not in dev_ids:
+                folder["devices"].append({"deviceID": phone_id, "introducedBy": "", "encryptionPassword": ""})
+                print(f"[{node_name}] Attached phone to '{FOLDER_ID}' (/mnt/shared/sem3)")
+            else:
+                print(f"[{node_name}] Phone is already attached to '{FOLDER_ID}'")
+        elif folder["id"] == "tinapple-shared":
+            # Ensure phone is NOT in shared-root
+            folder["devices"] = [d for d in folder.get("devices", []) if d["deviceID"] != phone_id]
+
+    if not found_folder:
+        print(f"[{node_name}] Warning: Folder '{FOLDER_ID}' not found!")
+        return False
+        
+    put_config(host, key, cfg)
+    print(f"[{node_name}] Configuration applied successfully.")
+    return True
+
+def main():
+    if len(sys.argv) < 2 or sys.argv[1] in ("-h", "--help"):
+        print("Usage: tinapple-pair-phone <SYNCTHING_DEVICE_ID>")
+        print("Example: tinapple-pair-phone ABCD123-EFGH456-...")
+        sys.exit(0 if len(sys.argv) >= 2 else 1)
+        
+    phone_id = sys.argv[1].strip()
+    print(f"=== Pairing Android Phone ({phone_id}) to Selective Semester 3 Sync ===")
+    
+    try:
+        pair_node(LAPTOP_HOST, LAPTOP_KEY, "Laptop", phone_id)
+    except Exception as e:
+        print(f"[Laptop] Failed to update config: {e}")
+
+    try:
+        pair_node(SERVER_HOST, SERVER_KEY, "Server", phone_id)
+    except Exception as e:
+        print(f"[Server] Failed to update config: {e}")
+
+    print("\n✓ Selective Phone Pairing Complete!")
+    print(f"  Folder ID: {FOLDER_ID}")
+    print("  Sync Target: Only /mnt/shared/sem3/ (All other folders remain strictly on PC & Server)")
+
+if __name__ == "__main__":
+    main()
