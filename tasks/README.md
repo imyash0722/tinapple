@@ -26,6 +26,12 @@ These task files define the remaining implementation work for tinapple v0.0.1 (e
 | R3 | `R3-settings-tui.md` | Settings TUI Hub | ✅ Complete | High |
 | R4 | `R4-remote-desktop.md` | Remote Desktop Module (xrdp + VNC) | ✅ Complete | High |
 | R5 | `R5-installer-integration.md` | Installer Integration | ✅ Complete | High |
+| S1 | `S1-homarr-service-and-guide-links.md` | Fix Homarr Service & Guide Links | 🔄 Active | High |
+| S2 | `S2-update-notification-toast.md` | Repo Update Notification Toast | 🔄 Active | High |
+| S3 | `S3-radial-view-wheel-scroll.md` | 3D Radial Wheel Scroll Isolation | 🔄 Active | Medium |
+| S4 | `S4-installer-release-links.md` | Installer Links to GitHub Releases | 🔄 Active | High |
+| S5 | `S5-client-apps-and-releases.md` | Build & Deploy Android & Client Releases | 🔄 Active | High |
+| S6 | `S6-rustwright-verification.md` | Rustwright Headless End-to-End Validation | 🔄 Active | High |
 
 ## Usage
 

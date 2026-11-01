@@ -38,6 +38,12 @@ PROMPT.md
 *.log
 *.old
 *.old.*
+*.key
+*gemini_key*
+*gemini_token*
+.env
+.env.*
+*.secret
 
 # OS and Editor artifacts
 .DS_Store

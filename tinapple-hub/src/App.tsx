@@ -48,6 +48,8 @@ import { HomarrCanvas } from './components/homarr/HomarrCanvas';
 import { HomarrBoard } from './components/homarr/HomarrBoard';
 import { GuidesPage } from './components/widgets/GuidesPage';
 import { UnifiedAppPage } from './components/widgets/UnifiedAppPage';
+import { ErrorLoggerPage } from './components/errors/ErrorLoggerPage';
+import { UpdateNotificationToast } from './components/common/UpdateNotificationToast';
 
 // High-speed lazy-loaded modals (reduces initial dashboard bundle size by >60%)
 const AppearanceModal = lazy(() => import('./components/common/AppearanceModal').then((m) => ({ default: m.AppearanceModal })));
@@ -609,7 +611,7 @@ export const App: React.FC = () => {
               <div className="md:hidden flex items-center gap-2 min-w-0">
                 <span className="text-lg shrink-0">🍎</span>
                 <span className="font-mono font-bold text-sm text-white capitalize truncate max-w-[140px] sm:max-w-xs">
-                  {viewingAppId ? `${viewingAppId} Guide` : activeTab === 'store' ? 'App Store' : activeTab === 'guides' ? 'Guides' : activeTab === 'terminal' ? 'Terminal' : activeTab}
+                  {viewingAppId ? `${viewingAppId} Guide` : activeTab === 'store' ? 'App Store' : activeTab === 'guides' ? 'Guides' : activeTab === 'terminal' ? 'Terminal' : activeTab === 'errors' ? 'Error Logger' : activeTab}
                 </span>
               </div>
 
@@ -634,7 +636,7 @@ export const App: React.FC = () => {
                     </button>
                     <span className="text-xs text-zinc-600">/</span>
                     <span className="text-sm font-mono font-black text-white capitalize truncate">
-                      {activeTab === 'store' ? 'App Store & Packs' : activeTab === 'guides' ? 'Appliance Guides' : activeTab === 'terminal' ? 'Appliance Web Terminal' : activeTab}
+                      {activeTab === 'store' ? 'App Store & Packs' : activeTab === 'guides' ? 'Appliance Guides' : activeTab === 'terminal' ? 'Appliance Web Terminal' : activeTab === 'errors' ? 'Error Logger & AI Diagnostics' : activeTab}
                     </span>
                     <span className="hidden 2xl:inline-flex text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/[0.05] border border-white/10 text-tinapple-gold font-bold whitespace-nowrap">
                       {systemInfo.sessionMode === 'headless' ? 'Headless Server' : 'Niri Desktop'}
@@ -936,6 +938,18 @@ export const App: React.FC = () => {
               </Suspense>
             </motion.div>
           )}
+
+          {activeTab === 'errors' && (
+            <motion.div
+              key="errors"
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -14 }}
+              transition={{ duration: 0.25, ease: 'easeOut' }}
+            >
+              <ErrorLoggerPage />
+            </motion.div>
+          )}
             </>
           )}
         </AnimatePresence>
@@ -1009,6 +1023,9 @@ export const App: React.FC = () => {
           />
         )}
       </Suspense>
+
+      {/* Floating Bottom-Right Repo Update Notification Toast */}
+      <UpdateNotificationToast onTriggerUpdate={handleRunSystemUpdate} />
     </div>
   );
 };

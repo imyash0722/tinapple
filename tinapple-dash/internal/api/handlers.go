@@ -215,9 +215,25 @@ func SetupRoutes(r *gin.Engine, cfg *config.Manifest, svcMgr *services.SystemdMa
 		v1.GET("/user/settings", h.GetUserSettings)
 		v1.POST("/user/settings", h.SaveUserSettings)
 
+		// Error Logger, Machine Diagnostics & Gemini AI Analysis
+		v1.GET("/system/errors", h.GetSystemErrors)
+		v1.POST("/system/errors/client", h.ReportClientError)
+		v1.POST("/system/errors/clear", h.ClearClientErrors)
+		v1.GET("/ai/status", h.GetAIStatus)
+		v1.POST("/ai/test-key", h.TestAIKey)
+		v1.POST("/ai/analyze-error", h.AnalyzeErrorWithAI)
+
 		// WebSocket
 		v1.GET("/ws", h.WebSocketHandler)
 	}
+
+	// Error Logger & Machine Diagnostics (Direct /api paths for cross-compatibility)
+	r.GET("/api/system/errors", h.GetSystemErrors)
+	r.POST("/api/system/errors/client", h.ReportClientError)
+	r.POST("/api/system/errors/clear", h.ClearClientErrors)
+	r.GET("/api/ai/status", h.GetAIStatus)
+	r.POST("/api/ai/test-key", h.TestAIKey)
+	r.POST("/api/ai/analyze-error", h.AnalyzeErrorWithAI)
 
 	// Tailscale Mesh RBAC (Direct /api paths for cross-compatibility)
 	r.GET("/api/users", h.GetUsers)

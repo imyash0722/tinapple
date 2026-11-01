@@ -104,8 +104,6 @@ export const SERVICE_NAME_PATH_MAP: Record<string, string> = {
 };
 
 export function getServiceUrl(portOrName: number | string, path: string = ''): string {
-  const cleanPath = path ? (path.startsWith('/') ? path.replace(/^\//, '') : path) : '';
-
   let subpath: string | undefined;
   if (typeof portOrName === 'string') {
     const cleanName = portOrName.toLowerCase().replace(/\.service$/, '').replace(/@.*$/, '');
@@ -114,7 +112,17 @@ export function getServiceUrl(portOrName: number | string, path: string = ''): s
     subpath = SERVICE_PATH_MAP[portOrName];
   }
 
+  let cleanPath = path ? (path.startsWith('/') ? path.replace(/^\//, '') : path) : '';
+
   if (subpath) {
+    // Prevent duplicate nested paths if path is already the subpath (e.g. /jellyfin/ + /jellyfin/)
+    const subTrimmed = subpath.replace(/^\/|\/$/g, '');
+    if (cleanPath === subTrimmed || cleanPath === subTrimmed + '/') {
+      cleanPath = '';
+    } else if (cleanPath.startsWith(subTrimmed + '/')) {
+      cleanPath = cleanPath.slice(subTrimmed.length + 1);
+    }
+
     if (typeof window !== 'undefined') {
       return `${subpath}${cleanPath}`;
     }
@@ -1298,6 +1306,77 @@ class ApiService {
     }
   }
 
+  async getSystemErrors(): Promise<{ errors: SystemErrorItem[]; count: number }> {
+    try {
+      const res = await fetch(`${API_BASE}/system/errors`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return await res.json();
+    } catch (e) {
+      console.warn('Failed to fetch system errors', e);
+      return { errors: [], count: 0 };
+    }
+  }
+
+  async reportClientError(report: { message: string; stack?: string; source?: string; url?: string }): Promise<void> {
+    try {
+      await fetch(`${API_BASE}/system/errors/client`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...report,
+          timestamp: new Date().toISOString(),
+          url: report.url || (typeof window !== 'undefined' ? window.location.href : ''),
+        }),
+      });
+    } catch {
+      // ignore
+    }
+  }
+
+  async clearClientErrors(): Promise<void> {
+    try {
+      await fetch(`${API_BASE}/system/errors/clear`, { method: 'POST' });
+    } catch {}
+  }
+
+  async getAIStatus(): Promise<AIStatus> {
+    try {
+      const res = await fetch(`${API_BASE}/ai/status`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return await res.json();
+    } catch {
+      return { configured: false, maskedKey: '', model: 'gemini-2.5-flash' };
+    }
+  }
+
+  async testAIKey(apiKey: string): Promise<{ success: boolean; message?: string; error?: string }> {
+    try {
+      const res = await fetch(`${API_BASE}/ai/test-key`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ apiKey }),
+      });
+      return await res.json();
+    } catch (e: any) {
+      return { success: false, error: e.message || 'Connection failed' };
+    }
+  }
+
+  async analyzeErrorWithAI(error: SystemErrorItem, apiKey?: string): Promise<AIErrorAnalysis> {
+    // If apiKey is provided, can also query directly or through server proxy
+    const res = await fetch(`${API_BASE}/ai/analyze-error`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ error, apiKey: apiKey || '' }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || `AI Analysis failed with status ${res.status}`);
+    }
+    const data = await res.json();
+    return data.analysis;
+  }
+
   getServerUrl(): string {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('tinapple_server_url') || 'http://100.108.215.120:8088';
@@ -1351,6 +1430,33 @@ class ApiService {
       if (fallbackInterval) clearInterval(fallbackInterval);
     };
   }
+}
+
+export interface SystemErrorItem {
+  id: string;
+  timestamp: string;
+  source: 'kernel' | 'wifi' | 'hardware' | 'service' | 'frontend';
+  service: string;
+  severity: 'critical' | 'error' | 'warning';
+  message: string;
+  raw: string;
+  component?: string;
+  analysis?: AIErrorAnalysis;
+}
+
+export interface AIErrorAnalysis {
+  source: string;
+  expectedCause: string;
+  filesAffected: string[];
+  formattedError: string;
+  suggestedRemediation: string;
+  severityAssessment: string;
+}
+
+export interface AIStatus {
+  configured: boolean;
+  maskedKey: string;
+  model: string;
 }
 
 export const api = new ApiService();

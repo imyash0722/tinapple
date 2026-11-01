@@ -2,6 +2,30 @@ import React, { Component, ErrorInfo, ReactNode } from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import './index.css';
+import { api } from './services/api';
+
+// Global uncaught error listener to forward browser & website crashes to Error Logger
+if (typeof window !== 'undefined') {
+  window.addEventListener('error', (event) => {
+    api.reportClientError({
+      message: event.message || 'Unknown browser window error',
+      stack: event.error?.stack || `${event.filename}:${event.lineno}:${event.colno}`,
+      source: 'window.onerror',
+      url: window.location.href,
+    });
+  });
+
+  window.addEventListener('unhandledrejection', (event) => {
+    const reason = event.reason;
+    const msg = typeof reason === 'string' ? reason : reason?.message || 'Unhandled Promise Rejection';
+    api.reportClientError({
+      message: msg,
+      stack: reason?.stack || String(reason),
+      source: 'unhandledrejection',
+      url: window.location.href,
+    });
+  });
+}
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -24,6 +48,12 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('Tinapple Hub Uncaught Error:', error, errorInfo);
+    api.reportClientError({
+      message: error.message || 'React ErrorBoundary Exception',
+      stack: `${error.stack || ''}\nComponentStack: ${errorInfo.componentStack || ''}`,
+      source: 'React ErrorBoundary',
+      url: typeof window !== 'undefined' ? window.location.href : '',
+    });
   }
 
   render() {

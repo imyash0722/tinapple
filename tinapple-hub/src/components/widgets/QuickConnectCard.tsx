@@ -177,18 +177,20 @@ export const QuickConnectCard: React.FC<QuickConnectCardProps> = ({
             </p>
           </div>
           <a
-            href="/download/releases/SHA256SUMS"
+            href="https://github.com/imyash0722/tinapple/releases"
             target="_blank"
             rel="noreferrer"
             className="text-[10px] font-mono text-slate-500 hover:text-slate-300 underline"
           >
-            SHA-256 Checksums
+            GitHub Releases & Checksums
           </a>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <a
-            href="/download/desktop"
+            href="https://github.com/imyash0722/tinapple/releases"
+            target="_blank"
+            rel="noreferrer"
             className="flex items-center gap-3 p-3 rounded-xl bg-slate-800/50 hover:bg-slate-800 border border-slate-700/60 hover:border-tinapple-gold/50 transition-all group"
           >
             <div className="w-9 h-9 rounded-lg bg-tinapple-gold/15 text-tinapple-gold flex items-center justify-center shrink-0">
@@ -204,7 +206,9 @@ export const QuickConnectCard: React.FC<QuickConnectCardProps> = ({
           </a>
 
           <a
-            href="/download/windows"
+            href="https://github.com/imyash0722/tinapple/releases"
+            target="_blank"
+            rel="noreferrer"
             className="flex items-center gap-3 p-3 rounded-xl bg-slate-800/50 hover:bg-slate-800 border border-slate-700/60 hover:border-sky-500/50 transition-all group"
           >
             <div className="w-9 h-9 rounded-lg bg-sky-500/15 text-sky-400 flex items-center justify-center shrink-0">
@@ -220,7 +224,9 @@ export const QuickConnectCard: React.FC<QuickConnectCardProps> = ({
           </a>
 
           <a
-            href="/download/macos"
+            href="https://github.com/imyash0722/tinapple/releases"
+            target="_blank"
+            rel="noreferrer"
             className="flex items-center gap-3 p-3 rounded-xl bg-slate-800/50 hover:bg-slate-800 border border-slate-700/60 hover:border-purple-500/50 transition-all group"
           >
             <div className="w-9 h-9 rounded-lg bg-purple-500/15 text-purple-400 flex items-center justify-center shrink-0">
@@ -236,7 +242,9 @@ export const QuickConnectCard: React.FC<QuickConnectCardProps> = ({
           </a>
 
           <a
-            href="/download/apk"
+            href="https://github.com/imyash0722/tinapple/releases"
+            target="_blank"
+            rel="noreferrer"
             className="flex items-center gap-3 p-3 rounded-xl bg-slate-800/50 hover:bg-slate-800 border border-slate-700/60 hover:border-emerald-500/50 transition-all group"
           >
             <div className="w-9 h-9 rounded-lg bg-emerald-500/15 text-emerald-400 flex items-center justify-center shrink-0">

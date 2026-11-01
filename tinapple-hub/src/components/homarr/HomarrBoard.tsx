@@ -477,7 +477,7 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
     // If matching apps exist, open the first matching app!
     if (filteredAppliances.length > 0) {
       const topApp = filteredAppliances[0];
-      const url = getServiceUrl(topApp.id, topApp.subpath);
+      const url = topApp.subpath || getServiceUrl(topApp.id);
       window.open(url, url.startsWith('/') ? '_self' : '_blank');
       return;
     }
@@ -1234,7 +1234,7 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
               {filteredAppliances.map((app) => {
                 const serviceInfo = servicesMap.get(app.id);
                 const activeState = serviceInfo?.activeState || 'active';
-                const appUrl = getServiceUrl(app.id, app.subpath);
+                const appUrl = app.subpath || getServiceUrl(app.id);
 
                 return (
                   <HomarrAppTile

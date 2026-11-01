@@ -761,4 +761,123 @@ export const GUIDES_CATALOG: GuideArticle[] = [
       },
     ],
   },
+  {
+    id: 'protonvpn',
+    title: 'Proton VPN Privacy Tunnel',
+    subtitle: 'High-speed Swiss WireGuard tunnel routing downloads and media through encrypted exit nodes',
+    category: 'cloud',
+    icon: <ShieldCheck className="w-5 h-5 text-indigo-400" />,
+    accentColor: '#6d28d9',
+    endpoints: [
+      { label: 'Tunnel Status', value: 'Active via WireGuard (proton0)' },
+      { label: 'WireGuard Config', value: '/etc/wireguard/proton.conf' },
+      { label: 'CLI Tool', value: 'tinapple-proton status' },
+    ],
+    steps: [
+      {
+        title: 'View Active Privacy Status',
+        description: 'Tinapple routes qBittorrent, Servarrs, and outbound indexers through Proton VPN while keeping local Tailscale mesh and LAN connections completely unobstructed.',
+        code: 'sudo tinapple-proton status',
+      },
+      {
+        title: 'Switch Exit Node or Reconnect',
+        description: 'You can test connection, re-authenticate with Proton CLI, or upload an updated WireGuard profile directly via the Proton VPN modal in the Hub dashboard.',
+        code: 'sudo tinapple-proton connect',
+      },
+    ],
+    clientApps: [
+      { name: 'Proton VPN Official', platform: 'Android, iOS, Windows, macOS', link: 'https://protonvpn.com/download' },
+      { name: 'WireGuard Client', platform: 'Cross-Platform', link: 'https://www.wireguard.com/install/' },
+    ],
+    specialConfigs: [
+      {
+        title: 'Safeguard Routing Policy',
+        description: 'Custom ip rule entries (priority 5260 & 5265) ensure LAN (192.168.4.1) and Tailscale (100.64.0.0/10) traffic bypasses the VPN routing table automatically.',
+      },
+    ],
+  },
+  {
+    id: 'playit',
+    title: 'Playit.gg Anycast Tunnel',
+    subtitle: 'Public Anycast mesh tunnel providing public domains for Minecraft and web services without port forwarding',
+    category: 'cloud',
+    icon: <Sparkles className="w-5 h-5 text-emerald-400" />,
+    accentColor: '#10b981',
+    endpoints: [
+      { label: 'Playit Agent Service', value: 'playit.service' },
+      { label: 'Claim Code / Web Portal', value: 'https://playit.gg/manage' },
+    ],
+    steps: [
+      {
+        title: 'Check Playit Agent Status',
+        description: 'Playit daemon runs in the background and connects your homelab services to global anycast edge nodes without opening firewall ports.',
+        code: 'systemctl status playit',
+      },
+      {
+        title: 'Claim Tunnel in Playit Console',
+        description: 'View current claim URL or assigned tunnel endpoints by checking the agent logs.',
+        code: 'journalctl -u playit -n 50 --no-pager',
+      },
+    ],
+    clientApps: [
+      { name: 'Playit Portal', platform: 'Web Console', link: 'https://playit.gg' },
+    ],
+  },
+  {
+    id: 'jdownloader',
+    title: 'JDownloader 2 Headless',
+    subtitle: 'Universal direct-download engine supporting 1000+ hosters with remote MyJDownloader cloud control',
+    category: 'cloud',
+    icon: <Download className="w-5 h-5 text-blue-400" />,
+    accentColor: '#2563eb',
+    endpoints: [
+      { label: 'Service Unit', value: 'jdownloader.service' },
+      { label: 'Cloud Controller', value: 'https://my.jdownloader.org' },
+    ],
+    steps: [
+      {
+        title: 'Control via MyJDownloader',
+        description: 'JDownloader 2 runs headless on Tinapple. Add links, solve captchas remotely, and control downloads via the official mobile apps or browser extension.',
+        code: 'https://my.jdownloader.org',
+      },
+      {
+        title: 'Manage Systemd Daemon',
+        description: 'Start, stop, or view live status of the headless JDownloader runtime.',
+        code: 'systemctl status jdownloader',
+      },
+    ],
+    clientApps: [
+      { name: 'MyJDownloader Web', platform: 'Browser', link: 'https://my.jdownloader.org' },
+      { name: 'MyJDownloader Mobile', platform: 'Android & iOS', link: 'https://jdownloader.org/download/index' },
+    ],
+  },
+  {
+    id: 'samba',
+    title: 'Samba SMB Network Storage',
+    subtitle: 'High-speed LAN file sharing across Windows Network Neighborhood, macOS Finder, and Linux',
+    category: 'cloud',
+    icon: <FolderSync className="w-5 h-5 text-sky-400" />,
+    accentColor: '#0ea5e9',
+    endpoints: [
+      { label: 'Windows Explorer UNC Path', value: '\\\\100.108.215.120\\media' },
+      { label: 'macOS Finder / Linux URI', value: 'smb://100.108.215.120/media' },
+      { label: 'SMB Port', value: '445 / 139' },
+    ],
+    steps: [
+      {
+        title: 'Connect on Windows',
+        description: 'Open File Explorer, press Win+R, enter \\\\100.108.215.120 or \\\\tinapple and sign in with your appliance credentials.',
+        code: '\\\\100.108.215.120\\media',
+      },
+      {
+        title: 'Connect on macOS / Linux',
+        description: 'In macOS Finder press Cmd+K, enter smb://100.108.215.120/media, and click Connect.',
+        code: 'smb://100.108.215.120/media',
+      },
+    ],
+    clientApps: [
+      { name: 'Windows Explorer', platform: 'Native Windows', link: '#' },
+      { name: 'macOS Finder', platform: 'Native macOS', link: '#' },
+    ],
+  },
 ];

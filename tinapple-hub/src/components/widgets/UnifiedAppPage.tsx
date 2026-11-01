@@ -204,6 +204,41 @@ const APP_METADATA_MAP: Record<
     categoryName: 'Mesh VPN & Networking',
     description: 'Zero-config WireGuard mesh network connecting your server, phones, and computers securely anywhere.',
   },
+  homarr: {
+    unit: 'homarr.service',
+    path: '/homarr/',
+    port: 7575,
+    categoryName: 'System & Dashboards',
+    description: 'Customizable homelab dashboard engine with real-time integration widgets, ping telemetry, and multi-user authentication.',
+  },
+  protonvpn: {
+    unit: 'tinapple-proton',
+    path: '#',
+    port: 0,
+    categoryName: 'Privacy & VPN',
+    description: 'High-speed Swiss encrypted WireGuard tunnel routing downloads and media through encrypted exit nodes.',
+  },
+  playit: {
+    unit: 'playit.service',
+    path: 'https://playit.gg/manage',
+    port: 0,
+    categoryName: 'Network & Anycast',
+    description: 'Global Anycast mesh tunnel providing public domains for Minecraft and homelab services without port forwarding.',
+  },
+  jdownloader: {
+    unit: 'jdownloader.service',
+    path: 'https://my.jdownloader.org',
+    port: 0,
+    categoryName: 'Downloads & Automation',
+    description: 'Headless direct-download manager supporting 1000+ hosters with remote MyJDownloader cloud control.',
+  },
+  samba: {
+    unit: 'smbd.service',
+    path: 'smb://100.108.215.120/media',
+    port: 445,
+    categoryName: 'Storage & SMB',
+    description: 'High-speed Samba SMB/CIFS network drive server for native Windows, macOS, and Linux network folder mounts.',
+  },
 };
 
 export const UnifiedAppPage: React.FC<UnifiedAppPageProps> = ({
@@ -228,6 +263,11 @@ export const UnifiedAppPage: React.FC<UnifiedAppPageProps> = ({
     if (raw.includes('matrix') || raw.includes('element') || raw.includes('whatsapp') || raw.includes('signal') || raw.includes('telegram') || raw.includes('discord') || raw.includes('instagram')) raw = 'mautrix';
     if (raw.includes('suwayomi') || raw.includes('manga') || raw.includes('tsumiru')) raw = 'syncyomi';
     if (raw.includes('pinchflat') || raw.includes('youtube')) raw = 'pinchflat';
+    if (raw === 'radarr' || raw === 'sonarr' || raw === 'prowlarr' || raw === 'bazarr') raw = 'servarr';
+    if (raw.includes('tailscale')) raw = 'tailscale';
+    if (raw.includes('couchdb') || raw.includes('obsidian')) raw = 'obsidian';
+    if (raw.includes('proton')) raw = 'protonvpn';
+    if (raw.includes('samba') || raw.includes('smb')) raw = 'samba';
     return raw;
   }, [appId]);
 

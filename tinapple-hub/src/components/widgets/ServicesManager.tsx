@@ -413,9 +413,20 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({
                             radarr: 'servarr',
                             sonarr: 'servarr',
                             prowlarr: 'servarr',
-                            qbittorrent: 'servarr',
+                            bazarr: 'servarr',
+                            qbittorrent: 'qbittorrent',
+                            homarr: 'homarr',
+                            pinchflat: 'pinchflat',
+                            navidrome: 'navidrome',
+                            adguardhome: 'adguard',
+                            adguard: 'adguard',
+                            tor: 'tor',
+                            protonvpn: 'protonvpn',
+                            playit: 'playit',
+                            jdownloader: 'jdownloader',
+                            samba: 'samba',
                           };
-                          const gId = guideMap[service.name] || 'jellyfin';
+                          const gId = guideMap[service.name] || service.name;
                           onOpenGuide(gId);
                         }}
                         className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-mono font-medium bg-purple-500/15 hover:bg-purple-500/25 border border-purple-500/30 text-purple-300 transition-colors"

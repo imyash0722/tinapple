@@ -104,14 +104,32 @@ export const CircularCarousel: React.FC<CircularCarouselProps> = ({
     }
   };
 
-  // Wheel horizontal/vertical delta
-  const handleWheel = (e: React.WheelEvent) => {
-    const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
-    if (Math.abs(delta) > 25) {
-      if (delta > 0) next();
-      else prev();
-    }
-  };
+  // Prevent page scroll when scrolling with mouse wheel inside 3D radial container
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    let wheelAccumulator = 0;
+    const onNativeWheel = (e: WheelEvent) => {
+      // Prevent browser from scrolling the window down
+      e.preventDefault();
+      e.stopPropagation();
+
+      const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+      wheelAccumulator += delta;
+
+      if (Math.abs(wheelAccumulator) >= 30) {
+        if (wheelAccumulator > 0) next();
+        else prev();
+        wheelAccumulator = 0;
+      }
+    };
+
+    el.addEventListener('wheel', onNativeWheel, { passive: false });
+    return () => {
+      el.removeEventListener('wheel', onNativeWheel);
+    };
+  }, [next, prev]);
 
   // Pointer drag gestures
   const handlePointerDown = (e: React.PointerEvent) => {
@@ -173,12 +191,13 @@ export const CircularCarousel: React.FC<CircularCarouselProps> = ({
       ref={containerRef}
       tabIndex={0}
       onKeyDown={handleKeyDown}
-      onWheel={handleWheel}
       onPointerDown={handlePointerDown}
       onPointerUp={handlePointerUp}
-      className={`relative w-full h-full flex flex-col items-center justify-center select-none outline-none overflow-hidden ${className}`.trim()}
+      className={`relative w-full h-full flex flex-col items-center justify-center select-none outline-none overflow-hidden overscroll-contain ${className}`.trim()}
       style={{
         perspective: '1200px',
+        touchAction: 'none',
+        overscrollBehavior: 'contain',
         ...style
       }}
       role="region"

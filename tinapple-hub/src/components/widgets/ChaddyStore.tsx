@@ -1610,10 +1610,15 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({
                         radarr: 'servarr',
                         sonarr: 'servarr',
                         prowlarr: 'servarr',
-                        qbittorrent: 'servarr',
-                        playit: 'tailscale',
-                        protonvpn: 'tailscale',
+                        bazarr: 'servarr',
+                        qbittorrent: 'qbittorrent',
+                        pinchflat: 'pinchflat',
+                        navidrome: 'navidrome',
+                        adguard: 'adguard',
+                        playit: 'playit',
+                        protonvpn: 'protonvpn',
                         homarr: 'homarr',
+                        samba: 'samba',
                       };
                       onOpenGuide(guideMap[selectedApp.id] || 'jellyfin');
                     }}
@@ -1777,10 +1782,15 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({
                             radarr: 'servarr',
                             sonarr: 'servarr',
                             prowlarr: 'servarr',
-                            qbittorrent: 'servarr',
-                            playit: 'tailscale',
-                            protonvpn: 'tailscale',
+                            bazarr: 'servarr',
+                            qbittorrent: 'qbittorrent',
+                            pinchflat: 'pinchflat',
+                            navidrome: 'navidrome',
+                            adguard: 'adguard',
+                            playit: 'playit',
+                            protonvpn: 'protonvpn',
                             homarr: 'homarr',
+                            samba: 'samba',
                           };
                           onOpenGuide(guideMap[app.id] || 'jellyfin');
                         }}

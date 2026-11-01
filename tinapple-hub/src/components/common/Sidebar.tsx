@@ -21,6 +21,7 @@ import {
   Monitor,
   Timer,
   Network,
+  ShieldAlert,
 } from 'lucide-react';
 import { SystemInfo, ServiceInfo } from '../../types/api';
 
@@ -125,6 +126,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
       icon: <Terminal className="w-5 h-5 shrink-0 text-emerald-400" />,
       badge: 'SSH',
       badgeColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
+    },
+    {
+      id: 'errors',
+      label: 'Error Logger',
+      desc: 'Machine & Web Faults',
+      icon: <ShieldAlert className="w-5 h-5 shrink-0 text-red-400" />,
+      badge: 'AI Logs',
+      badgeColor: 'bg-red-500/20 text-red-300 border-red-500/30',
     },
     {
       id: 'settings',

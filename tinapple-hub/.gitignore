@@ -4,3 +4,7 @@ dist-ssr
 *.local
 .env
 .env.*
+*.key
+*gemini_key*
+*gemini_token*
+*.secret
