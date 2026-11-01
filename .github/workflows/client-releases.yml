@@ -50,7 +50,14 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release upload ${{ github.ref_name }} out/releases/* --clobber
+          if ! gh release view "${{ github.ref_name }}" >/dev/null 2>&1; then
+            echo "Creating GitHub Release for ${{ github.ref_name }}..."
+            gh release create "${{ github.ref_name }}" \
+              --title "Tinapple Client ${{ github.ref_name }}" \
+              --notes "Multiplatform desktop and companion releases for Tinapple OS (${{ github.ref_name }})."
+          fi
+          echo "Uploading release assets..."
+          gh release upload "${{ github.ref_name }}" out/releases/* --clobber
 
   build-tauri:
     name: "Build Native Tauri Binaries"
