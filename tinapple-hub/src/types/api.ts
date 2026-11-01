@@ -55,6 +55,9 @@ export interface TelemetrySnapshot {
     percent: number;
     charging: boolean;
     chargeLimit: number; // e.g. 80
+    chargeLimitSupported?: boolean;
+    charge_limit_supported?: boolean;
+    hardware_locked?: boolean;
     healthPercent: number;
   };
 }

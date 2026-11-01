@@ -439,6 +439,8 @@ function normalizeTelemetry(raw: any): TelemetrySnapshot {
   const batCharging = rawBat.charging ?? false;
   const batLimit = rawBat.charge_limit ?? 80;
   const batHealth = rawBat.health_percent ?? 98;
+  const batLimitSupported = rawBat.charge_limit_supported === true || rawBat.chargeLimitSupported === true;
+  const batHardwareLocked = rawBat.hardware_locked === true || !batLimitSupported;
 
   return {
     timestamp: raw.timestamp ? raw.timestamp * 1000 : Date.now(),
@@ -481,6 +483,9 @@ function normalizeTelemetry(raw: any): TelemetrySnapshot {
       percent: batPercent,
       charging: batCharging,
       chargeLimit: batLimit,
+      chargeLimitSupported: batLimitSupported,
+      charge_limit_supported: batLimitSupported,
+      hardware_locked: batHardwareLocked,
       healthPercent: batHealth,
     },
   };

@@ -701,79 +701,96 @@ export const SettingsManifest: React.FC<SettingsManifestProps> = ({
 
         {/* SECTION 4: SECURITY CREDENTIALS */}
         <div className="mb-6 pt-5 border-t border-tinapple-border/70">
-          <div className="flex items-center justify-between mb-3 pb-1 border-b border-tinapple-border/50">
-            <div className="flex items-center gap-2 text-xs font-bold text-tinapple-gold font-mono uppercase tracking-wider">
-              <Lock className="w-4 h-4" />
-              <span>4. Root & Administrator Security Credentials</span>
+          <div className="p-4 sm:p-5 rounded-2xl bg-tinapple-dark/60 border border-tinapple-border space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 rounded-lg bg-tinapple-gold/15 text-tinapple-gold border border-tinapple-gold/25">
+                    <Lock className="w-4 h-4" />
+                  </div>
+                  <span className="text-xs font-bold text-white font-mono uppercase tracking-wider">
+                    4. Root & Administrator Security Credentials
+                  </span>
+                  <span className="px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold font-mono">
+                    Polkit Protected
+                  </span>
+                </div>
+                <p className="text-[11px] text-tinapple-subtext font-mono pl-8">
+                  Account: <strong className="text-white">pineapple</strong> • Privilege Elevation: <strong className="text-tinapple-gold">pkexec (PolicyKit)</strong>
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setChangePassword(!changePassword)}
+                className={`px-3.5 py-2 rounded-xl text-xs font-mono font-bold flex items-center gap-2 transition-all border shrink-0 ${
+                  changePassword
+                    ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 shadow-sm'
+                    : 'bg-white/[0.06] text-zinc-300 border-white/10 hover:text-white hover:bg-white/10'
+                }`}
+                title={changePassword ? 'Cancel password update' : 'Modify administrator password'}
+              >
+                <KeyRound className="w-3.5 h-3.5 text-tinapple-gold" />
+                <span>{changePassword ? 'Close Password Editor' : 'Change Password'}</span>
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={() => setChangePassword(!changePassword)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold flex items-center gap-1.5 transition-all border ${
-                changePassword
-                  ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 shadow-sm'
-                  : 'bg-white/[0.05] text-zinc-400 border-white/10 hover:text-white hover:bg-white/10'
-              }`}
-              title={changePassword ? 'Cancel password update' : 'Modify administrator password'}
-            >
-              <KeyRound className="w-3.5 h-3.5" />
-              <span>{changePassword ? 'Close Editor' : 'Update Password'}</span>
-            </button>
+
+            {changePassword && (
+              <div className="pt-3 border-t border-tinapple-border/60">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 font-mono">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-white uppercase tracking-wider">
+                      New Admin Password <span className="text-red-400">*</span>
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        placeholder="Minimum 6 characters"
+                        className={`w-full px-3.5 py-2.5 rounded-xl bg-slate-900/90 border text-xs text-white focus:outline-none transition-colors pr-10 ${
+                          errors.password
+                            ? 'border-red-500 bg-red-500/10 focus:border-red-400'
+                            : 'border-tinapple-border focus:border-tinapple-gold'
+                        }`}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-2.5 text-tinapple-muted hover:text-white"
+                      >
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-white uppercase tracking-wider">
+                      Confirm Password <span className="text-red-400">*</span>
+                    </label>
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="Re-enter password"
+                      className={`w-full px-3.5 py-2.5 rounded-xl bg-slate-900/90 border text-xs text-white focus:outline-none transition-colors ${
+                        errors.password
+                          ? 'border-red-500 bg-red-500/10 focus:border-red-400'
+                          : 'border-tinapple-border focus:border-tinapple-gold'
+                      }`}
+                    />
+                  </div>
+
+                  {errors.password && (
+                    <div className="col-span-full text-[11px] text-red-400 flex items-center gap-1.5">
+                      <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                      <span>{errors.password}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
-
-          {changePassword && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 font-mono pt-2">
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-white uppercase tracking-wider">
-                  New Admin Password <span className="text-red-400">*</span>
-                </label>
-                <div className="relative">
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="Minimum 6 characters"
-                    className={`w-full px-3.5 py-2.5 rounded-xl bg-tinapple-dark/90 border text-xs text-white focus:outline-none transition-colors pr-10 ${
-                      errors.password
-                        ? 'border-red-500 bg-red-500/10 focus:border-red-400'
-                        : 'border-tinapple-border focus:border-tinapple-gold'
-                    }`}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-2.5 text-tinapple-muted hover:text-white"
-                  >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-white uppercase tracking-wider">
-                  Confirm Password <span className="text-red-400">*</span>
-                </label>
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Re-enter password"
-                  className={`w-full px-3.5 py-2.5 rounded-xl bg-tinapple-dark/90 border text-xs text-white focus:outline-none transition-colors ${
-                    errors.password
-                      ? 'border-red-500 bg-red-500/10 focus:border-red-400'
-                      : 'border-tinapple-border focus:border-tinapple-gold'
-                  }`}
-                />
-              </div>
-
-              {errors.password && (
-                <div className="col-span-full text-[11px] text-red-400 flex items-center gap-1.5">
-                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                  <span>{errors.password}</span>
-                </div>
-              )}
-            </div>
-          )}
         </div>
 
         {/* Action Controls & HoldButton */}
