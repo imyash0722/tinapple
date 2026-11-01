@@ -18,7 +18,7 @@ import {
   Layers,
   ArrowRight,
 } from 'lucide-react';
-import { GUIDES_CATALOG, GuideArticle, findGuide } from '../../data/guidesCatalog';
+import { GUIDES_CATALOG, GuideArticle } from '../../data/guidesCatalog';
 
 interface GuidesPageProps {
   initialGuideId?: string | null;
@@ -83,7 +83,7 @@ export const GuidesPage: React.FC<GuidesPageProps> = ({
   }, [searchQuery, selectedCategory]);
 
   const currentGuide = useMemo(() => {
-    return findGuide(selectedId);
+    return GUIDES_CATALOG.find((g) => g.id === selectedId) || GUIDES_CATALOG[0];
   }, [selectedId]);
 
   const categories = [
@@ -424,7 +424,7 @@ export const GuidesPage: React.FC<GuidesPageProps> = ({
             </div>
 
             {/* Section 3: Client Applications & Downloads Matrix */}
-            {currentGuide.clientApps && currentGuide.clientApps.length > 0 && (
+            {currentGuide.clientApps.length > 0 && (
               <div className="space-y-3 pt-2">
                 <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-300 flex items-center gap-2">
                   <Smartphone className="w-4 h-4 text-emerald-400" />
@@ -466,7 +466,7 @@ export const GuidesPage: React.FC<GuidesPageProps> = ({
             )}
 
             {/* Section 4: Special Configurations & Performance Tuning */}
-            {currentGuide.specialConfigs && currentGuide.specialConfigs.length > 0 && (
+            {currentGuide.specialConfigs.length > 0 && (
               <div className="space-y-3 pt-2">
                 <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-300 flex items-center gap-2">
                   <Sliders className="w-4 h-4 text-purple-400" />

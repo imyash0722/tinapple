@@ -3,6 +3,7 @@ import { Plus, Edit2, Trash2, ExternalLink, Globe, BookOpen, Download, Laptop, S
 import { AppBrandIcon } from '../common/AppBrandIcons';
 import { ServiceStatus } from '../../types/api';
 import { CustomBookmark } from '../../services/dashboardLayout';
+import { serviceRegistry } from '../../services/serviceRegistry';
 
 interface QuickConnectCardProps {
   services?: ServiceStatus[];
@@ -98,21 +99,16 @@ export const QuickConnectCard: React.FC<QuickConnectCardProps> = ({
     },
   ];
 
-  const quickServices = [
-    { id: 'suwayomi', name: 'Suwayomi Manga', port: '4567', path: `http://${currentHost}:4567` },
-    { id: 'jellyfin', name: 'Jellyfin Media', port: '8096', path: `http://${currentHost}:8096` },
-    { id: 'qbittorrent', name: 'qBittorrent', port: '8080', path: `http://${currentHost}:8080` },
-    { id: 'filebrowser', name: 'FileBrowser', port: '8081', path: `http://${currentHost}:8081` },
-    { id: 'syncthing', name: 'Syncthing Sync', port: '8384', path: `http://${currentHost}:8384` },
-    { id: 'navidrome', name: 'Navidrome Music', port: '4533', path: `http://${currentHost}:4533` },
-    { id: 'adguard', name: 'AdGuard Home', port: '3000', path: `http://${currentHost}:3000` },
-    { id: 'vaultwarden', name: 'Vaultwarden', port: '8000', path: isHttps ? `https://${currentHost}:8000` : `http://${currentHost}:8000` },
-    { id: 'radarr', name: 'Radarr Movies', port: '7878', path: `http://${currentHost}:7878` },
-    { id: 'sonarr', name: 'Sonarr TV', port: '8989', path: `http://${currentHost}:8989` },
-    { id: 'prowlarr', name: 'Prowlarr Indexer', port: '9696', path: `http://${currentHost}:9696` },
-    { id: 'seerr', name: 'Jellyseerr Requests', port: '5055', path: `http://${currentHost}:5055` },
-    { id: 'protonvpn', name: 'Proton VPN', port: '', path: '#' },
-  ].filter((s) => isAdmin || (s.id !== 'suwayomi' && s.id !== 'suwayomi-server'));
+  const quickServices = serviceRegistry
+    .getAll()
+    .filter((s) => s.port > 0)
+    .map((s) => ({
+      id: s.id,
+      name: s.displayName,
+      port: s.port.toString(),
+      path: s.getOpenUrl(),
+    }))
+    .filter((s) => isAdmin || (s.id !== 'suwayomi' && s.id !== 'suwayomi-server'));
 
   return (
     <div className="space-y-6">

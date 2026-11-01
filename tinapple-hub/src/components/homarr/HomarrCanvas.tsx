@@ -777,7 +777,7 @@ export const HomarrCanvas: React.FC<HomarrCanvasProps> = ({
             className="px-3 py-1.5 rounded-xl bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 border border-sky-500/40 font-bold flex items-center gap-1.5 transition-all shadow-sm active:scale-95"
           >
             <Plus className="w-3.5 h-3.5" />
-            <span>+ Widget</span>
+            <span>Add Widget</span>
           </button>
 
           {/* Edit Mode Toggle */}

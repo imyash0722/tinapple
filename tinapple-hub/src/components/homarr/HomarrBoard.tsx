@@ -74,6 +74,7 @@ import { TelemetrySnapshot, SystemInfo, ServiceInfo } from '../../types/api';
 import { CanvasWidget, CanvasLayoutMode, WidgetCategory } from '../../types/canvas';
 import { AndroidBridge } from '../../services/androidBridge';
 import { api, getServiceUrl } from '../../services/api';
+import { serviceRegistry, ApplianceService } from '../../services/serviceRegistry';
 
 const DEFAULT_HOMARR_BOOKMARKS: CustomBookmarkItem[] = [
   {
@@ -477,7 +478,8 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
     // If matching apps exist, open the first matching app!
     if (filteredAppliances.length > 0) {
       const topApp = filteredAppliances[0];
-      const url = topApp.subpath || getServiceUrl(topApp.id);
+      const registeredApp = serviceRegistry.get(topApp.id);
+      const url = registeredApp ? registeredApp.getOpenUrl() : (topApp.subpath || getServiceUrl(topApp.id));
       window.open(url, url.startsWith('/') ? '_self' : '_blank');
       return;
     }
@@ -950,7 +952,7 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
               className="px-3.5 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 font-bold flex items-center gap-1.5 transition-all shadow-sm active:scale-95"
             >
               <Plus className="w-3.5 h-3.5 text-tinapple-gold" />
-              <span>+ Widget</span>
+              <span>Add Widget</span>
             </button>
 
             {/* Edit Mode Toggle */}
@@ -1234,7 +1236,9 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
               {filteredAppliances.map((app) => {
                 const serviceInfo = servicesMap.get(app.id);
                 const activeState = serviceInfo?.activeState || 'active';
-                const appUrl = app.subpath || getServiceUrl(app.id);
+                const registeredApp = serviceRegistry.get(app.id);
+                const appUrl = registeredApp ? registeredApp.getOpenUrl() : (app.subpath || getServiceUrl(app.id));
+                const appPort = app.port || registeredApp?.port;
 
                 return (
                   <HomarrAppTile
@@ -1245,6 +1249,7 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
                     category={app.category}
                     icon={app.icon}
                     url={appUrl}
+                    port={appPort}
                     activeState={activeState}
                     isEditMode={isEditMode}
                     colSpan={app.defaultColSpan || 3}

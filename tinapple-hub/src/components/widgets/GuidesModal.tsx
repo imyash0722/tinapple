@@ -24,7 +24,7 @@ import {
   Youtube,
 } from 'lucide-react';
 
-import { GUIDES_CATALOG, GuideArticle, findGuide } from "../../data/guidesCatalog";
+import { GUIDES_CATALOG, GuideArticle } from "../../data/guidesCatalog";
 
 interface GuidesModalProps {
   isOpen: boolean;
@@ -59,7 +59,7 @@ export const GuidesModal: React.FC<GuidesModalProps> = ({
   }, [searchQuery]);
 
   const currentGuide = useMemo(() => {
-    return findGuide(selectedId);
+    return GUIDES_CATALOG.find((g) => g.id === selectedId) || GUIDES_CATALOG[0];
   }, [selectedId]);
 
   const handleCopy = (text: string) => {
@@ -320,7 +320,7 @@ export const GuidesModal: React.FC<GuidesModalProps> = ({
             )}
 
             {/* Expert Tuning & Special Configurations */}
-            {currentGuide.specialConfigs && currentGuide.specialConfigs.length > 0 && (
+            {currentGuide.specialConfigs.length > 0 && (
               <div className="space-y-4 pt-2">
                 <h4 className="text-xs font-bold text-white uppercase tracking-wider font-mono flex items-center gap-2">
                   <Sliders className="w-4 h-4 text-purple-400" />

@@ -1715,7 +1715,7 @@ func (h *Handler) ThermalInfo(c *gin.Context) {
 	})
 }
 
-// SetThermalProfile sets thermal profile
+// SetThermalProfile sets thermal profile and applies CPU frequency scaling
 func (h *Handler) SetThermalProfile(c *gin.Context) {
 	var req struct {
 		Profile string `json:"profile" binding:"required,oneof=balanced performance quiet server"`
@@ -1724,7 +1724,28 @@ func (h *Handler) SetThermalProfile(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"status": "ok", "profile": req.Profile})
+
+	h.telemetry.SetThermalProfile(req.Profile)
+	h.cfg.Hardware.ThermalProfile = req.Profile
+
+	// Apply CPU scaling governor
+	gov := "schedutil"
+	switch req.Profile {
+	case "quiet":
+		gov = "powersave"
+	case "performance":
+		gov = "performance"
+	case "balanced":
+		gov = "schedutil"
+	}
+
+	// Try writing to cpufreq governors
+	cpus, _ := filepath.Glob("/sys/devices/system/cpu/cpu*/cpufreq/scaling_governor")
+	for _, cpuGov := range cpus {
+		_ = os.WriteFile(cpuGov, []byte(gov), 0644)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"status": "ok", "profile": req.Profile, "governor": gov})
 }
 
 // PowerProfileInfo returns power profile info
@@ -1744,7 +1765,26 @@ func (h *Handler) SetPowerProfile(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"status": "ok", "profile": req.Profile})
+
+	h.telemetry.SetPowerProfile(req.Profile)
+	h.cfg.Hardware.PowerProfile = req.Profile
+
+	gov := "schedutil"
+	switch req.Profile {
+	case "power-saver":
+		gov = "powersave"
+	case "performance":
+		gov = "performance"
+	case "balanced":
+		gov = "schedutil"
+	}
+
+	cpus, _ := filepath.Glob("/sys/devices/system/cpu/cpu*/cpufreq/scaling_governor")
+	for _, cpuGov := range cpus {
+		_ = os.WriteFile(cpuGov, []byte(gov), 0644)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"status": "ok", "profile": req.Profile, "governor": gov})
 }
 
 // GetSession returns current session mode

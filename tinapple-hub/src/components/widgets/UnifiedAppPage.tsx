@@ -21,7 +21,7 @@ import {
   ChevronRight,
   Lock,
 } from 'lucide-react';
-import { GUIDES_CATALOG, GuideArticle, findGuide, resolveGuideId } from '../../data/guidesCatalog';
+import { GUIDES_CATALOG, GuideArticle } from '../../data/guidesCatalog';
 import { AppBrandIcon } from '../common/AppBrandIcons';
 import { api } from '../../services/api';
 
@@ -248,7 +248,28 @@ export const UnifiedAppPage: React.FC<UnifiedAppPageProps> = ({
   onOpenTerminal,
 }) => {
   // Normalize ID (e.g., 'jellyfin-guide' -> 'jellyfin', 'vault' -> 'vaultwarden')
-  const cleanId = useMemo(() => resolveGuideId(appId), [appId]);
+  const cleanId = useMemo(() => {
+    let raw = (appId || 'jellyfin')
+      .toLowerCase()
+      .replace(/-guide$/, '')
+      .replace(/_guide$/, '')
+      .replace(/^\/app\//, '')
+      .replace(/^\//, '');
+    if (raw === 'vault') raw = 'vaultwarden';
+    if (raw.includes('qbittorrent')) raw = 'qbittorrent';
+    if (raw.includes('syncthing')) raw = 'syncthing';
+    if (raw.includes('adguard')) raw = 'adguard';
+    if (raw.includes('jellyseerr') || raw.includes('seerr')) raw = 'seerr';
+    if (raw.includes('matrix') || raw.includes('element') || raw.includes('whatsapp') || raw.includes('signal') || raw.includes('telegram') || raw.includes('discord') || raw.includes('instagram')) raw = 'mautrix';
+    if (raw.includes('suwayomi') || raw.includes('manga') || raw.includes('tsumiru')) raw = 'syncyomi';
+    if (raw.includes('pinchflat') || raw.includes('youtube')) raw = 'pinchflat';
+    if (raw === 'radarr' || raw === 'sonarr' || raw === 'prowlarr' || raw === 'bazarr') raw = 'servarr';
+    if (raw.includes('tailscale')) raw = 'tailscale';
+    if (raw.includes('couchdb') || raw.includes('obsidian')) raw = 'obsidian';
+    if (raw.includes('proton')) raw = 'protonvpn';
+    if (raw.includes('samba') || raw.includes('smb')) raw = 'samba';
+    return raw;
+  }, [appId]);
 
   const [activeTab, setActiveTab] = useState<'guide' | 'endpoints' | 'diagnostics'>('guide');
   const [copiedText, setCopiedText] = useState<string | null>(null);
@@ -257,7 +278,13 @@ export const UnifiedAppPage: React.FC<UnifiedAppPageProps> = ({
   const [actionMessage, setActionMessage] = useState<string | null>(null);
 
   // Match guide article from catalog
-  const guide = useMemo<GuideArticle>(() => findGuide(cleanId), [cleanId]);
+  const guide = useMemo<GuideArticle>(() => {
+    const found =
+      GUIDES_CATALOG.find((g) => g.id === cleanId) ||
+      GUIDES_CATALOG.find((g) => g.id.includes(cleanId) || cleanId.includes(g.id)) ||
+      GUIDES_CATALOG[0];
+    return found;
+  }, [cleanId]);
 
   const meta = useMemo(() => {
     return (

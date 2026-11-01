@@ -243,7 +243,6 @@ export const App: React.FC = () => {
 
   const handleCloseAppPage = () => {
     setViewingAppId(null);
-    setSelectedTab('dashboard');
     if (typeof window !== 'undefined') {
       window.history.pushState({}, '', '/');
     }
@@ -562,7 +561,7 @@ export const App: React.FC = () => {
       {/* PERSISTENT COLLAPSIBLE SIDEBAR & MOBILE DRAWER */}
       <Sidebar
         isLandingPage={isLandingPage}
-        activeTab={viewingAppId ? 'guides' : activeTab}
+        activeTab={activeTab}
         setActiveTab={handleSelectTab}
         mobileOpen={mobileSidebarOpen}
         setMobileOpen={setMobileSidebarOpen}
@@ -762,7 +761,9 @@ export const App: React.FC = () => {
                 onOpenTerminal={() => setSelectedTab('terminal')}
               />
             </motion.div>
-          ) : activeTab === 'welcome' ? (
+          ) : (
+            <>
+              {activeTab === 'welcome' && (
             <motion.div
               key="welcome"
               initial={{ opacity: 0, y: 14 }}
@@ -774,7 +775,9 @@ export const App: React.FC = () => {
                 onOpenDashboard={() => handleSelectTab('dashboard')}
               />
             </motion.div>
-          ) : activeTab === 'dashboard' ? (
+          )}
+
+          {activeTab === 'dashboard' && (
             <motion.div
               key="dashboard"
               initial={{ opacity: 0, y: 14 }}
@@ -805,7 +808,9 @@ export const App: React.FC = () => {
                 isRefreshing={isRefreshing}
               />
             </motion.div>
-          ) : activeTab === 'services' ? (
+          )}
+
+          {activeTab === 'services' && (
             <motion.div
               key="services"
               initial={{ opacity: 0, y: 14 }}
@@ -835,7 +840,9 @@ export const App: React.FC = () => {
                 onOpenGuide={handleOpenGuide}
               />
             </motion.div>
-          ) : activeTab === 'store' ? (
+          )}
+
+          {activeTab === 'store' && (
             <motion.div
               key="store"
               initial={{ opacity: 0, y: 14 }}
@@ -849,7 +856,9 @@ export const App: React.FC = () => {
                 onOpenSettings={(appId, name) => setSettingsModalApp({ id: appId, name })}
               />
             </motion.div>
-          ) : activeTab === 'guides' ? (
+          )}
+
+          {activeTab === 'guides' && (
             <motion.div
               key="guides"
               initial={{ opacity: 0, y: 14 }}
@@ -862,7 +871,9 @@ export const App: React.FC = () => {
                 onSelectGuide={(id) => setSelectedGuideId(id)}
               />
             </motion.div>
-          ) : activeTab === 'hardware' ? (
+          )}
+
+          {activeTab === 'hardware' && (
             <motion.div
               key="hardware"
               initial={{ opacity: 0, y: 14 }}
@@ -890,7 +901,9 @@ export const App: React.FC = () => {
                 onSetChargeLimit={api.setBatteryChargeLimit}
               />
             </motion.div>
-          ) : activeTab === 'settings' ? (
+          )}
+
+          {activeTab === 'settings' && (
             <motion.div
               key="settings"
               initial={{ opacity: 0, y: 14 }}
@@ -901,7 +914,9 @@ export const App: React.FC = () => {
             >
               <SettingsManifest systemInfo={systemInfo} onUpdateSession={handleUpdateSession} />
             </motion.div>
-          ) : activeTab === 'terminal' ? (
+          )}
+
+          {activeTab === 'terminal' && (
             <motion.div
               key="terminal"
               initial={{ opacity: 0, y: 14 }}
@@ -922,7 +937,9 @@ export const App: React.FC = () => {
                 />
               </Suspense>
             </motion.div>
-          ) : activeTab === 'errors' ? (
+          )}
+
+          {activeTab === 'errors' && (
             <motion.div
               key="errors"
               initial={{ opacity: 0, y: 14 }}
@@ -932,7 +949,9 @@ export const App: React.FC = () => {
             >
               <ErrorLoggerPage />
             </motion.div>
-          ) : null}
+          )}
+            </>
+          )}
         </AnimatePresence>
       </main>
 

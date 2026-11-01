@@ -204,8 +204,10 @@ export const ErrorLoggerPage: React.FC = () => {
   };
 
   // Filtered errors
+  const safeErrors = Array.isArray(errors) ? errors : [];
+
   const filteredErrors = useMemo(() => {
-    return errors.filter((item) => {
+    return safeErrors.filter((item) => {
       // Source filter
       if (selectedSource !== 'all') {
         if (selectedSource === 'kernel' && item.source !== 'kernel' && item.source !== 'hardware') return false;
@@ -232,19 +234,19 @@ export const ErrorLoggerPage: React.FC = () => {
 
       return true;
     });
-  }, [errors, selectedSource, selectedSeverity, searchQuery]);
+  }, [safeErrors, selectedSource, selectedSeverity, searchQuery]);
 
   // Statistics
   const stats = useMemo(() => {
     return {
-      total: errors.length,
-      critical: errors.filter((e) => e.severity === 'critical').length,
-      hardware: errors.filter((e) => e.source === 'hardware' || e.source === 'kernel').length,
-      wifi: errors.filter((e) => e.source === 'wifi').length,
-      services: errors.filter((e) => e.source === 'service').length,
-      frontend: errors.filter((e) => e.source === 'frontend').length,
+      total: safeErrors.length,
+      critical: safeErrors.filter((e) => e.severity === 'critical').length,
+      hardware: safeErrors.filter((e) => e.source === 'hardware' || e.source === 'kernel').length,
+      wifi: safeErrors.filter((e) => e.source === 'wifi').length,
+      services: safeErrors.filter((e) => e.source === 'service').length,
+      frontend: safeErrors.filter((e) => e.source === 'frontend').length,
     };
-  }, [errors]);
+  }, [safeErrors]);
 
   const hasApiKey = Boolean(apiKey.trim() || serverAIStatus.configured);
 

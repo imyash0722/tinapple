@@ -822,12 +822,6 @@ export const GUIDES_CATALOG: GuideArticle[] = [
     clientApps: [
       { name: 'Playit Portal', platform: 'Web Console', link: 'https://playit.gg' },
     ],
-    specialConfigs: [
-      {
-        title: 'Permanent Static Custom Domain',
-        description: 'Assign a custom sub-domain (.playit.gg or your own domain) in the Playit.gg web dashboard for zero-change game joins.',
-      },
-    ],
   },
   {
     id: 'jdownloader',
@@ -855,12 +849,6 @@ export const GUIDES_CATALOG: GuideArticle[] = [
     clientApps: [
       { name: 'MyJDownloader Web', platform: 'Browser', link: 'https://my.jdownloader.org' },
       { name: 'MyJDownloader Mobile', platform: 'Android & iOS', link: 'https://jdownloader.org/download/index' },
-    ],
-    specialConfigs: [
-      {
-        title: 'Auto-Extraction & RAR Password List',
-        description: 'Configure auto-extraction rules and encrypted archive passwords in the MyJDownloader web dashboard under Extension Settings ➔ Archive Extractor.',
-      },
     ],
   },
   {
@@ -891,56 +879,5 @@ export const GUIDES_CATALOG: GuideArticle[] = [
       { name: 'Windows Explorer', platform: 'Native Windows', link: '#' },
       { name: 'macOS Finder', platform: 'Native macOS', link: '#' },
     ],
-    specialConfigs: [
-      {
-        title: 'Samba User & Password Credentials',
-        description: 'To add or change credentials for SMB file shares, run sudo smbpasswd -a tinapple on the server console.',
-        code: 'sudo smbpasswd -a tinapple',
-      },
-    ],
   },
 ];
-
-export const resolveGuideId = (rawId?: string | null): string => {
-  if (!rawId) return 'jellyfin';
-  const raw = rawId
-    .toLowerCase()
-    .replace(/-guide$/, '')
-    .replace(/_guide$/, '')
-    .replace(/^\/app\//, '')
-    .replace(/^\//, '')
-    .trim();
-
-  if (raw === 'vault') return 'vaultwarden';
-  if (raw.includes('qbittorrent')) return 'qbittorrent';
-  if (raw.includes('syncthing')) return 'syncthing';
-  if (raw.includes('adguard')) return 'adguard';
-  if (raw.includes('jellyseerr') || raw.includes('seerr')) return 'seerr';
-  if (raw.includes('matrix') || raw.includes('element') || raw.includes('whatsapp') || raw.includes('signal') || raw.includes('telegram') || raw.includes('discord') || raw.includes('instagram')) return 'mautrix';
-  if (raw.includes('suwayomi') || raw.includes('manga') || raw.includes('tsumiru')) return 'syncyomi';
-  if (raw.includes('pinchflat') || raw.includes('youtube')) return 'pinchflat';
-  if (raw === 'radarr' || raw === 'sonarr' || raw === 'prowlarr' || raw === 'bazarr') return 'servarr';
-  if (raw.includes('tailscale') || raw.includes('tailscaled')) return 'tailscale';
-  if (raw.includes('couchdb') || raw.includes('obsidian')) return 'obsidian';
-  if (raw.includes('proton')) return 'protonvpn';
-  if (raw.includes('samba') || raw.includes('smb')) return 'samba';
-  if (raw.includes('jdownloader')) return 'jdownloader';
-  if (raw.includes('playit') || raw.includes('minecraft')) return 'playit';
-  if (raw.includes('beeper')) return 'beeper';
-  if (raw.includes('tor')) return 'tor';
-  if (raw.includes('navidrome')) return 'navidrome';
-  if (raw.includes('homarr')) return 'homarr';
-  if (raw.includes('filebrowser')) return 'syncthing';
-  if (raw.includes('jellyfin')) return 'jellyfin';
-
-  return raw;
-};
-
-export const findGuide = (rawId?: string | null): GuideArticle => {
-  const cleanId = resolveGuideId(rawId);
-  const found =
-    GUIDES_CATALOG.find((g) => g.id === cleanId) ||
-    GUIDES_CATALOG.find((g) => g.id.includes(cleanId) || cleanId.includes(g.id)) ||
-    GUIDES_CATALOG[0];
-  return found;
-};

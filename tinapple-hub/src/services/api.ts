@@ -1,4 +1,5 @@
 import { SystemInfo, TelemetrySnapshot, ServiceInfo, HardwareInfo, SessionMode, AppInfo, AppActionResult, InstallProgressState, InstallLogMessage, TailscaleStatus, AppliancePackStatus, WallpaperItem, OpenPortInfo, AppConfigDetails, MaintenanceResult, FailedUnitsResult, UserManagementData, ProtonStatus, ProtonWireGuardInfo } from '../types/api';
+import { serviceRegistry, ApplianceService } from './serviceRegistry';
 
 export function getApiBaseUrl(): string {
   if (typeof window !== 'undefined') {
@@ -104,36 +105,41 @@ export const SERVICE_NAME_PATH_MAP: Record<string, string> = {
 };
 
 export function getServiceUrl(portOrName: number | string, path: string = ''): string {
-  let subpath: string | undefined;
   if (typeof portOrName === 'string') {
     const cleanName = portOrName.toLowerCase().replace(/\.service$/, '').replace(/@.*$/, '');
-    subpath = SERVICE_NAME_PATH_MAP[cleanName];
-  } else if (typeof portOrName === 'number') {
-    subpath = SERVICE_PATH_MAP[portOrName];
-  }
-
-  let cleanPath = path ? (path.startsWith('/') ? path.replace(/^\//, '') : path) : '';
-
-  if (subpath) {
-    // Prevent duplicate nested paths if path is already the subpath (e.g. /jellyfin/ + /jellyfin/)
-    const subTrimmed = subpath.replace(/^\/|\/$/g, '');
-    if (cleanPath === subTrimmed || cleanPath === subTrimmed + '/') {
-      cleanPath = '';
-    } else if (cleanPath.startsWith(subTrimmed + '/')) {
-      cleanPath = cleanPath.slice(subTrimmed.length + 1);
+    const service = serviceRegistry.get(cleanName);
+    if (service) {
+      const base = service.getOpenUrl();
+      if (!path) return base;
+      const cleanPath = path.startsWith('/') ? path.slice(1) : path;
+      return base.endsWith('/') ? `${base}${cleanPath}` : `${base}/${cleanPath}`;
     }
-
-    if (typeof window !== 'undefined') {
-      return `${subpath}${cleanPath}`;
+    const subpath = SERVICE_NAME_PATH_MAP[cleanName];
+    if (subpath) {
+      const host = getServiceHost();
+      const cleanSub = subpath.replace(/^\/|\/$/g, '');
+      const cleanPath = path ? (path.startsWith('/') ? path.slice(1) : path) : '';
+      if (typeof window !== 'undefined' && window.location.port !== '8088') {
+        return `/${cleanSub}/${cleanPath}`.replace(/\/+$/, '/');
+      }
+      return `http://${host}/${cleanSub}/${cleanPath}`.replace(/\/+$/, '/');
+    }
+  } else if (typeof portOrName === 'number') {
+    const service = serviceRegistry.getByPort(portOrName);
+    if (service) {
+      const base = service.getOpenUrl();
+      if (!path) return base;
+      const cleanPath = path.startsWith('/') ? path.slice(1) : path;
+      return base.endsWith('/') ? `${base}${cleanPath}` : `${base}/${cleanPath}`;
     }
     const host = getServiceHost();
-    return `https://${host}${subpath}${cleanPath}`;
+    const cleanPath = path ? (path.startsWith('/') ? path.slice(1) : path) : '';
+    if (portOrName > 0) {
+      return `http://${host}:${portOrName}/${cleanPath}`;
+    }
   }
 
-  const host = getServiceHost();
-  if (typeof portOrName === 'number' && portOrName > 0) {
-    return `http://${host}:${portOrName}/${cleanPath}`;
-  }
+  const cleanPath = path ? (path.startsWith('/') ? path.slice(1) : path) : '';
   return `/${cleanPath}`;
 }
 

@@ -11,6 +11,7 @@ import {
   HelpCircle,
   BookOpen,
 } from 'lucide-react';
+import { serviceRegistry } from '../../services/serviceRegistry';
 
 export interface HomarrAppTileProps {
   id: string;
@@ -161,7 +162,9 @@ export const HomarrAppTile: React.FC<HomarrAppTileProps> = ({
               :{port}
             </span>
           )}
-          <span className="truncate text-zinc-500">{url.replace(/^https?:\/\//, '')}</span>
+          <span className="truncate text-zinc-500">
+            {serviceRegistry.get(id)?.getDisplayPath() || (url.startsWith('/') ? url : `/${id}`)}
+          </span>
         </div>
 
         <div className="flex items-center gap-1 shrink-0">

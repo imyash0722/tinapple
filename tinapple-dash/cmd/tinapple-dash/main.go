@@ -173,21 +173,39 @@ func main() {
 				return
 			}
 
-			if strings.HasPrefix(path, "/tsumiru") || strings.HasPrefix(path, "/suwayomi") {
-				host := c.Request.Host
-				if colon := strings.Index(host, ":"); colon != -1 {
-					host = host[:colon]
-				}
-				c.Redirect(http.StatusFound, "http://"+host+":4567/")
-				return
+			// Direct port service redirects for dev/8088 dashboard access
+			servicePortRedirects := map[string]int{
+				"/seerr":       5055,
+				"/jellyseerr":  5055,
+				"/jellyfin":    8096,
+				"/qbittorrent": 8080,
+				"/radarr":      7878,
+				"/sonarr":      8989,
+				"/prowlarr":    9696,
+				"/bazarr":      6767,
+				"/syncthing":   8384,
+				"/adguard":     3000,
+				"/adguardhome": 3000,
+				"/vault":       8000,
+				"/vaultwarden": 8000,
+				"/navidrome":   4533,
+				"/pinchflat":   8945,
+				"/youtube":     8945,
+				"/suwayomi":    4567,
+				"/tsumiru":     4567,
+				"/homarr":      7575,
 			}
-			if strings.HasPrefix(path, "/pinchflat") || strings.HasPrefix(path, "/youtube") {
-				host := c.Request.Host
-				if colon := strings.Index(host, ":"); colon != -1 {
-					host = host[:colon]
+
+			cleanPath := strings.TrimRight(strings.ToLower(path), "/")
+			for prefix, port := range servicePortRedirects {
+				if cleanPath == prefix || strings.HasPrefix(cleanPath, prefix+"/") {
+					host := c.Request.Host
+					if colon := strings.Index(host, ":"); colon != -1 {
+						host = host[:colon]
+					}
+					c.Redirect(http.StatusFound, fmt.Sprintf("http://%s:%d/", host, port))
+					return
 				}
-				c.Redirect(http.StatusFound, "http://"+host+":8945/")
-				return
 			}
 			if strings.HasPrefix(path, "/api") ||
 				strings.HasPrefix(path, "/assets") ||
