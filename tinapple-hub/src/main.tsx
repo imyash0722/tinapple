@@ -40,7 +40,18 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
             </p>
             <button
               onClick={() => {
-                localStorage.removeItem('tinapple_theme_settings');
+                try {
+                  const keysToRemove: string[] = [];
+                  for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key && (key.startsWith('tinapple_') || key.startsWith('homarr_'))) {
+                      keysToRemove.push(key);
+                    }
+                  }
+                  keysToRemove.forEach((k) => localStorage.removeItem(k));
+                } catch (e) {
+                  console.error('Failed to clear cache', e);
+                }
                 window.location.reload();
               }}
               className="px-4 py-2 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 text-xs font-bold transition-colors"

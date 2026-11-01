@@ -207,12 +207,13 @@ export const App: React.FC = () => {
   const [hardware, setHardware] = useState<HardwareInfo>(MOCK_HARDWARE);
 
   const isOwner = systemInfo.isAdmin === true;
+  const safeServices = Array.isArray(services) ? services : [];
   const displayServices = useMemo(() => {
-    if (isOwner) return services;
-    return services.filter(
+    if (isOwner) return safeServices;
+    return safeServices.filter(
       (s) => s.id !== 'suwayomi' && s.id !== 'suwayomi-server' && s.name !== 'suwayomi' && s.name !== 'suwayomi-server'
     );
-  }, [services, isOwner]);
+  }, [safeServices, isOwner]);
 
   const [activeLogService, setActiveLogService] = useState<string | null>(null);
   const [serviceLogs, setServiceLogs] = useState<string[]>([]);
@@ -372,7 +373,7 @@ export const App: React.FC = () => {
         api.getHardwareInfo(),
       ]);
       setSystemInfo(info);
-      setServices(svcs);
+      setServices(Array.isArray(svcs) ? svcs : []);
       setHardware(hw);
     };
     loadInitialData();
@@ -401,7 +402,7 @@ export const App: React.FC = () => {
       ]);
       setSystemInfo(info);
       setTelemetry(tel);
-      setServices(svcs);
+      setServices(Array.isArray(svcs) ? svcs : []);
     } finally {
       setIsRefreshing(false);
     }

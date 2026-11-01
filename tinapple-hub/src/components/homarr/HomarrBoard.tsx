@@ -466,16 +466,29 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
   // 3. Persistent Board Widgets State
   const [widgets, setWidgets] = useState<CanvasWidget[]>(() => {
     try {
-      const saved = localStorage.getItem(BOARD_STORAGE_KEY);
-      if (saved) return JSON.parse(saved);
+      const parseWidgets = (raw: string | null): CanvasWidget[] | null => {
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) return parsed;
+        if (parsed && typeof parsed === 'object' && Array.isArray(parsed.widgets)) {
+          return parsed.widgets;
+        }
+        return null;
+      };
+
+      const saved = parseWidgets(localStorage.getItem(BOARD_STORAGE_KEY));
+      if (saved && saved.length > 0) return saved;
+
       // Fallback to previous canvas storage if available
-      const canvasSaved = localStorage.getItem('tinapple_homarr_canvas_widgets_v7');
-      if (canvasSaved) return JSON.parse(canvasSaved);
+      const canvasSaved = parseWidgets(localStorage.getItem('tinapple_homarr_canvas_widgets_v7'));
+      if (canvasSaved && canvasSaved.length > 0) return canvasSaved;
     } catch (e) {
       console.warn('Failed to load board widgets state', e);
     }
     return DEFAULT_BOARD_WIDGETS;
   });
+
+  const safeWidgets = Array.isArray(widgets) ? widgets : DEFAULT_BOARD_WIDGETS;
 
   // 4. Collapsible Section Headers State
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>(() => {
@@ -506,9 +519,10 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
 
   // Sync widgets with localStorage
   const saveWidgets = (newWidgets: CanvasWidget[]) => {
-    setWidgets(newWidgets);
+    const list = Array.isArray(newWidgets) ? newWidgets : DEFAULT_BOARD_WIDGETS;
+    setWidgets(list);
     try {
-      localStorage.setItem(BOARD_STORAGE_KEY, JSON.stringify(newWidgets));
+      localStorage.setItem(BOARD_STORAGE_KEY, JSON.stringify(list));
     } catch (e) {
       console.error('Failed to save widgets', e);
     }
@@ -524,30 +538,30 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
   };
 
   const handleAddWidget = (newWidget: CanvasWidget) => {
-    saveWidgets([...widgets, newWidget]);
+    saveWidgets([...safeWidgets, newWidget]);
     setCreatorOpen(false);
     AndroidBridge.performHaptic('medium');
   };
 
   const handleUpdateWidget = (updated: CanvasWidget) => {
-    saveWidgets(widgets.map((w) => (w.id === updated.id ? updated : w)));
+    saveWidgets(safeWidgets.map((w) => (w.id === updated.id ? updated : w)));
     setEditingWidget(null);
   };
 
   const handleDeleteWidget = (id: string) => {
-    saveWidgets(widgets.filter((w) => w.id !== id));
+    saveWidgets(safeWidgets.filter((w) => w.id !== id));
     AndroidBridge.performHaptic('light');
   };
 
   const handleToggleWidgetVisibility = (id: string) => {
     saveWidgets(
-      widgets.map((w) => (w.id === id ? { ...w, visible: !w.visible } : w))
+      safeWidgets.map((w) => (w.id === id ? { ...w, visible: !w.visible } : w))
     );
   };
 
   const handleToggleColSpan = (id: string) => {
     saveWidgets(
-      widgets.map((w) => {
+      safeWidgets.map((w) => {
         if (w.id !== id) return w;
         const current = w.colSpan || 6;
         const nextSpan = current === 3 ? 6 : current === 6 ? 12 : 3;
@@ -557,12 +571,12 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
   };
 
   const handleMoveWidget = (id: string, direction: 'up' | 'down') => {
-    const idx = widgets.findIndex((w) => w.id === id);
+    const idx = safeWidgets.findIndex((w) => w.id === id);
     if (idx === -1) return;
     const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
-    if (targetIdx < 0 || targetIdx >= widgets.length) return;
+    if (targetIdx < 0 || targetIdx >= safeWidgets.length) return;
 
-    const reordered = [...widgets];
+    const reordered = [...safeWidgets];
     const [moved] = reordered.splice(idx, 1);
     reordered.splice(targetIdx, 0, moved);
     saveWidgets(reordered);
@@ -572,10 +586,12 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
   // 5. Build dynamic services map for live ping statuses
   const servicesMap = useMemo(() => {
     const map = new Map<string, ServiceInfo>();
-    services.forEach((s) => {
-      map.set(s.id, s);
-      map.set(s.name, s);
-    });
+    if (Array.isArray(services)) {
+      services.forEach((s) => {
+        map.set(s.id, s);
+        map.set(s.name, s);
+      });
+    }
     return map;
   }, [services]);
 
@@ -604,7 +620,7 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
   }, [selectedCategory, searchQuery]);
 
   const visibleWidgets = useMemo(() => {
-    return widgets.filter((w) => {
+    return safeWidgets.filter((w) => {
       if (!isEditMode && !w.visible) return false;
       const matchesCategory = selectedCategory === 'all' || w.category === selectedCategory;
       if (!matchesCategory) return false;
@@ -616,7 +632,7 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
         (w.description && w.description.toLowerCase().includes(q))
       );
     });
-  }, [widgets, isEditMode, selectedCategory, searchQuery]);
+  }, [safeWidgets, isEditMode, selectedCategory, searchQuery]);
 
   // Render individual widget component
   const renderWidgetContent = (widget: CanvasWidget) => {
@@ -679,7 +695,7 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
             isEditMode={isEditMode}
             onUpdateLinks={(newLinks) => {
               saveWidgets(
-                widgets.map((w) => (w.id === widget.id ? { ...w, links: newLinks } : w))
+                safeWidgets.map((w) => (w.id === widget.id ? { ...w, links: newLinks } : w))
               );
             }}
           />
@@ -1335,7 +1351,7 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
           isOpen={creatorOpen}
           onClose={() => setCreatorOpen(false)}
           onAddWidget={handleAddWidget}
-          currentWidgetCount={widgets.length}
+          currentWidgetCount={safeWidgets.length}
           viewportCenter={{ x: 200, y: 200 }}
         />
       )}
