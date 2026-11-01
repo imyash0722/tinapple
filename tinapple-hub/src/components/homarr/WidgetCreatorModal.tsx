@@ -117,15 +117,6 @@ const TEMPLATES: WidgetTemplate[] = [
 
   // Built-in Appliance Widgets
   {
-    type: 'homarr_apps_board',
-    title: 'Homarr Appliance Board',
-    description: 'Iconic Homarr service launcher with live ping dots, open ports, and direct WebUI launchers.',
-    icon: '🚀',
-    category: 'system',
-    defaultW: 960,
-    defaultH: 380,
-  },
-  {
     type: 'silicon_telemetry',
     title: 'Silicon Resource Monitor',
     description: 'Real-time CPU load, Memory (RAM), Root storage fill bars, core count, and thermals.',

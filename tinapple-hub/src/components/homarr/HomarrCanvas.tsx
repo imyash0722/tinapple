@@ -33,7 +33,6 @@ import {
   HomarrTerminalWidget,
   HomarrJournalWidget,
   HomarrBookmarksWidget,
-  HomarrAppsGridWidget,
   CustomBookmarkItem,
   HomarrSingleApplianceWidget,
 } from './HomarrWidgets';
@@ -54,25 +53,10 @@ import { api } from '../../services/api';
 
 const CANVAS_WIDTH = 3200;
 const CANVAS_HEIGHT = 2200;
-const STORAGE_KEY = 'tinapple_homarr_canvas_widgets_v6';
+const STORAGE_KEY = 'tinapple_homarr_canvas_widgets_v7';
 const GRID_SIZE = 20;
 
 const DEFAULT_WIDGETS: CanvasWidget[] = [
-  {
-    id: 'homarr_apps_board',
-    type: 'homarr_apps_board',
-    title: 'Homarr Appliance Board',
-    description: 'Iconic Homarr service launcher with live ping dots, open ports, and direct WebUI launchers.',
-    icon: '🚀',
-    category: 'system',
-    x: 60,
-    y: 60,
-    w: 960,
-    h: 360,
-    colSpan: 12,
-    zIndex: 1,
-    visible: true,
-  },
   {
     id: 'silicon_telemetry',
     type: 'silicon_telemetry',
@@ -81,11 +65,11 @@ const DEFAULT_WIDGETS: CanvasWidget[] = [
     icon: '⚡',
     category: 'telemetry',
     x: 60,
-    y: 440,
+    y: 60,
     w: 520,
-    h: 320,
+    h: 340,
     colSpan: 6,
-    zIndex: 2,
+    zIndex: 1,
     visible: true,
   },
   {
@@ -96,11 +80,11 @@ const DEFAULT_WIDGETS: CanvasWidget[] = [
     icon: '⏱️',
     category: 'system',
     x: 600,
-    y: 440,
+    y: 60,
     w: 420,
-    h: 320,
+    h: 340,
     colSpan: 3,
-    zIndex: 3,
+    zIndex: 2,
     visible: true,
   },
   {
@@ -113,8 +97,23 @@ const DEFAULT_WIDGETS: CanvasWidget[] = [
     x: 1040,
     y: 60,
     w: 420,
-    h: 360,
+    h: 340,
     colSpan: 3,
+    zIndex: 3,
+    visible: true,
+  },
+  {
+    id: 'quick_terminal',
+    type: 'quick_terminal',
+    title: 'Interactive Web Terminal',
+    description: 'Embedded fast PTY bash shell launcher for quick node troubleshooting.',
+    icon: '💻',
+    category: 'system',
+    x: 1480,
+    y: 60,
+    w: 480,
+    h: 340,
+    colSpan: 4,
     zIndex: 4,
     visible: true,
   },
@@ -125,8 +124,8 @@ const DEFAULT_WIDGETS: CanvasWidget[] = [
     description: 'Tailscale VPN MagicDNS status, direct Tor onion exit toggle switch, and AdGuard Home.',
     icon: '🛡️',
     category: 'network',
-    x: 1040,
-    y: 440,
+    x: 60,
+    y: 420,
     w: 480,
     h: 320,
     colSpan: 6,
@@ -140,26 +139,26 @@ const DEFAULT_WIDGETS: CanvasWidget[] = [
     description: 'Live matrix of verified open ports (:8088, :8096, :4567, :8080, :8384, :8081, :3000, :8000).',
     icon: '🔌',
     category: 'network',
-    x: 60,
-    y: 780,
-    w: 520,
+    x: 560,
+    y: 420,
+    w: 460,
     h: 320,
     colSpan: 6,
     zIndex: 6,
     visible: true,
   },
   {
-    id: 'media_server',
-    type: 'media_server',
-    title: 'Jellyfin Media Server',
-    description: 'Hardware video transcoding status (VA-API/QSV), 4K DirectPlay streaming, and web player.',
-    icon: '🎬',
-    category: 'media',
-    x: 600,
-    y: 780,
-    w: 460,
+    id: 'hardware_thermals',
+    type: 'hardware_thermals',
+    title: 'Hardware Thermals & Battery',
+    description: 'Silicon sensor temperatures, cooling fan RPM, battery health and charge limiter.',
+    icon: '🌡️',
+    category: 'telemetry',
+    x: 1040,
+    y: 420,
+    w: 420,
     h: 320,
-    colSpan: 6,
+    colSpan: 4,
     zIndex: 7,
     visible: true,
   },
@@ -170,42 +169,27 @@ const DEFAULT_WIDGETS: CanvasWidget[] = [
     description: 'Continuous encrypted P2P folder synchronization and TrueNAS ZFS dataset bridge.',
     icon: '🔄',
     category: 'storage',
-    x: 1080,
-    y: 780,
-    w: 440,
+    x: 1480,
+    y: 420,
+    w: 480,
     h: 320,
     colSpan: 6,
     zIndex: 8,
     visible: true,
   },
   {
-    id: 'quick_terminal',
-    type: 'quick_terminal',
-    title: 'Interactive Web Terminal',
-    description: 'Embedded fast PTY bash shell launcher for quick node troubleshooting.',
-    icon: '💻',
-    category: 'system',
-    x: 1480,
-    y: 60,
-    w: 480,
-    h: 360,
-    colSpan: 4,
-    zIndex: 9,
-    visible: true,
-  },
-  {
-    id: 'hardware_thermals',
-    type: 'hardware_thermals',
-    title: 'Hardware Thermals & Battery',
-    description: 'Silicon sensor temperatures, cooling fan RPM, battery health and charge limiter.',
-    icon: '🌡️',
-    category: 'telemetry',
-    x: 1540,
-    y: 440,
-    w: 420,
+    id: 'media_server',
+    type: 'media_server',
+    title: 'Jellyfin Media Server',
+    description: 'Hardware video transcoding status (VA-API/QSV), 4K DirectPlay streaming, and web player.',
+    icon: '🎬',
+    category: 'media',
+    x: 60,
+    y: 760,
+    w: 460,
     h: 320,
-    colSpan: 4,
-    zIndex: 10,
+    colSpan: 6,
+    zIndex: 9,
     visible: true,
   },
   {
@@ -215,12 +199,12 @@ const DEFAULT_WIDGETS: CanvasWidget[] = [
     description: 'Self-hosted manga library status and fast offline Tsumiru reader launcher.',
     icon: '📖',
     category: 'media',
-    x: 1540,
-    y: 780,
+    x: 540,
+    y: 760,
     w: 420,
     h: 320,
     colSpan: 4,
-    zIndex: 11,
+    zIndex: 10,
     visible: true,
   },
   {
@@ -230,12 +214,12 @@ const DEFAULT_WIDGETS: CanvasWidget[] = [
     description: 'Active session link, Direct Ethernet patch, Tailscale MagicDNS link with copy buttons.',
     icon: '⚡',
     category: 'network',
-    x: 60,
-    y: 1120,
-    w: 960,
-    h: 280,
+    x: 980,
+    y: 760,
+    w: 980,
+    h: 320,
     colSpan: 12,
-    zIndex: 12,
+    zIndex: 11,
     visible: true,
   },
   {
@@ -245,12 +229,12 @@ const DEFAULT_WIDGETS: CanvasWidget[] = [
     description: 'Customizable grid of external web links and homelab portals with icon customization.',
     icon: '🔖',
     category: 'system',
-    x: 1040,
-    y: 1120,
-    w: 920,
+    x: 60,
+    y: 1100,
+    w: 1900,
     h: 280,
     colSpan: 12,
-    zIndex: 13,
+    zIndex: 12,
     visible: true,
   },
 ];
@@ -290,11 +274,16 @@ export const HomarrCanvas: React.FC<HomarrCanvasProps> = ({
 
   const [widgets, setWidgets] = useState<CanvasWidget[]>(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
+      const saved = localStorage.getItem(STORAGE_KEY) || localStorage.getItem('tinapple_homarr_canvas_widgets_v6');
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed.widgets) && parsed.widgets.length > 0) {
-          return parsed.widgets;
+          const clean = parsed.widgets.filter(
+            (w: CanvasWidget) => (w.type as string) !== 'homarr_apps_board' && w.id !== 'homarr_apps_board'
+          );
+          if (clean.length > 0) {
+            return clean;
+          }
         }
       }
     } catch {}
@@ -667,15 +656,6 @@ export const HomarrCanvas: React.FC<HomarrCanvasProps> = ({
             customTitle={widget.title}
             customIcon={widget.icon}
             customColor={widget.color}
-          />
-        );
-      case 'homarr_apps_board':
-        return (
-          <HomarrAppsGridWidget
-            services={services}
-            isEditMode={isEditMode}
-            onOpenSettings={onOpenAppSettings}
-            onOpenGuide={onOpenGuide}
           />
         );
       case 'silicon_telemetry':
