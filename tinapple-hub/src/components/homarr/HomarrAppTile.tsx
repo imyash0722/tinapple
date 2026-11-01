@@ -72,9 +72,20 @@ export const HomarrAppTile: React.FC<HomarrAppTileProps> = ({
     custom: 'bg-zinc-700/40 text-zinc-300 border-zinc-600/40',
   };
 
+  const handleCardClick = (e: React.MouseEvent) => {
+    if (isEditMode) return;
+    // Don't trigger if clicked on an interactive element
+    const target = e.target as HTMLElement;
+    if (target.closest('button') || target.closest('a')) return;
+    window.open(url, url.startsWith('/') ? '_self' : '_blank');
+  };
+
   return (
     <div
-      className={`${getColSpanClass()} group relative rounded-2xl bg-slate-900/60 hover:bg-slate-900/80 border border-white/[0.08] hover:border-white/20 backdrop-blur-xl transition-all duration-200 p-4 flex flex-col justify-between shadow-lg shadow-black/20 hover:shadow-black/40`}
+      onClick={handleCardClick}
+      className={`${getColSpanClass()} group relative rounded-2xl bg-slate-900/60 hover:bg-slate-900/80 border border-white/[0.08] hover:border-white/20 backdrop-blur-xl transition-all duration-200 p-4 flex flex-col justify-between shadow-lg shadow-black/20 hover:shadow-black/40 ${
+        !isEditMode ? 'cursor-pointer hover:scale-[1.01]' : ''
+      }`}
     >
       {/* Edit Mode Grip & Controls Overlay */}
       {isEditMode && (

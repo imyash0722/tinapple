@@ -38,6 +38,10 @@ import {
   ShoppingBag,
   Server,
   Zap,
+  Sun,
+  HardDrive,
+  Thermometer,
+  Clock,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -94,6 +98,25 @@ export interface HomarrBoardProps {
   onRefresh: () => void;
   isRefreshing: boolean;
 }
+
+interface SearchBang {
+  prefix: string;
+  name: string;
+  url: string;
+  icon: string;
+  description: string;
+}
+
+const SEARCH_BANGS: SearchBang[] = [
+  { prefix: '!yt', name: 'YouTube', url: 'https://www.youtube.com/results?search_query=', icon: '📺', description: 'Search YouTube videos' },
+  { prefix: '!g', name: 'Google', url: 'https://www.google.com/search?q=', icon: '🔍', description: 'Search Google web' },
+  { prefix: '!ddg', name: 'DuckDuckGo', url: 'https://duckduckgo.com/?q=', icon: '🦆', description: 'Privacy search on DuckDuckGo' },
+  { prefix: '!gh', name: 'GitHub', url: 'https://github.com/search?q=', icon: '🐙', description: 'Search GitHub repositories' },
+  { prefix: '!tmdb', name: 'The Movie Database', url: 'https://www.themoviedb.org/search?query=', icon: '🎬', description: 'Search TMDB Movies & Shows' },
+  { prefix: '!wiki', name: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Special:Search?search=', icon: '📖', description: 'Search Wikipedia encyclopedia' },
+  { prefix: '!nyaa', name: 'Nyaa Anime', url: 'https://nyaa.si/?f=0&c=0_0&q=', icon: '⛩️', description: 'Search Nyaa anime releases' },
+  { prefix: '!r', name: 'Reddit', url: 'https://www.reddit.com/search/?q=', icon: '💬', description: 'Search Reddit discussions' },
+];
 
 // 1. Definition of Built-in Curated Homarr Appliance Tiles
 interface CuratedAppliance {
@@ -330,20 +353,115 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  // Keyboard shortcut '/' or 'Cmd+K' to focus search
+  // Live Open Weather (wttr.in)
+  const [weatherText, setWeatherText] = useState<string>('Sunny');
+
+  useEffect(() => {
+    let active = true;
+    const fetchWeather = async () => {
+      try {
+        const res = await fetch('https://wttr.in/?format=%c+%t+%C');
+        if (res.ok) {
+          const txt = await res.text();
+          if (active && txt && !txt.includes('Unknown') && txt.length < 40) {
+            setWeatherText(txt.trim());
+          }
+        }
+      } catch {
+        // ignore offline weather
+      }
+    };
+    fetchWeather();
+    const interval = setInterval(fetchWeather, 600000);
+    return () => {
+      active = false;
+      clearInterval(interval);
+    };
+  }, []);
+
+  // Compute live silicon metrics
+  const cpuPercent = Math.min(100, Math.round(telemetry?.cpu?.usagePercent ?? 0));
+  const ramPercent = Math.min(100, Math.round(telemetry?.memory?.usagePercent ?? 0));
+  const diskPercent = Math.min(100, Math.round(telemetry?.disk?.usagePercent ?? 0));
+  const tempC = telemetry?.thermal?.cpuTemp ? `${Math.round(telemetry.thermal.cpuTemp)}°C` : 'Normal';
+
+  const formatUptime = (sec: number) => {
+    const days = Math.floor(sec / 86400);
+    const hours = Math.floor((sec % 86400) / 3600);
+    const mins = Math.floor((sec % 3600) / 60);
+    if (days > 0) return `${days}d ${hours}h`;
+    return `${hours}h ${mins}m`;
+  };
+
+  // Detect Search Bangs (!yt, !g, !ddg, !gh, !tmdb, !wiki, !nyaa, !r)
+  const activeBang = useMemo(() => {
+    const trimmed = searchQuery.trim();
+    if (!trimmed.startsWith('!')) return null;
+    const parts = trimmed.split(/\s+/);
+    const prefix = parts[0].toLowerCase();
+    const query = parts.slice(1).join(' ');
+    const found = SEARCH_BANGS.find((b) => b.prefix === prefix);
+    if (found) {
+      return { ...found, query };
+    }
+    return null;
+  }, [searchQuery]);
+
+  // Enhanced Keyboard Shortcuts: '/' or 'Cmd+K' focus, 'Esc' clear, 'Cmd+E' edit, '1'-'7' category
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.key === '/' || ((e.metaKey || e.ctrlKey) && e.key === 'k')) && document.activeElement !== searchInputRef.current) {
+      const isInput =
+        document.activeElement === searchInputRef.current ||
+        document.activeElement?.tagName === 'INPUT' ||
+        document.activeElement?.tagName === 'TEXTAREA';
+
+      if ((e.key === '/' || ((e.metaKey || e.ctrlKey) && e.key === 'k')) && !isInput) {
         e.preventDefault();
         searchInputRef.current?.focus();
       } else if (e.key === 'Escape' && document.activeElement === searchInputRef.current) {
         setSearchQuery('');
         searchInputRef.current?.blur();
+      } else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'e') {
+        e.preventDefault();
+        setIsEditMode((prev) => !prev);
+        AndroidBridge.performHaptic('medium');
+      } else if (!isInput && ['1', '2', '3', '4', '5', '6', '7'].includes(e.key)) {
+        const catMap: Record<string, string> = {
+          '1': 'all',
+          '2': 'media',
+          '3': 'downloads',
+          '4': 'storage',
+          '5': 'network',
+          '6': 'telemetry',
+          '7': 'system',
+        };
+        if (catMap[e.key]) setSelectedCategory(catMap[e.key]);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [setIsEditMode]);
+
+  // Handle Search Submission (Search Bangs or top matching app or DuckDuckGo)
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (activeBang) {
+      const targetUrl = `${activeBang.url}${encodeURIComponent(activeBang.query)}`;
+      window.open(targetUrl, '_blank', 'noopener,noreferrer');
+      return;
+    }
+    // If matching apps exist, open the first matching app!
+    if (filteredAppliances.length > 0) {
+      const topApp = filteredAppliances[0];
+      const url = getServiceUrl(topApp.id, topApp.subpath);
+      window.open(url, url.startsWith('/') ? '_self' : '_blank');
+      return;
+    }
+    // Web search fallback
+    if (searchQuery.trim()) {
+      window.open(`https://duckduckgo.com/?q=${encodeURIComponent(searchQuery)}`, '_blank', 'noopener,noreferrer');
+    }
+  };
 
   // 3. Persistent Board Widgets State
   const [widgets, setWidgets] = useState<CanvasWidget[]>(() => {
@@ -797,8 +915,8 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
           </div>
         </div>
 
-        {/* Center: Homarr Fast Interactive Search Bar */}
-        <div className="relative w-full">
+        {/* Center: Homarr Fast Interactive Search Bar with Bangs Support */}
+        <form onSubmit={handleSearchSubmit} className="relative w-full">
           <div className="relative flex items-center">
             <Search className="w-4 h-4 text-zinc-400 absolute left-4 pointer-events-none" />
             <input
@@ -806,13 +924,14 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search apps, daemons, widgets, or web… (Press '/' to focus, 'Esc' to clear)"
+              placeholder="Search apps, daemons, or type bangs like '!yt query', '!g', '!tmdb'… (Press '/' to focus)"
               className="w-full pl-11 pr-24 py-3 rounded-2xl bg-slate-900/90 border border-white/15 focus:border-tinapple-gold text-sm font-mono text-white placeholder-zinc-500 focus:outline-none transition-all shadow-inner"
             />
             {/* Clear Button or Shortcut Pill */}
             <div className="absolute right-3.5 flex items-center gap-1.5">
               {searchQuery ? (
                 <button
+                  type="button"
                   onClick={() => {
                     setSearchQuery('');
                     searchInputRef.current?.focus();
@@ -829,22 +948,65 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
             </div>
           </div>
 
-          {/* Web Search fallback pill if user typed a search query */}
-          {searchQuery.trim().length > 0 && (
+          {/* Active Search Bang Preview Pill */}
+          {activeBang && (
+            <div className="mt-2 flex items-center justify-between px-3 py-1.5 rounded-xl bg-purple-950/50 border border-purple-500/30 text-xs font-mono text-purple-200 animate-in fade-in">
+              <div className="flex items-center gap-2">
+                <span>{activeBang.icon}</span>
+                <span>
+                  Search <strong>{activeBang.name}</strong> for: <em className="text-tinapple-gold not-italic font-bold">"{activeBang.query || '...'}"</em>
+                </span>
+              </div>
+              <span className="text-[10px] px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30 font-bold">
+                Press Enter ↵
+              </span>
+            </div>
+          )}
+
+          {/* Web Search fallback pill if user typed a non-bang query */}
+          {!activeBang && searchQuery.trim().length > 0 && (
             <div className="mt-2 flex items-center justify-between px-3 py-1.5 rounded-xl bg-slate-900/60 border border-white/10 text-xs font-mono text-zinc-400">
-              <span>Filtering for "{searchQuery}"</span>
+              <div className="flex items-center gap-2">
+                <span>Filtering for <strong>"{searchQuery}"</strong></span>
+                {filteredAppliances.length > 0 && (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/25">
+                    {filteredAppliances.length} app match{filteredAppliances.length > 1 ? 'es' : ''} (Press Enter to open first)
+                  </span>
+                )}
+              </div>
               <a
                 href={`https://duckduckgo.com/?q=${encodeURIComponent(searchQuery)}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-tinapple-gold hover:underline flex items-center gap-1 font-bold"
+                className="text-tinapple-gold hover:underline flex items-center gap-1 font-bold shrink-0"
               >
-                <span>Search DuckDuckGo</span>
+                <span>Search Web</span>
                 <ExternalLink className="w-3 h-3" />
               </a>
             </div>
           )}
-        </div>
+
+          {/* Quick Search Bang Shortcuts when empty */}
+          {!searchQuery && (
+            <div className="hidden sm:flex items-center gap-1.5 mt-2 font-mono text-[11px] text-zinc-500 overflow-x-auto scrollbar-none">
+              <span className="text-zinc-600">Quick Bangs:</span>
+              {SEARCH_BANGS.slice(0, 6).map((b) => (
+                <button
+                  key={b.prefix}
+                  type="button"
+                  onClick={() => {
+                    setSearchQuery(`${b.prefix} `);
+                    searchInputRef.current?.focus();
+                  }}
+                  className="px-2 py-0.5 rounded-lg bg-white/[0.03] hover:bg-white/[0.08] hover:text-zinc-300 transition-colors border border-white/5 flex items-center gap-1"
+                >
+                  <span>{b.icon}</span>
+                  <span>{b.prefix}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </form>
 
         {/* Bottom Filter Row: Category Filter Pills */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none font-mono text-xs">
@@ -878,6 +1040,77 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
           )}
         </div>
       </header>
+
+      {/* ═══════════════════════════════════════════════════════════════
+          LIVE SILICON METRICS & WEATHER HUD STRIP (GLANCE / HOMARR)
+          ═══════════════════════════════════════════════════════════════ */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 font-mono text-xs">
+        {/* CPU */}
+        <div className="px-3.5 py-2 rounded-2xl bg-slate-950/60 border border-white/[0.08] backdrop-blur-xl flex items-center justify-between shadow-sm">
+          <div className="flex items-center gap-2">
+            <Cpu className="w-3.5 h-3.5 text-sky-400" />
+            <span className="text-zinc-400 text-[11px]">CPU</span>
+          </div>
+          <span className={`font-black tabular-nums ${cpuPercent > 80 ? 'text-red-400' : cpuPercent > 50 ? 'text-amber-400' : 'text-sky-300'}`}>
+            {cpuPercent}%
+          </span>
+        </div>
+
+        {/* RAM */}
+        <div className="px-3.5 py-2 rounded-2xl bg-slate-950/60 border border-white/[0.08] backdrop-blur-xl flex items-center justify-between shadow-sm">
+          <div className="flex items-center gap-2">
+            <Activity className="w-3.5 h-3.5 text-purple-400" />
+            <span className="text-zinc-400 text-[11px]">RAM</span>
+          </div>
+          <span className={`font-black tabular-nums ${ramPercent > 85 ? 'text-red-400' : 'text-purple-300'}`}>
+            {ramPercent}%
+          </span>
+        </div>
+
+        {/* Disk */}
+        <div className="px-3.5 py-2 rounded-2xl bg-slate-950/60 border border-white/[0.08] backdrop-blur-xl flex items-center justify-between shadow-sm">
+          <div className="flex items-center gap-2">
+            <HardDrive className="w-3.5 h-3.5 text-emerald-400" />
+            <span className="text-zinc-400 text-[11px]">Disk</span>
+          </div>
+          <span className={`font-black tabular-nums ${diskPercent > 85 ? 'text-red-400' : 'text-emerald-300'}`}>
+            {diskPercent}%
+          </span>
+        </div>
+
+        {/* Temp */}
+        <div className="px-3.5 py-2 rounded-2xl bg-slate-950/60 border border-white/[0.08] backdrop-blur-xl flex items-center justify-between shadow-sm">
+          <div className="flex items-center gap-2">
+            <Thermometer className="w-3.5 h-3.5 text-amber-400" />
+            <span className="text-zinc-400 text-[11px]">Temp</span>
+          </div>
+          <span className="font-black text-amber-300 tabular-nums">
+            {tempC}
+          </span>
+        </div>
+
+        {/* Uptime */}
+        <div className="px-3.5 py-2 rounded-2xl bg-slate-950/60 border border-white/[0.08] backdrop-blur-xl flex items-center justify-between shadow-sm">
+          <div className="flex items-center gap-2">
+            <Clock className="w-3.5 h-3.5 text-indigo-400" />
+            <span className="text-zinc-400 text-[11px]">Uptime</span>
+          </div>
+          <span className="font-bold text-indigo-300 tabular-nums truncate max-w-[85px]">
+            {formatUptime(systemInfo?.uptime || 0)}
+          </span>
+        </div>
+
+        {/* Weather */}
+        <div className="px-3.5 py-2 rounded-2xl bg-slate-950/60 border border-white/[0.08] backdrop-blur-xl flex items-center justify-between shadow-sm col-span-2 sm:col-span-1">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <Sun className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+            <span className="text-zinc-400 text-[11px] shrink-0">Weather</span>
+          </div>
+          <span className="font-bold text-amber-300 text-[11px] truncate max-w-[110px]" title={weatherText}>
+            {weatherText}
+          </span>
+        </div>
+      </div>
 
       {/* ═══════════════════════════════════════════════════════════════
           2. HOMARR SECTION 1: APPLIANCE DAEMONS GRID (APPS CONTAINER)
