@@ -94,12 +94,17 @@ export const App: React.FC = () => {
   const [requestedTab] = useState(() => {
     if (typeof window === 'undefined') return null;
     const path = window.location.pathname.toLowerCase();
-    if (path === '/guides' || path === '/guides/') return 'guides';
+    if (path === '/guides' || path.startsWith('/guides/')) return 'guides';
     const params = new URLSearchParams(window.location.search);
     return params.get('tab');
   });
   const [requestedGuide] = useState(() => {
-    const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
+    if (typeof window === 'undefined') return null;
+    const path = window.location.pathname.toLowerCase();
+    if (path.startsWith('/guides/') && path.length > 8) {
+      return path.slice(8).replace(/\/$/, '');
+    }
+    const params = new URLSearchParams(window.location.search);
     return params.get('guide');
   });
   const [selectedTab, setSelectedTab] = useState<string | null>(requestedTab);
@@ -113,6 +118,13 @@ export const App: React.FC = () => {
     const handlePopState = () => {
       setViewingAppId(getInitialAppFromPath());
       if (typeof window !== 'undefined') {
+        const path = window.location.pathname.toLowerCase();
+        if (path === '/guides' || path.startsWith('/guides/')) {
+          setSelectedTab('guides');
+          if (path.startsWith('/guides/') && path.length > 8) {
+            setSelectedGuideId(path.slice(8).replace(/\/$/, ''));
+          }
+        }
         const params = new URLSearchParams(window.location.search);
         const tab = params.get('tab');
         if (tab) setSelectedTab(tab);

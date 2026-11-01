@@ -582,10 +582,40 @@ export const HomarrCanvas: React.FC<HomarrCanvasProps> = ({
     };
   }, [isPanning, viewport.zoom, containerSize, snapToGrid, widgets]);
 
-  // Handle canvas wheel zoom / pan
-  const handleWheel = (e: React.WheelEvent) => {
-    if (e.ctrlKey || e.metaKey) {
+  // Handle canvas wheel zoom / pan with non-passive listener to prevent page scrolling
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const onNativeWheel = (e: WheelEvent) => {
       e.preventDefault();
+      e.stopPropagation();
+
+      if (e.ctrlKey || e.metaKey) {
+        const zoomFactor = -e.deltaY * 0.0015;
+        setViewport((prev) => {
+          const nextZoom = Math.min(1.8, Math.max(0.5, prev.zoom + zoomFactor));
+          return { ...prev, zoom: nextZoom };
+        });
+      } else {
+        setViewport((prev) => ({
+          ...prev,
+          panX: prev.panX - e.deltaX,
+          panY: prev.panY - e.deltaY,
+        }));
+      }
+    };
+
+    el.addEventListener('wheel', onNativeWheel, { passive: false });
+    return () => {
+      el.removeEventListener('wheel', onNativeWheel);
+    };
+  }, []);
+
+  // Handle canvas wheel zoom / pan (fallback synthetic)
+  const handleWheel = (e: React.WheelEvent) => {
+    e.preventDefault();
+    if (e.ctrlKey || e.metaKey) {
       const zoomFactor = -e.deltaY * 0.0015;
       setViewport((prev) => {
         const nextZoom = Math.min(1.8, Math.max(0.5, prev.zoom + zoomFactor));
