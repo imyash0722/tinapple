@@ -29,6 +29,7 @@ import { AppBrandIcon } from '../common/AppBrandIcons';
 import { api, getServiceUrl } from '../../services/api';
 import { AppInfo, AppliancePackStatus } from '../../types/api';
 import { StoreTerminal } from './StoreTerminal';
+import { resolveGuideId } from '../../data/guidesCatalog';
 
 const FALLBACK_APPS: AppInfo[] = [
   {
@@ -1305,14 +1306,14 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({
                             'seerr-stack': 'seerr',
                             'manga-suite': 'syncyomi',
                             'manga-syncyomi': 'syncyomi',
-                            'privacy-shield': 'tailscale',
+                            'privacy-shield': 'adguard',
                             'audiophile-cloud': 'navidrome',
                             'cloud-vault': 'vaultwarden',
                             'second-brain': 'obsidian',
-                            'gaming-anvil': 'tailscale',
+                            'gaming-anvil': 'playit',
                             'truenas-vault': 'syncthing',
                           };
-                          onOpenGuide(packGuideMap[pack.id] || 'jellyfin');
+                          onOpenGuide(packGuideMap[pack.id] || resolveGuideId(pack.id));
                         }}
                         className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-purple-500/15 hover:bg-purple-500/25 border border-purple-500/30 text-purple-300 font-mono text-xs font-semibold transition-all active:scale-95"
                         title="View Stack & Client Setup Guide"
@@ -1598,30 +1599,7 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({
 
                 {onOpenGuide && (
                   <button
-                    onClick={() => {
-                      const guideMap: Record<string, string> = {
-                        jellyfin: 'jellyfin',
-                        suwayomi: 'syncyomi',
-                        'suwayomi-server': 'syncyomi',
-                        beeper: 'beeper',
-                        vaultwarden: 'vaultwarden',
-                        syncthing: 'syncthing',
-                        couchdb: 'obsidian',
-                        radarr: 'servarr',
-                        sonarr: 'servarr',
-                        prowlarr: 'servarr',
-                        bazarr: 'servarr',
-                        qbittorrent: 'qbittorrent',
-                        pinchflat: 'pinchflat',
-                        navidrome: 'navidrome',
-                        adguard: 'adguard',
-                        playit: 'playit',
-                        protonvpn: 'protonvpn',
-                        homarr: 'homarr',
-                        samba: 'samba',
-                      };
-                      onOpenGuide(guideMap[selectedApp.id] || 'jellyfin');
-                    }}
+                    onClick={() => onOpenGuide(resolveGuideId(selectedApp.id))}
                     className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-purple-500/15 hover:bg-purple-500/25 border border-purple-500/30 text-purple-300 text-xs font-mono transition-all"
                     title="View Client App & Setup Guide"
                   >
@@ -1770,30 +1748,7 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({
                   <div className="flex items-center gap-1.5">
                     {onOpenGuide && (
                       <button
-                        onClick={() => {
-                          const guideMap: Record<string, string> = {
-                            jellyfin: 'jellyfin',
-                            suwayomi: 'syncyomi',
-                            'suwayomi-server': 'syncyomi',
-                            beeper: 'beeper',
-                            vaultwarden: 'vaultwarden',
-                            syncthing: 'syncthing',
-                            couchdb: 'obsidian',
-                            radarr: 'servarr',
-                            sonarr: 'servarr',
-                            prowlarr: 'servarr',
-                            bazarr: 'servarr',
-                            qbittorrent: 'qbittorrent',
-                            pinchflat: 'pinchflat',
-                            navidrome: 'navidrome',
-                            adguard: 'adguard',
-                            playit: 'playit',
-                            protonvpn: 'protonvpn',
-                            homarr: 'homarr',
-                            samba: 'samba',
-                          };
-                          onOpenGuide(guideMap[app.id] || 'jellyfin');
-                        }}
+                        onClick={() => onOpenGuide(resolveGuideId(app.id))}
                         className="p-1.5 rounded-lg bg-purple-500/15 hover:bg-purple-500/25 text-purple-300 border border-purple-500/30 text-xs transition-colors flex items-center gap-1"
                         title={`View ${app.name} Client & Setup Guide`}
                       >

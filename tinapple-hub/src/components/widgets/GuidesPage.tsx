@@ -18,7 +18,7 @@ import {
   Layers,
   ArrowRight,
 } from 'lucide-react';
-import { GUIDES_CATALOG, GuideArticle } from '../../data/guidesCatalog';
+import { GUIDES_CATALOG, GuideArticle, findGuide } from '../../data/guidesCatalog';
 
 interface GuidesPageProps {
   initialGuideId?: string | null;
@@ -83,7 +83,7 @@ export const GuidesPage: React.FC<GuidesPageProps> = ({
   }, [searchQuery, selectedCategory]);
 
   const currentGuide = useMemo(() => {
-    return GUIDES_CATALOG.find((g) => g.id === selectedId) || GUIDES_CATALOG[0];
+    return findGuide(selectedId);
   }, [selectedId]);
 
   const categories = [
