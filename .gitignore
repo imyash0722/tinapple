@@ -68,6 +68,7 @@ tinapple-hub/android/.gradle/
 tinapple-dash/web/dist/releases/
 tinapple-dash/web/dist/tsumiru/
 tinapple-repo/packages/tinapple-dash/web/dist/tsumiru/
+tinapple-hub/public/tsumiru/
 
 # Packaged shell entry points are source, not compiled binaries.
 !tinapple-base/bin/
