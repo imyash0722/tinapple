@@ -1,0 +1,9 @@
+{
+  "appId": "org.tinapple.hub",
+  "appName": "Tinapple Hub",
+  "webDir": "dist",
+  "server": {
+    "cleartext": true,
+    "androidScheme": "https"
+  }
+}

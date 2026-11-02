@@ -33,71 +33,31 @@ cd "${REPO_DIR}/tinapple-hub"
 npm run build --silent
 echo -e "${GREEN}✓ Production bundle ready in dist/ (${DIST_DIR})${NC}"
 
-# 2. Package Android Companion APK with Cache Stack
-echo -e "${CYAN}[2/6] Packaging Android Companion APK with embedded cache stack...${NC}"
-mkdir -p "${REPO_DIR}/tinapple-android/assets/web"
-rm -rf "${REPO_DIR}/tinapple-android/assets/web"/*
-cp -r "${DIST_DIR}"/* "${REPO_DIR}/tinapple-android/assets/web/"
-rm -rf "${REPO_DIR}/tinapple-android/assets/web/tsumiru"
+# 2. Package Android Companion APK with Capacitor
+echo -e "${CYAN}[2/6] Packaging Android Companion APK with Capacitor...${NC}"
+cd "${REPO_DIR}/tinapple-hub"
+node node_modules/@capacitor/cli/bin/capacitor sync android
 
-# Ensure release key exists
-mkdir -p "${REPO_DIR}/tinapple-android/keystore"
-if [[ ! -f "${REPO_DIR}/tinapple-android/keystore/release.key" ]]; then
-  openssl req -x509 -newkey rsa:2048 \
-    -keyout "${REPO_DIR}/tinapple-android/keystore/release.key" \
-    -out "${REPO_DIR}/tinapple-android/keystore/release.crt" \
-    -days 10000 -nodes \
-    -subj "/CN=Tinapple Hub/O=Tinapple Appliance Platform/C=IN" >/dev/null 2>&1
-fi
-
-# Ensure PKCS12 keystore exists for v1/v2/v3 signing
-if [[ ! -f "${REPO_DIR}/tinapple-android/keystore/tinapple.p12" ]]; then
-  openssl pkcs12 -export \
-    -in "${REPO_DIR}/tinapple-android/keystore/release.crt" \
-    -inkey "${REPO_DIR}/tinapple-android/keystore/release.key" \
-    -out "${REPO_DIR}/tinapple-android/keystore/tinapple.p12" \
-    -name tinapple -passout pass:tinapple123 >/dev/null 2>&1 || true
-fi
-
-# Clean out old assets from template APK if present, then inject fresh assets
-zip -d "${REPO_DIR}/out/tinapple-client.apk" "assets/*" >/dev/null 2>&1 || true
-
-# Inject assets into template APK
-cd "${REPO_DIR}/tinapple-android"
-zip -r "${REPO_DIR}/out/tinapple-client.apk" assets/ >/dev/null 2>&1 || true
-
-# Sign with v1, v2, and v3 schemes (via uber-apk-signer or sign-apk.py fallback)
-UBER_SIGNER="${REPO_DIR}/scripts/bin/uber-apk-signer.jar"
-if command -v java &>/dev/null && [[ -f "${UBER_SIGNER}" ]]; then
-  TMP_SIGN_DIR="/tmp/tinapple-apk-sign-$$"
-  mkdir -p "${TMP_SIGN_DIR}"
-  java -jar "${UBER_SIGNER}" \
-    -a "${REPO_DIR}/out/tinapple-client.apk" \
-    --ks "${REPO_DIR}/tinapple-android/keystore/tinapple.p12" \
-    --ksPass tinapple123 --ksAlias tinapple --ksKeyPass tinapple123 \
-    --allowResign -o "${TMP_SIGN_DIR}" >/dev/null 2>&1 || true
-  
-  if ls "${TMP_SIGN_DIR}"/*-signed.apk &>/dev/null; then
-    cp "${TMP_SIGN_DIR}"/*-signed.apk "${OUT_DIR}/tinapple-android-client.apk"
-  else
-    python3 "${REPO_DIR}/scripts/sign-apk.py" \
-      "${REPO_DIR}/out/tinapple-client.apk" \
-      "${OUT_DIR}/tinapple-android-client.apk" \
-      "${REPO_DIR}/tinapple-android/keystore/release.crt" \
-      "${REPO_DIR}/tinapple-android/keystore/release.key" >/dev/null
+if command -v javac &>/dev/null || [[ -n "${ANDROID_HOME:-}" || -n "${ANDROID_SDK_ROOT:-}" ]]; then
+  echo "Building native Android APK via Gradle..."
+  cd "${REPO_DIR}/tinapple-hub/android"
+  chmod +x ./gradlew
+  ./gradlew assembleDebug --no-daemon || true
+  if [[ -f "${REPO_DIR}/tinapple-hub/android/app/build/outputs/apk/debug/app-debug.apk" ]]; then
+    cp "${REPO_DIR}/tinapple-hub/android/app/build/outputs/apk/debug/app-debug.apk" "${OUT_DIR}/tinapple-android-client.apk"
+    echo -e "${GREEN}✓ Native Capacitor Android APK built successfully.${NC}"
   fi
-  rm -rf "${TMP_SIGN_DIR}"
-else
-  python3 "${REPO_DIR}/scripts/sign-apk.py" \
-    "${REPO_DIR}/out/tinapple-client.apk" \
-    "${OUT_DIR}/tinapple-android-client.apk" \
-    "${REPO_DIR}/tinapple-android/keystore/release.crt" \
-    "${REPO_DIR}/tinapple-android/keystore/release.key" >/dev/null
 fi
 
-cp "${OUT_DIR}/tinapple-android-client.apk" "${REPO_DIR}/out/tinapple-client.apk"
-cp "${OUT_DIR}/tinapple-android-client.apk" "${REPO_DIR}/tinapple-dash/web/dist/tinapple-client.apk"
-echo -e "${GREEN}✓ Android APK release packaged: out/releases/tinapple-android-client.apk${NC}"
+if [[ ! -f "${OUT_DIR}/tinapple-android-client.apk" && -f "${REPO_DIR}/out/tinapple-client.apk" ]]; then
+  cp "${REPO_DIR}/out/tinapple-client.apk" "${OUT_DIR}/tinapple-android-client.apk"
+fi
+
+if [[ -f "${OUT_DIR}/tinapple-android-client.apk" ]]; then
+  cp "${OUT_DIR}/tinapple-android-client.apk" "${REPO_DIR}/out/tinapple-client.apk" 2>/dev/null || true
+  cp "${OUT_DIR}/tinapple-android-client.apk" "${REPO_DIR}/tinapple-dash/web/dist/tinapple-client.apk" 2>/dev/null || true
+  echo -e "${GREEN}✓ Android APK release ready: out/releases/tinapple-android-client.apk${NC}"
+fi
 
 # 3. Package Linux Desktop Releases
 echo -e "${CYAN}[3/6] Packaging Linux Desktop Release (AppImage & Portable Tarball)...${NC}"
