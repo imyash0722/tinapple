@@ -238,9 +238,7 @@ export const QuickConnectCard: React.FC<QuickConnectCardProps> = ({
           </a>
 
           <a
-            href="https://github.com/imyash0722/tinapple/releases"
-            target="_blank"
-            rel="noreferrer"
+            href="/download/apk"
             className="flex items-center gap-3 p-3 rounded-xl bg-slate-800/50 hover:bg-slate-800 border border-slate-700/60 hover:border-emerald-500/50 transition-all group"
           >
             <div className="w-9 h-9 rounded-lg bg-emerald-500/15 text-emerald-400 flex items-center justify-center shrink-0">
@@ -251,7 +249,7 @@ export const QuickConnectCard: React.FC<QuickConnectCardProps> = ({
                 <span className="text-xs font-bold text-white group-hover:text-emerald-300 transition-colors">Android Companion</span>
                 <span className="text-[9px] font-mono px-1.5 py-0.5 bg-emerald-500/10 text-emerald-400 rounded">APK</span>
               </div>
-              <p className="text-[10px] text-slate-400 font-mono truncate">Kotlin + Compose Canvas</p>
+              <p className="text-[10px] text-slate-400 font-mono truncate">Capacitor 7 Native Client</p>
             </div>
           </a>
         </div>

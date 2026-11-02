@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowUpCircle, X, ExternalLink, RefreshCw, Sparkles, GitCommit } from 'lucide-react';
 import { api } from '../../services/api';
+import { AppUpdateService } from '../../services/appUpdate';
 
 const DISMISSED_SHA_KEY = 'tinapple_dismissed_update_sha';
 
@@ -85,6 +86,27 @@ export const UpdateNotificationToast: React.FC<UpdateNotificationToastProps> = (
 
   const handleApplyUpdate = async () => {
     setIsUpdating(true);
+    if (AppUpdateService.isNativeAndroid()) {
+      setUpdateStatus('Connecting to update server...');
+      try {
+        const apkUrl = 'https://pineapple-server.taildb42a2.ts.net/tinapple-client.apk';
+        const res = await AppUpdateService.installApk(apkUrl, (progress) => {
+          setUpdateStatus(`Downloading update (${progress}%)...`);
+        });
+        if (res.success) {
+          setUpdateStatus('Launching Android installer...');
+          setTimeout(() => setIsVisible(false), 3000);
+        } else {
+          setUpdateStatus(`Update notice: ${res.error || res.status}`);
+          setIsUpdating(false);
+        }
+      } catch (e: any) {
+        setUpdateStatus(`Update failed: ${e.message || 'Check connection'}`);
+        setIsUpdating(false);
+      }
+      return;
+    }
+
     setUpdateStatus('Deploying system update...');
     try {
       if (onTriggerUpdate) {
@@ -168,7 +190,13 @@ export const UpdateNotificationToast: React.FC<UpdateNotificationToastProps> = (
               className="flex-1 py-1.5 px-3 rounded-xl bg-gradient-to-r from-cyan-500 to-sky-500 hover:from-cyan-400 hover:to-sky-400 text-slate-950 font-bold flex items-center justify-center gap-1.5 transition-all shadow-md active:scale-95 disabled:opacity-50"
             >
               <RefreshCw className={`w-3 h-3 ${isUpdating ? 'animate-spin' : ''}`} />
-              <span>{isUpdating ? 'Updating...' : 'Update System'}</span>
+              <span>
+                {isUpdating
+                  ? 'Updating...'
+                  : AppUpdateService.isNativeAndroid()
+                  ? 'Update App'
+                  : 'Update System'}
+              </span>
             </button>
 
             <a

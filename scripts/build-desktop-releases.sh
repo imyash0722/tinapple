@@ -54,7 +54,10 @@ if [[ -d "${ANDROID_HOME}" ]] && command -v java &>/dev/null; then
   cd "${REPO_DIR}/tinapple-hub/android"
   chmod +x ./gradlew
   ./gradlew assembleDebug --stacktrace --no-daemon
-  if [[ -f "${REPO_DIR}/tinapple-hub/android/app/build/outputs/apk/debug/app-debug.apk" ]]; then
+  if [[ -f "${REPO_DIR}/tinapple-hub/android/app/build/outputs/apk/release/app-release.apk" ]]; then
+    cp "${REPO_DIR}/tinapple-hub/android/app/build/outputs/apk/release/app-release.apk" "${OUT_DIR}/tinapple-android-client.apk"
+    echo -e "${GREEN}✓ Native Capacitor Android Release APK built successfully.${NC}"
+  elif [[ -f "${REPO_DIR}/tinapple-hub/android/app/build/outputs/apk/debug/app-debug.apk" ]]; then
     cp "${REPO_DIR}/tinapple-hub/android/app/build/outputs/apk/debug/app-debug.apk" "${OUT_DIR}/tinapple-android-client.apk"
     echo -e "${GREEN}✓ Native Capacitor Android APK built successfully.${NC}"
   else
