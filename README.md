@@ -92,7 +92,7 @@ The tinapple platform is structured into modular layers:
 - **`tinapple-hub`**: A single-page dashboard built with React 18, TypeScript, Tailwind CSS, Lucide icons, and Framer Motion. Compiled into static production assets served directly by `tinapple-dash` from `/usr/share/tinapple-dash/web/dist`.
 - **`tinapple-hw`**: Hardware abstraction daemon responsible for reading battery controller nodes in `/sys/class/power_supply/`, enforcing charge ceilings, and managing CPU energy performance preferences via `power-profiles-daemon`.
 - **`tinapple-config-generator`**: Template engine that converts the declarative `/etc/tinapple/tinapple.json` manifest into service-specific configuration files for Caddy, Navidrome, qBittorrent, and systemd units.
-- **`tinapple-android`**: Dedicated Android client package (`org.tinapple.client`) compiled with Android SDK 34, connecting directly to the server's HTTPS endpoint.
+- **`tinapple-hub/android`**: Capacitor Android companion package (`org.tinapple.hub`) targeting SDK 34, connecting directly to the server's HTTPS endpoint with native status bar, haptic feedback, and offline fallback.
 
 ---
 
@@ -592,16 +592,16 @@ GitHub Actions workflow [`.github/workflows/client-releases.yml`](.github/workfl
 
 ---
 
-### 2. Kotlin Android Companion Client (`tinapple-android`)
+### 2. Capacitor Android Companion Client (`tinapple-hub/android`)
 
-The dedicated Android companion app (`org.tinapple.hub` / `org.tinapple.client`) is engineered for low latency, smooth touch navigation, and hardware integration:
+The dedicated Android companion app (`org.tinapple.hub`) is engineered for low latency, smooth touch navigation, and hardware integration:
 
-- **Offline Cache Stack**: Implements `WebViewClient.shouldInterceptRequest()`, which intercepts static requests (`/assets/...`, `/icons/...`, `/wallpapers/...`, and `/index.html`) and serves them directly from local APK storage (`android_asset/web/`).
-- **Compose Draggable Canvas (`ComposeCanvas.kt`)**: Native Jetpack Compose implementation of the 2D infinite draggable canvas with multi-touch pinch-to-zoom (0.5× – 1.8×) and 60fps pan gestures.
-- **Native Android Bridge (`TinappleBridge.kt`)**: Bridges web events with native Android vibration engines (`VibrationEffect.EFFECT_CLICK`, `EFFECT_TICK`) for tactile haptic feedback during widget dragging and toggle switches.
-- **Resilient Fallback**: Automatically falls back between Tailscale MagicDNS (`http://100.108.215.120:8088`), Wi-Fi Hotspot (`http://192.168.4.1:8088`), and LAN mDNS (`http://pineapple-server:8088`).
+- **Capacitor 7 Hybrid Engine**: Renders the complete React 18 / Vite 6 dashboard with hardware acceleration, responsive touch handling, and dynamic viewport adaptations.
+- **Compose Draggable Canvas Support**: Optimized 2D infinite draggable canvas with multi-touch pinch-to-zoom (0.5× – 1.8×) and 60fps pan gestures.
+- **Native Android Bridge (`androidBridge.ts`)**: Bridges web events with native Android vibration engines for tactile haptic feedback during widget dragging and toggle switches.
+- **Resilient Fallback**: Automatically connects to Tailscale MagicDNS (`https://pineapple-server.taildb42a2.ts.net`), Wi-Fi Hotspot (`http://192.168.4.1:8088`), or LAN mDNS (`http://pineapple-server:8088`).
 
-#### Building & Signing Android APK:
+#### Building & Packaging Android APK:
 ```bash
 ./scripts/build-desktop-releases.sh
 ```
@@ -760,11 +760,7 @@ journalctl -u tinapple-hw.service -f
 - **Symptom**: ADB install fails on Android 14 / 15 with:
   `INSTALL_FAILED_DEPRECATED_SDK_VERSION: App package must target at least SDK version 24, but found 0`.
 - **Root Cause**: The APK manifest was missing the `<uses-sdk>` directive or targeted a legacy API version.
-- **Resolution**: Verify [`tinapple-android/AndroidManifest.xml`](tinapple-android/AndroidManifest.xml) contains:
-  ```xml
-  <uses-sdk android:minSdkVersion="24" android:targetSdkVersion="34" />
-  ```
-  Recompile using JDK 17 and reinstall.
+- **Resolution**: Verify [`tinapple-hub/android/app/build.gradle`](tinapple-hub/android/app/build.gradle) specifies `minSdkVersion 24` and `targetSdkVersion 34`. Recompile using `./scripts/build-desktop-releases.sh` and reinstall.
 
 ### Issue: Battery Does Not Stop Charging at 80%
 
@@ -800,11 +796,10 @@ tinapple/
 │   ├── run-vm.sh                 # Local QEMU testing launcher
 │   └── tinapple-display-sleep    # Display sleep helper script
 ├── tasks/                        # Implementation task plans and milestones
-├── tinapple-android/             # Android companion application
-│   ├── AndroidManifest.xml       # App manifest (SDK 24-34)
-│   ├── build-apk.sh              # Standalone APK compilation script
-│   ├── res/                      # Android drawables, icons, and layouts
-│   └── src/                      # Java source code (MainActivity.java)
+├── tinapple-hub/                 # React 18 / Vite 6 Web & Mobile Dashboard
+│   ├── android/                  # Capacitor Android companion project (SDK 34)
+│   ├── src/                      # UI components, canvas engine, and widgets
+│   └── package.json              # Web & native dependencies
 ├── tinapple-base/                # Base Arch Linux filesystem overlays
 ├── tinapple-config-generator/    # Dynamic template parser for manifests
 ├── tinapple-dash/                # Core appliance Go daemon

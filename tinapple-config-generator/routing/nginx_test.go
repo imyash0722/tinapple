@@ -33,20 +33,20 @@ func TestRoutesAndAliases(t *testing.T) {
 	}
 }
 
-func TestMeTubeRoute(t *testing.T) {
-	app := App{ID: "metube", Package: "metube", Unit: "metube.service", Port: 8085}
+func TestPinchflatRoute(t *testing.T) {
+	app := App{ID: "pinchflat", Package: "pinchflat", Unit: "pinchflat.service", Port: 8945}
 	if err := ValidateApp(app); err != nil {
-		t.Fatalf("validation failed for metube: %v", err)
+		t.Fatalf("validation failed for pinchflat: %v", err)
 	}
 	data, err := Render([]App{app}, []string{"server.local"})
 	if err != nil {
-		t.Fatalf("failed to render metube route: %v", err)
+		t.Fatalf("failed to render pinchflat route: %v", err)
 	}
-	if !strings.Contains(string(data), "location ^~ /youtube/") {
-		t.Errorf("missing /youtube/ route in nginx config: %s", string(data))
+	if !strings.Contains(string(data), "location ^~ /pinchflat/") {
+		t.Errorf("missing /pinchflat/ route in nginx config: %s", string(data))
 	}
-	if !strings.Contains(string(data), "proxy_pass http://127.0.0.1:8085/;") {
-		t.Errorf("missing proxy_pass 8085 in nginx config: %s", string(data))
+	if !strings.Contains(string(data), "proxy_pass http://127.0.0.1:8945/;") {
+		t.Errorf("missing proxy_pass 8945 in nginx config: %s", string(data))
 	}
 }
 func TestRejectConfigInjection(t *testing.T) {

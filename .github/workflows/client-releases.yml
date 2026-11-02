@@ -36,7 +36,7 @@ jobs:
 
       - name: Build and Package Multi-Platform Client Apps
         run: |
-          chmod +x ./scripts/build-desktop-releases.sh ./scripts/sign-apk.py
+          chmod +x ./scripts/build-desktop-releases.sh
           ./scripts/build-desktop-releases.sh
 
       - name: Upload Client Release Artifacts

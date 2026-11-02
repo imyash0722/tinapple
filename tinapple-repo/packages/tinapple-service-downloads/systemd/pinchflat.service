@@ -1,0 +1,16 @@
+[Unit]
+Description=Pinchflat YouTube Media Manager for Jellyfin
+After=docker.service network.target
+Requires=docker.service
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=5
+ExecStartPre=-/usr/bin/docker stop pinchflat
+ExecStartPre=-/usr/bin/docker rm pinchflat
+ExecStart=/usr/bin/docker run --name pinchflat --net=host -e TZ=Asia/Kolkata -e PORT=8945 -v /var/lib/pinchflat:/config -v /srv/media/youtube:/downloads -v /usr/local/bin/yt-dlp-standalone:/usr/local/bin/yt-dlp:ro ghcr.io/kieraneglin/pinchflat:latest
+ExecStop=/usr/bin/docker stop pinchflat
+
+[Install]
+WantedBy=multi-user.target
