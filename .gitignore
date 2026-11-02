@@ -21,6 +21,11 @@ tinapple-repo/packages/tinapple-dash/tinapple-dash
 
 # Build & ISO output directories
 out/
+dist/
+**/dist/
+**/.gradle/
+tinapple-hub/dist/
+tinapple-hub/android/
 tinapple-installer/iso/out/
 tinapple-installer/bin/
 tinapple-installer/iso/work/

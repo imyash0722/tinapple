@@ -44,6 +44,11 @@ node node_modules/@capacitor/cli/bin/capacitor sync android
 
 if [[ -d "${ANDROID_HOME}" ]] && command -v java &>/dev/null; then
   echo "Building native Android APK via Gradle (SDK: ${ANDROID_HOME})..."
+  if [[ -x "${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager" ]]; then
+    echo "Accepting Android SDK licenses and ensuring platform-35..."
+    yes | "${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null 2>&1 || true
+    "${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager" "platforms;android-35" >/dev/null 2>&1 || true
+  fi
   mkdir -p "${REPO_DIR}/tinapple-hub/android"
   echo "sdk.dir=${ANDROID_HOME}" > "${REPO_DIR}/tinapple-hub/android/local.properties"
   cd "${REPO_DIR}/tinapple-hub/android"
