@@ -35,11 +35,17 @@ echo -e "${GREEN}✓ Production bundle ready in dist/ (${DIST_DIR})${NC}"
 
 # 2. Package Android Companion APK with Capacitor
 echo -e "${CYAN}[2/6] Packaging Android Companion APK with Capacitor...${NC}"
+export ANDROID_HOME="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+export ANDROID_SDK_ROOT="${ANDROID_SDK_ROOT:-$ANDROID_HOME}"
+export PATH="${ANDROID_HOME}/cmdline-tools/latest/bin:${ANDROID_HOME}/platform-tools:${PATH}"
+
 cd "${REPO_DIR}/tinapple-hub"
 node node_modules/@capacitor/cli/bin/capacitor sync android
 
-if command -v javac &>/dev/null || [[ -n "${ANDROID_HOME:-}" || -n "${ANDROID_SDK_ROOT:-}" ]]; then
-  echo "Building native Android APK via Gradle..."
+if [[ -d "${ANDROID_HOME}" ]] && command -v java &>/dev/null; then
+  echo "Building native Android APK via Gradle (SDK: ${ANDROID_HOME})..."
+  mkdir -p "${REPO_DIR}/tinapple-hub/android"
+  echo "sdk.dir=${ANDROID_HOME}" > "${REPO_DIR}/tinapple-hub/android/local.properties"
   cd "${REPO_DIR}/tinapple-hub/android"
   chmod +x ./gradlew
   ./gradlew assembleDebug --no-daemon || true
