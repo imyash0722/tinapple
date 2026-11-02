@@ -48,10 +48,12 @@ if [[ -d "${ANDROID_HOME}" ]] && command -v java &>/dev/null; then
   echo "sdk.dir=${ANDROID_HOME}" > "${REPO_DIR}/tinapple-hub/android/local.properties"
   cd "${REPO_DIR}/tinapple-hub/android"
   chmod +x ./gradlew
-  ./gradlew assembleDebug --no-daemon || true
+  ./gradlew assembleDebug --stacktrace --no-daemon
   if [[ -f "${REPO_DIR}/tinapple-hub/android/app/build/outputs/apk/debug/app-debug.apk" ]]; then
     cp "${REPO_DIR}/tinapple-hub/android/app/build/outputs/apk/debug/app-debug.apk" "${OUT_DIR}/tinapple-android-client.apk"
     echo -e "${GREEN}✓ Native Capacitor Android APK built successfully.${NC}"
+  else
+    echo -e "${YELLOW}Warning: app-debug.apk not found after gradlew assembleDebug${NC}"
   fi
 fi
 
