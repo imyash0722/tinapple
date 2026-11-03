@@ -25,6 +25,15 @@ if (typeof window !== 'undefined') {
       url: window.location.href,
     });
   });
+
+  // Register Service Worker for offline PWA cache stack
+  if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js').catch((err) => {
+        console.warn('[PWA] Service Worker registration failed:', err);
+      });
+    });
+  }
 }
 
 interface ErrorBoundaryProps {

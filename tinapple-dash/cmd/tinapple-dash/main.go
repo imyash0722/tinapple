@@ -130,6 +130,8 @@ func main() {
 		wpDir := api.FindWallpapersDir(distDir)
 		r.Static("/wallpapers", wpDir)
 		r.StaticFile("/favicon.ico", filepath.Join(distDir, "favicon.ico"))
+		r.StaticFile("/sw.js", filepath.Join(distDir, "sw.js"))
+		r.StaticFile("/manifest.json", filepath.Join(distDir, "manifest.json"))
 		serveIndex := func(c *gin.Context) {
 			c.Header("Cache-Control", "no-cache, no-store, must-revalidate, max-age=0")
 			c.Header("Pragma", "no-cache")
@@ -156,6 +158,13 @@ func main() {
 
 		r.NoRoute(func(c *gin.Context) {
 			path := c.Request.URL.Path
+
+			// Check if file exists directly in distDir (e.g. icons, sw.js, manifest.json)
+			targetFile := filepath.Join(distDir, filepath.Clean(path))
+			if fi, err := os.Stat(targetFile); err == nil && !fi.IsDir() {
+				c.File(targetFile)
+				return
+			}
 
 			// Unified App & Guide routes: always serve Pineapple Hub React SPA
 			if strings.HasSuffix(path, "-guide") || strings.HasPrefix(path, "/app/") || strings.HasPrefix(path, "/guide/") || strings.HasPrefix(path, "/guides/") || path == "/guides" || path == "/guides/" {

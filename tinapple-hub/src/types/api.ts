@@ -231,6 +231,8 @@ export interface AppConfigDetails {
   rawConfig?: string;
   rawOverride?: string;
   cpuWeight?: number;
+  cpuQuota?: string;
+  nice?: number;
   ignorePerms?: boolean;
   customEnv?: Record<string, string>;
 }

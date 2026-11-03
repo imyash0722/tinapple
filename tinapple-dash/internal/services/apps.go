@@ -63,6 +63,21 @@ func ensurePacmanReliability() {
 	}
 }
 
+// applySuwayomiGovernor applies thermal protection drop-in overrides to suwayomi-server.service
+// to prevent Kotlin coroutines / Chromium CEF from saturating an entire CPU core and overheating the appliance.
+func applySuwayomiGovernor() error {
+	dropInDir := "/etc/systemd/system/suwayomi-server.service.d"
+	if err := os.MkdirAll(dropInDir, 0755); err != nil {
+		return err
+	}
+	content := "[Service]\n# Thermal & Multi-Core Protection: prevent single-core starvation and runaway coroutine loops\nCPUQuota=75%\nCPUWeight=50\nNice=10\n"
+	if err := os.WriteFile(filepath.Join(dropInDir, "tinapple-override.conf"), []byte(content), 0644); err != nil {
+		return err
+	}
+	_ = exec.Command("systemctl", "daemon-reload").Run()
+	return nil
+}
+
 type AppDefinition struct {
 	ID           string `json:"id"`
 	Name         string `json:"name"`
@@ -1855,6 +1870,23 @@ func (m *AppManager) installUnlocked(id string) error {
 				_ = exec.Command("chown", "-R", "jdownloader:jdownloader", "/opt/JDownloader").Run()
 			}
 		}
+	case "suwayomi":
+		if app.Package != "" {
+			cleanStalePacmanLock()
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+			defer cancel()
+			installErr = m.runStreamCmd(ctx, id, "pacman", "-S", "--noconfirm", "--needed", app.Package)
+			if installErr != nil {
+				primaryUser, _ := getSystemPrimaryUser()
+				m.AppendLog(id, "warn", fmt.Sprintf("Pacman failed, attempting AUR via paru as %s...", primaryUser))
+				installErr = m.runStreamCmd(ctx, id, "sudo", "-u", primaryUser, "paru", "-S", "--noconfirm", "--needed", "--skipreview", app.Package)
+			}
+		}
+		if installErr == nil {
+			if err := applySuwayomiGovernor(); err == nil {
+				m.AppendLog(id, "info", "[✓] Thermal & single-core runaway protection (CPUQuota=75%, Nice=10) applied to suwayomi-server")
+			}
+		}
 	default:
 		if app.Package != "" {
 			cleanStalePacmanLock()
@@ -2010,6 +2042,9 @@ func (m *AppManager) configurePackUnlocked(id string) error {
 		_ = exec.Command("chmod", "-R", "775", "/srv/media/manga").Run()
 		_ = exec.Command("chmod", "-R", "g+s", "/srv/media/manga").Run()
 		m.AppendLog(id, "info", "[✓] Storage /srv/media/manga configured with media group permissions")
+		if err := applySuwayomiGovernor(); err == nil {
+			m.AppendLog(id, "info", "[✓] Thermal & core protection (CPUQuota=75%, Nice=10) applied to suwayomi-server")
+		}
 		_ = exec.Command("systemctl", "restart", "suwayomi-server").Run()
 		m.AppendLog(id, "info", "[✓] Suwayomi Manga Server reloaded and active on port 4567")
 		m.AppendLog(id, "info", "[✓] Tsumiru native client ready for phone sync")
@@ -2020,6 +2055,9 @@ func (m *AppManager) configurePackUnlocked(id string) error {
 		_ = exec.Command("chmod", "-R", "775", "/srv/media/manga").Run()
 		_ = exec.Command("chmod", "-R", "g+s", "/srv/media/manga").Run()
 		m.AppendLog(id, "info", "[✓] Storage /srv/media/manga configured with media group permissions")
+		if err := applySuwayomiGovernor(); err == nil {
+			m.AppendLog(id, "info", "[✓] Thermal & core protection (CPUQuota=75%, Nice=10) applied to suwayomi-server")
+		}
 		_ = exec.Command("systemctl", "restart", "suwayomi-server").Run()
 		_ = exec.Command("systemctl", "restart", "syncyomi").Run()
 		m.AppendLog(id, "info", "[✓] Suwayomi Manga Server active on port 4567")
@@ -2398,6 +2436,30 @@ func (m *AppManager) GetConfig(id string) (map[string]interface{}, error) {
 		}
 	}
 
+	// Parse CPUQuota and Nice from drop-in override
+	var cpuQuota string
+	var niceVal int
+	if rawOverride, ok := res["rawOverride"].(string); ok {
+		for _, line := range strings.Split(rawOverride, "\n") {
+			line = strings.TrimSpace(line)
+			if strings.HasPrefix(line, "CPUQuota=") {
+				cpuQuota = strings.TrimPrefix(line, "CPUQuota=")
+			} else if strings.HasPrefix(line, "Nice=") {
+				if n, err := strconv.Atoi(strings.TrimPrefix(line, "Nice=")); err == nil {
+					niceVal = n
+				}
+			}
+		}
+	}
+	if app.ID == "suwayomi" && cpuQuota == "" {
+		cpuQuota = "75%"
+	}
+	if app.ID == "suwayomi" && niceVal == 0 {
+		niceVal = 10
+	}
+	res["cpuQuota"] = cpuQuota
+	res["nice"] = niceVal
+
 	return res, nil
 }
 
@@ -2407,6 +2469,8 @@ type UpdateConfigRequest struct {
 	RawConfig   string            `json:"rawConfig"`
 	Autostart   *bool             `json:"autostart"`
 	CpuWeight   int               `json:"cpuWeight"`
+	CpuQuota    string            `json:"cpuQuota"`
+	Nice        int               `json:"nice"`
 	IgnorePerms *bool             `json:"ignorePerms"`
 }
 
@@ -2434,7 +2498,7 @@ func (m *AppManager) UpdateConfig(id string, req UpdateConfigRequest) error {
 		}
 	}
 
-	// 3. Drop-in overrides (Port, CPU Weight, Custom Environment)
+	// 3. Drop-in overrides (Port, CPU Weight, CPU Quota, Nice, Custom Environment)
 	dropInDir := fmt.Sprintf("/etc/systemd/system/%s.d", app.Unit)
 	if err := os.MkdirAll(dropInDir, 0755); err != nil {
 		return fmt.Errorf("failed to create override dir: %w", err)
@@ -2447,7 +2511,26 @@ func (m *AppManager) UpdateConfig(id string, req UpdateConfigRequest) error {
 	}
 	if req.CpuWeight > 0 {
 		dropInContent.WriteString(fmt.Sprintf("CPUWeight=%d\n", req.CpuWeight))
+	} else if app.ID == "suwayomi" {
+		dropInContent.WriteString("CPUWeight=50\n")
 	}
+
+	quota := strings.TrimSpace(req.CpuQuota)
+	if app.ID == "suwayomi" && quota == "" {
+		quota = "75%"
+	}
+	if quota != "" && quota != "unlimited" && quota != "0%" {
+		dropInContent.WriteString(fmt.Sprintf("CPUQuota=%s\n", quota))
+	}
+
+	niceVal := req.Nice
+	if app.ID == "suwayomi" && niceVal == 0 {
+		niceVal = 10
+	}
+	if niceVal != 0 {
+		dropInContent.WriteString(fmt.Sprintf("Nice=%d\n", niceVal))
+	}
+
 	for k, v := range req.CustomEnv {
 		dropInContent.WriteString(fmt.Sprintf("Environment=\"%s=%s\"\n", k, v))
 	}

@@ -1,5 +1,37 @@
 import { SystemInfo, TelemetrySnapshot, ServiceInfo, HardwareInfo, SessionMode, AppInfo, AppActionResult, InstallProgressState, InstallLogMessage, TailscaleStatus, AppliancePackStatus, WallpaperItem, OpenPortInfo, AppConfigDetails, MaintenanceResult, FailedUnitsResult, UserManagementData, ProtonStatus, ProtonWireGuardInfo } from '../types/api';
 import { serviceRegistry, ApplianceService } from './serviceRegistry';
+import { Capacitor } from '@capacitor/core';
+
+export const DEFAULT_SERVERS = [
+  { id: 'tailscale', label: 'Tailscale Mesh', url: 'http://100.108.215.120:8088', host: '100.108.215.120' },
+  { id: 'hotspot', label: 'Direct AP Hotspot', url: 'http://192.168.4.1:8088', host: '192.168.4.1' },
+  { id: 'lan', label: 'Local LAN / mDNS', url: 'http://pineapple-server:8088', host: 'pineapple-server' },
+];
+
+export function isStandaloneClient(): boolean {
+  if (typeof window === 'undefined') return false;
+  const isCapacitor = Capacitor.isNativePlatform() || (typeof (window as any).Capacitor !== 'undefined' && (window as any).Capacitor?.isNativePlatform?.());
+  const h = window.location.hostname;
+  const p = window.location.port;
+  const isLocalhostWebView = (h === 'localhost' || h === '127.0.0.1') && p === '';
+  const isDevTauri = (h === 'localhost' && p === '1420') || h === 'tauri.localhost';
+  const isCustomProtocol = window.location.protocol === 'file:' || window.location.protocol === 'tauri:' || window.location.protocol === 'capacitor:';
+  return isCapacitor || isLocalhostWebView || isDevTauri || isCustomProtocol || h === '';
+}
+
+export function getActiveServerOrigin(): string {
+  if (typeof window !== 'undefined') {
+    const customUrl = localStorage.getItem('tinapple_server_url');
+    if (customUrl) {
+      return customUrl.replace(/\/+$/, '');
+    }
+    if (isStandaloneClient()) {
+      return 'http://100.108.215.120:8088';
+    }
+    return window.location.origin;
+  }
+  return 'http://100.108.215.120:8088';
+}
 
 export function getApiBaseUrl(): string {
   if (typeof window !== 'undefined') {
@@ -7,13 +39,7 @@ export function getApiBaseUrl(): string {
     if (customUrl) {
       return `${customUrl.replace(/\/+$/, '')}/api/v1`;
     }
-    const isStandaloneClient =
-      window.location.protocol === 'file:' ||
-      window.location.protocol === 'tauri:' ||
-      window.location.hostname === 'tauri.localhost' ||
-      (window.location.hostname === 'localhost' && window.location.port === '1420') ||
-      window.location.hostname === '';
-    if (isStandaloneClient) {
+    if (isStandaloneClient()) {
       return 'http://100.108.215.120:8088/api/v1';
     }
   }
@@ -28,13 +54,7 @@ export function getWsTerminalUrl(): string {
       const host = customUrl.replace(/^https?:\/\//, '').replace(/\/+$/, '');
       return `${isHttps ? 'wss:' : 'ws:'}//${host}/api/v1/terminal/ws`;
     }
-    const isStandaloneClient =
-      window.location.protocol === 'file:' ||
-      window.location.protocol === 'tauri:' ||
-      window.location.hostname === 'tauri.localhost' ||
-      (window.location.hostname === 'localhost' && window.location.port === '1420') ||
-      window.location.hostname === '';
-    if (isStandaloneClient) {
+    if (isStandaloneClient()) {
       return 'ws://100.108.215.120:8088/api/v1/terminal/ws';
     }
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -55,7 +75,7 @@ export function getServiceHost(): string {
     const h = window.location.hostname;
     // *.ts.net domains have HSTS preloaded in modern browsers which breaks connecting to plain HTTP on secondary service ports (:8096, :4567, :8080).
     // Standalone clients (Tauri desktop app, Android WebView, file://, dev port 1420) also use direct Tailscale IP.
-    if (!h || h.endsWith('.ts.net') || h === 'tauri.localhost' || (h === 'localhost' && window.location.port === '1420')) {
+    if (!h || isStandaloneClient() || h.endsWith('.ts.net') || h === 'tauri.localhost' || (h === 'localhost' && window.location.port === '1420')) {
       return '100.108.215.120';
     }
     return h;
@@ -657,6 +677,66 @@ class ApiService {
     }
   }
 
+  async checkServerReachability(candidateUrl?: string): Promise<{ reachable: boolean; latencyMs?: number; url: string }> {
+    const target = candidateUrl ? `${candidateUrl.replace(/\/+$/, '')}/api/v1` : getApiBaseUrl();
+    const start = performance.now();
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 3500);
+      const res = await fetch(`${target}/system/info`, {
+        signal: controller.signal,
+        headers: { Accept: 'application/json' },
+      });
+      clearTimeout(timer);
+      const latencyMs = Math.round(performance.now() - start);
+      return { reachable: res.ok, latencyMs, url: target.replace(/\/api\/v1\/?$/, '') };
+    } catch {
+      return { reachable: false, url: target.replace(/\/api\/v1\/?$/, '') };
+    }
+  }
+
+  subscribeInstallStream(
+    onLog: (log: InstallLogMessage) => void,
+    onStatus?: (status: InstallProgressState) => void
+  ): () => void {
+    const sseUrl = `${API_BASE}/apps/install/stream`;
+    let eventSource: EventSource | null = null;
+    let isClosed = false;
+
+    try {
+      eventSource = new EventSource(sseUrl);
+
+      eventSource.addEventListener('status', (e: MessageEvent) => {
+        if (isClosed || !onStatus) return;
+        try {
+          const st = JSON.parse(e.data);
+          onStatus(st);
+        } catch {}
+      });
+
+      eventSource.addEventListener('log', (e: MessageEvent) => {
+        if (isClosed) return;
+        try {
+          const logData = JSON.parse(e.data);
+          onLog(logData);
+        } catch {}
+      });
+
+      eventSource.onerror = () => {
+        // SSE auto-reconnects natively
+      };
+    } catch (e) {
+      console.warn('Install stream SSE error:', e);
+    }
+
+    return () => {
+      isClosed = true;
+      if (eventSource) {
+        eventSource.close();
+      }
+    };
+  }
+
   async getInstallProgress(): Promise<InstallProgressState | null> {
     try {
       const res = await fetch(`${API_BASE}/apps/install/progress`);
@@ -1127,6 +1207,8 @@ class ApiService {
       rawConfig?: string;
       autostart?: boolean;
       cpuWeight?: number;
+      cpuQuota?: string;
+      nice?: number;
       ignorePerms?: boolean;
       customEnv?: Record<string, string>;
     }

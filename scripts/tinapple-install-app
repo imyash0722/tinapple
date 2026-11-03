@@ -38,6 +38,21 @@ PRIMARY_USER="pineapple"
 if id -u tinapple &>/dev/null; then PRIMARY_USER="tinapple"; fi
 
 case "$APP_ID" in
+    suwayomi)
+        if ! pacman -S --noconfirm --needed suwayomi-server-bin 2>/dev/null; then
+            sudo -u "$PRIMARY_USER" paru -S --noconfirm --needed --skipreview suwayomi-server-bin
+        fi
+        mkdir -p /etc/systemd/system/suwayomi-server.service.d/
+        cat << 'EOF' > /etc/systemd/system/suwayomi-server.service.d/tinapple-override.conf
+[Service]
+# Thermal & Multi-Core Protection: prevent single-core starvation and runaway coroutine loops
+CPUQuota=75%
+CPUWeight=50
+Nice=10
+EOF
+        systemctl daemon-reload
+        systemctl enable --now suwayomi-server.service || true
+        ;;
     syncyomi)
         if [ -x /usr/local/bin/tinapple-install-syncyomi ]; then
             /usr/local/bin/tinapple-install-syncyomi

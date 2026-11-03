@@ -50,6 +50,8 @@ import { GuidesPage } from './components/widgets/GuidesPage';
 import { UnifiedAppPage } from './components/widgets/UnifiedAppPage';
 import { ErrorLoggerPage } from './components/errors/ErrorLoggerPage';
 import { UpdateNotificationToast } from './components/common/UpdateNotificationToast';
+import { ServerOfflineStandby } from './components/common/ServerOfflineStandby';
+import { SystemUpdatePage } from './components/widgets/SystemUpdatePage';
 
 // High-speed lazy-loaded modals (reduces initial dashboard bundle size by >60%)
 const AppearanceModal = lazy(() => import('./components/common/AppearanceModal').then((m) => ({ default: m.AppearanceModal })));
@@ -328,6 +330,11 @@ export const App: React.FC = () => {
   const [isRebooting, setIsRebooting] = useState(false);
   const [actionMessage, setActionMessage] = useState('');
 
+  // Server Reachability & Standby States
+  const [isServerReachable, setIsServerReachable] = useState<boolean>(true);
+  const [viewingCachedMode, setViewingCachedMode] = useState<boolean>(false);
+  const [isUpdatePageOpen, setIsUpdatePageOpen] = useState<boolean>(false);
+
   // Dashboard Homarr Edit Mode & Custom Bookmarks (Tinarchy Architecture)
   const [isEditMode, setIsEditMode] = useState<boolean>(false);
   const [layout, setLayout] = useState<DashboardLayoutState>(loadDashboardLayout);
@@ -430,6 +437,9 @@ export const App: React.FC = () => {
   // Initial load
   useEffect(() => {
     const loadInitialData = async () => {
+      const reachability = await api.checkServerReachability();
+      setIsServerReachable(reachability.reachable);
+
       const [info, svcs, hw] = await Promise.all([
         api.getSystemInfo(),
         api.getServices(),
@@ -458,6 +468,9 @@ export const App: React.FC = () => {
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
+      const reachability = await api.checkServerReachability();
+      setIsServerReachable(reachability.reachable);
+
       const [info, tel, svcs] = await Promise.all([
         api.getSystemInfo(),
         api.getTelemetry(),
@@ -488,22 +501,8 @@ export const App: React.FC = () => {
 
   const [isUpdatingSystem, setIsUpdatingSystem] = useState<boolean>(false);
 
-  const handleRunSystemUpdate = async () => {
-    setIsUpdatingSystem(true);
-    setActionMessage('Initiating full system & appliance update...');
-    try {
-      const res = await api.runSystemUpdate();
-      if (res.ok) {
-        setActionMessage('System update running. Inspecting live console.');
-        handleSelectTab('store');
-      } else {
-        setActionMessage(res.error || 'System update failed to initiate.');
-      }
-    } catch {
-      setActionMessage('Failed to trigger update pipeline.');
-    } finally {
-      setIsUpdatingSystem(false);
-    }
+  const handleRunSystemUpdate = () => {
+    setIsUpdatePageOpen(true);
   };
 
   const handleReboot = async () => {
@@ -1091,8 +1090,23 @@ export const App: React.FC = () => {
         )}
       </Suspense>
 
-      {/* Floating Bottom-Right Repo Update Notification Toast */}
-      <UpdateNotificationToast onTriggerUpdate={handleRunSystemUpdate} />
+      {/* Standby Full-Page Views */}
+      {!isServerReachable && !viewingCachedMode && (
+        <ServerOfflineStandby
+          onRetry={handleRefresh}
+          onEnterCachedMode={() => setViewingCachedMode(true)}
+        />
+      )}
+
+      {isUpdatePageOpen && (
+        <SystemUpdatePage
+          onClose={() => setIsUpdatePageOpen(false)}
+          autoStart={true}
+        />
+      )}
+
+      {/* Floating Top Update Notification Bubble */}
+      <UpdateNotificationToast onTriggerUpdate={() => setIsUpdatePageOpen(true)} />
     </div>
   );
 };

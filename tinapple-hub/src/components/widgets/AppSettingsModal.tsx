@@ -46,6 +46,8 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({
   const [port, setPort] = useState<number>(0);
   const [autostart, setAutostart] = useState<boolean>(false);
   const [cpuWeight, setCpuWeight] = useState<number>(100);
+  const [cpuQuota, setCpuQuota] = useState<string>('');
+  const [nice, setNice] = useState<number>(0);
   const [ignorePerms, setIgnorePerms] = useState<boolean>(false);
   const [rawConfig, setRawConfig] = useState<string>('');
   const [copied, setCopied] = useState<boolean>(false);
@@ -63,7 +65,9 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({
         setConfig(data);
         setPort(data.port || 0);
         setAutostart(data.autostart || false);
-        setCpuWeight(data.cpuWeight || 100);
+        setCpuWeight(data.cpuWeight || (appId === 'suwayomi' ? 50 : 100));
+        setCpuQuota(data.cpuQuota || (appId === 'suwayomi' ? '75%' : ''));
+        setNice(data.nice || (appId === 'suwayomi' ? 10 : 0));
         setIgnorePerms(data.ignorePerms ?? false);
         setRawConfig(data.rawConfig || '');
       } else {
@@ -93,6 +97,8 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({
         port: port > 0 ? port : undefined,
         autostart,
         cpuWeight,
+        cpuQuota: cpuQuota || undefined,
+        nice: nice !== 0 ? nice : undefined,
         ignorePerms: appId === 'syncthing' ? ignorePerms : undefined,
         rawConfig: rawConfig.trim() !== '' ? rawConfig : undefined,
       });
@@ -264,15 +270,15 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({
                     />
                   </div>
 
-                  {/* Option 3: CPU Weight / Resource Priority */}
-                  <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.06] space-y-2">
+                  {/* Option 3: CPU Weight & Thermal Ceiling */}
+                  <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.06] space-y-3">
                     <div className="flex items-center justify-between">
                       <label className="text-xs font-mono font-semibold text-zinc-200 flex items-center gap-2">
                         <Cpu className="w-4 h-4 text-sky-400" />
-                        <span>CPU Weight / Scheduling Priority</span>
+                        <span>CPU Weight & Scheduling Priority</span>
                       </label>
                       <span className="text-[11px] font-mono text-tinapple-gold font-bold">
-                        Weight: {cpuWeight}
+                        Weight: {cpuWeight} {nice !== 0 ? `(Nice: ${nice})` : ''}
                       </span>
                     </div>
                     <input
@@ -289,6 +295,38 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({
                       <span>Balanced (Standard: 100)</span>
                       <span>High Priority (500)</span>
                       <span>Realtime (1000)</span>
+                    </div>
+
+                    {/* Single-Core Runaway Protection Banner */}
+                    {appId === 'suwayomi' && (
+                      <div className="p-3 rounded-xl bg-sky-500/10 border border-sky-500/20 text-sky-300 text-xs font-mono flex items-start gap-2.5">
+                        <ShieldCheck className="w-4 h-4 shrink-0 text-sky-400 mt-0.5" />
+                        <div>
+                          <span className="font-semibold block text-sky-200">Thermal & Single-Core Runaway Protection Active</span>
+                          <span className="text-[11px] text-zinc-400 leading-relaxed block mt-0.5">
+                            Suwayomi coroutines and CEF background scraping are capped at 75% core ceiling (Nice: 10) to prevent single-core lockup and protect server temperatures.
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* CPU Quota / Ceiling Selector */}
+                    <div className="pt-2 border-t border-white/[0.06] flex items-center justify-between">
+                      <div>
+                        <span className="text-xs font-mono font-semibold text-zinc-200 block">CPU Core Ceiling (CPUQuota)</span>
+                        <span className="text-[11px] font-mono text-zinc-400">Hard limit on single/multi-core saturation</span>
+                      </div>
+                      <select
+                        value={cpuQuota || 'unlimited'}
+                        onChange={(e) => setCpuQuota(e.target.value === 'unlimited' ? '' : e.target.value)}
+                        className="px-3 py-1.5 bg-black/60 border border-white/10 rounded-lg text-xs font-mono text-tinapple-gold focus:outline-none focus:border-tinapple-gold"
+                      >
+                        <option value="50%">50% of 1 Core (Ultra Quiet)</option>
+                        <option value="75%">75% of 1 Core (Recommended)</option>
+                        <option value="100%">100% (1 Full Core)</option>
+                        <option value="150%">150% (1.5 Cores)</option>
+                        <option value="unlimited">Unlimited (No Ceiling)</option>
+                      </select>
                     </div>
                   </div>
 

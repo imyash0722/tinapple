@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowUpCircle, X, ExternalLink, RefreshCw, Sparkles, GitCommit } from 'lucide-react';
-import { api } from '../../services/api';
+import { X, ExternalLink, RefreshCw, Sparkles, GitCommit, ArrowUpRight } from 'lucide-react';
 import { AppUpdateService } from '../../services/appUpdate';
 
 const DISMISSED_SHA_KEY = 'tinapple_dismissed_update_sha';
@@ -21,8 +20,7 @@ interface UpdateNotificationToastProps {
 export const UpdateNotificationToast: React.FC<UpdateNotificationToastProps> = ({ onTriggerUpdate }) => {
   const [latestCommit, setLatestCommit] = useState<GitHubCommitInfo | null>(null);
   const [isVisible, setIsVisible] = useState<boolean>(false);
-  const [isUpdating, setIsUpdating] = useState<boolean>(false);
-  const [updateStatus, setUpdateStatus] = useState<string | null>(null);
+  const isAndroid = AppUpdateService.isNativeAndroid();
 
   const checkRepoUpdates = useCallback(async () => {
     try {
@@ -54,7 +52,7 @@ export const UpdateNotificationToast: React.FC<UpdateNotificationToastProps> = (
       });
       setIsVisible(true);
     } catch {
-      // Offline / campus network fallback
+      // Offline / network fallback
     }
   }, []);
 
@@ -84,43 +82,10 @@ export const UpdateNotificationToast: React.FC<UpdateNotificationToastProps> = (
     setIsVisible(false);
   };
 
-  const handleApplyUpdate = async () => {
-    setIsUpdating(true);
-    if (AppUpdateService.isNativeAndroid()) {
-      setUpdateStatus('Connecting to update server...');
-      try {
-        const apkUrl = 'https://pineapple-server.taildb42a2.ts.net/tinapple-client.apk';
-        const res = await AppUpdateService.installApk(apkUrl, (progress) => {
-          setUpdateStatus(`Downloading update (${progress}%)...`);
-        });
-        if (res.success) {
-          setUpdateStatus('Launching Android installer...');
-          setTimeout(() => setIsVisible(false), 3000);
-        } else {
-          setUpdateStatus(`Update notice: ${res.error || res.status}`);
-          setIsUpdating(false);
-        }
-      } catch (e: any) {
-        setUpdateStatus(`Update failed: ${e.message || 'Check connection'}`);
-        setIsUpdating(false);
-      }
-      return;
-    }
-
-    setUpdateStatus('Deploying system update...');
-    try {
-      if (onTriggerUpdate) {
-        onTriggerUpdate();
-      } else {
-        await api.runSystemUpdate();
-      }
-      setUpdateStatus('Update completed successfully!');
-      setTimeout(() => {
-        setIsVisible(false);
-      }, 3000);
-    } catch (e: any) {
-      setUpdateStatus(`Update failed: ${e.message || 'Check logs'}`);
-      setTimeout(() => setIsUpdating(false), 3000);
+  const handleStartUpdate = () => {
+    setIsVisible(false);
+    if (onTriggerUpdate) {
+      onTriggerUpdate();
     }
   };
 
@@ -129,85 +94,57 @@ export const UpdateNotificationToast: React.FC<UpdateNotificationToastProps> = (
   return (
     <AnimatePresence>
       <motion.div
-        initial={{ opacity: 0, y: 30, scale: 0.95 }}
+        initial={{ opacity: 0, y: -40, scale: 0.95 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={{ opacity: 0, y: 20, scale: 0.95 }}
-        transition={{ duration: 0.25, ease: 'easeOut' }}
-        className="fixed bottom-5 right-5 z-50 max-w-sm w-full font-mono select-none"
+        exit={{ opacity: 0, y: -30, scale: 0.95 }}
+        transition={{ duration: 0.3, ease: 'easeOut' }}
+        className="fixed top-4 left-1/2 -translate-x-1/2 z-50 max-w-lg w-[92vw] sm:w-full font-sans select-none"
       >
-        <div className="relative rounded-2xl bg-slate-900/95 border border-cyan-500/40 p-4 shadow-2xl shadow-cyan-500/10 backdrop-blur-2xl overflow-hidden text-xs">
-          {/* Ambient glow accent */}
+        <div className="relative rounded-2xl bg-slate-900/95 border border-cyan-400/40 p-3 sm:p-4 shadow-2xl shadow-cyan-950/80 backdrop-blur-3xl overflow-hidden text-xs">
+          {/* Subtle accent glow */}
           <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/10 rounded-full blur-2xl pointer-events-none" />
 
-          {/* Top header row */}
-          <div className="flex items-start justify-between gap-2 mb-2 relative z-10">
-            <div className="flex items-center gap-2">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-500" />
-              </span>
-              <span className="font-bold text-white uppercase tracking-wider text-[11px] flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-tinapple-gold" />
-                Tinapple Repo Update
-              </span>
+          <div className="flex items-start justify-between gap-3 relative z-10">
+            {/* Left Column: Icon + Update Info */}
+            <div className="flex items-start gap-2.5 flex-1 min-w-0">
+              <div className="w-8 h-8 rounded-xl bg-cyan-500/15 border border-cyan-500/30 flex items-center justify-center text-cyan-400 flex-shrink-0 mt-0.5">
+                <Sparkles className="w-4 h-4 text-cyan-300" />
+              </div>
+
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-0.5">
+                  <span className="font-bold text-white tracking-wide text-xs">
+                    {isAndroid ? 'Android Update Available' : 'Tinapple System Update'}
+                  </span>
+                  <span className="px-1.5 py-0.2 rounded font-mono text-[10px] bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                    {latestCommit.sha}
+                  </span>
+                </div>
+
+                <p className="text-slate-300 line-clamp-1 text-[11px] font-medium leading-relaxed">
+                  {latestCommit.message}
+                </p>
+              </div>
             </div>
 
-            <button
-              onClick={handleDismiss}
-              className="p-1 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 transition-colors"
-              title="Dismiss update notice"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          </div>
+            {/* Right Column: Actions + Dismiss */}
+            <div className="flex items-center gap-1.5 flex-shrink-0">
+              <button
+                onClick={handleStartUpdate}
+                className="py-1.5 px-3 rounded-xl bg-gradient-to-r from-cyan-500 to-sky-500 hover:from-cyan-400 hover:to-sky-400 text-slate-950 font-bold text-xs flex items-center gap-1 shadow-md shadow-cyan-500/20 active:scale-95 transition-all"
+              >
+                <span>Yes, Update</span>
+                <ArrowUpRight className="w-3.5 h-3.5" />
+              </button>
 
-          {/* Commit Message & Metadata */}
-          <div className="space-y-1.5 mb-3 relative z-10">
-            <div className="text-zinc-200 font-semibold line-clamp-2 leading-relaxed">
-              {latestCommit.message}
+              <button
+                onClick={handleDismiss}
+                className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+                title="Dismiss update"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
-
-            <div className="flex items-center gap-2 text-[10px] text-zinc-400">
-              <span className="flex items-center gap-1 text-cyan-300 bg-cyan-500/10 px-1.5 py-0.5 rounded border border-cyan-500/20">
-                <GitCommit className="w-2.5 h-2.5" />
-                {latestCommit.sha}
-              </span>
-              <span>by {latestCommit.author}</span>
-            </div>
-          </div>
-
-          {updateStatus && (
-            <div className="mb-2 p-1.5 rounded-lg bg-black/40 border border-white/10 text-[10px] text-zinc-300">
-              {updateStatus}
-            </div>
-          )}
-
-          {/* Action Buttons */}
-          <div className="flex items-center gap-2 relative z-10">
-            <button
-              onClick={handleApplyUpdate}
-              disabled={isUpdating}
-              className="flex-1 py-1.5 px-3 rounded-xl bg-gradient-to-r from-cyan-500 to-sky-500 hover:from-cyan-400 hover:to-sky-400 text-slate-950 font-bold flex items-center justify-center gap-1.5 transition-all shadow-md active:scale-95 disabled:opacity-50"
-            >
-              <RefreshCw className={`w-3 h-3 ${isUpdating ? 'animate-spin' : ''}`} />
-              <span>
-                {isUpdating
-                  ? 'Updating...'
-                  : AppUpdateService.isNativeAndroid()
-                  ? 'Update App'
-                  : 'Update System'}
-              </span>
-            </button>
-
-            <a
-              href={latestCommit.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="py-1.5 px-3 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 text-zinc-300 hover:text-white font-semibold flex items-center gap-1 transition-all"
-            >
-              <span>View</span>
-              <ExternalLink className="w-3 h-3" />
-            </a>
           </div>
         </div>
       </motion.div>
