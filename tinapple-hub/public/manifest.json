@@ -3,7 +3,7 @@
   "short_name": "Tinapple",
   "description": "Appliance Operating System & Dashboard",
   "start_url": "/",
-  "display": "standalone",
+  "display": "fullscreen",
   "orientation": "any",
   "theme_color": "#050814",
   "background_color": "#050814",

@@ -566,6 +566,27 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
   const [editingWidget, setEditingWidget] = useState<CanvasWidget | null>(null);
   const [creatorOpen, setCreatorOpen] = useState(false);
 
+  // Fullscreen State
+  const [isFullscreen, setIsFullscreen] = useState(() => {
+    return typeof document !== 'undefined' ? !!document.fullscreenElement : false;
+  });
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(() => {});
+    } else {
+      document.exitFullscreen().catch(() => {});
+    }
+  };
+
   // Sync widgets with localStorage
   const saveWidgets = (newWidgets: CanvasWidget[]) => {
     const list = Array.isArray(newWidgets) ? newWidgets : DEFAULT_BOARD_WIDGETS;
@@ -644,7 +665,6 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
     return map;
   }, [services]);
 
-  const totalServicesCount = CURATED_APPLIANCES.length;
   const onlineServicesCount = useMemo(() => {
     return CURATED_APPLIANCES.filter((app) => {
       const s = servicesMap.get(app.id);
@@ -885,16 +905,13 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
                 {/* Live Online Badge */}
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-[11px] font-mono text-emerald-300 font-bold">
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                  <span>{onlineServicesCount}/{totalServicesCount} Online</span>
+                  <span>{onlineServicesCount} Online</span>
                 </span>
                 {/* Headless Server / Niri Desktop Badge */}
                 <span className="hidden sm:inline-block px-2 py-0.5 rounded text-[10px] font-mono bg-white/[0.05] border border-white/10 text-zinc-400 font-semibold">
                   {systemInfo?.sessionMode === 'headless' ? 'Headless Server' : 'Niri Desktop'}
                 </span>
               </div>
-              <p className="text-xs text-zinc-400 mt-0.5 font-mono">
-                Homarr Appliance Landing Page • All Daemons Reverse Proxied
-              </p>
             </div>
           </div>
 
@@ -945,6 +962,15 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
               title="Customize Wallpaper, Accent Colors & Glass Blur"
             >
               <Palette className="w-4 h-4" />
+            </button>
+
+            {/* Fullscreen Toggle */}
+            <button
+              onClick={toggleFullscreen}
+              className="p-2 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 text-zinc-300 hover:text-white transition-all active:scale-95"
+              title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
+            >
+              {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
             </button>
 
             {/* Add Widget / Appliance */}
