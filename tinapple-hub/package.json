@@ -1,7 +1,7 @@
 {
   "name": "tinapple-hub",
   "private": true,
-  "version": "0.0.1",
+  "version": "0.0.7",
   "type": "module",
   "scripts": {
     "dev": "node node_modules/vite/bin/vite.js",
