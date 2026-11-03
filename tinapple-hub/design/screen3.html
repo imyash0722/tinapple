@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Tinapple OS - Hardware &amp; Thermals</title>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Font Roboto Flex -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wght@8..144,300;400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "on-primary-container": "#004965",
+            "surface-variant": "#303539",
+            "surface": "#101828",
+            "on-tertiary-fixed": "#2a1700",
+            "on-primary-fixed": "#001e2c",
+            "outline-variant": "#1e293b",
+            "on-tertiary-fixed-variant": "#653e00",
+            "on-tertiary-container": "#613b00",
+            "secondary-container": "#1e293b",
+            "inverse-primary": "#00668a",
+            "primary-fixed": "#c4e7ff",
+            "tertiary-container": "#f1a02b",
+            "surface-bright": "#1c2940",
+            "on-primary-fixed-variant": "#004c69",
+            "outline": "#334155",
+            "on-background": "#dee3e8",
+            "on-error": "#450a0a",
+            "surface-container-high": "#152034",
+            "background": "#0f1418",
+            "on-secondary-container": "#b3b8ca",
+            "surface-container-lowest": "#05070f",
+            "secondary-fixed": "#dde2f5",
+            "error-container": "#93000a",
+            "primary-fixed-dim": "#7bd0ff",
+            "on-surface": "#f8fafc",
+            "on-primary": "#032d42",
+            "on-surface-variant": "#94a3b8",
+            "secondary": "#c1c6d8",
+            "surface-container-highest": "#303539",
+            "primary-container": "#074a6e",
+            "tertiary": "#ffc176",
+            "surface-dim": "#0f1418",
+            "on-tertiary": "#472a00",
+            "inverse-on-surface": "#2c3135",
+            "on-error-container": "#ffdad6",
+            "on-secondary-fixed": "#161b29",
+            "surface-container-low": "#171c20",
+            "error": "#f87171",
+            "inverse-surface": "#dee3e8",
+            "on-secondary-fixed-variant": "#414756",
+            "primary": "#38bdf8",
+            "secondary-fixed-dim": "#c1c6d8",
+            "on-secondary": "#2a303e",
+            "surface-container": "#1b2024",
+            "surface-tint": "#7bd0ff",
+            "tertiary-fixed-dim": "#ffb960",
+            "tertiary-fixed": "#ffddb8"
+          },
+          "borderRadius": {
+            "DEFAULT": "1rem",
+            "lg": "2rem",
+            "xl": "3rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "gutter": "1rem",
+            "space-lg": "1.5rem",
+            "margin": "1.5rem",
+            "space-xs": "0.25rem",
+            "space-xl": "2rem",
+            "space-sm": "0.5rem",
+            "space-md": "1rem"
+          },
+          "fontFamily": {
+            "headline-md": ["Roboto Flex", "sans-serif"],
+            "label-medium": ["Roboto Flex", "sans-serif"],
+            "title-medium": ["Roboto Flex", "sans-serif"],
+            "title-large": ["Roboto Flex", "sans-serif"],
+            "headline-lg": ["Roboto Flex", "sans-serif"],
+            "body-medium": ["Roboto Flex", "sans-serif"],
+            "mono": ["JetBrains Mono", "monospace"]
+          },
+          "fontSize": {
+            "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "500" }],
+            "label-medium": ["12px", { "lineHeight": "16px", "fontWeight": "500" }],
+            "title-medium": ["16px", { "lineHeight": "24px", "fontWeight": "500" }],
+            "title-large": ["22px", { "lineHeight": "28px", "fontWeight": "500" }],
+            "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "500" }],
+            "body-medium": ["14px", { "lineHeight": "20px", "fontWeight": "400" }]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      display: inline-block;
+      vertical-align: middle;
+      line-height: 1;
+    }
+    /* Custom clean slider */
+    input[type=range] {
+      -webkit-appearance: none;
+      background: transparent;
+    }
+    input[type=range]:focus {
+      outline: none;
+    }
+    input[type=range]::-webkit-slider-runnable-track {
+      width: 100%;
+      height: 8px;
+      cursor: pointer;
+      background: #1e293b;
+      border-radius: 9999px;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      height: 22px;
+      width: 22px;
+      border-radius: 50%;
+      background: #38bdf8;
+      cursor: pointer;
+      -webkit-appearance: none;
+      margin-top: -7px;
+      box-shadow: 0 0 0 4px #074a6e;
+      transition: transform 0.15s ease;
+    }
+    input[type=range]::-webkit-slider-thumb:hover {
+      transform: scale(1.1);
+    }
+  </style>
+</head>
+<body class="bg-background text-on-surface antialiased flex min-h-screen overflow-x-hidden selection:bg-primary-container selection:text-primary">
+<!-- ==================== SIDE NAV BAR (SHARED ANCHOR) ==================== -->
+<aside class="fixed top-0 left-0 h-screen w-64 border-r border-outline-variant bg-surface-container-low z-40 flex flex-col justify-between p-space-md select-none">
+<!-- Top Brand & Hierarchy -->
+<div class="flex flex-col gap-space-md">
+<!-- Brand Identity -->
+<div class="flex items-center gap-3 px-2 py-1">
+<div class="w-10 h-10 rounded-DEFAULT bg-primary-container/30 border border-outline-variant flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-2xl" data-icon="memory">memory</span>
+</div>
+<div class="flex flex-col">
+<span class="text-title-large font-title-large font-medium text-on-surface tracking-tight leading-tight">Tinapple OS</span>
+<span class="text-label-medium font-label-medium text-on-surface-variant font-mono">tinapple-node</span>
+</div>
+</div>
+<!-- Quick Server Tools Action Bar -->
+<div class="px-1 py-1">
+<div class="text-[10px] tracking-wider text-on-surface-variant font-medium uppercase px-2 mb-1.5">Quick Clusters</div>
+<div class="grid grid-cols-2 gap-1.5">
+<button class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-DEFAULT bg-primary-container/20 text-primary text-label-medium font-label-medium border border-outline-variant/60 active:scale-[0.98] transition-all">
+<span class="material-symbols-outlined text-[16px]" data-icon="build">build</span>
+<span>Server Tools</span>
+</button>
+<button class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-DEFAULT bg-surface-container text-on-surface-variant hover:text-on-surface text-label-medium font-label-medium border border-outline-variant/40 active:scale-[0.98] transition-all">
+<span class="material-symbols-outlined text-[16px]" data-icon="hub">hub</span>
+<span>Tailscale</span>
+</button>
+</div>
+</div>
+<div class="h-[1px] bg-outline-variant/80 mx-1"></div>
+<!-- Navigation Links -->
+<nav class="flex flex-col gap-1">
+<!-- Dashboard -->
+<a class="flex items-center gap-space-md px-space-md py-space-sm rounded-DEFAULT text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors duration-200 text-body-medium font-body-medium" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span>Dashboard</span>
+</a>
+<!-- Services -->
+<a class="flex items-center gap-space-md px-space-md py-space-sm rounded-DEFAULT text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors duration-200 text-body-medium font-body-medium" href="#">
+<span class="material-symbols-outlined" data-icon="dns">dns</span>
+<span>Services</span>
+</a>
+<!-- App Store -->
+<a class="flex items-center gap-space-md px-space-md py-space-sm rounded-DEFAULT text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors duration-200 text-body-medium font-body-medium" href="#">
+<span class="material-symbols-outlined" data-icon="storefront">storefront</span>
+<span>App Store</span>
+</a>
+<!-- Guides -->
+<a class="flex items-center gap-space-md px-space-md py-space-sm rounded-DEFAULT text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors duration-200 text-body-medium font-body-medium" href="#">
+<span class="material-symbols-outlined" data-icon="menu_book">menu_book</span>
+<span>Guides</span>
+</a>
+<!-- Hardware (MANDATORY ACTIVE STATE) -->
+<a class="flex items-center gap-space-md px-space-md py-space-sm rounded-DEFAULT bg-primary-container/15 text-primary font-medium transition-colors duration-200 text-body-medium font-body-medium border-l-2 border-primary" href="#">
+<span class="material-symbols-outlined" data-icon="memory" data-weight="fill" style="font-variation-settings: 'FILL' 1;">memory</span>
+<span class="font-medium text-primary">Hardware</span>
+<span class="ml-auto w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+</a>
+<!-- Terminal -->
+<a class="flex items-center gap-space-md px-space-md py-space-sm rounded-DEFAULT text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors duration-200 text-body-medium font-body-medium" href="#">
+<span class="material-symbols-outlined" data-icon="terminal">terminal</span>
+<span>Terminal</span>
+</a>
+<!-- Error Logger -->
+<a class="flex items-center gap-space-md px-space-md py-space-sm rounded-DEFAULT text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors duration-200 text-body-medium font-body-medium" href="#">
+<span class="material-symbols-outlined" data-icon="bug_report">bug_report</span>
+<span>Error Logger</span>
+</a>
+<!-- Settings -->
+<a class="flex items-center gap-space-md px-space-md py-space-sm rounded-DEFAULT text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors duration-200 text-body-medium font-body-medium" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span>Settings</span>
+</a>
+</nav>
+</div>
+<!-- Bottom Footer Anchor Controls -->
+<div class="flex flex-col gap-2 pt-2 border-t border-outline-variant">
+<div class="flex items-center justify-between px-2 py-1.5 rounded-DEFAULT bg-surface-container/60 border border-outline-variant/60">
+<div class="flex items-center gap-2.5">
+<div class="w-7 h-7 rounded-full bg-surface-variant flex items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]" data-icon="account_circle">account_circle</span>
+</div>
+<div class="flex flex-col">
+<span class="text-label-medium font-label-medium text-on-surface font-medium">Sysadmin</span>
+<span class="text-[11px] text-primary">Root Access</span>
+</div>
+</div>
+<div class="flex items-center gap-1">
+<button class="p-1 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors" title="Dark Theme">
+<span class="material-symbols-outlined text-[18px]" data-icon="dark_mode">dark_mode</span>
+</button>
+<button class="p-1 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors" title="Pin Drawer">
+<span class="material-symbols-outlined text-[18px]" data-icon="push_pin">push_pin</span>
+</button>
+</div>
+</div>
+</div>
+</aside>
+<!-- ==================== MAIN CONTENT WRAPPER ==================== -->
+<div class="pl-64 flex-1 flex flex-col min-w-0 bg-background pb-28">
+<!-- ==================== TOP NAV BAR (SHARED ANCHOR) ==================== -->
+<header class="sticky top-0 w-full border-b border-outline-variant bg-surface-container z-30 flex items-center justify-between px-space-lg py-space-sm select-none">
+<!-- Host & Network Telemetry Pill Cluster -->
+<div class="flex items-center gap-3">
+<div class="flex items-center gap-2 pr-3 border-r border-outline-variant">
+<div class="w-2.5 h-2.5 rounded-full bg-emerald-400"></div>
+<span class="text-title-medium font-title-medium text-on-surface font-medium tracking-tight">tinapple-node</span>
+<span class="px-2 py-0.5 rounded-full bg-emerald-950/60 border border-emerald-800/50 text-[11px] font-mono text-emerald-300">Online</span>
+</div>
+<!-- Telemetry Items -->
+<div class="flex items-center gap-3 font-mono text-label-medium">
+<div class="flex items-center gap-1.5 px-2.5 py-1 rounded bg-surface-container-high border border-outline-variant text-on-surface-variant">
+<span class="material-symbols-outlined text-[15px] text-primary" data-icon="lan">lan</span>
+<span>192.168.1.120</span>
+</div>
+<div class="flex items-center gap-1.5 px-2.5 py-1 rounded bg-surface-container-high border border-outline-variant text-on-surface-variant">
+<span class="material-symbols-outlined text-[15px] text-sky-400" data-icon="vpn_lock">vpn_lock</span>
+<span>100.84.22.9</span>
+</div>
+<div class="flex items-center gap-1.5 px-2 py-1 rounded bg-surface-container-high/60 text-on-surface-variant">
+<span class="material-symbols-outlined text-[15px]" data-icon="schedule">schedule</span>
+<span>Up 14d 6h</span>
+</div>
+<div class="flex items-center gap-1.5 px-2 py-1 rounded bg-surface-container-high/60 text-on-surface-variant">
+<span class="material-symbols-outlined text-[15px]" data-icon="speed">speed</span>
+<span>Load 0.42</span>
+</div>
+</div>
+</div>
+<!-- Trailing Action Cluster -->
+<div class="flex items-center gap-3">
+<!-- Update Available Chip -->
+<div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-tertiary-container/20 border border-tertiary-container/40 text-tertiary text-label-medium font-label-medium">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary animate-ping"></span>
+<span>Update Available</span>
+</div>
+<div class="h-4 w-[1px] bg-outline-variant"></div>
+<!-- Utility Icons -->
+<button class="p-1.5 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors" title="Notifications">
+<span class="material-symbols-outlined text-[20px]" data-icon="notifications">notifications</span>
+</button>
+<button class="p-1.5 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors" title="Tailscale Network">
+<span class="material-symbols-outlined text-[20px]" data-icon="wifi">wifi</span>
+</button>
+<button class="p-1.5 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors" title="Shell">
+<span class="material-symbols-outlined text-[20px]" data-icon="terminal">terminal</span>
+</button>
+<!-- Reboot Action Button -->
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded-DEFAULT bg-surface-container-high hover:bg-error/20 hover:text-error hover:border-error/40 border border-outline-variant text-on-surface text-label-medium font-label-medium transition-all active:scale-[0.98]">
+<span class="material-symbols-outlined text-[16px]" data-icon="restart_alt">restart_alt</span>
+<span>Reboot</span>
+</button>
+</div>
+</header>
+<!-- ==================== MAIN HARDWARE & THERMALS CANVAS ==================== -->
+<main class="p-space-lg max-w-[1440px] mx-auto w-full flex flex-col gap-6">
+<!-- 1. Header Section -->
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-outline-variant/60">
+<div class="flex flex-col gap-1.5">
+<div class="flex items-center gap-3">
+<h1 class="text-headline-md font-headline-md text-on-surface tracking-tight">Hardware &amp; Thermals</h1>
+<span class="px-3 py-0.5 rounded-full bg-surface-container-high border border-outline-variant text-label-medium font-mono text-primary font-medium">
+              Core i7-12700T • Iris Xe • 8 Fans/Zones Active
+            </span>
+</div>
+<p class="text-body-medium font-body-medium text-on-surface-variant">Real-time thermal envelope, dynamic fan RPM telemetry, and power delivery state machine.</p>
+</div>
+<!-- Top Controls -->
+<div class="flex items-center gap-2.5">
+<button class="flex items-center gap-2 px-3.5 py-2 rounded-DEFAULT bg-secondary-container border border-outline-variant text-on-secondary-container hover:text-on-surface hover:bg-surface-container-high text-label-medium font-label-medium transition-all active:scale-[0.98]">
+<span class="material-symbols-outlined text-[18px] text-tertiary" data-icon="auto_mode">auto_mode</span>
+<span>Emergency Profile: Auto</span>
+</button>
+<button class="flex items-center gap-2 px-4 py-2 rounded-DEFAULT bg-primary text-on-primary hover:bg-primary-fixed-dim text-label-medium font-label-medium font-semibold shadow-sm transition-all active:scale-[0.98]">
+<span class="material-symbols-outlined text-[18px]" data-icon="tune">tune</span>
+<span>Calibrate Fans</span>
+</button>
+</div>
+</div>
+<!-- 2. Hardware Overview Grid (Bento cards, 28px radius, surface-container) -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+<!-- Card 1: CPU Package & Cores -->
+<div class="bg-surface rounded-[28px] border border-outline-variant p-6 flex flex-col justify-between shadow-sm relative overflow-hidden group">
+<div class="flex items-center justify-between mb-4">
+<div class="flex items-center gap-2.5">
+<div class="w-9 h-9 rounded-xl bg-surface-container-high border border-outline-variant flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[20px]" data-icon="developer_board">developer_board</span>
+</div>
+<div>
+<h3 class="text-title-medium font-title-medium text-on-surface leading-tight">CPU Package</h3>
+<span class="text-label-medium font-mono text-on-surface-variant">Alder Lake 12th Gen</span>
+</div>
+</div>
+<span class="px-2.5 py-1 rounded-full bg-emerald-950/40 border border-emerald-800/40 text-[11px] font-mono text-emerald-400">Nominal</span>
+</div>
+<!-- Radial Gauge SVG CPU -->
+<div class="flex flex-col items-center justify-center py-2 relative">
+<div class="relative w-48 h-32 flex items-center justify-center">
+<svg class="w-48 h-32 transform" viewbox="0 0 160 100">
+<!-- Background Arc (from 180 to 0 deg) -->
+<path d="M 20 90 A 60 60 0 0 1 140 90" fill="none" stroke="#1e293b" stroke-linecap="round" stroke-width="12"></path>
+<!-- Active Arc (42°C in a 20-100 range ~ 27% fill) -->
+<path d="M 20 90 A 60 60 0 0 1 140 90" fill="none" stroke="#38bdf8" stroke-dasharray="188.4" stroke-dashoffset="136" stroke-linecap="round" stroke-width="12"></path>
+</svg>
+<!-- Center Metric Value -->
+<div class="absolute bottom-2 flex flex-col items-center">
+<span class="text-3xl font-headline-md font-mono font-semibold text-on-surface tracking-tight">42<span class="text-primary text-xl font-normal">°C</span></span>
+<span class="text-[11px] font-mono text-on-surface-variant uppercase tracking-wider">Tctl / Tdie</span>
+</div>
+</div>
+</div>
+<!-- Metrics Breakdown -->
+<div class="grid grid-cols-2 gap-3 pt-3 border-t border-outline-variant">
+<div class="bg-surface-container-high/60 rounded-xl p-2.5 border border-outline-variant/60">
+<span class="text-[11px] text-on-surface-variant block">Package Power</span>
+<span class="text-title-medium font-mono font-medium text-on-surface">28.4 <span class="text-xs text-on-surface-variant">W</span></span>
+</div>
+<div class="bg-surface-container-high/60 rounded-xl p-2.5 border border-outline-variant/60">
+<span class="text-[11px] text-on-surface-variant block">Core Clock</span>
+<span class="text-title-medium font-mono font-medium text-on-surface">2.40 <span class="text-xs text-on-surface-variant">GHz avg</span></span>
+</div>
+</div>
+<!-- P-core vs E-core Mini Bar -->
+<div class="mt-4 pt-3 border-t border-outline-variant flex flex-col gap-2">
+<div class="flex justify-between text-label-medium font-mono">
+<span class="text-on-surface-variant">P-cores (8T): <span class="text-on-surface font-medium">41°C</span></span>
+<span class="text-on-surface-variant">E-cores (4T): <span class="text-on-surface font-medium">38°C</span></span>
+</div>
+<div class="w-full bg-surface-container-high h-2 rounded-full overflow-hidden flex">
+<div class="bg-primary h-full rounded-l-full" style="width: 52%"></div>
+<div class="bg-primary-container h-full rounded-r-full" style="width: 48%"></div>
+</div>
+<div class="flex justify-between text-[11px] text-on-surface-variant">
+<span>Throttle Limit: 95°C</span>
+<span class="font-mono text-emerald-400">Headroom +53°C</span>
+</div>
+</div>
+</div>
+<!-- Card 2: GPU & Video Engine -->
+<div class="bg-surface rounded-[28px] border border-outline-variant p-6 flex flex-col justify-between shadow-sm relative overflow-hidden group">
+<div class="flex items-center justify-between mb-4">
+<div class="flex items-center gap-2.5">
+<div class="w-9 h-9 rounded-xl bg-surface-container-high border border-outline-variant flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[20px]" data-icon="videocam">videocam</span>
+</div>
+<div>
+<h3 class="text-title-medium font-title-medium text-on-surface leading-tight">GPU &amp; Transcode</h3>
+<span class="text-label-medium font-mono text-on-surface-variant">Intel Iris Xe (32EU)</span>
+</div>
+</div>
+<span class="px-2.5 py-1 rounded-full bg-emerald-950/40 border border-emerald-800/40 text-[11px] font-mono text-emerald-400">Idle / Ready</span>
+</div>
+<!-- Radial Gauge SVG GPU -->
+<div class="flex flex-col items-center justify-center py-2 relative">
+<div class="relative w-48 h-32 flex items-center justify-center">
+<svg class="w-48 h-32 transform" viewbox="0 0 160 100">
+<path d="M 20 90 A 60 60 0 0 1 140 90" fill="none" stroke="#1e293b" stroke-linecap="round" stroke-width="12"></path>
+<!-- 39°C representation -->
+<path d="M 20 90 A 60 60 0 0 1 140 90" fill="none" stroke="#38bdf8" stroke-dasharray="188.4" stroke-dashoffset="145" stroke-linecap="round" stroke-width="12"></path>
+</svg>
+<div class="absolute bottom-2 flex flex-col items-center">
+<span class="text-3xl font-headline-md font-mono font-semibold text-on-surface tracking-tight">39<span class="text-primary text-xl font-normal">°C</span></span>
+<span class="text-[11px] font-mono text-on-surface-variant uppercase tracking-wider">iGPU Temp</span>
+</div>
+</div>
+</div>
+<!-- Video Engine Breakdown -->
+<div class="grid grid-cols-2 gap-3 pt-3 border-t border-outline-variant">
+<div class="bg-surface-container-high/60 rounded-xl p-2.5 border border-outline-variant/60">
+<span class="text-[11px] text-on-surface-variant block">Shared VRAM</span>
+<span class="text-title-medium font-mono font-medium text-on-surface">2048 <span class="text-xs text-on-surface-variant">/ 4096 MB</span></span>
+</div>
+<div class="bg-surface-container-high/60 rounded-xl p-2.5 border border-outline-variant/60">
+<span class="text-[11px] text-on-surface-variant block">QuickSync Engine</span>
+<span class="text-title-medium font-mono font-medium text-primary">12% <span class="text-xs text-on-surface-variant">Load</span></span>
+</div>
+</div>
+<!-- Active Transcoding Status -->
+<div class="mt-4 pt-3 border-t border-outline-variant flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary animate-ping"></span>
+<span class="text-body-medium font-body-medium text-on-surface">1x 4K HEVC → 1080p Stream</span>
+</div>
+<span class="text-label-medium font-mono text-on-surface-variant">Jellyfin VAAPI</span>
+</div>
+</div>
+<!-- Card 3: Memory & Thermal Zones -->
+<div class="bg-surface rounded-[28px] border border-outline-variant p-6 flex flex-col justify-between shadow-sm">
+<div class="flex items-center justify-between mb-2">
+<div class="flex items-center gap-2.5">
+<div class="w-9 h-9 rounded-xl bg-surface-container-high border border-outline-variant flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[20px]" data-icon="thermostat">thermostat</span>
+</div>
+<div>
+<h3 class="text-title-medium font-title-medium text-on-surface leading-tight">Board Thermal Zones</h3>
+<span class="text-label-medium font-mono text-on-surface-variant">4 Active Sensor Buses</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant text-[20px]" data-icon="sensors">sensors</span>
+</div>
+<!-- Thermal Zone Readouts -->
+<div class="flex flex-col gap-2.5 py-1">
+<!-- VRM Temp -->
+<div class="flex items-center justify-between p-2 rounded-xl bg-surface-container-high/50 border border-outline-variant/40">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[18px]" data-icon="bolt">bolt</span>
+<span class="text-body-medium font-body-medium text-on-surface">VRM Mosfet</span>
+</div>
+<div class="flex items-center gap-3">
+<div class="w-24 bg-surface-container-low h-1.5 rounded-full overflow-hidden">
+<div class="bg-primary h-full rounded-full" style="width: 46%"></div>
+</div>
+<span class="font-mono text-body-medium text-on-surface font-medium w-12 text-right">46°C</span>
+</div>
+</div>
+<!-- NVMe 1 Gen4 -->
+<div class="flex items-center justify-between p-2 rounded-xl bg-surface-container-high/50 border border-outline-variant/40">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[18px]" data-icon="storage">storage</span>
+<span class="text-body-medium font-body-medium text-on-surface">NVMe 1 (OS/Crucial)</span>
+</div>
+<div class="flex items-center gap-3">
+<div class="w-24 bg-surface-container-low h-1.5 rounded-full overflow-hidden">
+<div class="bg-primary h-full rounded-full" style="width: 44%"></div>
+</div>
+<span class="font-mono text-body-medium text-on-surface font-medium w-12 text-right">44°C</span>
+</div>
+</div>
+<!-- NVMe 2 Gen4 -->
+<div class="flex items-center justify-between p-2 rounded-xl bg-surface-container-high/50 border border-outline-variant/40">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[18px]" data-icon="storage">storage</span>
+<span class="text-body-medium font-body-medium text-on-surface">NVMe 2 (Cache/980Pro)</span>
+</div>
+<div class="flex items-center gap-3">
+<div class="w-24 bg-surface-container-low h-1.5 rounded-full overflow-hidden">
+<div class="bg-primary h-full rounded-full" style="width: 41%"></div>
+</div>
+<span class="font-mono text-body-medium text-on-surface font-medium w-12 text-right">41°C</span>
+</div>
+</div>
+<!-- Motherboard Ambient -->
+<div class="flex items-center justify-between p-2 rounded-xl bg-surface-container-high/50 border border-outline-variant/40">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[18px]" data-icon="home_mini">home_mini</span>
+<span class="text-body-medium font-body-medium text-on-surface">Chassis Ambient</span>
+</div>
+<div class="flex items-center gap-3">
+<div class="w-24 bg-surface-container-low h-1.5 rounded-full overflow-hidden">
+<div class="bg-emerald-400 h-full rounded-full" style="width: 31%"></div>
+</div>
+<span class="font-mono text-body-medium text-emerald-400 font-medium w-12 text-right">31°C</span>
+</div>
+</div>
+</div>
+<div class="pt-2 border-t border-outline-variant flex items-center justify-between text-label-medium text-on-surface-variant font-mono">
+<span>Critical Throttling: 85°C</span>
+<span class="text-primary font-sans font-medium">All Sensors Safe</span>
+</div>
+</div>
+</div>
+<!-- 3. Fan Curves & Profiles Section (Large 28px bento card) -->
+<div class="bg-surface rounded-[28px] border border-outline-variant p-6 shadow-sm flex flex-col gap-6">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-xl bg-surface-container-high border border-outline-variant flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-2xl" data-icon="mode_fan">mode_fan</span>
+</div>
+<div>
+<h2 class="text-title-large font-title-large text-on-surface font-medium">Dynamic Fan Curve &amp; PWM Controller</h2>
+<span class="text-label-medium font-label-medium text-on-surface-variant">Closed-loop thermal management responding to CPU Package Tctl</span>
+</div>
+</div>
+<!-- Profile Selector Chips -->
+<div class="flex items-center p-1 rounded-DEFAULT bg-surface-container-low border border-outline-variant">
+<button class="px-3 py-1.5 rounded-lg text-label-medium font-label-medium text-on-surface-variant hover:text-on-surface transition-all">Silent</button>
+<button class="px-3.5 py-1.5 rounded-lg text-label-medium font-label-medium bg-primary text-on-primary font-medium shadow-sm transition-all">Balanced (Active)</button>
+<button class="px-3 py-1.5 rounded-lg text-label-medium font-label-medium text-on-surface-variant hover:text-on-surface transition-all">Performance</button>
+<button class="px-3 py-1.5 rounded-lg text-label-medium font-label-medium text-on-surface-variant hover:text-on-surface transition-all">Fixed Manual</button>
+</div>
+</div>
+<!-- Inner Split: Graph + Real-time Fan Tachs -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+<!-- Graph Area (8 cols) -->
+<div class="lg:col-span-8 bg-surface-container-low/70 rounded-2xl p-5 border border-outline-variant/80 flex flex-col gap-3">
+<div class="flex items-center justify-between text-label-medium text-on-surface-variant">
+<span class="font-mono">Curve Profile: Balanced [800 RPM @ 40°C → 2200 RPM @ 80°C]</span>
+<div class="flex items-center gap-4">
+<span class="flex items-center gap-1.5"><span class="w-2.5 h-0.5 bg-primary"></span> Target Curve</span>
+<span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-primary animate-ping"></span> Live (42°C / 870 RPM)</span>
+</div>
+</div>
+<!-- Stylized SVG Curve Graph -->
+<div class="w-full h-56 relative pt-2">
+<svg class="w-full h-full" preserveaspectratio="none" viewbox="0 0 700 200">
+<!-- Grid Lines Horizontal -->
+<line stroke="#1e293b" stroke-dasharray="4" x1="40" x2="680" y1="20" y2="20"></line>
+<line stroke="#1e293b" stroke-dasharray="4" x1="40" x2="680" y1="70" y2="70"></line>
+<line stroke="#1e293b" stroke-dasharray="4" x1="40" x2="680" y1="120" y2="120"></line>
+<line stroke="#1e293b" x1="40" x2="680" y1="170" y2="170"></line>
+<!-- Grid Labels Y (RPM) -->
+<text fill="#94a3b8" font-family="monospace" font-size="10" text-anchor="end" x="32" y="24">2400</text>
+<text fill="#94a3b8" font-family="monospace" font-size="10" text-anchor="end" x="32" y="74">1600</text>
+<text fill="#94a3b8" font-family="monospace" font-size="10" text-anchor="end" x="32" y="124">800</text>
+<text fill="#94a3b8" font-family="monospace" font-size="10" text-anchor="end" x="32" y="174">0</text>
+<!-- Grid Labels X (Temp °C) -->
+<text fill="#94a3b8" font-family="monospace" font-size="10" text-anchor="middle" x="140" y="192">30°C</text>
+<text fill="#94a3b8" font-family="monospace" font-size="10" text-anchor="middle" x="260" y="192">45°C</text>
+<text fill="#94a3b8" font-family="monospace" font-size="10" text-anchor="middle" x="380" y="192">60°C</text>
+<text fill="#94a3b8" font-family="monospace" font-size="10" text-anchor="middle" x="500" y="192">75°C</text>
+<text fill="#94a3b8" font-family="monospace" font-size="10" text-anchor="middle" x="620" y="192">90°C</text>
+<!-- Curve Fill Gradient Area -->
+<defs>
+<lineargradient id="curveGradient" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#38bdf8" stop-opacity="0.25"></stop>
+<stop offset="100%" stop-color="#38bdf8" stop-opacity="0.0"></stop>
+</lineargradient>
+</defs>
+<path d="M 60 160 C 180 160, 240 145, 340 120 C 440 90, 520 40, 640 30 L 640 170 L 60 170 Z" fill="url(#curveGradient)"></path>
+<!-- The Actual Curve Line -->
+<path d="M 60 160 C 180 160, 240 145, 340 120 C 440 90, 520 40, 640 30" fill="none" stroke="#38bdf8" stroke-linecap="round" stroke-width="3"></path>
+<!-- Threshold Dots -->
+<!-- 40°C dot (approx x=220, y=148) -->
+<circle cx="220" cy="148" fill="#101828" r="4.5" stroke="#38bdf8" stroke-width="2.5"></circle>
+<!-- 60°C dot (approx x=380, y=105) -->
+<circle cx="380" cy="105" fill="#101828" r="4.5" stroke="#38bdf8" stroke-width="2.5"></circle>
+<!-- 80°C dot (approx x=540, y=45) -->
+<circle cx="540" cy="45" fill="#101828" r="4.5" stroke="#38bdf8" stroke-width="2.5"></circle>
+<!-- Live Current Point Indicator (at 42°C, x=236, y=144) -->
+<circle class="animate-pulse" cx="236" cy="144" fill="#38bdf8" fill-opacity="0.3" r="8"></circle>
+<circle cx="236" cy="144" fill="#38bdf8" r="5"></circle>
+</svg>
+</div>
+</div>
+<!-- Dual Fan Readouts (4 cols) -->
+<div class="lg:col-span-4 flex flex-col gap-3.5">
+<!-- Fan 1 Intake -->
+<div class="p-4 rounded-2xl bg-surface-container-low border border-outline-variant/80 flex flex-col gap-2">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[18px]" data-icon="air">air</span>
+<span class="text-body-medium font-body-medium text-on-surface font-medium">Fan 1: Intake (Noctua NF-A12)</span>
+</div>
+<span class="text-[11px] font-mono text-emerald-400">PWM 38%</span>
+</div>
+<div class="flex items-baseline justify-between">
+<div class="flex items-baseline gap-1 font-mono">
+<span class="text-2xl font-headline-md font-semibold text-on-surface">850</span>
+<span class="text-xs text-on-surface-variant">RPM</span>
+</div>
+<span class="text-[11px] text-on-surface-variant font-mono">Target: 800-900</span>
+</div>
+<div class="w-full bg-surface-container-high h-2 rounded-full overflow-hidden">
+<div class="bg-primary h-full rounded-full" style="width: 38%"></div>
+</div>
+</div>
+<!-- Fan 2 Exhaust -->
+<div class="p-4 rounded-2xl bg-surface-container-low border border-outline-variant/80 flex flex-col gap-2">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[18px]" data-icon="mode_fan">mode_fan</span>
+<span class="text-body-medium font-body-medium text-on-surface font-medium">Fan 2: Rear Exhaust</span>
+</div>
+<span class="text-[11px] font-mono text-emerald-400">PWM 42%</span>
+</div>
+<div class="flex items-baseline justify-between">
+<div class="flex items-baseline gap-1 font-mono">
+<span class="text-2xl font-headline-md font-semibold text-on-surface">920</span>
+<span class="text-xs text-on-surface-variant">RPM</span>
+</div>
+<span class="text-[11px] text-on-surface-variant font-mono">Target: 900-1000</span>
+</div>
+<div class="w-full bg-surface-container-high h-2 rounded-full overflow-hidden">
+<div class="bg-primary h-full rounded-full" style="width: 42%"></div>
+</div>
+</div>
+<!-- Aux / Pump -->
+<div class="p-3 rounded-2xl bg-surface-container-low/40 border border-outline-variant/40 flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-on-surface-variant text-[18px]" data-icon="water_drop">water_drop</span>
+<span class="text-label-medium font-label-medium text-on-surface-variant">Pump / Aux Header</span>
+</div>
+<span class="text-[11px] font-mono text-on-surface-variant">Standby (0 RPM)</span>
+</div>
+</div>
+</div>
+</div>
+<!-- 4. Battery & Power Delivery Management (Crucial for Tinapple hardware spec) -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+<!-- Battery Charge Protection Slider Card (8 cols) -->
+<div class="lg:col-span-8 bg-surface rounded-[28px] border border-outline-variant p-6 shadow-sm flex flex-col justify-between">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-outline-variant/60">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-xl bg-surface-container-high border border-outline-variant flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-2xl" data-icon="battery_charging_full">battery_charging_full</span>
+</div>
+<div>
+<h3 class="text-title-large font-title-large text-on-surface font-medium">BMS Battery Charge Protection</h3>
+<span class="text-label-medium font-label-medium text-on-surface-variant">Continuous 24/7 plugged-in operation battery threshold limiter</span>
+</div>
+</div>
+<!-- Real Material 3 Switch (52x32px) in ON state -->
+<div class="flex items-center gap-3">
+<span class="text-label-medium font-medium text-on-surface">BMS Bypass at 80%</span>
+<button aria-checked="true" class="w-[52px] h-[32px] rounded-full bg-primary p-1 flex items-center justify-end transition-colors duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/40" role="switch">
+<!-- M3 On Thumb: 24px width/height -->
+<div class="w-6 h-6 rounded-full bg-on-primary shadow-sm flex items-center justify-center">
+<span class="material-symbols-outlined text-[14px] text-primary" data-icon="check">check</span>
+</div>
+</button>
+</div>
+</div>
+<!-- Slider with Stop Ticks -->
+<div class="py-6 flex flex-col gap-4">
+<div class="flex justify-between items-center">
+<span class="text-body-medium font-body-medium text-on-surface">Maximum Charge Cutoff Threshold:</span>
+<span class="px-3 py-1 rounded-DEFAULT bg-primary-container/20 border border-primary/40 font-mono text-primary font-semibold text-title-medium">
+                80% (Preserve Chemistry)
+              </span>
+</div>
+<!-- Custom Slider Track -->
+<div class="relative w-full px-2">
+<input class="w-full z-10 relative" max="100" min="60" step="5" type="range" value="80"/>
+<!-- Stop Ticks Bar -->
+<div class="flex justify-between text-label-medium font-mono text-on-surface-variant pt-3 px-1">
+<div class="flex flex-col items-center gap-1">
+<span class="w-1 h-2 bg-outline rounded-full"></span>
+<span>60%</span>
+<span class="text-[10px] text-on-surface-variant/70">Max Shelf</span>
+</div>
+<div class="flex flex-col items-center gap-1">
+<span class="w-1 h-2 bg-outline rounded-full"></span>
+<span>75%</span>
+<span class="text-[10px] text-on-surface-variant/70">Balanced</span>
+</div>
+<div class="flex flex-col items-center gap-1">
+<span class="w-1 h-2.5 bg-primary rounded-full"></span>
+<span class="text-primary font-semibold">80%</span>
+<span class="text-[10px] text-primary">Recommended</span>
+</div>
+<div class="flex flex-col items-center gap-1">
+<span class="w-1 h-2 bg-outline rounded-full"></span>
+<span>100%</span>
+<span class="text-[10px] text-on-surface-variant/70">Full Mobilize</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Info note -->
+<div class="p-3 rounded-xl bg-surface-container-high/40 border border-outline-variant/60 flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-[20px]" data-icon="info">info</span>
+<span class="text-label-medium text-on-surface-variant">When threshold is met, internal charging circuitry disconnects the lithium pack and routes AC power directly to the motherboard via hardware pass-through.</span>
+</div>
+</div>
+<!-- Power Delivery Status Card (4 cols) -->
+<div class="lg:col-span-4 bg-surface rounded-[28px] border border-outline-variant p-6 shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2.5">
+<div class="w-9 h-9 rounded-xl bg-surface-container-high border border-outline-variant flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[20px]" data-icon="power">power</span>
+</div>
+<h3 class="text-title-medium font-title-medium text-on-surface">Power Delivery (PD)</h3>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-emerald-950/60 border border-emerald-800/40 text-[11px] font-mono text-emerald-400">AC Attached</span>
+</div>
+<!-- AC Readouts -->
+<div class="flex flex-col gap-3 my-4">
+<div class="p-3 rounded-xl bg-surface-container-high/60 border border-outline-variant/60 flex items-center justify-between">
+<span class="text-body-medium text-on-surface-variant">Power Supply</span>
+<span class="font-mono text-body-medium text-on-surface font-semibold">90W GaN OEM Adapter</span>
+</div>
+<div class="p-3 rounded-xl bg-surface-container-high/60 border border-outline-variant/60 flex items-center justify-between">
+<span class="text-body-medium text-on-surface-variant">Battery State</span>
+<span class="font-mono text-body-medium text-primary font-medium">80% • Pass-through (Idle)</span>
+</div>
+<div class="p-3 rounded-xl bg-surface-container-high/60 border border-outline-variant/60 flex items-center justify-between">
+<span class="text-body-medium text-on-surface-variant">Cycle Count</span>
+<span class="font-mono text-body-medium text-on-surface">48 cycles</span>
+</div>
+<div class="p-3 rounded-xl bg-surface-container-high/60 border border-outline-variant/60 flex items-center justify-between">
+<span class="text-body-medium text-on-surface-variant">State of Health (SoH)</span>
+<span class="font-mono text-body-medium text-emerald-400 font-semibold">97.2% Excellent</span>
+</div>
+</div>
+<div class="pt-2 border-t border-outline-variant flex items-center justify-between text-[11px] font-mono text-on-surface-variant">
+<span>Estimated 24/7 Life: 4.8 yrs</span>
+<span class="text-primary">Voltage: 11.42 V</span>
+</div>
+</div>
+</div>
+<!-- 5. Sensor Telemetry Table / Readout (Bottom card) -->
+<div class="bg-surface rounded-[28px] border border-outline-variant p-6 shadow-sm flex flex-col gap-4">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-outline-variant/60">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-xl bg-surface-container-high border border-outline-variant flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[20px]" data-icon="table_chart">table_chart</span>
+</div>
+<div>
+<h2 class="text-title-large font-title-large text-on-surface font-medium">Kernel Sensor Telemetry Matrix</h2>
+<span class="text-label-medium font-label-medium text-on-surface-variant">Direct hwmon subsystem probes via lm-sensors / ACPI bus</span>
+</div>
+</div>
+<!-- Quick search filter / reload indicator -->
+<div class="flex items-center gap-2">
+<span class="text-[11px] font-mono text-on-surface-variant">Polling interval: 1000ms</span>
+<span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+</div>
+</div>
+<!-- Tabular Responsive Sensors Table -->
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="border-b border-outline-variant text-[12px] font-mono text-on-surface-variant">
+<th class="py-3 px-4 font-medium uppercase tracking-wider">Sensor ID / Driver</th>
+<th class="py-3 px-4 font-medium uppercase tracking-wider">Subsystem Target</th>
+<th class="py-3 px-4 font-medium uppercase tracking-wider">Measured Value</th>
+<th class="py-3 px-4 font-medium uppercase tracking-wider">Warning Limit</th>
+<th class="py-3 px-4 font-medium uppercase tracking-wider">Critical Limit</th>
+<th class="py-3 px-4 font-medium uppercase tracking-wider">Health Status</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/50 font-mono text-body-medium">
+<!-- Row 1 -->
+<tr class="hover:bg-surface-container-high/40 transition-colors">
+<td class="py-3.5 px-4 text-primary font-medium">coretemp-isa-0000</td>
+<td class="py-3.5 px-4 font-sans text-on-surface">CPU Package (Package id 0)</td>
+<td class="py-3.5 px-4 font-semibold text-on-surface">42.0 °C</td>
+<td class="py-3.5 px-4 text-on-surface-variant">80.0 °C</td>
+<td class="py-3.5 px-4 text-on-surface-variant">100.0 °C</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-950/40 border border-emerald-800/40 text-[11px] text-emerald-400">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Normal
+                  </span>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-surface-container-high/40 transition-colors">
+<td class="py-3.5 px-4 text-primary font-medium">coretemp-isa-0000</td>
+<td class="py-3.5 px-4 font-sans text-on-surface">Core 0..7 Max Hotspot</td>
+<td class="py-3.5 px-4 font-semibold text-on-surface">44.0 °C</td>
+<td class="py-3.5 px-4 text-on-surface-variant">85.0 °C</td>
+<td class="py-3.5 px-4 text-on-surface-variant">105.0 °C</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-950/40 border border-emerald-800/40 text-[11px] text-emerald-400">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Normal
+                  </span>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-surface-container-high/40 transition-colors">
+<td class="py-3.5 px-4 text-primary font-medium">nvme_composite-pci-0100</td>
+<td class="py-3.5 px-4 font-sans text-on-surface">NVMe Sensor 1 (Crucial T500)</td>
+<td class="py-3.5 px-4 font-semibold text-on-surface">44.8 °C</td>
+<td class="py-3.5 px-4 text-on-surface-variant">70.0 °C</td>
+<td class="py-3.5 px-4 text-on-surface-variant">85.0 °C</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-950/40 border border-emerald-800/40 text-[11px] text-emerald-400">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Healthy
+                  </span>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-surface-container-high/40 transition-colors">
+<td class="py-3.5 px-4 text-primary font-medium">nvme_composite-pci-0200</td>
+<td class="py-3.5 px-4 font-sans text-on-surface">NVMe Sensor 2 (Samsung 980)</td>
+<td class="py-3.5 px-4 font-semibold text-on-surface">41.2 °C</td>
+<td class="py-3.5 px-4 text-on-surface-variant">70.0 °C</td>
+<td class="py-3.5 px-4 text-on-surface-variant">84.0 °C</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-950/40 border border-emerald-800/40 text-[11px] text-emerald-400">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Healthy
+                  </span>
+</td>
+</tr>
+<!-- Row 5 -->
+<tr class="hover:bg-surface-container-high/40 transition-colors">
+<td class="py-3.5 px-4 text-primary font-medium">pch_cannonlake-virtual-0</td>
+<td class="py-3.5 px-4 font-sans text-on-surface">Intel PCH Chipset Controller</td>
+<td class="py-3.5 px-4 font-semibold text-on-surface">48.5 °C</td>
+<td class="py-3.5 px-4 text-on-surface-variant">75.0 °C</td>
+<td class="py-3.5 px-4 text-on-surface-variant">95.0 °C</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-950/40 border border-emerald-800/40 text-[11px] text-emerald-400">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Normal
+                  </span>
+</td>
+</tr>
+<!-- Row 6 -->
+<tr class="hover:bg-surface-container-high/40 transition-colors">
+<td class="py-3.5 px-4 text-primary font-medium">acpitz-acpi-0</td>
+<td class="py-3.5 px-4 font-sans text-on-surface">ACPI Thermal Zone 0 (Board VRM)</td>
+<td class="py-3.5 px-4 font-semibold text-on-surface">46.0 °C</td>
+<td class="py-3.5 px-4 text-on-surface-variant">80.0 °C</td>
+<td class="py-3.5 px-4 text-on-surface-variant">100.0 °C</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-950/40 border border-emerald-800/40 text-[11px] text-emerald-400">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Normal
+                  </span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</main>
+</div>
+<!-- ==================== FLOATING BOTTOM SERVICE DOCK ==================== -->
+<div class="fixed bottom-5 left-1/2 -translate-x-1/2 z-50">
+<div class="flex items-center gap-2.5 px-4 py-2.5 rounded-full bg-surface/90 backdrop-blur-md border border-outline-variant shadow-2xl">
+<!-- Dock Service Item 1: Jellyfin -->
+<a class="w-10 h-10 rounded-full bg-surface-container-high hover:bg-primary-container hover:text-primary border border-outline-variant flex items-center justify-center text-on-surface-variant transition-all hover:scale-105 active:scale-95 group relative" href="#" title="Jellyfin Media Server">
+<span class="material-symbols-outlined text-[20px]" data-icon="play_circle">play_circle</span>
+<span class="absolute -top-8 px-2 py-0.5 rounded bg-surface border border-outline-variant text-[10px] text-on-surface font-mono opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">Jellyfin</span>
+</a>
+<!-- Dock Service Item 2: qBittorrent -->
+<a class="w-10 h-10 rounded-full bg-surface-container-high hover:bg-primary-container hover:text-primary border border-outline-variant flex items-center justify-center text-on-surface-variant transition-all hover:scale-105 active:scale-95 group relative" href="#" title="qBittorrent">
+<span class="material-symbols-outlined text-[20px]" data-icon="download">download</span>
+<span class="absolute -top-8 px-2 py-0.5 rounded bg-surface border border-outline-variant text-[10px] text-on-surface font-mono opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">qBittorrent</span>
+</a>
+<!-- Dock Service Item 3: Suwayomi -->
+<a class="w-10 h-10 rounded-full bg-surface-container-high hover:bg-primary-container hover:text-primary border border-outline-variant flex items-center justify-center text-on-surface-variant transition-all hover:scale-105 active:scale-95 group relative" href="#" title="Suwayomi Manga">
+<span class="material-symbols-outlined text-[20px]" data-icon="auto_stories">auto_stories</span>
+<span class="absolute -top-8 px-2 py-0.5 rounded bg-surface border border-outline-variant text-[10px] text-on-surface font-mono opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">Suwayomi</span>
+</a>
+<!-- Dock Service Item 4: Radarr -->
+<a class="w-10 h-10 rounded-full bg-surface-container-high hover:bg-primary-container hover:text-primary border border-outline-variant flex items-center justify-center text-on-surface-variant transition-all hover:scale-105 active:scale-95 group relative" href="#" title="Radarr">
+<span class="material-symbols-outlined text-[20px]" data-icon="movie">movie</span>
+<span class="absolute -top-8 px-2 py-0.5 rounded bg-surface border border-outline-variant text-[10px] text-on-surface font-mono opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">Radarr</span>
+</a>
+<!-- Dock Service Item 5: Navidrome -->
+<a class="w-10 h-10 rounded-full bg-surface-container-high hover:bg-primary-container hover:text-primary border border-outline-variant flex items-center justify-center text-on-surface-variant transition-all hover:scale-105 active:scale-95 group relative" href="#" title="Navidrome Music">
+<span class="material-symbols-outlined text-[20px]" data-icon="headphones">headphones</span>
+<span class="absolute -top-8 px-2 py-0.5 rounded bg-surface border border-outline-variant text-[10px] text-on-surface font-mono opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">Navidrome</span>
+</a>
+<!-- Dock Service Item 6: FileBrowser -->
+<a class="w-10 h-10 rounded-full bg-surface-container-high hover:bg-primary-container hover:text-primary border border-outline-variant flex items-center justify-center text-on-surface-variant transition-all hover:scale-105 active:scale-95 group relative" href="#" title="FileBrowser">
+<span class="material-symbols-outlined text-[20px]" data-icon="folder">folder</span>
+<span class="absolute -top-8 px-2 py-0.5 rounded bg-surface border border-outline-variant text-[10px] text-on-surface font-mono opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">FileBrowser</span>
+</a>
+<!-- Vertical divider in dock -->
+<div class="h-6 w-[1px] bg-outline-variant mx-1"></div>
+<!-- Quick Sync / Network State Indicator in Dock -->
+<div class="flex items-center gap-2 px-2 text-label-medium font-mono text-on-surface-variant">
+<span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+<span class="text-xs">Sync Ok</span>
+</div>
+</div>
+</div>
+</body></html>

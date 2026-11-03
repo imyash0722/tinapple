@@ -798,6 +798,7 @@ export const GUIDES_CATALOG: GuideArticle[] = [
   },
   {
     id: 'playit',
+    specialConfigs: [],
     title: 'Playit.gg Anycast Tunnel',
     subtitle: 'Public Anycast mesh tunnel providing public domains for Minecraft and web services without port forwarding',
     category: 'cloud',
@@ -825,6 +826,7 @@ export const GUIDES_CATALOG: GuideArticle[] = [
   },
   {
     id: 'jdownloader',
+    specialConfigs: [],
     title: 'JDownloader 2 Headless',
     subtitle: 'Universal direct-download engine supporting 1000+ hosters with remote MyJDownloader cloud control',
     category: 'cloud',
@@ -853,6 +855,7 @@ export const GUIDES_CATALOG: GuideArticle[] = [
   },
   {
     id: 'samba',
+    specialConfigs: [],
     title: 'Samba SMB Network Storage',
     subtitle: 'High-speed LAN file sharing across Windows Network Neighborhood, macOS Finder, and Linux',
     category: 'cloud',

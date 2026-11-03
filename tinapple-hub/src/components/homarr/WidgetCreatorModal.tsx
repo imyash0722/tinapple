@@ -283,26 +283,26 @@ export const WidgetCreatorModal: React.FC<WidgetCreatorModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in select-none">
-      <div className="w-full max-w-3xl rounded-2xl bg-slate-900 border border-white/10 shadow-2xl overflow-hidden font-mono text-xs flex flex-col max-h-[85vh]">
+      <div className="w-full max-w-3xl rounded-2xl bg-surface-container-low border border-outline-variant/50 shadow-none overflow-hidden font-sans tabular-nums text-xs flex flex-col max-h-[85vh]">
         {/* Header */}
-        <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between bg-slate-950/60 shrink-0">
+        <div className="px-5 py-4 border-b border-outline-variant/50 flex items-center justify-between bg-surface-container-low shrink-0">
           <div className="flex items-center gap-2.5">
             <Plus className="w-4 h-4 text-tinapple-gold" />
-            <h3 className="font-bold text-white text-sm">Add Canvas Widget</h3>
+            <h3 className="font-bold text-on-surface text-sm">Add Canvas Widget</h3>
           </div>
-          <button onClick={onClose} className="text-zinc-400 hover:text-white transition-colors">
+          <button onClick={onClose} className="text-on-surface-variant hover:text-on-surface transition-colors">
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Tab switcher */}
-        <div className="px-5 pt-3 border-b border-white/5 flex gap-4 bg-slate-950/30 shrink-0 overflow-x-auto">
+        <div className="px-5 pt-3 border-b border-outline-variant/50 flex gap-4 bg-surface-container-low shrink-0 overflow-x-auto">
           <button
             onClick={() => setActiveTab('individual')}
             className={`pb-2.5 border-b-2 font-bold flex items-center gap-1.5 transition-all whitespace-nowrap ${
               activeTab === 'individual'
                 ? 'border-tinapple-gold text-tinapple-gold'
-                : 'border-transparent text-zinc-400 hover:text-white'
+                : 'border-transparent text-on-surface-variant hover:text-on-surface'
             }`}
           >
             <Server className="w-3.5 h-3.5" />
@@ -313,7 +313,7 @@ export const WidgetCreatorModal: React.FC<WidgetCreatorModalProps> = ({
             className={`pb-2.5 border-b-2 font-bold flex items-center gap-1.5 transition-all whitespace-nowrap ${
               activeTab === 'custom'
                 ? 'border-tinapple-gold text-tinapple-gold'
-                : 'border-transparent text-zinc-400 hover:text-white'
+                : 'border-transparent text-on-surface-variant hover:text-on-surface'
             }`}
           >
             <Sparkles className="w-3.5 h-3.5" />
@@ -324,7 +324,7 @@ export const WidgetCreatorModal: React.FC<WidgetCreatorModalProps> = ({
             className={`pb-2.5 border-b-2 font-bold flex items-center gap-1.5 transition-all whitespace-nowrap ${
               activeTab === 'builtin'
                 ? 'border-tinapple-gold text-tinapple-gold'
-                : 'border-transparent text-zinc-400 hover:text-white'
+                : 'border-transparent text-on-surface-variant hover:text-on-surface'
             }`}
           >
             <LayoutGrid className="w-3.5 h-3.5" />
@@ -336,7 +336,7 @@ export const WidgetCreatorModal: React.FC<WidgetCreatorModalProps> = ({
         <div className="p-5 overflow-y-auto space-y-3 flex-1">
           {activeTab === 'individual' ? (
             <>
-              <p className="text-[11px] text-zinc-400 mb-2">
+              <p className="text-[11px] text-on-surface-variant mb-2">
                 Click any individual appliance to spawn a dedicated compact live monitoring & control card:
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -344,7 +344,7 @@ export const WidgetCreatorModal: React.FC<WidgetCreatorModalProps> = ({
                   <div
                     key={app.id}
                     onClick={() => handleCreateAppliance(app)}
-                    className="p-3.5 rounded-xl bg-slate-950/70 hover:bg-slate-800/80 border border-white/10 hover:border-tinapple-gold/50 cursor-pointer transition-all group flex flex-col justify-between shadow-md relative overflow-hidden"
+                    className="p-3.5 rounded-xl bg-surface-container-low hover:bg-surface-container border border-outline-variant/50 hover:border-tinapple-gold/50 cursor-pointer transition-all group flex flex-col justify-between shadow-none relative overflow-hidden"
                   >
                     <div
                       className="absolute -top-10 -right-10 w-20 h-20 rounded-full blur-xl opacity-20 pointer-events-none group-hover:opacity-40 transition-opacity"
@@ -353,19 +353,19 @@ export const WidgetCreatorModal: React.FC<WidgetCreatorModalProps> = ({
                     <div>
                       <div className="flex items-center justify-between mb-2">
                         <AppBrandIcon id={app.icon} size={28} />
-                        <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-white/5 text-zinc-400 border border-white/10">
+                        <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-white/5 text-on-surface-variant border border-outline-variant/50">
                           {app.port > 0 ? `:${app.port}` : 'daemon'}
                         </span>
                       </div>
-                      <h4 className="font-bold text-white text-xs group-hover:text-tinapple-gold transition-colors">
+                      <h4 className="font-bold text-on-surface text-xs group-hover:text-tinapple-gold transition-colors">
                         {app.name}
                       </h4>
-                      <p className="text-[10px] text-zinc-400 mt-1 leading-relaxed line-clamp-2">
+                      <p className="text-[10px] text-on-surface-variant mt-1 leading-relaxed line-clamp-2">
                         {app.tagline}
                       </p>
                     </div>
 
-                    <div className="mt-3 pt-2 border-t border-white/5 flex items-center justify-between text-[10px] text-zinc-500 font-bold">
+                    <div className="mt-3 pt-2 border-t border-outline-variant/50 flex items-center justify-between text-[10px] text-on-surface-variant font-bold">
                       <span className="capitalize">{app.category}</span>
                       <span className="text-tinapple-gold flex items-center gap-0.5 group-hover:translate-x-0.5 transition-transform">
                         Spawn Widget +
@@ -377,7 +377,7 @@ export const WidgetCreatorModal: React.FC<WidgetCreatorModalProps> = ({
             </>
           ) : (
             <>
-              <p className="text-[11px] text-zinc-400 mb-2">
+              <p className="text-[11px] text-on-surface-variant mb-2">
                 Click a widget template to spawn it directly into your canvas:
               </p>
 
@@ -386,22 +386,22 @@ export const WidgetCreatorModal: React.FC<WidgetCreatorModalProps> = ({
                   <div
                     key={t.type}
                     onClick={() => handleCreate(t)}
-                    className="p-4 rounded-xl bg-slate-950/70 hover:bg-slate-800/80 border border-white/10 hover:border-tinapple-gold/50 cursor-pointer transition-all group flex flex-col justify-between shadow-md"
+                    className="p-4 rounded-xl bg-surface-container-low hover:bg-surface-container border border-outline-variant/50 hover:border-tinapple-gold/50 cursor-pointer transition-all group flex flex-col justify-between shadow-none"
                   >
                     <div>
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-2xl">{t.icon}</span>
-                        <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-white/5 text-zinc-400 border border-white/10">
+                        <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-white/5 text-on-surface-variant border border-outline-variant/50">
                           {t.defaultW}×{t.defaultH}px
                         </span>
                       </div>
-                      <h4 className="font-bold text-white text-xs group-hover:text-tinapple-gold transition-colors">
+                      <h4 className="font-bold text-on-surface text-xs group-hover:text-tinapple-gold transition-colors">
                         {t.title}
                       </h4>
-                      <p className="text-[11px] text-zinc-400 mt-1 leading-relaxed">{t.description}</p>
+                      <p className="text-[11px] text-on-surface-variant mt-1 leading-relaxed">{t.description}</p>
                     </div>
 
-                    <div className="mt-3 pt-2.5 border-t border-white/5 flex items-center justify-between text-[10px] text-zinc-500 font-bold">
+                    <div className="mt-3 pt-2.5 border-t border-outline-variant/50 flex items-center justify-between text-[10px] text-on-surface-variant font-bold">
                       <span>Category: {t.category}</span>
                       <span className="text-tinapple-gold flex items-center gap-0.5 group-hover:translate-x-0.5 transition-transform">
                         Spawn +
@@ -415,10 +415,10 @@ export const WidgetCreatorModal: React.FC<WidgetCreatorModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="px-5 py-3 border-t border-white/10 bg-slate-950 flex justify-end shrink-0">
+        <div className="px-5 py-3 border-t border-outline-variant/50 bg-surface-container-low flex justify-end shrink-0">
           <button
             onClick={onClose}
-            className="px-4 py-1.5 rounded-xl bg-slate-800 text-zinc-300 hover:text-white font-bold"
+            className="px-4 py-1.5 rounded-xl bg-surface-container text-on-surface hover:text-on-surface font-bold"
           >
             Close
           </button>

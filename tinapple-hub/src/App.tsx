@@ -31,27 +31,29 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 import { FullWindowBackground } from './components/reactbits/FullWindowBackground';
 import { Sidebar } from './components/common/Sidebar';
-import { BUNDLED_WALLPAPERS, THEME_STORAGE_KEY, colorChannels, extractWallpaperColors, loadSettings } from './theme/appearance';
-import { fetchMatugenPalette, applyMatugenM3 } from './theme/matugen';
+import { THEME_STORAGE_KEY, loadSettings } from './theme/appearance';
+import { fetchMatugenPalette, applyMatugenM3, generateLocalM3Palette } from './theme/matugen';
 import { DockItem } from './components/reactbits/Dock';
 
 import { TelemetryCards } from './components/widgets/TelemetryCards';
-import { ServicesManager } from './components/widgets/ServicesManager';
-import { ChaddyStore } from './components/widgets/ChaddyStore';
-import { HardwareSensors } from './components/widgets/HardwareSensors';
-import { SettingsManifest } from './components/widgets/SettingsManifest';
 import { QuickConnectCard } from './components/widgets/QuickConnectCard';
 import { TransfersWidget } from './components/widgets/TransfersWidget';
 import { MangaShelfWidget } from './components/widgets/MangaShelfWidget';
 import { TorPrivacyWidget } from './components/widgets/TorPrivacyWidget';
 import { HomarrCanvas } from './components/homarr/HomarrCanvas';
 import { HomarrBoard } from './components/homarr/HomarrBoard';
-import { GuidesPage } from './components/widgets/GuidesPage';
-import { UnifiedAppPage } from './components/widgets/UnifiedAppPage';
-import { ErrorLoggerPage } from './components/errors/ErrorLoggerPage';
 import { UpdateNotificationToast } from './components/common/UpdateNotificationToast';
 import { ServerOfflineStandby } from './components/common/ServerOfflineStandby';
 import { SystemUpdatePage } from './components/widgets/SystemUpdatePage';
+
+// High-speed lazy-loaded subpages (reduces initial dashboard entry bundle by >60%)
+const ServicesManager = lazy(() => import('./components/widgets/ServicesManager').then((m) => ({ default: m.ServicesManager })));
+const ChaddyStore = lazy(() => import('./components/widgets/ChaddyStore').then((m) => ({ default: m.ChaddyStore })));
+const HardwareSensors = lazy(() => import('./components/widgets/HardwareSensors').then((m) => ({ default: m.HardwareSensors })));
+const SettingsManifest = lazy(() => import('./components/widgets/SettingsManifest').then((m) => ({ default: m.SettingsManifest })));
+const GuidesPage = lazy(() => import('./components/widgets/GuidesPage').then((m) => ({ default: m.GuidesPage })));
+const UnifiedAppPage = lazy(() => import('./components/widgets/UnifiedAppPage').then((m) => ({ default: m.UnifiedAppPage })));
+const ErrorLoggerPage = lazy(() => import('./components/errors/ErrorLoggerPage').then((m) => ({ default: m.ErrorLoggerPage })));
 
 // High-speed lazy-loaded modals (reduces initial dashboard bundle size by >60%)
 const AppearanceModal = lazy(() => import('./components/common/AppearanceModal').then((m) => ({ default: m.AppearanceModal })));
@@ -186,23 +188,10 @@ export const App: React.FC = () => {
 
   useEffect(() => {
     const root = document.documentElement;
-    root.style.setProperty('--tinapple-accent', settings.accentColor);
-    root.style.setProperty('--tinapple-accent-rgb', colorChannels(settings.accentColor));
-    root.style.setProperty('--tinapple-accent-glow', `${settings.accentColor}55`);
-    root.style.setProperty('--tinapple-accent-secondary', settings.secondaryColor);
-    root.style.setProperty('--tinapple-secondary-rgb', colorChannels(settings.secondaryColor));
-
     const blur = settings.glassBlur ?? 20;
     const translucency = settings.glassTranslucency ?? 45;
-    // Higher translucency = lower alpha (more see-through / clear glass)
-    const alpha = Math.max(0.08, Math.min(0.95, (100 - translucency) / 100));
-
-    root.style.setProperty('--glass-blur', `${blur}px`);
-    root.style.setProperty('--glass-opacity', `${alpha.toFixed(2)}`);
-    root.style.setProperty('--glass-translucency', `${translucency}%`);
-    root.style.setProperty('--glass-bg', settings.enableGlass ? `rgba(10, 18, 38, ${alpha.toFixed(2)})` : '#0a1226');
-    root.style.setProperty('--glass-filter', settings.enableGlass ? `blur(${blur}px) saturate(180%)` : 'none');
-
+    const alpha = 1 - translucency / 1000;
+    applyMatugenM3(generateLocalM3Palette(settings.accentColor, settings.colorMode || 'dark'), translucency, settings.enableGlass, blur);
     const scale = settings.uiScale || '100%';
     root.style.setProperty('--ui-scale', scale);
     // Reset body zoom so fixed modals, backdrops, and framer-motion coordinates aren't displaced
@@ -215,10 +204,12 @@ export const App: React.FC = () => {
     let active = true;
     fetchMatugenPalette({
       hex: settings.accentColor,
-      wallpaper: settings.mode === 'wallpaper' ? settings.wallpaperUrl : undefined,
+      wallpaper: settings.mode === 'wallpaper' && settings.syncWallpaperColors ? settings.wallpaperUrl : undefined,
+      mode: settings.colorMode || 'dark',
     }).then((palette) => {
       if (active && palette) {
-        applyMatugenM3(palette, translucency, settings.enableGlass);
+        applyMatugenM3(palette, translucency, settings.enableGlass, blur);
+        setColorStatus(`Material You palette · ${palette.source_color}`);
       }
     }).catch((err) => {
       console.debug('M3 palette application error:', err);
@@ -236,36 +227,6 @@ export const App: React.FC = () => {
     return () => { active = false; };
   }, [settings]);
 
-  useEffect(() => {
-    setColorStatus('');
-    // Matugen extraction: automatically triggers if wallpaper mode is enabled
-    if (settings.mode !== 'wallpaper') return;
-
-    let active = true;
-    setColorStatus('Matugen M3 extracting palette from wallpaper…');
-    fetchMatugenPalette({
-      wallpaper: settings.wallpaperUrl,
-      mode: 'dark',
-    }).then((palette) => {
-      if (active && palette) {
-        applyMatugenM3(palette, settings.glassTranslucency, settings.enableGlass);
-        const primary = palette.colors.primary;
-        const secondary = palette.colors.tertiary || palette.colors.secondary;
-        if (primary && (primary !== settings.accentColor || secondary !== settings.secondaryColor)) {
-          setSettings(previous => ({
-            ...previous,
-            accentColor: primary,
-            secondaryColor: secondary || previous.secondaryColor,
-          }));
-        }
-        setColorStatus(`Matugen M3 active: ${palette.source_color}`);
-      }
-    }).catch(() => {
-      if (active) setColorStatus('Matugen active');
-    });
-
-    return () => { active = false; };
-  }, [settings.mode, settings.wallpaperUrl]);
   const [telemetry, setTelemetry] = useState<TelemetrySnapshot>(MOCK_TELEMETRY);
   const [services, setServices] = useState<ServiceInfo[]>(MOCK_SERVICES);
   const [hardware, setHardware] = useState<HardwareInfo>(MOCK_HARDWARE);
@@ -523,8 +484,8 @@ export const App: React.FC = () => {
     }
   };
 
-  const actionButtonClass = 'p-2 rounded-xl bg-white/[0.04] border border-white/[0.08] text-zinc-400 hover:text-white hover:bg-white/[0.08] hover:border-white/20 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tinapple-gold disabled:opacity-50 disabled:cursor-wait';
-  const statusPillClass = 'flex items-center gap-2 px-2.5 py-1.5 rounded-full bg-white/[0.04] border border-white/[0.08] text-xs font-mono text-zinc-300 whitespace-nowrap';
+  const actionButtonClass = 'p-2 rounded-full bg-surface-container-highest border border-outline-variant text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-50 disabled:cursor-wait';
+  const statusPillClass = 'flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface-container border border-outline-variant text-xs font-sans text-on-surface whitespace-nowrap';
 
   const handleControlService = async (
     name: string,
@@ -652,7 +613,7 @@ export const App: React.FC = () => {
       {/* TOP COMMAND HEADER (CLEAN BREADCRUMB & STATUS BAR - Only shown for subpages, Homarr Board has its own unified header) */}
       {!isLandingPage && (
         <header
-          className={`sticky top-0 z-20 w-full bg-[#050a16]/85 backdrop-blur-2xl border-b border-white/[0.08] shadow-lg shadow-black/20 transition-all duration-300 ${
+          className={`sticky top-0 z-20 w-full bg-surface-container-low border-b border-outline-variant shadow-none transition-all duration-300 ${
             isSidebarPinned ? (desktopSidebarCollapsed ? 'md:pl-20' : 'md:pl-64') : ''
           }`}
         >
@@ -662,47 +623,47 @@ export const App: React.FC = () => {
               {/* Universal Hamburger Toggle (Full width on all tabs) */}
               <button
                 onClick={() => setMobileSidebarOpen(true)}
-                className={`p-2 sm:p-2.5 rounded-2xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 text-zinc-300 hover:text-white transition-all shadow-sm active:scale-95 shrink-0 ${
+                className={`p-2 sm:p-2.5 rounded-full bg-surface-container-highest hover:bg-surface-container-high border border-outline-variant text-on-surface hover:text-on-surface transition-all shadow-none active:scale-95 shrink-0 ${
                   isSidebarPinned ? 'md:hidden' : 'flex'
                 }`}
                 title="Open Appliance Navigation Drawer (Ctrl+B)"
                 aria-label="Open Appliance Navigation Drawer"
               >
-                <Menu className="w-5 h-5 text-tinapple-gold" />
+                <Menu className="w-5 h-5 text-primary" />
               </button>
 
               {/* Mobile Brand Icon & Tab Title */}
               <div className="md:hidden flex items-center gap-2 min-w-0">
-                <span className="text-lg shrink-0">🍎</span>
-                <span className="font-mono font-bold text-sm text-white capitalize truncate max-w-[140px] sm:max-w-xs">
+                <Layers className="w-5 h-5 text-primary shrink-0" />
+                <span className="font-sans font-bold text-sm text-on-surface capitalize truncate max-w-[140px] sm:max-w-xs">
                   {viewingAppId ? `${viewingAppId} Guide` : activeTab === 'store' ? 'App Store' : activeTab === 'guides' ? 'Guides' : activeTab === 'terminal' ? 'Terminal' : activeTab === 'errors' ? 'Error Logger' : activeTab}
                 </span>
               </div>
 
               {/* Desktop Page Title & Breadcrumb */}
               <div className="hidden md:flex items-center gap-2.5 min-w-0 shrink-0">
-                <span className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500 shrink-0">Node</span>
-                <span className="text-xs text-zinc-600 shrink-0">/</span>
+                <span className="text-xs font-mono font-bold uppercase tracking-wider text-on-surface-variant shrink-0">Node</span>
+                <span className="text-xs text-outline shrink-0">/</span>
                 {viewingAppId ? (
                   <div className="flex items-center gap-2 min-w-0">
-                    <button onClick={handleCloseAppPage} className="text-sm font-mono text-slate-400 hover:text-white transition-colors">
+                    <button onClick={handleCloseAppPage} className="text-sm font-sans text-on-surface-variant hover:text-on-surface transition-colors">
                       Dashboard
                     </button>
-                    <span className="text-xs text-zinc-600">/</span>
-                    <span className="text-sm font-mono font-black text-cyan-400 capitalize truncate">
+                    <span className="text-xs text-outline">/</span>
+                    <span className="text-sm font-sans font-semibold text-primary capitalize truncate">
                       {viewingAppId} App & Guide
                     </span>
                   </div>
                 ) : (
                   <div className="flex items-center gap-2 min-w-0">
-                    <button onClick={() => handleSelectTab('dashboard')} className="text-sm font-mono text-slate-400 hover:text-white transition-colors">
+                    <button onClick={() => handleSelectTab('dashboard')} className="text-sm font-sans text-on-surface-variant hover:text-on-surface transition-colors">
                       Dashboard
                     </button>
-                    <span className="text-xs text-zinc-600">/</span>
-                    <span className="text-sm font-mono font-black text-white capitalize truncate">
+                    <span className="text-xs text-outline">/</span>
+                    <span className="text-sm font-sans font-semibold text-on-surface capitalize truncate">
                       {activeTab === 'store' ? 'App Store & Packs' : activeTab === 'guides' ? 'Appliance Guides' : activeTab === 'terminal' ? 'Appliance Web Terminal' : activeTab === 'errors' ? 'Error Logger & AI Diagnostics' : activeTab}
                     </span>
-                    <span className="hidden 2xl:inline-flex text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/[0.05] border border-white/10 text-tinapple-gold font-bold whitespace-nowrap">
+                    <span className="hidden 2xl:inline-flex text-[10px] font-sans px-2.5 py-0.5 rounded-full bg-surface-container-highest border border-outline-variant text-primary font-medium whitespace-nowrap">
                       {systemInfo.sessionMode === 'headless' ? 'Headless Server' : 'Niri Desktop'}
                     </span>
                   </div>
@@ -713,13 +674,13 @@ export const App: React.FC = () => {
             {/* Right: Live Telemetry Status & Quick Actions */}
             <div className="flex items-center justify-end gap-1.5 sm:gap-2 shrink-0">
               {/* Tailscale Port 443 SSL Status Chip */}
-              <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-[11px] font-mono text-emerald-400">
-                <Lock className="w-3.5 h-3.5" />
+              <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-container border border-outline-variant text-[11px] font-sans text-on-surface">
+                <Lock className="w-3.5 h-3.5 text-primary" />
                 <span className="hidden lg:inline">Tailscale HTTPS 443</span>
               </div>
 
               {/* Live SSE Pulse Chip */}
-              <div className="hidden 2xl:flex items-center gap-2 px-2.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[11px] font-mono text-emerald-300">
+              <div className="hidden 2xl:flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface-container border border-outline-variant text-[11px] font-sans text-on-surface">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                 <span>SSE Live</span>
               </div>
@@ -727,10 +688,10 @@ export const App: React.FC = () => {
               {/* Tailscale VPN Chip */}
               <button
                 onClick={() => setTailscaleOpen(true)}
-                className="hidden 2xl:flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/20 text-[11px] font-mono text-sky-300 transition-all cursor-pointer whitespace-nowrap"
+                className="hidden 2xl:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-container hover:bg-surface-container-high border border-outline-variant text-[11px] font-sans text-on-surface transition-all cursor-pointer whitespace-nowrap"
                 title="Tailscale VPN Mesh Status"
               >
-                <span className="w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse" />
+                <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
                 <span>Tailscale VPN</span>
               </button>
 
@@ -738,20 +699,20 @@ export const App: React.FC = () => {
               <button
                 onClick={handleRunSystemUpdate}
                 disabled={isUpdatingSystem}
-                className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 font-mono text-xs font-semibold transition-all shadow-sm active:scale-95 disabled:opacity-50"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary text-on-primary hover:bg-primary/90 font-sans text-xs font-medium transition-all shadow-none active:scale-95 disabled:opacity-50"
                 title="Full System & Appliance Update (paru/pacman -Syu)"
               >
-                <ArrowUpCircle className={`w-4 h-4 text-emerald-400 ${isUpdatingSystem ? 'animate-spin' : ''}`} />
+                <ArrowUpCircle className={`w-4 h-4 text-on-primary ${isUpdatingSystem ? 'animate-spin' : ''}`} />
                 <span className="hidden xl:inline">Update OS</span>
               </button>
 
               {/* Interactive Guides Button */}
               <button
                 onClick={() => handleSelectTab('guides')}
-                className="hidden lg:flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl border border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 transition-all font-mono text-xs font-semibold shadow-sm active:scale-95"
+                className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-outline-variant bg-surface-container-highest hover:bg-surface-container-high text-on-surface transition-all font-sans text-xs font-medium shadow-none active:scale-95"
                 title="Interactive Setup Guides"
               >
-                <BookOpen className="w-4 h-4 text-purple-400" />
+                <BookOpen className="w-4 h-4 text-primary" />
                 <span>Guides</span>
               </button>
 
@@ -811,7 +772,14 @@ export const App: React.FC = () => {
               }`
         }`}
       >
-        <AnimatePresence mode="wait">
+        <Suspense
+          fallback={
+            <div className="h-96 rounded-[28px] bg-surface-container-low border border-outline-variant flex items-center justify-center font-sans text-xs text-on-surface-variant">
+              Loading module...
+            </div>
+          }
+        >
+          <AnimatePresence mode="wait">
           {viewingAppId ? (
             <motion.div
               key={`unified-app-${viewingAppId}`}
@@ -859,8 +827,7 @@ export const App: React.FC = () => {
                 setIsEditMode={setIsEditMode}
                 isOwner={isOwner}
                 onOpenAppSettings={(app) => {
-                  setSelectedAppForConfig(app);
-                  setAppSettingsOpen(true);
+                  setSettingsModalApp({ id: app.id || app.name, name: app.displayName || app.name });
                 }}
                 onOpenTailscale={() => setTailscaleOpen(true)}
                 onOpenProton={() => setProtonModalOpen(true)}
@@ -887,7 +854,7 @@ export const App: React.FC = () => {
             >
               <div className="flex justify-between items-center mb-2">
                 <div>
-                  <h2 className="text-xl font-bold text-white tracking-tight font-mono">
+                  <h2 className="text-xl font-bold text-on-surface tracking-tight font-mono">
                     Systemd Service Daemons
                   </h2>
                   <p className="text-xs text-tinapple-subtext font-mono mt-0.5">
@@ -992,7 +959,7 @@ export const App: React.FC = () => {
             >
               <Suspense
                 fallback={
-                  <div className="h-96 rounded-2xl bg-slate-950/90 border border-white/10 flex items-center justify-center font-mono text-xs text-zinc-400">
+                  <div className="h-96 rounded-2xl bg-surface-container-low border border-outline-variant/50 flex items-center justify-center font-mono text-xs text-on-surface-variant">
                     Loading Fullpage Terminal...
                   </div>
                 }
@@ -1019,6 +986,7 @@ export const App: React.FC = () => {
             </>
           )}
         </AnimatePresence>
+        </Suspense>
       </main>
 
       {/* LAZY LOADED FLOATING MODALS (ONLY FETCHED WHEN OPENED) */}

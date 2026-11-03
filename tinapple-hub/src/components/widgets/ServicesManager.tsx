@@ -12,7 +12,9 @@ import {
   ExternalLink,
   Settings,
   Smartphone,
+  X,
 } from 'lucide-react';
+import { SquishSwitch } from '../reactbits/SquishSwitch';
 import { SpotlightCard } from '../reactbits/SpotlightCard';
 import HoldButton from '../reactbits/HoldButton';
 import { ServiceInfo } from '../../types/api';
@@ -123,18 +125,18 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({
   return (
     <div className="space-y-4">
       {/* Search and Filter Controls */}
-      <div className="flex flex-col xl:flex-row gap-3.5 items-stretch xl:items-center justify-between p-3.5 rounded-2xl bg-tinapple-card/80 border border-tinapple-border backdrop-blur-2xl">
+      <div className="flex flex-col xl:flex-row gap-3.5 items-stretch xl:items-center justify-between p-3.5 rounded-[28px] bg-surface-container-low border border-outline-variant shadow-none">
         <div className="flex-1 min-w-0">
           {/* Category Tabs */}
-          <div className="flex items-center p-1 rounded-xl bg-tinapple-dark/90 border border-tinapple-border overflow-x-auto scrollbar-none gap-1">
+          <div className="flex items-center p-1 rounded-full bg-surface-container-highest border border-outline-variant overflow-x-auto scrollbar-none gap-1">
             {categories.map((c) => (
               <button
                 key={c}
                 onClick={() => setFilterCategory(c)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold capitalize font-mono transition-all whitespace-nowrap shrink-0 ${
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold capitalize font-sans tabular-nums transition-all whitespace-nowrap shrink-0 ${
                   filterCategory === c
-                    ? 'bg-tinapple-gold text-tinapple-dark shadow-sm'
-                    : 'text-tinapple-subtext hover:text-white'
+                    ? 'bg-primary text-on-primary shadow-sm'
+                    : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high'
                 }`}
               >
                 {c}
@@ -146,13 +148,13 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({
         <div className="flex flex-wrap sm:flex-nowrap items-center justify-between xl:justify-end gap-3 shrink-0">
           {/* Search Box */}
           <div className="relative w-full sm:w-60 md:w-64 shrink-0">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-tinapple-muted" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant" />
             <input
               type="text"
               placeholder="Filter daemons or ports..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-tinapple-dark/90 border border-tinapple-border text-xs font-mono text-tinapple-text placeholder:text-tinapple-muted focus:outline-none focus:border-tinapple-gold transition-colors"
+              className="w-full pl-9 pr-3 py-1.5 rounded-full bg-surface-container-highest border border-outline-variant text-xs font-sans tabular-nums text-on-surface placeholder:text-on-surface-variant/60 focus:outline-none focus:border-primary transition-colors"
             />
           </div>
 
@@ -174,18 +176,18 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({
                   await handleAction(s.name, 'restart');
                 }
               }}
-              className="font-mono text-xs font-bold whitespace-nowrap px-3 py-1.5"
+              className="font-sans tabular-nums text-xs font-bold whitespace-nowrap px-3 py-1.5 rounded-full"
             >
               Hold to Restart Core
             </HoldButton>
 
-            <div className="flex items-center p-1 rounded-xl bg-tinapple-dark/90 border border-tinapple-border">
+            <div className="flex items-center p-1 rounded-full bg-surface-container-highest border border-outline-variant">
               <button
                 onClick={() => setViewMode('grid')}
-                className={`p-1.5 rounded-lg transition-colors ${
+                className={`p-1.5 rounded-full transition-colors ${
                   viewMode === 'grid'
-                    ? 'bg-tinapple-surface text-tinapple-gold'
-                    : 'text-tinapple-muted hover:text-white'
+                    ? 'bg-primary text-on-primary'
+                    : 'text-on-surface-variant hover:text-on-surface'
                 }`}
                 title="Grid view"
               >
@@ -193,10 +195,10 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({
               </button>
               <button
                 onClick={() => setViewMode('table')}
-                className={`p-1.5 rounded-lg transition-colors ${
+                className={`p-1.5 rounded-full transition-colors ${
                   viewMode === 'table'
-                    ? 'bg-tinapple-surface text-tinapple-gold'
-                    : 'text-tinapple-muted hover:text-white'
+                    ? 'bg-primary text-on-primary'
+                    : 'text-on-surface-variant hover:text-on-surface'
                 }`}
                 title="Table view"
               >
@@ -208,16 +210,16 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({
       </div>
 
       {errorNotice && (
-        <div className="flex items-center justify-between p-3.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-mono">
+        <div className="flex items-center justify-between p-3.5 rounded-[12px] bg-red-500/10 border border-red-500/30 text-red-300 text-xs font-sans tabular-nums">
           <div className="flex items-center gap-2">
             <span className="font-bold">Error ({errorNotice.name}):</span>
             <span>{errorNotice.error}</span>
           </div>
           <button
             onClick={() => setErrorNotice(null)}
-            className="text-tinapple-muted hover:text-white px-2 py-0.5 text-xs font-bold"
+            className="text-on-surface-variant hover:text-on-surface p-1 rounded-full"
           >
-            ✕
+            <X className="w-3.5 h-3.5" />
           </button>
         </div>
       )}
@@ -261,14 +263,14 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({
                               href={serviceUrl}
                               target="_blank"
                               rel="noreferrer"
-                              className="text-sm font-bold text-white hover:text-emerald-300 font-mono truncate transition-colors flex items-center gap-1.5 group/name"
+                              className="text-sm font-bold text-on-surface hover:text-emerald-300 font-sans tabular-nums truncate transition-colors flex items-center gap-1.5 group/name"
                               title={`Open ${service.displayName || service.name} Web Dashboard`}
                             >
                               <span className="truncate">{service.displayName || service.name}</span>
                               <ExternalLink className="w-3.5 h-3.5 text-tinapple-muted group-hover/name:text-emerald-300 shrink-0" />
                             </a>
                           ) : (
-                            <h4 className="text-sm font-bold text-white font-mono truncate">
+                            <h4 className="text-sm font-bold text-on-surface font-sans tabular-nums truncate">
                               {service.displayName || service.name}
                             </h4>
                           )}
@@ -280,7 +282,7 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({
                     </div>
 
                     <span
-                      className={`text-[10px] font-mono px-2 py-0.5 rounded-full border uppercase whitespace-nowrap shrink-0 ${
+                      className={`text-[10px] font-sans tabular-nums px-2 py-0.5 rounded-full border uppercase whitespace-nowrap shrink-0 ${
                         isActive
                           ? 'bg-tinapple-green/10 text-tinapple-green border-tinapple-green/20 font-bold'
                           : isFailed
@@ -295,7 +297,7 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({
                   </div>
 
                   {/* Service Metadata: Port & RAM with Clickable Link */}
-                  <div className="flex items-center gap-3 my-3 text-[11px] font-mono text-tinapple-muted">
+                  <div className="flex items-center gap-3 my-3 text-[11px] font-sans tabular-nums text-tinapple-muted">
                     {service.port ? (
                       serviceUrl && isActive ? (
                         <a
@@ -322,15 +324,15 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({
                 </div>
 
                 {/* Control Action Buttons */}
-                <div className="flex items-center justify-between gap-1.5 pt-3 border-t border-tinapple-border/70">
-                  <div className="flex flex-wrap items-center gap-1.5 font-mono">
+                <div className="flex items-center justify-between gap-1.5 pt-3 border-t border-outline-variant">
+                  <div className="flex flex-wrap items-center gap-1.5 font-sans tabular-nums">
                     {/* Direct Web UI Links */}
                     {isActive && serviceUrl && (
                       <a
                         href={serviceUrl}
                         target="_blank"
                         rel="noreferrer"
-                        className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 transition-colors shadow-sm active:scale-95"
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium bg-primary text-on-primary hover:bg-primary/90 transition-colors shadow-none active:scale-95"
                         title={`Open ${service.displayName || service.name} Web UI`}
                       >
                         <ExternalLink className="w-3.5 h-3.5" />
@@ -341,10 +343,10 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({
                       <a
                         href="/download/tsumiru"
                         download="tsumiru-client.apk"
-                        className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/30 text-sky-300 transition-colors active:scale-95"
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium bg-surface-container-highest hover:bg-surface-container-high border border-outline-variant text-on-surface transition-colors active:scale-95"
                         title="Download Tsumiru Android APK for your phone (Connects via :4567)"
                       >
-                        <Smartphone className="w-3.5 h-3.5 text-sky-400" />
+                        <Smartphone className="w-3.5 h-3.5 text-primary" />
                         <span>Phone APK</span>
                       </a>
                     )}
@@ -353,33 +355,20 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({
                         <button
                           disabled={isLoading}
                           onClick={() => handleAction(service.name, 'restart')}
-                          className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-semibold bg-tinapple-dark/90 hover:bg-tinapple-surface border border-tinapple-border text-tinapple-text transition-colors disabled:opacity-50 active:scale-95"
+                          className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium bg-surface-container-highest hover:bg-surface-container-high border border-outline-variant text-on-surface transition-colors disabled:opacity-50 active:scale-95"
                           title="Restart daemon"
                         >
-                          <RotateCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin text-tinapple-gold' : ''}`} />
+                          <RotateCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin text-primary' : ''}`} />
                           <span>Restart</span>
                         </button>
-                        <button
-                          disabled={isLoading}
-                          onClick={() => handleAction(service.name, 'stop')}
-                          className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-semibold bg-tinapple-red/10 hover:bg-tinapple-red/20 border border-tinapple-red/20 text-tinapple-red transition-colors disabled:opacity-50 active:scale-95"
-                          title="Stop daemon"
-                        >
-                          <Square className="w-3.5 h-3.5" />
-                          <span>Stop</span>
-                        </button>
+                        <SquishSwitch checked disabled={isLoading} label={`Run ${service.displayName || service.name}`}
+                          onChange={() => handleAction(service.name, 'stop')} />
                       </>
                     ) : isInstalled ? (
-                      <button
-                        disabled={isLoading}
-                        onClick={() => handleAction(service.name, 'start')}
-                        className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-tinapple-green/15 hover:bg-tinapple-green/25 border border-tinapple-green/30 text-tinapple-green transition-colors disabled:opacity-50 active:scale-95"
-                      >
-                        <Play className="w-3.5 h-3.5 fill-current" />
-                        <span>Start</span>
-                      </button>
+                      <SquishSwitch checked={false} disabled={isLoading} label={`Run ${service.displayName || service.name}`}
+                        onChange={() => handleAction(service.name, 'start')} />
                     ) : (
-                      <span className="inline-flex items-center px-3 py-1.5 rounded-xl text-xs font-semibold bg-tinapple-dark/60 border border-tinapple-border text-tinapple-muted">
+                      <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-surface-container-highest border border-outline-variant text-on-surface-variant">
                         Not Installed
                       </span>
                     )}
@@ -389,7 +378,7 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({
                     {(service.name === 'tailscale' || service.name === 'tailscaled') && onOpenTailscale && (
                       <button
                         onClick={onOpenTailscale}
-                        className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-sky-500/20 hover:bg-sky-500/30 border border-sky-500/30 text-sky-300 transition-colors"
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium bg-surface-container-highest hover:bg-surface-container-high border border-outline-variant text-primary transition-colors"
                         title="Tailscale Auth & Mesh Login"
                       >
                         <ShieldCheck className="w-3.5 h-3.5" />
@@ -429,28 +418,28 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({
                           const gId = guideMap[service.name] || service.name;
                           onOpenGuide(gId);
                         }}
-                        className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-mono font-medium bg-purple-500/15 hover:bg-purple-500/25 border border-purple-500/30 text-purple-300 transition-colors shrink-0 whitespace-nowrap"
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-sans tabular-nums font-medium bg-surface-container-highest hover:bg-surface-container-high border border-outline-variant text-secondary transition-colors shrink-0 whitespace-nowrap"
                         title={`View ${service.displayName || service.name} Client & Setup Guide`}
                       >
-                        <BookOpen className="w-3.5 h-3.5 text-purple-400 shrink-0" />
+                        <BookOpen className="w-3.5 h-3.5 text-secondary shrink-0" />
                         <span className="hidden sm:inline">Guide</span>
                       </button>
                     )}
                     {onOpenSettings && (
                       <button
                         onClick={() => onOpenSettings(service.name)}
-                        className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-mono font-medium bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-zinc-300 hover:text-white transition-colors shrink-0 whitespace-nowrap"
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-sans tabular-nums font-medium bg-surface-container-highest hover:bg-surface-container-high border border-outline-variant text-on-surface hover:text-on-surface transition-colors shrink-0 whitespace-nowrap"
                         title={`Configure ${service.displayName || service.name} & Paste Config`}
                       >
-                        <Settings className="w-3.5 h-3.5 text-tinapple-gold shrink-0" />
+                        <Settings className="w-3.5 h-3.5 text-primary shrink-0" />
                         <span className="hidden sm:inline">Config</span>
                       </button>
                     )}
                     <button
                       onClick={() => onOpenLogs(service.name)}
-                      className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-mono font-medium bg-tinapple-dark/80 hover:bg-tinapple-surface border border-tinapple-border text-tinapple-subtext hover:text-white transition-colors shrink-0 whitespace-nowrap"
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-sans tabular-nums font-medium bg-surface-container-highest hover:bg-surface-container-high border border-outline-variant text-on-surface-variant hover:text-on-surface transition-colors shrink-0 whitespace-nowrap"
                     >
-                      <Terminal className="w-3.5 h-3.5 text-tinapple-gold shrink-0" />
+                      <Terminal className="w-3.5 h-3.5 text-primary shrink-0" />
                       <span>Logs</span>
                     </button>
                   </div>
@@ -461,9 +450,9 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({
         </div>
       ) : (
         /* Services Table View */
-        <div className="overflow-x-auto rounded-2xl border border-tinapple-border bg-tinapple-card/80 backdrop-blur-2xl">
-          <table className="w-full text-left text-xs font-mono">
-            <thead className="bg-tinapple-dark/80 text-tinapple-subtext uppercase text-[10px] tracking-wider border-b border-tinapple-border">
+        <div className="overflow-x-auto rounded-[28px] border border-outline-variant bg-surface-container-low shadow-none">
+          <table className="w-full text-left text-xs font-sans tabular-nums">
+            <thead className="bg-surface-container text-on-surface-variant uppercase text-[10px] tracking-wider border-b border-outline-variant">
               <tr>
                 <th className="px-4 py-3">Status</th>
                 <th className="px-4 py-3">Unit</th>
@@ -473,7 +462,7 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({
                 <th className="px-4 py-3 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-tinapple-border/50 text-tinapple-text">
+            <tbody className="divide-y divide-outline-variant text-on-surface">
               {filteredServices.map((service) => {
                 const isLoading = Boolean(loadingMap[service.name]);
                 const isActive = service.activeState === 'active' || service.running;
@@ -482,22 +471,22 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({
                 const serviceUrl = getServiceAppUrl(service);
 
                 return (
-                  <tr key={service.name} className="hover:bg-tinapple-surface/40 transition-colors">
+                  <tr key={service.name} className="hover:bg-surface-container-high/40 transition-colors">
                     <td className="px-4 py-3">
                       <span
                         className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] border ${
                           isActive
-                            ? 'bg-tinapple-green/10 text-tinapple-green border-tinapple-green/20 font-semibold'
+                            ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 font-semibold'
                             : isFailed
-                            ? 'bg-tinapple-red/10 text-tinapple-red border-tinapple-red/20 font-semibold'
+                            ? 'bg-error/10 text-error border-error/20 font-semibold'
                             : isInstalled
                             ? 'bg-amber-400/10 text-amber-400 border-amber-400/20 font-semibold'
-                            : 'bg-tinapple-muted/10 text-tinapple-muted border-tinapple-border'
+                            : 'bg-surface-container-highest text-on-surface-variant border-outline-variant'
                         }`}
                       >
                         <span
                           className={`w-1.5 h-1.5 rounded-full ${
-                            isActive ? 'bg-tinapple-green animate-pulse' : 'bg-tinapple-muted'
+                            isActive ? 'bg-emerald-400 animate-pulse' : 'bg-on-surface-variant'
                           }`}
                         />
                         {isActive ? 'Running' : isFailed ? 'Failed' : isInstalled ? 'Stopped' : 'Not Installed'}
@@ -511,26 +500,26 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({
                             href={serviceUrl}
                             target="_blank"
                             rel="noreferrer"
-                            className="font-bold text-white hover:text-emerald-300 transition-colors inline-flex items-center gap-1.5 group/tbl"
+                            className="font-bold text-on-surface hover:text-primary transition-colors inline-flex items-center gap-1.5 group/tbl"
                             title={`Open ${service.displayName || service.name} Web UI`}
                           >
                             <span>{service.displayName || service.name}</span>
-                            <ExternalLink className="w-3 h-3 text-tinapple-muted group-hover/tbl:text-emerald-300" />
+                            <ExternalLink className="w-3 h-3 text-on-surface-variant group-hover/tbl:text-primary" />
                           </a>
                         ) : (
-                          <span className="font-bold text-white">{service.displayName || service.name}</span>
+                          <span className="font-bold text-on-surface">{service.displayName || service.name}</span>
                         )}
                       </div>
                     </td>
-                    <td className="px-4 py-3 capitalize text-tinapple-green">{service.category}</td>
-                    <td className="px-4 py-3 text-tinapple-gold font-semibold">
+                    <td className="px-4 py-3 capitalize text-primary">{service.category}</td>
+                    <td className="px-4 py-3 text-primary font-semibold">
                       {service.port ? (
                         serviceUrl && isActive ? (
                           <a
                             href={serviceUrl}
                             target="_blank"
                             rel="noreferrer"
-                            className="text-tinapple-gold hover:text-emerald-400 font-semibold inline-flex items-center gap-1 transition-colors"
+                            className="text-primary hover:text-primary/80 font-semibold inline-flex items-center gap-1 transition-colors"
                             title={`Open port :${service.port}`}
                           >
                             <span>:{service.port}</span>
@@ -543,7 +532,7 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({
                         '—'
                       )}
                     </td>
-                    <td className="px-4 py-3 text-tinapple-subtext">
+                    <td className="px-4 py-3 text-on-surface-variant">
                       {service.memoryBytes
                         ? `${(service.memoryBytes / (1024 * 1024)).toFixed(2)} MB`
                         : '—'}
@@ -555,7 +544,7 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({
                             href={serviceUrl}
                             target="_blank"
                             rel="noreferrer"
-                            className="px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-[11px] font-semibold text-emerald-300 transition-colors inline-flex items-center gap-1"
+                            className="px-3 py-1 rounded-full bg-primary text-on-primary text-[11px] font-medium transition-colors inline-flex items-center gap-1"
                             title="Open Web Dashboard"
                           >
                             <ExternalLink className="w-3 h-3" />
@@ -566,7 +555,7 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({
                           <button
                             disabled={isLoading}
                             onClick={() => handleAction(service.name, 'stop')}
-                            className="px-2.5 py-1 rounded-lg bg-tinapple-red/10 hover:bg-tinapple-red/20 border border-tinapple-red/20 text-[11px] font-semibold text-tinapple-red transition-colors disabled:opacity-50"
+                            className="px-3 py-1 rounded-full bg-error/15 hover:bg-error/25 border border-error/30 text-[11px] font-medium text-error transition-colors disabled:opacity-50"
                           >
                             Stop
                           </button>
@@ -574,27 +563,27 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({
                           <button
                             disabled={isLoading}
                             onClick={() => handleAction(service.name, 'start')}
-                            className="px-2.5 py-1 rounded-lg bg-tinapple-green/15 hover:bg-tinapple-green/25 border border-tinapple-green/30 text-[11px] font-semibold text-tinapple-green transition-colors disabled:opacity-50"
+                            className="px-3 py-1 rounded-full bg-primary/15 hover:bg-primary/25 border border-primary/30 text-[11px] font-medium text-primary transition-colors disabled:opacity-50"
                           >
                             Start
                           </button>
                         ) : (
-                          <span className="text-[10px] text-tinapple-muted px-2 py-0.5">
+                          <span className="text-[10px] text-on-surface-variant px-2 py-0.5">
                             Not Installed
                           </span>
                         )}
                         {onOpenSettings && (
                           <button
                             onClick={() => onOpenSettings(service.name)}
-                            className="px-2 py-1 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-[11px] text-zinc-300 hover:text-white shrink-0 whitespace-nowrap"
+                            className="px-2.5 py-1 rounded-full bg-surface-container-highest hover:bg-surface-container-high border border-outline-variant text-[11px] text-on-surface shrink-0 whitespace-nowrap"
                             title="Configure"
                           >
-                            <Settings className="w-3 h-3 text-tinapple-gold inline shrink-0" />
+                            <Settings className="w-3 h-3 text-primary inline shrink-0" />
                           </button>
                         )}
                         <button
                           onClick={() => onOpenLogs(service.name)}
-                          className="px-2.5 py-1 rounded-lg bg-tinapple-dark/90 hover:bg-tinapple-surface border border-tinapple-border text-[11px] text-tinapple-gold shrink-0 whitespace-nowrap"
+                          className="px-3 py-1 rounded-full bg-surface-container-highest hover:bg-surface-container-high border border-outline-variant text-[11px] text-primary shrink-0 whitespace-nowrap"
                         >
                           Logs
                         </button>

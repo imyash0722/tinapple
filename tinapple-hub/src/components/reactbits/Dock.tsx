@@ -23,7 +23,7 @@ export const Dock: React.FC<DockProps> = ({ items, activeId, onSelect, className
     <div
       onMouseMove={(e) => mouseX.set(e.pageX)}
       onMouseLeave={() => mouseX.set(Infinity)}
-      className={`tinapple-glass-card flex items-end h-16 gap-3 px-4 pb-2.5 rounded-2xl shadow-2xl shadow-black/80 ${className}`}
+      className={`flex items-end h-16 gap-3 px-4 pb-2.5 rounded-full bg-surface-container-high border border-outline-variant shadow-none ${className}`}
     >
       {items.map((item) => (
         <DockIcon
@@ -62,14 +62,14 @@ const DockIcon: React.FC<DockIconProps> = ({ item, mouseX, isActive, onClick }) 
       style={{ width, height: width }}
       onClick={onClick}
       aria-label={item.label}
-      className={`relative flex items-center justify-center rounded-xl transition-all duration-200 group hover:z-50 focus-within:z-50 active:scale-90 ${
+      className={`relative flex items-center justify-center rounded-full transition-all duration-200 group hover:z-50 focus-within:z-50 active:scale-90 ${
         isActive
-          ? 'bg-tinapple-surface border border-tinapple-gold/70 text-tinapple-gold shadow-lg shadow-tinapple-gold/20'
-          : 'bg-tinapple-surface/80 border border-transparent text-tinapple-subtext hover:bg-tinapple-surface hover:text-white'
+          ? 'bg-primary/20 border border-primary/40 text-primary shadow-none'
+          : 'bg-surface-container border border-transparent text-on-surface-variant hover:bg-surface-container-highest hover:text-on-surface'
       }`}
     >
       {/* Tooltip */}
-      <span className="absolute -top-10 left-1/2 -translate-x-1/2 invisible group-hover:visible group-focus-visible:visible opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-all duration-200 pointer-events-none px-2.5 py-1 text-[11px] font-mono font-semibold rounded-lg bg-zinc-900/95 border border-white/10 text-tinapple-gold shadow-2xl whitespace-nowrap z-50">
+      <span className="absolute -top-10 left-1/2 -translate-x-1/2 invisible group-hover:visible group-focus-visible:visible opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-all duration-200 pointer-events-none px-2.5 py-1 text-[11px] font-sans font-semibold rounded-full bg-surface-container-highest border border-outline-variant text-primary shadow-none whitespace-nowrap z-50">
         {item.label}
       </span>
 
@@ -80,7 +80,7 @@ const DockIcon: React.FC<DockIconProps> = ({ item, mouseX, isActive, onClick }) 
 
       {/* Badge if present */}
       {item.badge !== undefined && (
-        <span className="absolute -top-1 -right-1 px-1.5 py-0.2 min-w-4 h-4 flex items-center justify-center text-[10px] font-mono font-bold rounded-full bg-tinapple-green text-tinapple-dark shadow-sm">
+        <span className="absolute -top-1 -right-1 px-1.5 py-0.2 min-w-4 h-4 flex items-center justify-center text-[10px] font-sans tabular-nums font-bold rounded-full bg-primary text-on-primary shadow-sm">
           {item.badge}
         </span>
       )}

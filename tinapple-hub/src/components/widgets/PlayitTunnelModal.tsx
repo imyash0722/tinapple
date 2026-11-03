@@ -129,29 +129,29 @@ export const PlayitTunnelModal: React.FC<PlayitTunnelModalProps> = ({ isOpen, on
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
-      <div className="relative w-full max-w-2xl overflow-hidden rounded-3xl bg-slate-900 border border-emerald-500/30 shadow-2xl flex flex-col max-h-[90vh]">
+      <div className="relative w-full max-w-2xl overflow-hidden rounded-3xl bg-surface-container-low border border-emerald-500/30 shadow-none flex flex-col max-h-[90vh]">
         {/* Glow Header */}
         <div className="absolute top-0 right-0 -mr-16 -mt-16 w-48 h-48 bg-emerald-500/20 rounded-full blur-3xl pointer-events-none" />
 
         {/* Modal Header */}
-        <div className="flex items-center justify-between p-6 border-b border-slate-800 relative z-10 bg-slate-900/60 backdrop-blur-sm">
+        <div className="flex items-center justify-between p-6 border-b border-slate-800 relative z-10 bg-surface-container-low backdrop-blur-sm">
           <div className="flex items-center gap-3">
             <AppBrandIcon id="playit" size={32} showBadge />
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-xl font-bold text-white tracking-wide">Playit.gg Minecraft Tunnel</h3>
+                <h3 className="text-xl font-bold text-on-surface tracking-wide">Playit.gg Minecraft Tunnel</h3>
                 <span className="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
                   Anycast Mesh
                 </span>
               </div>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <p className="text-xs text-on-surface-variant mt-0.5">
                 Worldwide Minecraft server access without port forwarding or exposing your home IP.
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            className="p-2 rounded-xl text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -167,9 +167,9 @@ export const PlayitTunnelModal: React.FC<PlayitTunnelModalProps> = ({ isOpen, on
           )}
 
           {/* Status & Public Address Card */}
-          <div className="p-5 rounded-2xl bg-slate-950/70 border border-slate-800/80 space-y-4">
+          <div className="p-5 rounded-2xl bg-surface-container-low border border-slate-800/80 space-y-4">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-mono uppercase tracking-wider text-slate-400">Tunnel Daemon Status</span>
+              <span className="text-xs font-mono uppercase tracking-wider text-on-surface-variant">Tunnel Daemon Status</span>
               <div className="flex items-center gap-2">
                 <span
                   className={`w-2.5 h-2.5 rounded-full ${
@@ -182,9 +182,9 @@ export const PlayitTunnelModal: React.FC<PlayitTunnelModalProps> = ({ isOpen, on
               </div>
             </div>
 
-            <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="p-4 rounded-xl bg-surface-container-low border border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <div>
-                <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider block">
+                <span className="text-[10px] font-mono text-on-surface-variant uppercase tracking-wider block">
                   Public Minecraft Address
                 </span>
                 <span className="text-sm font-mono font-bold text-emerald-300 break-all">
@@ -227,7 +227,7 @@ export const PlayitTunnelModal: React.FC<PlayitTunnelModalProps> = ({ isOpen, on
               <button
                 onClick={loadStatus}
                 disabled={loading}
-                className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-mono flex items-center gap-1.5 transition-colors disabled:opacity-50"
+                className="px-3 py-2 rounded-xl bg-surface-container hover:bg-slate-700 text-on-surface text-xs font-mono flex items-center gap-1.5 transition-colors disabled:opacity-50"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
                 <span>Refresh</span>
@@ -236,7 +236,7 @@ export const PlayitTunnelModal: React.FC<PlayitTunnelModalProps> = ({ isOpen, on
               <button
                 onClick={handleReset}
                 disabled={loading}
-                className="px-3 py-2 rounded-xl bg-slate-800/80 hover:bg-rose-950/40 hover:text-rose-300 text-slate-400 text-xs font-mono ml-auto transition-colors disabled:opacity-50"
+                className="px-3 py-2 rounded-xl bg-surface-container hover:bg-rose-950/40 hover:text-rose-300 text-on-surface-variant text-xs font-mono ml-auto transition-colors disabled:opacity-50"
               >
                 Reset Key
               </button>
@@ -247,9 +247,9 @@ export const PlayitTunnelModal: React.FC<PlayitTunnelModalProps> = ({ isOpen, on
           <div className="p-5 rounded-2xl bg-gradient-to-r from-emerald-950/40 to-slate-900 border border-emerald-500/20 space-y-3">
             <div className="flex items-center gap-2">
               <Radio className="w-4 h-4 text-emerald-400" />
-              <h4 className="text-sm font-bold text-white">1-Click Agent Provisioning</h4>
+              <h4 className="text-sm font-bold text-on-surface">1-Click Agent Provisioning</h4>
             </div>
-            <p className="text-xs text-slate-300">
+            <p className="text-xs text-on-surface">
               Generate a unique claim token, open the claim link on your browser, and bind this Minecraft instance to your Playit account.
             </p>
 
@@ -257,7 +257,7 @@ export const PlayitTunnelModal: React.FC<PlayitTunnelModalProps> = ({ isOpen, on
               <button
                 onClick={handleGenerateClaim}
                 disabled={loading}
-                className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-mono text-xs font-bold shadow-lg shadow-emerald-900/30 flex items-center gap-2 transition-all disabled:opacity-50"
+                className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-on-surface font-mono text-xs font-bold shadow-none shadow-emerald-900/30 flex items-center gap-2 transition-all disabled:opacity-50"
               >
                 <Sparkles className="w-4 h-4" />
                 <span>Generate Claim Link</span>
@@ -268,7 +268,7 @@ export const PlayitTunnelModal: React.FC<PlayitTunnelModalProps> = ({ isOpen, on
                   href={status.claimUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-emerald-500/40 font-mono text-xs font-bold flex items-center gap-2 transition-colors"
+                  className="px-4 py-2 rounded-xl bg-surface-container hover:bg-slate-700 text-emerald-400 border border-emerald-500/40 font-mono text-xs font-bold flex items-center gap-2 transition-colors"
                 >
                   <span>Open Claim Page</span>
                   <ExternalLink className="w-3.5 h-3.5" />
@@ -277,14 +277,14 @@ export const PlayitTunnelModal: React.FC<PlayitTunnelModalProps> = ({ isOpen, on
             </div>
 
             {status?.claimCode && (
-              <div className="mt-2 text-xs font-mono text-slate-400 flex items-center gap-2">
+              <div className="mt-2 text-xs font-mono text-on-surface-variant flex items-center gap-2">
                 <span>Code:</span>
-                <span className="px-2 py-0.5 rounded bg-slate-800 text-emerald-300 font-bold">
+                <span className="px-2 py-0.5 rounded bg-surface-container text-emerald-300 font-bold">
                   {status.claimCode}
                 </span>
                 <button
                   onClick={() => copyToClipboard(status.claimCode!, 'code')}
-                  className="text-slate-400 hover:text-white"
+                  className="text-on-surface-variant hover:text-on-surface"
                 >
                   {copiedKey === 'code' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
                 </button>
@@ -293,12 +293,12 @@ export const PlayitTunnelModal: React.FC<PlayitTunnelModalProps> = ({ isOpen, on
           </div>
 
           {/* Manual Secret Key */}
-          <div className="p-5 rounded-2xl bg-slate-950/70 border border-slate-800/80 space-y-3">
+          <div className="p-5 rounded-2xl bg-surface-container-low border border-slate-800/80 space-y-3">
             <div className="flex items-center gap-2">
               <Key className="w-4 h-4 text-emerald-400" />
-              <h4 className="text-sm font-bold text-white">Or Enter Playit Secret Key Directly</h4>
+              <h4 className="text-sm font-bold text-on-surface">Or Enter Playit Secret Key Directly</h4>
             </div>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-on-surface-variant">
               If you already have a secret key from your Playit dashboard, paste it below:
             </p>
             <div className="flex flex-col sm:flex-row gap-2">
@@ -307,12 +307,12 @@ export const PlayitTunnelModal: React.FC<PlayitTunnelModalProps> = ({ isOpen, on
                 placeholder="Paste Playit Secret Key here..."
                 value={secretInput}
                 onChange={(e) => setSecretInput(e.target.value)}
-                className="flex-1 px-4 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs font-mono focus:border-emerald-500 focus:outline-none"
+                className="flex-1 px-4 py-2 rounded-xl bg-surface-container-low border border-slate-700 text-on-surface text-xs font-mono focus:border-emerald-500 focus:outline-none"
               />
               <button
                 onClick={handleApplySecret}
                 disabled={loading || !secretInput.trim()}
-                className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-mono text-xs font-bold disabled:opacity-50 transition-colors"
+                className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-on-surface font-mono text-xs font-bold disabled:opacity-50 transition-colors"
               >
                 Apply Secret
               </button>
@@ -322,7 +322,7 @@ export const PlayitTunnelModal: React.FC<PlayitTunnelModalProps> = ({ isOpen, on
           {/* Terminal Logs Preview */}
           {status?.lastLog && (
             <div className="space-y-2">
-              <div className="flex items-center gap-2 text-xs font-mono text-slate-400">
+              <div className="flex items-center gap-2 text-xs font-mono text-on-surface-variant">
                 <Terminal className="w-3.5 h-3.5" />
                 <span>Live Agent Output</span>
               </div>

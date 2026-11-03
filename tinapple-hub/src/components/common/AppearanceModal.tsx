@@ -55,7 +55,7 @@ const WALLPAPER_CATEGORIES = [
 ];
 
 const fieldClass =
-  'w-full min-w-0 rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-zinc-200 focus:outline-none focus:ring-2 focus:ring-tinapple-gold';
+  'w-full min-w-0 rounded-xl border border-outline-variant/50 bg-black/20 px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-tinapple-gold';
 
 export const AppearanceModal: React.FC<AppearanceModalProps> = ({
   isOpen,
@@ -161,24 +161,32 @@ export const AppearanceModal: React.FC<AppearanceModalProps> = ({
 
   // Handle Wallpaper Select (with color sampling and API notify)
   const handleSelectWallpaper = async (wp: WallpaperItem) => {
-    update({ wallpaperUrl: wp.url });
     setUrlError('');
 
     // Inform server session
     api.selectWallpaper(wp.file);
 
+    const partial: Partial<BackgroundSettings> = {
+      mode: 'wallpaper',
+      wallpaperUrl: wp.url,
+      syncWallpaperColors: true,
+    };
+
     // Auto extract colors if enabled and not video
-    if (settings.syncWallpaperColors && !wp.isVideo) {
+    if (!wp.isVideo) {
       try {
         const abortCtrl = new AbortController();
         const [prim, sec] = await extractWallpaperColors(wp.url, abortCtrl.signal);
         if (prim && sec) {
-          update({ accentColor: prim, secondaryColor: sec });
+          partial.accentColor = prim;
+          partial.secondaryColor = sec;
         }
       } catch (e) {
         console.debug('Color extraction:', e);
       }
     }
+
+    update(partial);
   };
 
   // Handle Random / Shuffle Wallpaper
@@ -241,12 +249,30 @@ export const AppearanceModal: React.FC<AppearanceModalProps> = ({
   ) => (
     <div className="flex items-center justify-between gap-4 py-3">
       <span>
-        <span className="block text-sm text-zinc-200">{label}</span>
-        {description && <span className="block mt-1 text-xs text-zinc-400">{description}</span>}
+        <span className="block text-sm text-on-surface">{label}</span>
+        {description && <span className="block mt-1 text-xs text-on-surface-variant">{description}</span>}
       </span>
       <SquishSwitch
+        label={label}
         checked={settings[key]}
-        onChange={(val) => update({ [key]: val })}
+        onChange={async (val) => {
+          if (key === 'syncWallpaperColors' && val) {
+            update({ syncWallpaperColors: true });
+            if (settings.mode === 'wallpaper' && settings.wallpaperUrl) {
+              try {
+                const abortCtrl = new AbortController();
+                const [prim, sec] = await extractWallpaperColors(settings.wallpaperUrl, abortCtrl.signal);
+                if (prim && sec) {
+                  update({ syncWallpaperColors: true, accentColor: prim, secondaryColor: sec });
+                }
+              } catch (e) {
+                console.debug('Toggle sync extraction:', e);
+              }
+            }
+          } else {
+            update({ [key]: val });
+          }
+        }}
         variant="amber"
         size="sm"
       />
@@ -261,25 +287,25 @@ export const AppearanceModal: React.FC<AppearanceModalProps> = ({
       onClick={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}
-      className="appearance-drawer fixed inset-y-0 left-auto right-0 m-0 h-dvh max-h-none w-full max-w-xl overflow-y-auto border-l border-white/10 bg-[#0e1118]/95 p-0 text-zinc-200 backdrop-blur-2xl shadow-2xl z-50"
+      className="appearance-drawer fixed inset-y-0 left-auto right-0 m-0 h-dvh max-h-none w-full max-w-xl overflow-y-auto border-l border-outline-variant/50 bg-surface-container-high p-0 text-on-surface backdrop-blur-2xl shadow-none z-50"
     >
       <div className="flex min-h-full flex-col" onClick={(event) => event.stopPropagation()}>
         {/* Sticky Header */}
-        <div className="sticky top-0 z-20 flex items-center justify-between gap-4 border-b border-white/10 bg-[#0e1118]/95 p-5 sm:p-6 backdrop-blur-xl">
+        <div className="sticky top-0 z-20 flex items-center justify-between gap-4 border-b border-outline-variant/50 bg-surface-container-high p-5 sm:p-6 backdrop-blur-xl">
           <div>
-            <h2 id="appearance-title" className="flex items-center gap-2 font-mono text-lg font-bold">
+            <h2 id="appearance-title" className="flex items-center gap-2 font-sans text-lg font-bold">
               <Palette className="h-5 w-5 text-tinapple-gold" />
-              Portal Appearance & Atmosphere
+              Appearance & theme
             </h2>
-            <p className="mt-0.5 text-xs text-zinc-400 font-mono">
-              Material 3 (M3) Matugen engine, dynamic wallpaper extraction, and glass styling
+            <p className="mt-0.5 text-xs text-on-surface-variant font-sans">
+              Material You colors, wallpapers, and matte surfaces
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close appearance"
-            className="rounded-xl p-2 hover:bg-white/10 focus-visible:outline-tinapple-gold text-zinc-400 hover:text-white transition-colors"
+            className="rounded-xl p-2 hover:bg-white/10 focus-visible:outline-tinapple-gold text-on-surface-variant hover:text-on-surface transition-colors"
           >
             <X className="h-5 w-5" />
           </button>
@@ -288,7 +314,7 @@ export const AppearanceModal: React.FC<AppearanceModalProps> = ({
         <div className="space-y-7 p-5 sm:p-6 pb-[calc(2.5rem+env(safe-area-inset-bottom,0px))]">
           {/* Background Mode Selection */}
           <section aria-labelledby="background-heading">
-            <h3 id="background-heading" className="mb-3 text-xs font-mono uppercase tracking-wider text-zinc-400">
+            <h3 id="background-heading" className="mb-3 text-xs font-sans uppercase tracking-wider text-on-surface-variant">
               Backdrop Engine
             </h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -298,10 +324,10 @@ export const AppearanceModal: React.FC<AppearanceModalProps> = ({
                   type="button"
                   aria-pressed={settings.mode === mode.id}
                   onClick={() => update({ mode: mode.id })}
-                  className={`rounded-xl border px-3 py-2.5 text-xs font-mono transition-all text-center ${
+                  className={`rounded-xl border px-3 py-2.5 text-xs font-sans transition-all text-center ${
                     settings.mode === mode.id
                       ? 'border-tinapple-gold/70 bg-tinapple-gold/15 text-tinapple-gold font-bold shadow-sm shadow-tinapple-gold/10'
-                      : 'border-white/10 bg-white/[0.03] text-zinc-300 hover:bg-white/[0.07] hover:border-white/20'
+                      : 'border-outline-variant/50 bg-white/[0.03] text-on-surface hover:bg-white/[0.07] hover:border-outline-variant/50'
                   }`}
                 >
                   {mode.label}
@@ -315,10 +341,10 @@ export const AppearanceModal: React.FC<AppearanceModalProps> = ({
             <section aria-labelledby="wallpaper-heading" className="space-y-4">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
-                  <h3 id="wallpaper-heading" className="text-xs font-mono uppercase tracking-wider text-zinc-400">
+                  <h3 id="wallpaper-heading" className="text-xs font-sans uppercase tracking-wider text-on-surface-variant">
                     Wallpaper Library ({gallery.length} from imyash0722/Wallpapers)
                   </h3>
-                  <p className="text-[11px] text-zinc-500 font-mono mt-0.5">
+                  <p className="text-[11px] text-on-surface-variant font-sans mt-0.5">
                     Click any image or video loop to set immediately
                   </p>
                 </div>
@@ -326,7 +352,7 @@ export const AppearanceModal: React.FC<AppearanceModalProps> = ({
                   <button
                     type="button"
                     onClick={handleShuffle}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-500/15 hover:bg-purple-500/25 border border-purple-500/30 text-purple-300 text-xs font-mono font-semibold transition-all active:scale-95"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-500/15 hover:bg-purple-500/25 border border-purple-500/30 text-purple-300 text-xs font-sans font-semibold transition-all active:scale-95"
                     title="Randomly pick a wallpaper from the collection"
                   >
                     <Shuffle className="w-3.5 h-3.5" />
@@ -336,7 +362,7 @@ export const AppearanceModal: React.FC<AppearanceModalProps> = ({
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
                     disabled={isUploading}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-tinapple-gold/15 hover:bg-tinapple-gold/25 border border-tinapple-gold/30 text-tinapple-gold text-xs font-mono font-semibold transition-all active:scale-95 disabled:opacity-50"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-tinapple-gold/15 hover:bg-tinapple-gold/25 border border-tinapple-gold/30 text-tinapple-gold text-xs font-sans font-semibold transition-all active:scale-95 disabled:opacity-50"
                     title="Upload your own wallpaper image or MP4 loop"
                   >
                     {isUploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
@@ -353,20 +379,20 @@ export const AppearanceModal: React.FC<AppearanceModalProps> = ({
               </div>
 
               {uploadMessage && (
-                <div className="p-2.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-mono animate-pulse">
+                <div className="p-2.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-sans animate-pulse">
                   {uploadMessage}
                 </div>
               )}
 
               {/* Search Bar */}
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant" />
                 <input
                   type="text"
                   placeholder="Filter 120+ wallpapers by name or style..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 rounded-xl bg-black/30 border border-white/10 text-xs font-mono text-zinc-200 placeholder:text-zinc-500 focus:outline-none focus:border-tinapple-gold transition-colors"
+                  className="w-full pl-9 pr-3 py-2 rounded-xl bg-black/30 border border-outline-variant/50 text-xs font-sans text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:border-tinapple-gold transition-colors"
                 />
               </div>
 
@@ -379,10 +405,10 @@ export const AppearanceModal: React.FC<AppearanceModalProps> = ({
                       key={cat}
                       type="button"
                       onClick={() => setSelectedCategory(cat)}
-                      className={`px-3 py-1 rounded-lg text-xs font-mono font-semibold whitespace-nowrap transition-all shrink-0 ${
+                      className={`px-3 py-1 rounded-lg text-xs font-sans font-semibold whitespace-nowrap transition-all shrink-0 ${
                         isSelected
                           ? 'bg-tinapple-gold text-slate-950 shadow-sm'
-                          : 'bg-white/5 text-zinc-400 hover:text-zinc-200 hover:bg-white/10 border border-white/5'
+                          : 'bg-white/5 text-on-surface-variant hover:text-on-surface hover:bg-white/10 border border-outline-variant/50'
                       }`}
                     >
                       {cat}
@@ -406,8 +432,8 @@ export const AppearanceModal: React.FC<AppearanceModalProps> = ({
                       aria-pressed={isSelected}
                       className={`group relative overflow-hidden rounded-xl border text-left transition-all ${
                         isSelected
-                          ? 'border-tinapple-gold ring-2 ring-tinapple-gold/70 shadow-lg shadow-tinapple-gold/20'
-                          : 'border-white/10 hover:border-white/30 hover:shadow-md'
+                          ? 'border-tinapple-gold ring-2 ring-tinapple-gold/70 shadow-none shadow-tinapple-gold/20'
+                          : 'border-outline-variant/50 hover:border-white/30 hover:shadow-none'
                       }`}
                     >
                       {wallpaper.isVideo ? (
@@ -420,7 +446,7 @@ export const AppearanceModal: React.FC<AppearanceModalProps> = ({
                             playsInline
                             className="aspect-video w-full object-cover group-hover:scale-105 transition-transform duration-300"
                           />
-                          <span className="absolute top-1.5 left-1.5 flex items-center gap-1 px-1.5 py-0.5 rounded bg-purple-950/80 border border-purple-500/40 text-[9px] font-mono font-bold text-purple-300 backdrop-blur-sm">
+                          <span className="absolute top-1.5 left-1.5 flex items-center gap-1 px-1.5 py-0.5 rounded bg-purple-950/80 border border-purple-500/40 text-[9px] font-sans font-bold text-purple-300 backdrop-blur-sm">
                             <Film className="w-2.5 h-2.5" />
                             <span>LOOP</span>
                           </span>
@@ -438,16 +464,16 @@ export const AppearanceModal: React.FC<AppearanceModalProps> = ({
 
                       {/* Selected checkmark */}
                       {isSelected && (
-                        <div className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-tinapple-gold text-slate-950 flex items-center justify-center shadow-md">
+                        <div className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-tinapple-gold text-slate-950 flex items-center justify-center shadow-none">
                           <Check className="w-3.5 h-3.5 stroke-[3]" />
                         </div>
                       )}
 
-                      <div className="p-2 bg-slate-900/90 border-t border-white/5 backdrop-blur-sm">
-                        <span className="block text-[11px] font-mono font-semibold text-zinc-200 truncate group-hover:text-tinapple-gold transition-colors">
+                      <div className="p-2 bg-surface-container-low border-t border-outline-variant/50 backdrop-blur-sm">
+                        <span className="block text-[11px] font-sans font-semibold text-on-surface truncate group-hover:text-tinapple-gold transition-colors">
                           {wallpaper.name}
                         </span>
-                        <span className="text-[9px] font-mono text-zinc-400 capitalize">
+                        <span className="text-[9px] font-sans text-on-surface-variant capitalize">
                           {wallpaper.category}
                         </span>
                       </div>
@@ -457,24 +483,41 @@ export const AppearanceModal: React.FC<AppearanceModalProps> = ({
               </div>
 
               {filteredWallpapers.length === 0 && (
-                <div className="text-center py-8 text-xs font-mono text-zinc-400 border border-dashed border-white/10 rounded-xl">
+                <div className="text-center py-8 text-xs font-sans text-on-surface-variant border border-dashed border-outline-variant/50 rounded-xl">
                   No wallpapers found matching "{searchQuery}".
                 </div>
               )}
 
               {/* Custom Image URL Form */}
               <form
-                onSubmit={(event) => {
+                onSubmit={async (event) => {
                   event.preventDefault();
-                  if (!isWallpaperUrl(url.trim())) {
+                  const targetUrl = url.trim();
+                  if (!isWallpaperUrl(targetUrl)) {
                     setUrlError('Enter an HTTP(S) image URL or a local image path.');
                     return;
                   }
-                  update({ wallpaperUrl: url.trim() });
                   setUrlError('');
+                  const partial: Partial<BackgroundSettings> = {
+                    mode: 'wallpaper',
+                    wallpaperUrl: targetUrl,
+                  };
+                  if (settings.syncWallpaperColors && !targetUrl.match(/\.(mp4|webm)(\?.*)?$/i)) {
+                    try {
+                      const abortCtrl = new AbortController();
+                      const [prim, sec] = await extractWallpaperColors(targetUrl, abortCtrl.signal);
+                      if (prim && sec) {
+                        partial.accentColor = prim;
+                        partial.secondaryColor = sec;
+                      }
+                    } catch (e) {
+                      console.debug('Custom URL color extraction:', e);
+                    }
+                  }
+                  update(partial);
                 }}
               >
-                <label htmlFor="wallpaper-url" className="mb-2 block text-xs text-zinc-400 font-mono">
+                <label htmlFor="wallpaper-url" className="mb-2 block text-xs text-on-surface-variant font-sans">
                   Custom image or video URL
                 </label>
                 <div className="flex gap-2">
@@ -490,23 +533,43 @@ export const AppearanceModal: React.FC<AppearanceModalProps> = ({
                   />
                   <button
                     type="submit"
-                    className="rounded-xl border border-white/10 px-4 text-xs font-mono hover:bg-white/10 shrink-0 font-semibold"
+                    className="rounded-xl border border-outline-variant/50 px-4 text-xs font-sans hover:bg-white/10 shrink-0 font-semibold"
                   >
                     Apply
                   </button>
                 </div>
                 {urlError && (
-                  <p id="wallpaper-url-error" role="alert" className="mt-2 text-xs text-red-400 font-mono">
+                  <p id="wallpaper-url-error" role="alert" className="mt-2 text-xs text-red-400 font-sans">
                     {urlError}
                   </p>
                 )}
               </form>
 
+              {/* Wallpaper Blur Slider */}
+              <label className="block text-sm" htmlFor="wallpaper-blur">
+                <span className="flex justify-between text-xs font-sans">
+                  <span className="text-on-surface">Wallpaper Blur</span>
+                  <span className="font-sans text-tinapple-gold font-bold">
+                    {settings.wallpaperBlur || 0}px
+                  </span>
+                </span>
+                <input
+                  id="wallpaper-blur"
+                  type="range"
+                  min="0"
+                  max="40"
+                  step="1"
+                  value={settings.wallpaperBlur || 0}
+                  onChange={(event) => update({ wallpaperBlur: Number(event.target.value) })}
+                  className="mt-2 w-full accent-tinapple-gold cursor-pointer"
+                />
+              </label>
+
               {/* Dark Overlay Slider */}
               <label className="block text-sm" htmlFor="wallpaper-dim">
-                <span className="flex justify-between text-xs font-mono">
-                  <span className="text-zinc-300">Dark Contrast Overlay</span>
-                  <span className="font-mono text-tinapple-gold font-bold">
+                <span className="flex justify-between text-xs font-sans">
+                  <span className="text-on-surface">Dark Contrast Overlay</span>
+                  <span className="font-sans text-tinapple-gold font-bold">
                     {Math.round(settings.wallpaperDim * 100)}%
                   </span>
                 </span>
@@ -527,42 +590,42 @@ export const AppearanceModal: React.FC<AppearanceModalProps> = ({
                 'Material 3 (M3) Matugen Wallpaper Sync',
                 'Automatically generate full Material You M3 palette from the active wallpaper.'
               )}
-              {colorStatus && <p role="status" className="text-xs text-zinc-400 font-mono">{colorStatus}</p>}
+              {colorStatus && <p role="status" className="text-xs text-on-surface-variant font-sans">{colorStatus}</p>}
 
               {/* Live Material 3 Token Chips */}
-              <div className="p-3 rounded-xl bg-white/[0.03] border border-white/10 space-y-2">
+              <div className="p-3 rounded-xl bg-white/[0.03] border border-outline-variant/50 space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-mono text-tinapple-gold font-bold uppercase tracking-wider flex items-center gap-1.5">
+                  <span className="text-[11px] font-sans text-tinapple-gold font-bold uppercase tracking-wider flex items-center gap-1.5">
                     <Sparkles className="w-3.5 h-3.5" /> Material 3 (M3) Matugen
                   </span>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+                  <span className="text-[10px] font-sans px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
                     M3 Tokens Active
                   </span>
                 </div>
                 <div className="grid grid-cols-6 gap-1.5 pt-1">
                   <div className="flex flex-col items-center">
-                    <div className="w-7 h-7 rounded-lg border border-white/20 shadow-sm" style={{ backgroundColor: 'var(--md-sys-color-primary, #38bdf8)' }} />
-                    <span className="text-[9px] font-mono text-zinc-400 mt-1">Primary</span>
+                    <div className="w-7 h-7 rounded-lg border border-outline-variant/50 shadow-sm" style={{ backgroundColor: 'var(--md-sys-color-primary, #38bdf8)' }} />
+                    <span className="text-[9px] font-sans text-on-surface-variant mt-1">Primary</span>
                   </div>
                   <div className="flex flex-col items-center">
-                    <div className="w-7 h-7 rounded-lg border border-white/20 shadow-sm" style={{ backgroundColor: 'var(--md-sys-color-primary-container, #004d67)' }} />
-                    <span className="text-[9px] font-mono text-zinc-400 mt-1">Container</span>
+                    <div className="w-7 h-7 rounded-lg border border-outline-variant/50 shadow-sm" style={{ backgroundColor: 'var(--md-sys-color-primary-container, #004d67)' }} />
+                    <span className="text-[9px] font-sans text-on-surface-variant mt-1">Container</span>
                   </div>
                   <div className="flex flex-col items-center">
-                    <div className="w-7 h-7 rounded-lg border border-white/20 shadow-sm" style={{ backgroundColor: 'var(--md-sys-color-secondary, #b5c9d7)' }} />
-                    <span className="text-[9px] font-mono text-zinc-400 mt-1">Secondary</span>
+                    <div className="w-7 h-7 rounded-lg border border-outline-variant/50 shadow-sm" style={{ backgroundColor: 'var(--md-sys-color-secondary, #b5c9d7)' }} />
+                    <span className="text-[9px] font-sans text-on-surface-variant mt-1">Secondary</span>
                   </div>
                   <div className="flex flex-col items-center">
-                    <div className="w-7 h-7 rounded-lg border border-white/20 shadow-sm" style={{ backgroundColor: 'var(--md-sys-color-tertiary, #cac1e9)' }} />
-                    <span className="text-[9px] font-mono text-zinc-400 mt-1">Tertiary</span>
+                    <div className="w-7 h-7 rounded-lg border border-outline-variant/50 shadow-sm" style={{ backgroundColor: 'var(--md-sys-color-tertiary, #cac1e9)' }} />
+                    <span className="text-[9px] font-sans text-on-surface-variant mt-1">Tertiary</span>
                   </div>
                   <div className="flex flex-col items-center">
-                    <div className="w-7 h-7 rounded-lg border border-white/20 shadow-sm" style={{ backgroundColor: 'var(--md-sys-color-surface-container, #101828)' }} />
-                    <span className="text-[9px] font-mono text-zinc-400 mt-1">Surface</span>
+                    <div className="w-7 h-7 rounded-lg border border-outline-variant/50 shadow-sm" style={{ backgroundColor: 'var(--md-sys-color-surface-container, #101828)' }} />
+                    <span className="text-[9px] font-sans text-on-surface-variant mt-1">Surface</span>
                   </div>
                   <div className="flex flex-col items-center">
-                    <div className="w-7 h-7 rounded-lg border border-white/20 shadow-sm" style={{ backgroundColor: 'var(--md-sys-color-outline-variant, #3f4755)' }} />
-                    <span className="text-[9px] font-mono text-zinc-400 mt-1">Outline</span>
+                    <div className="w-7 h-7 rounded-lg border border-outline-variant/50 shadow-sm" style={{ backgroundColor: 'var(--md-sys-color-outline-variant, #3f4755)' }} />
+                    <span className="text-[9px] font-sans text-on-surface-variant mt-1">Outline</span>
                   </div>
                 </div>
               </div>
@@ -571,9 +634,24 @@ export const AppearanceModal: React.FC<AppearanceModalProps> = ({
 
           {/* Accent Color Palettes */}
           <section aria-labelledby="accent-heading" className="space-y-3">
-            <h3 id="accent-heading" className="text-xs font-mono uppercase tracking-wider text-zinc-400">
+            <h3 id="accent-heading" className="text-xs font-sans uppercase tracking-wider text-on-surface-variant">
               Theme Accent Palette
             </h3>
+            <div className="flex gap-2" aria-label="Color mode">
+              {(['dark', 'light'] as const).map(mode => (
+                <button key={mode} type="button" aria-pressed={(settings.colorMode || 'dark') === mode}
+                  onClick={() => update({ colorMode: mode })}
+                  className={`m3-button ${(settings.colorMode || 'dark') === mode ? 'm3-button-tonal' : 'm3-button-outlined'}`}>
+                  {mode === 'dark' ? 'Dark' : 'Light'}
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-2" aria-label="Tonal elevation preview">
+              {['lowest', 'low', '', 'high', 'highest'].map((level, index) => (
+                <span key={level} title={`Surface container ${level || 'default'}`} className="h-8 w-8 rounded-full border border-outline-variant flex items-center justify-center text-xs"
+                  style={{ background: `var(--md-sys-color-surface-container${level ? '-' + level : ''})` }}>{index}</span>
+              ))}
+            </div>
             <div className="grid grid-cols-5 gap-2.5">
               {THEME_PALETTES.map((palette) => {
                 const selected =
@@ -594,19 +672,19 @@ export const AppearanceModal: React.FC<AppearanceModalProps> = ({
                     title={palette.name}
                   >
                     <span
-                      className={`flex h-8 w-8 items-center justify-center rounded-full border border-white/20 transition-transform ${
+                      className={`flex h-8 w-8 items-center justify-center rounded-full border border-outline-variant/50 transition-transform ${
                         selected ? 'ring-2 ring-white ring-offset-2 ring-offset-zinc-900 scale-105' : 'hover:scale-105'
                       }`}
                       style={{ background: `linear-gradient(135deg, ${palette.primary}, ${palette.secondary})` }}
                     >
                       {selected && <Check className="h-4 w-4 text-black stroke-[3]" />}
                     </span>
-                    <span className="text-center text-[9px] font-mono text-zinc-400 line-clamp-1">{palette.name}</span>
+                    <span className="text-center text-[9px] font-sans text-on-surface-variant line-clamp-1">{palette.name}</span>
                   </button>
                 );
               })}
             </div>
-            <p className="text-[11px] text-zinc-400 font-mono">
+            <p className="text-[11px] text-on-surface-variant font-sans">
               Selecting a palette turns off wallpaper auto-sampling.
             </p>
 
@@ -619,7 +697,7 @@ export const AppearanceModal: React.FC<AppearanceModalProps> = ({
                 } else setHexError('Use a six-digit hex color, such as #38bdf8.');
               }}
             >
-              <label htmlFor="accent-hex" className="mb-2 block text-xs text-zinc-400 font-mono">
+              <label htmlFor="accent-hex" className="mb-2 block text-xs text-on-surface-variant font-sans">
                 Custom Primary Accent
               </label>
               <div className="flex items-center gap-2">
@@ -628,66 +706,91 @@ export const AppearanceModal: React.FC<AppearanceModalProps> = ({
                   type="color"
                   value={settings.accentColor}
                   onChange={(event) => setAccent(event.target.value)}
-                  className="h-9 w-10 shrink-0 cursor-pointer rounded-lg border border-white/10 bg-transparent p-1"
+                  className="h-9 w-10 shrink-0 cursor-pointer rounded-lg border border-outline-variant/50 bg-transparent p-1"
                 />
                 <input
                   id="accent-hex"
                   value={hex}
                   onChange={(event) => setHex(event.target.value)}
-                  className={`${fieldClass} font-mono`}
+                  className={`${fieldClass} font-sans`}
                   aria-invalid={!!hexError}
                   aria-describedby={hexError ? 'accent-error' : undefined}
                 />
                 <button
                   type="submit"
-                  className="rounded-xl border border-white/10 px-4 py-2 text-xs font-mono font-semibold hover:bg-white/10"
+                  className="rounded-xl border border-outline-variant/50 px-4 py-2 text-xs font-sans font-semibold hover:bg-white/10"
                 >
                   Apply
                 </button>
               </div>
               {hexError && (
-                <p id="accent-error" role="alert" className="mt-2 text-xs text-red-400 font-mono">
+                <p id="accent-error" role="alert" className="mt-2 text-xs text-red-400 font-sans">
                   {hexError}
                 </p>
               )}
             </form>
 
-            <label className="flex items-center justify-between text-xs font-mono text-zinc-300">
+            <label className="flex items-center justify-between text-xs font-sans text-on-surface">
               Secondary Accent Hue
               <input
                 aria-label="Secondary accent color picker"
                 type="color"
                 value={settings.secondaryColor}
                 onChange={(event) => update({ secondaryColor: event.target.value, syncWallpaperColors: false })}
-                className="h-8 w-10 cursor-pointer rounded-lg border border-white/10 bg-transparent p-1"
+                className="h-8 w-10 cursor-pointer rounded-lg border border-outline-variant/50 bg-transparent p-1"
               />
             </label>
           </section>
 
           {/* Ambient Effects */}
           <section aria-labelledby="ambient-heading">
-            <h3 id="ambient-heading" className="text-xs font-mono uppercase tracking-wider text-zinc-400">
+            <h3 id="ambient-heading" className="text-xs font-sans uppercase tracking-wider text-on-surface-variant">
               Ambient Matrix
             </h3>
             {toggle('enableParticles', 'Constellation Particles', 'Floating ambient particles responding to mouse motion.')}
             {toggle('enableNebula', 'Radial Nebula Glow', 'Atmospheric soft radial glow tuned to primary & secondary accents.')}
           </section>
 
-          {/* Frosted Glass Translucency */}
+          {/* Component Translucency & Liquid Glass */}
           <section aria-labelledby="glass-heading" className="space-y-4">
-            <h3 id="glass-heading" className="text-xs font-mono uppercase tracking-wider text-zinc-400">
-              Frosted Glassmorphism
-            </h3>
-            {toggle('enableGlass', 'Frosted Glass Panels', 'Let your wallpaper shine through widgets and control cards.')}
+            <div>
+              <h3 id="glass-heading" className="text-xs font-sans uppercase tracking-wider text-on-surface-variant font-bold">
+                Component Translucency & Liquid Glass
+              </h3>
+              <p className="text-[11px] text-on-surface-variant mt-0.5 font-sans">
+                Control the liquid-like transparency and frosted diffusion of dashboard cards, tiles, and headers.
+              </p>
+            </div>
+            {toggle('enableGlass', 'Liquid Glass Panels', 'Let your wallpaper shine through widgets and control cards.')}
             <div
               className={`space-y-4 pt-1 transition-opacity ${
                 settings.enableGlass ? 'opacity-100' : 'opacity-40 pointer-events-none'
               }`}
             >
+              <label className="block text-sm" htmlFor="glass-translucency">
+                <span className="flex justify-between text-xs font-sans">
+                  <span className="text-on-surface">Component Transparency</span>
+                  <span className="font-sans text-tinapple-gold font-bold">{settings.glassTranslucency}%</span>
+                </span>
+                <input
+                  id="glass-translucency"
+                  type="range"
+                  min="0"
+                  max="90"
+                  step="1"
+                  value={settings.glassTranslucency}
+                  onChange={(event) => update({ glassTranslucency: Number(event.target.value) })}
+                  className="mt-2 w-full accent-tinapple-gold cursor-pointer"
+                />
+                <span className="block text-[10px] text-on-surface-variant mt-1 font-sans">
+                  0% is solid matte Material 3; higher values produce liquid transparent glass.
+                </span>
+              </label>
+
               <label className="block text-sm" htmlFor="glass-blur">
-                <span className="flex justify-between text-xs font-mono">
-                  <span className="text-zinc-200">Background Blur</span>
-                  <span className="font-mono text-tinapple-gold font-bold">{settings.glassBlur}px</span>
+                <span className="flex justify-between text-xs font-sans">
+                  <span className="text-on-surface">Frosted Glass Diffusion</span>
+                  <span className="font-sans text-tinapple-gold font-bold">{settings.glassBlur}px</span>
                 </span>
                 <input
                   id="glass-blur"
@@ -699,30 +802,16 @@ export const AppearanceModal: React.FC<AppearanceModalProps> = ({
                   onChange={(event) => update({ glassBlur: Number(event.target.value) })}
                   className="mt-2 w-full accent-tinapple-gold cursor-pointer"
                 />
-              </label>
-
-              <label className="block text-sm" htmlFor="glass-translucency">
-                <span className="flex justify-between text-xs font-mono">
-                  <span className="text-zinc-200">Glass Translucency</span>
-                  <span className="font-mono text-tinapple-gold font-bold">{settings.glassTranslucency}%</span>
+                <span className="block text-[10px] text-on-surface-variant mt-1 font-sans">
+                  Backdrop blur dispersion applied to translucent components.
                 </span>
-                <input
-                  id="glass-translucency"
-                  type="range"
-                  min="10"
-                  max="90"
-                  step="1"
-                  value={settings.glassTranslucency}
-                  onChange={(event) => update({ glassTranslucency: Number(event.target.value) })}
-                  className="mt-2 w-full accent-tinapple-gold cursor-pointer"
-                />
               </label>
             </div>
           </section>
 
           {/* UI Scaling */}
           <section aria-labelledby="scale-heading" className="space-y-3">
-            <h3 id="scale-heading" className="text-xs font-mono uppercase tracking-wider text-zinc-400">
+            <h3 id="scale-heading" className="text-xs font-sans uppercase tracking-wider text-on-surface-variant">
               UI Display Scaling
             </h3>
             <div className="grid grid-cols-4 gap-2">
@@ -738,10 +827,10 @@ export const AppearanceModal: React.FC<AppearanceModalProps> = ({
                     key={preset.value}
                     type="button"
                     onClick={() => update({ uiScale: preset.value })}
-                    className={`p-2.5 rounded-xl text-xs font-mono transition-all text-center border ${
+                    className={`p-2.5 rounded-xl text-xs font-sans transition-all text-center border ${
                       isSelected
                         ? 'border-tinapple-gold/70 bg-tinapple-gold/15 text-tinapple-gold font-bold shadow-sm'
-                        : 'border-white/10 bg-white/[0.03] text-zinc-400 hover:text-zinc-200 hover:border-white/20'
+                        : 'border-outline-variant/50 bg-white/[0.03] text-on-surface-variant hover:text-on-surface hover:border-outline-variant/50'
                     }`}
                   >
                     <span className="block font-bold">{preset.label}</span>
@@ -752,7 +841,7 @@ export const AppearanceModal: React.FC<AppearanceModalProps> = ({
             </div>
           </section>
 
-          <p role="status" className="text-xs text-zinc-500 font-mono">
+          <p role="status" className="text-xs text-on-surface-variant font-sans">
             {storageStatus || 'Preferences stored locally. Instantaneous client persistence.'}
           </p>
         </div>

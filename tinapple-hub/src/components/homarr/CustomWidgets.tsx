@@ -22,17 +22,17 @@ export const CustomIframeWidget: React.FC<{ widget: CanvasWidget }> = ({ widget 
   const [loadError, setLoadError] = useState(false);
 
   return (
-    <div className="h-full w-full flex flex-col rounded-2xl bg-slate-900/90 border border-white/10 overflow-hidden shadow-xl backdrop-blur-md">
+    <div className="h-full w-full flex flex-col rounded-2xl bg-surface-container-low border border-outline-variant/50 overflow-hidden shadow-none backdrop-blur-md">
       {/* Header bar */}
-      <div className="px-3.5 py-2.5 border-b border-white/10 bg-slate-950/60 flex items-center justify-between gap-2 shrink-0">
+      <div className="px-3.5 py-2.5 border-b border-outline-variant/50 bg-surface-container-low flex items-center justify-between gap-2 shrink-0">
         <div className="flex items-center gap-2 min-w-0">
           <span className="text-base shrink-0">{widget.icon || '🌐'}</span>
-          <span className="font-mono font-bold text-xs text-white truncate">{widget.title}</span>
+          <span className="font-sans tabular-nums font-bold text-xs text-on-surface truncate">{widget.title}</span>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
           <button
             onClick={() => setIframeKey((k) => k + 1)}
-            className="p-1 rounded-lg hover:bg-white/10 text-zinc-400 hover:text-white transition-colors"
+            className="p-1 rounded-lg hover:bg-white/10 text-on-surface-variant hover:text-on-surface transition-colors"
             title="Reload Frame"
           >
             <RotateCw className="w-3 h-3" />
@@ -42,7 +42,7 @@ export const CustomIframeWidget: React.FC<{ widget: CanvasWidget }> = ({ widget 
               href={url}
               target="_blank"
               rel="noreferrer"
-              className="p-1 rounded-lg hover:bg-white/10 text-zinc-400 hover:text-white transition-colors"
+              className="p-1 rounded-lg hover:bg-white/10 text-on-surface-variant hover:text-on-surface transition-colors"
               title="Open in New Tab"
             >
               <ExternalLink className="w-3 h-3" />
@@ -52,7 +52,7 @@ export const CustomIframeWidget: React.FC<{ widget: CanvasWidget }> = ({ widget 
       </div>
 
       {/* Body */}
-      <div className="flex-1 w-full h-full relative bg-slate-950">
+      <div className="flex-1 w-full h-full relative bg-surface-container-low">
         {url ? (
           <iframe
             key={iframeKey}
@@ -63,7 +63,7 @@ export const CustomIframeWidget: React.FC<{ widget: CanvasWidget }> = ({ widget 
             onError={() => setLoadError(true)}
           />
         ) : (
-          <div className="h-full flex flex-col items-center justify-center p-4 text-center font-mono text-xs text-zinc-500">
+          <div className="h-full flex flex-col items-center justify-center p-4 text-center font-sans tabular-nums text-xs text-on-surface-variant">
             <Globe className="w-8 h-8 mb-2 opacity-40 text-sky-400" />
             <span>No URL configured</span>
             <span className="text-[10px] text-zinc-600 mt-1">Click Edit Widget to set an embed URL</span>
@@ -86,22 +86,22 @@ export const CustomMarkdownWidget: React.FC<{ widget: CanvasWidget }> = ({ widge
   };
 
   return (
-    <div className="h-full w-full flex flex-col rounded-2xl bg-gradient-to-br from-slate-900/90 to-slate-950/90 border border-white/10 p-4 shadow-xl backdrop-blur-md overflow-hidden">
-      <div className="flex items-center justify-between pb-2 mb-2 border-b border-white/10 shrink-0">
+    <div className="h-full w-full flex flex-col rounded-2xl bg-gradient-to-br from-slate-900/90 to-slate-950/90 border border-outline-variant/50 p-4 shadow-none backdrop-blur-md overflow-hidden">
+      <div className="flex items-center justify-between pb-2 mb-2 border-b border-outline-variant/50 shrink-0">
         <div className="flex items-center gap-2">
           <span className="text-base">{widget.icon || '📝'}</span>
-          <span className="font-mono font-bold text-xs text-white">{widget.title}</span>
+          <span className="font-sans tabular-nums font-bold text-xs text-on-surface">{widget.title}</span>
         </div>
         <button
           onClick={handleCopy}
-          className="p-1 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 transition-colors"
+          className="p-1 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-white/10 transition-colors"
           title="Copy Text"
         >
           {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto font-mono text-xs text-zinc-300 whitespace-pre-wrap leading-relaxed pr-1 selection:bg-purple-500/30">
+      <div className="flex-1 overflow-y-auto font-sans tabular-nums text-xs text-on-surface whitespace-pre-wrap leading-relaxed pr-1 selection:bg-purple-500/30">
         {content}
       </div>
     </div>
@@ -113,11 +113,11 @@ export const CustomLinksWidget: React.FC<{ widget: CanvasWidget }> = ({ widget }
   const links = widget.customConfig?.links || [];
 
   return (
-    <div className="h-full w-full flex flex-col rounded-2xl bg-slate-900/90 border border-white/10 p-4 shadow-xl backdrop-blur-md overflow-hidden">
-      <div className="flex items-center gap-2 pb-2 mb-3 border-b border-white/10 shrink-0">
+    <div className="h-full w-full flex flex-col rounded-2xl bg-surface-container-low border border-outline-variant/50 p-4 shadow-none backdrop-blur-md overflow-hidden">
+      <div className="flex items-center gap-2 pb-2 mb-3 border-b border-outline-variant/50 shrink-0">
         <span className="text-base">{widget.icon || '🔖'}</span>
-        <span className="font-mono font-bold text-xs text-white">{widget.title}</span>
-        <span className="ml-auto text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/5 text-zinc-400 border border-white/10">
+        <span className="font-sans tabular-nums font-bold text-xs text-on-surface">{widget.title}</span>
+        <span className="ml-auto text-[10px] font-sans tabular-nums px-2 py-0.5 rounded-full bg-white/5 text-on-surface-variant border border-outline-variant/50">
           {links.length} links
         </span>
       </div>
@@ -130,17 +130,17 @@ export const CustomLinksWidget: React.FC<{ widget: CanvasWidget }> = ({ widget }
               href={link.url}
               target="_blank"
               rel="noreferrer"
-              className="flex items-center justify-between p-2 rounded-xl bg-slate-950/60 hover:bg-slate-800/80 border border-white/5 hover:border-white/15 text-zinc-200 hover:text-white transition-all group font-mono text-xs"
+              className="flex items-center justify-between p-2 rounded-xl bg-surface-container-low hover:bg-surface-container border border-outline-variant/50 hover:border-white/15 text-on-surface hover:text-on-surface transition-all group font-sans tabular-nums text-xs"
             >
               <div className="flex items-center gap-2.5 truncate">
                 <span className="text-sm shrink-0">{link.icon || '🔗'}</span>
                 <span className="font-medium truncate">{link.name}</span>
               </div>
-              <ExternalLink className="w-3 h-3 text-zinc-500 group-hover:text-zinc-300 shrink-0 ml-2" />
+              <ExternalLink className="w-3 h-3 text-on-surface-variant group-hover:text-on-surface shrink-0 ml-2" />
             </a>
           ))
         ) : (
-          <div className="h-full flex flex-col items-center justify-center text-center font-mono text-xs text-zinc-500 py-6">
+          <div className="h-full flex flex-col items-center justify-center text-center font-sans tabular-nums text-xs text-on-surface-variant py-6">
             <Bookmark className="w-6 h-6 mb-2 opacity-40 text-amber-400" />
             <span>No links configured</span>
             <span className="text-[10px] text-zinc-600 mt-0.5">Click Edit Widget to add links</span>
@@ -187,15 +187,15 @@ export const CustomMonitorWidget: React.FC<{ widget: CanvasWidget }> = ({ widget
   }, [endpoint, port]);
 
   return (
-    <div className="h-full w-full flex flex-col justify-between rounded-2xl bg-slate-900/90 border border-white/10 p-4 shadow-xl backdrop-blur-md font-mono">
-      <div className="flex items-center justify-between pb-2 border-b border-white/10">
+    <div className="h-full w-full flex flex-col justify-between rounded-2xl bg-surface-container-low border border-outline-variant/50 p-4 shadow-none backdrop-blur-md font-sans tabular-nums">
+      <div className="flex items-center justify-between pb-2 border-b border-outline-variant/50">
         <div className="flex items-center gap-2 truncate">
           <span className="text-base">{widget.icon || '⚡'}</span>
-          <span className="font-bold text-xs text-white truncate">{widget.title}</span>
+          <span className="font-bold text-xs text-on-surface truncate">{widget.title}</span>
         </div>
         <button
           onClick={checkHealth}
-          className="p-1 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 transition-colors"
+          className="p-1 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-white/10 transition-colors"
           title="Ping Now"
         >
           <RotateCw className="w-3 h-3" />
@@ -212,10 +212,10 @@ export const CustomMonitorWidget: React.FC<{ widget: CanvasWidget }> = ({ widget
             <XCircle className="w-5 h-5 text-rose-400" />
           )}
           <div>
-            <span className="text-xs font-bold text-white uppercase block">
+            <span className="text-xs font-bold text-on-surface uppercase block">
               {status === 'online' ? 'Operational' : status === 'checking' ? 'Testing link...' : 'Unreachable'}
             </span>
-            <span className="text-[10px] text-zinc-400">
+            <span className="text-[10px] text-on-surface-variant">
               {endpoint || (port ? `Port :${port}` : 'No target defined')}
             </span>
           </div>
@@ -228,9 +228,9 @@ export const CustomMonitorWidget: React.FC<{ widget: CanvasWidget }> = ({ widget
         )}
       </div>
 
-      <div className="pt-2 border-t border-white/5 flex items-center justify-between text-[10px] text-zinc-500">
+      <div className="pt-2 border-t border-outline-variant/50 flex items-center justify-between text-[10px] text-on-surface-variant">
         <span>Auto-ping: {widget.customConfig?.refreshSeconds || 30}s</span>
-        <span className="text-zinc-400">Node Link</span>
+        <span className="text-on-surface-variant">Node Link</span>
       </div>
     </div>
   );

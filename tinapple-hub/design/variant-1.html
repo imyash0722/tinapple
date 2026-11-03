@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Tinapple OS - Services Management (Variant 2)</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Space+Mono:ital,wght@0,400;0,700;1,400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            // Teal/Mint HCT Seed #2dd4bf palette
+            primary: "#2dd4bf",
+            "on-primary": "#003831",
+            "primary-container": "#0d534b",
+            "on-primary-container": "#7cf7e4",
+            "primary-fixed": "#7cf7e4",
+            "primary-fixed-dim": "#5eead4",
+            "on-primary-fixed": "#00201b",
+            "on-primary-fixed-variant": "#005046",
+
+            secondary: "#b1ccc6",
+            "on-secondary": "#1c3531",
+            "secondary-container": "#334b47",
+            "on-secondary-container": "#cde8e2",
+            
+            tertiary: "#f59e0b",
+            "on-tertiary": "#452b00",
+            "tertiary-container": "#644000",
+            "on-tertiary-container": "#ffddb3",
+
+            // Matte Deep Container Elevation
+            "surface-dim": "#05070f",
+            background: "#070a12",
+            "surface-container-lowest": "#05070f",
+            "surface-container-low": "#0c121f",
+            surface: "#101828",
+            "surface-container": "#131e31",
+            "surface-container-high": "#1a273f",
+            "surface-container-highest": "#243452",
+            "surface-bright": "#16233a",
+
+            "on-surface": "#ecfdf5",
+            "on-surface-variant": "#94a3b8",
+            outline: "#334155",
+            "outline-variant": "#1e293b",
+
+            error: "#f87171",
+            "on-error": "#450a0a",
+            "error-container": "#93000a",
+            "on-error-container": "#ffdad6"
+          },
+          borderRadius: {
+            DEFAULT: "0.875rem",
+            lg: "1.5rem",
+            xl: "2rem",
+            full: "9999px"
+          },
+          spacing: {
+            "space-xs": "0.25rem",
+            "space-sm": "0.5rem",
+            "space-md": "1rem",
+            "space-lg": "1.5rem",
+            "space-xl": "2rem",
+            gutter: "1rem",
+            margin: "1.5rem"
+          },
+          fontFamily: {
+            sans: ["Inter", "sans-serif"],
+            mono: ["Space Mono", "monospace"]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-family: 'Material Symbols Outlined';
+      font-weight: normal;
+      font-style: normal;
+      font-size: 20px;
+      line-height: 1;
+      display: inline-block;
+      white-space: nowrap;
+      word-wrap: normal;
+      direction: ltr;
+      -webkit-font-feature-settings: 'liga';
+      -webkit-font-smoothing: antialiased;
+    }
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+    .font-mono-num {
+      font-family: 'Space Mono', monospace;
+      letter-spacing: -0.02em;
+    }
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #05070f;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1e293b;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #334155;
+    }
+  </style>
+</head>
+<body class="bg-surface-dim text-on-surface antialiased flex h-screen overflow-hidden selection:bg-primary-container selection:text-primary">
+<!-- ========================================================================= -->
+<!-- LEFT SIDEBAR: Shared Component (SideNavBar with Teal/Emerald Indicators)   -->
+<!-- ========================================================================= -->
+<aside class="fixed top-0 left-0 h-screen w-64 border-r border-outline-variant bg-surface-container-low flex flex-col justify-between p-space-md z-40 select-none">
+<div class="flex flex-col gap-y-3.5">
+<!-- Header Brand with Rail Indicator -->
+<div class="flex items-center gap-space-sm px-space-xs">
+<div class="w-10 h-10 rounded-xl bg-primary-container/40 border border-primary/30 flex items-center justify-center text-primary flex-shrink-0">
+<span class="material-symbols-outlined" data-icon="dns">dns</span>
+</div>
+<div class="flex flex-col truncate">
+<span class="text-base font-semibold text-on-surface tracking-tight leading-snug">Tinapple OS</span>
+<span class="text-xs text-on-surface-variant flex items-center gap-1.5 font-mono-num">
+<span class="inline-block w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+          tinapple-node
+        </span>
+</div>
+</div>
+<!-- Quick Chips / Server Tools CTA -->
+<div class="flex items-center gap-1.5 overflow-hidden py-1 px-1 bg-surface-container-lowest border border-outline-variant rounded-full">
+<span class="px-2.5 py-0.5 text-xs font-medium rounded-full bg-primary/20 text-primary border border-primary/30">Server Tools</span>
+<span class="px-2 py-0.5 text-xs font-medium rounded-full text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer">Tailscale</span>
+<span class="px-2 py-0.5 text-xs font-medium rounded-full text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer">Proton VPN</span>
+</div>
+<!-- Storage Pool Breadcrumb Reference (Btrfs) -->
+<div class="px-2.5 py-1.5 rounded-lg bg-surface-container border border-outline-variant/60 flex items-center justify-between text-[11px] text-on-surface-variant">
+<span class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-sm text-primary">hard_drive</span>
+<span class="font-medium text-slate-300">Btrfs Pool #0</span>
+</span>
+<span class="font-mono-num text-primary">3.8 TB RAID1</span>
+</div>
+<!-- Navigation Order (Exact 8 items with active rail pill indicator) -->
+<nav class="flex flex-col gap-1 mt-0.5">
+<!-- 1. Dashboard -->
+<a class="group relative flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors text-sm font-medium" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="dashboard">dashboard</span>
+<span>Dashboard</span>
+</a>
+<!-- 2. Services (ACTIVE DESTINATION with Teal Tonal Pill Indicator) -->
+<a class="group relative flex items-center gap-3 px-3 py-2 rounded-lg bg-surface-container-high text-primary border border-primary/25 font-semibold text-sm transition-colors" href="#">
+<span class="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 rounded-r bg-primary"></span>
+<span class="material-symbols-outlined text-lg" data-icon="dns" style="font-variation-settings: 'FILL' 1;">dns</span>
+<span>Services</span>
+<span class="ml-auto font-mono-num text-[11px] px-1.5 py-0.5 rounded bg-primary/15 text-primary border border-primary/20">6/8</span>
+</a>
+<!-- 3. App Store -->
+<a class="group relative flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors text-sm font-medium" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="storefront">storefront</span>
+<span>App Store</span>
+</a>
+<!-- 4. Guides -->
+<a class="group relative flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors text-sm font-medium" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="menu_book">menu_book</span>
+<span>Guides</span>
+</a>
+<!-- 5. Hardware -->
+<a class="group relative flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors text-sm font-medium" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="memory">memory</span>
+<span>Hardware</span>
+</a>
+<!-- 6. Terminal -->
+<a class="group relative flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors text-sm font-medium" href="#">
+<span class="material-symbols-outlined text-lg font-mono-num" data-icon="terminal">terminal</span>
+<span>Terminal</span>
+</a>
+<!-- 7. Error Logger -->
+<a class="group relative flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors text-sm font-medium" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="bug_report">bug_report</span>
+<span>Error Logger</span>
+</a>
+<!-- 8. Settings -->
+<a class="group relative flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors text-sm font-medium" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="settings">settings</span>
+<span>Settings</span>
+</a>
+</nav>
+</div>
+<!-- Footer Controls & Sysadmin Profile -->
+<div class="flex flex-col gap-2 pt-space-sm border-t border-outline-variant">
+<div class="flex items-center justify-between px-2 py-1 text-on-surface-variant">
+<button class="flex items-center gap-1.5 hover:text-on-surface transition-colors p-1 rounded hover:bg-surface-container" title="Dark Theme active" type="button">
+<span class="material-symbols-outlined text-base text-primary" data-icon="dark_mode">dark_mode</span>
+<span class="text-xs font-medium">Dark Theme</span>
+</button>
+<button class="p-1 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors" title="Toggle Rail" type="button">
+<span class="material-symbols-outlined text-base" data-icon="push_pin">push_pin</span>
+</button>
+</div>
+<!-- Sysadmin Account Card -->
+<div class="flex items-center justify-between p-2 rounded-xl bg-surface-container-lowest hover:bg-surface-container transition-colors cursor-pointer border border-outline-variant">
+<div class="flex items-center gap-2.5 truncate">
+<div class="w-8 h-8 rounded-lg bg-surface-container-highest flex items-center justify-center text-primary border border-outline flex-shrink-0">
+<span class="material-symbols-outlined text-base" data-icon="account_circle">account_circle</span>
+</div>
+<div class="flex flex-col truncate">
+<span class="text-xs font-semibold text-on-surface truncate">sysadmin</span>
+<span class="text-[11px] font-mono-num text-on-surface-variant truncate">node: 127.0.0.1</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant text-base">expand_more</span>
+</div>
+</div>
+</aside>
+<!-- ========================================================================= -->
+<!-- MAIN VIEW CONTAINER                                                       -->
+<!-- ========================================================================= -->
+<div class="ml-64 flex-1 flex flex-col h-screen overflow-hidden bg-background">
+<!-- Top System Status Bar -->
+<header class="sticky top-0 w-full border-b border-outline-variant bg-surface-container-lowest/90 backdrop-blur z-30 flex items-center justify-between px-space-lg py-space-sm h-14 select-none">
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-2">
+<span class="text-sm font-semibold text-on-surface font-mono-num">tinapple-node</span>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/30">
+<span class="w-1.5 h-1.5 rounded-full bg-primary mr-1.5 animate-pulse"></span>
+          Online
+        </span>
+</div>
+<div class="h-4 w-px bg-outline-variant"></div>
+<!-- Telemetry Network Pills with Monospace Tabular Numerics -->
+<div class="flex items-center gap-3 text-xs font-mono-num text-on-surface-variant">
+<div class="flex items-center gap-1.5 hover:text-on-surface transition-colors cursor-default">
+<span class="material-symbols-outlined text-sm text-primary" data-icon="wifi">wifi</span>
+<span>192.168.1.120</span>
+</div>
+<span class="text-outline">/</span>
+<div class="flex items-center gap-1.5 hover:text-on-surface transition-colors cursor-default">
+<span class="material-symbols-outlined text-sm text-secondary" data-icon="dns">dns</span>
+<span>100.84.22.9</span>
+</div>
+<span class="text-outline">/</span>
+<div class="flex items-center gap-1 hover:text-on-surface transition-colors cursor-default">
+<span class="text-slate-400">Up 14d 06h</span>
+</div>
+<span class="text-outline">/</span>
+<div class="flex items-center gap-1 hover:text-on-surface transition-colors cursor-default">
+<span class="text-slate-400">Load 0.42</span>
+</div>
+</div>
+</div>
+<!-- Trailing Action Badges -->
+<div class="flex items-center gap-2.5">
+<button class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/30 text-xs font-medium hover:bg-amber-500/20 transition-colors" type="button">
+<span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping"></span>
+        Update Available
+      </button>
+<div class="flex items-center gap-1 text-on-surface-variant border-l border-outline-variant pl-2">
+<button class="p-1.5 rounded-lg hover:bg-surface-container-high hover:text-on-surface transition-colors" title="Notifications" type="button">
+<span class="material-symbols-outlined text-lg" data-icon="notifications">notifications</span>
+</button>
+<button class="p-1.5 rounded-lg hover:bg-surface-container-high hover:text-on-surface transition-colors" title="Terminal Access" type="button">
+<span class="material-symbols-outlined text-lg" data-icon="terminal">terminal</span>
+</button>
+<button class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-surface-container-high text-on-surface hover:bg-surface-container-highest border border-outline-variant text-xs font-medium ml-1 transition-colors" type="button">
+<span class="material-symbols-outlined text-sm text-error" data-icon="restart_alt">restart_alt</span>
+<span>Reboot</span>
+</button>
+</div>
+</div>
+</header>
+<!-- CONTENT SCROLL AREA -->
+<main class="flex-1 overflow-y-auto px-space-lg pt-5 pb-28">
+<div class="max-w-[1184px] mx-auto flex flex-col gap-5">
+<!-- SERVICES HEADER BAR -->
+<section class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+<div class="flex items-center gap-3.5">
+<h1 class="text-2xl font-bold text-on-surface tracking-tight">Services Management</h1>
+<span class="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-medium font-mono-num bg-primary/10 text-primary border border-primary/30">
+<span class="w-1.5 h-1.5 rounded-full bg-primary mr-2"></span>
+            6 / 8 Active
+          </span>
+<!-- Component Reference Tag -->
+<span class="text-[11px] font-mono-num px-2 py-0.5 rounded bg-surface-container border border-outline-variant text-on-surface-variant">
+            HCT #2dd4bf / Inter + Space Mono
+          </span>
+</div>
+<div class="flex items-center gap-3">
+<button class="h-9 px-3.5 rounded-full border border-outline-variant bg-surface-container hover:bg-surface-container-high text-on-surface text-xs font-medium inline-flex items-center gap-2 transition-colors" type="button">
+<span class="material-symbols-outlined text-base" data-icon="sync">sync</span>
+<span>Restart All</span>
+</button>
+<button class="h-9 px-4 rounded-full bg-primary text-on-primary font-semibold text-xs inline-flex items-center gap-1.5 shadow-none hover:bg-primary-fixed-dim transition-colors" type="button">
+<span class="material-symbols-outlined text-base font-bold" data-icon="add">add</span>
+<span>Add Container</span>
+</button>
+</div>
+</section>
+<!-- M3 SWITCH STATES & INTERACTIVE SPEC REFERENCE BAR -->
+<section class="p-3 rounded-xl bg-surface-container-low border border-outline-variant flex flex-wrap items-center justify-between gap-3 text-xs">
+<div class="flex items-center gap-2 text-on-surface-variant font-mono-num text-[11px]">
+<span class="material-symbols-outlined text-base text-primary">tune</span>
+<span class="font-semibold text-on-surface">M3 Switch State Spec:</span>
+</div>
+<div class="flex flex-wrap items-center gap-4 text-[11px] text-on-surface-variant">
+<!-- State 1: Active ON -->
+<div class="flex items-center gap-2">
+<div class="relative w-[48px] h-[28px] rounded-full bg-primary flex items-center p-0.5 cursor-pointer">
+<div class="w-6 h-6 rounded-full bg-on-primary ml-auto shadow-sm"></div>
+</div>
+<span>On (Active)</span>
+</div>
+<!-- State 2: Pressed State (28px thumb) -->
+<div class="flex items-center gap-2">
+<div class="relative w-[48px] h-[28px] rounded-full bg-primary-container border border-primary/40 flex items-center p-0.5 cursor-pointer">
+<div class="w-6 h-6 rounded-full bg-primary ml-auto flex items-center justify-center">
+<span class="w-1.5 h-1.5 rounded-full bg-on-primary"></span>
+</div>
+</div>
+<span>Pressed (28px thumb)</span>
+</div>
+<!-- State 3: Standby / OFF -->
+<div class="flex items-center gap-2">
+<div class="relative w-[48px] h-[28px] rounded-full border border-outline bg-surface-container-lowest flex items-center px-1 cursor-pointer">
+<div class="w-4 h-4 rounded-full bg-outline"></div>
+</div>
+<span>Off (Standby)</span>
+</div>
+<!-- State 4: Disabled (38% opacity) -->
+<div class="flex items-center gap-2 opacity-[0.38] cursor-not-allowed">
+<div class="relative w-[48px] h-[28px] rounded-full border border-outline bg-surface-container-lowest flex items-center px-1">
+<div class="w-4 h-4 rounded-full bg-outline"></div>
+</div>
+<span>Disabled (38% α)</span>
+</div>
+<!-- State 5: Focus-visible Ring -->
+<div class="flex items-center gap-2">
+<div class="relative w-[48px] h-[28px] rounded-full bg-primary flex items-center p-0.5 ring-2 ring-primary ring-offset-2 ring-offset-surface-dim">
+<div class="w-6 h-6 rounded-full bg-on-primary ml-auto"></div>
+</div>
+<span>Focus-Visible</span>
+</div>
+</div>
+</section>
+<!-- FILTER & SEARCH TOOLBAR -->
+<section class="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 p-2 bg-surface-container-lowest border border-outline-variant rounded-xl">
+<!-- Filter Chips -->
+<div class="flex items-center gap-1.5 overflow-x-auto pb-1 lg:pb-0 scrollbar-none text-xs">
+<button class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/15 text-primary border border-primary/30 font-semibold" type="button">
+<span class="material-symbols-outlined text-sm" data-icon="check">check</span>
+<span>All Services</span>
+<span class="ml-1 px-1.5 py-0.2 bg-primary/20 rounded-full font-mono-num text-[10px]">8</span>
+</button>
+<button class="px-3 py-1.5 rounded-full bg-surface-container text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high border border-outline-variant transition-colors" type="button">
+            Media &amp; Streaming
+          </button>
+<button class="px-3 py-1.5 rounded-full bg-surface-container text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high border border-outline-variant transition-colors" type="button">
+            Downloaders
+          </button>
+<button class="px-3 py-1.5 rounded-full bg-surface-container text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high border border-outline-variant transition-colors" type="button">
+            Productivity &amp; Storage
+          </button>
+<button class="px-3 py-1.5 rounded-full bg-surface-container text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high border border-outline-variant transition-colors" type="button">
+            Automation
+          </button>
+<button class="px-3 py-1.5 rounded-full bg-surface-container text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high border border-outline-variant transition-colors" type="button">
+            Monitoring
+          </button>
+</div>
+<!-- Integrated Search and Sort Dropdown -->
+<div class="flex items-center gap-2 flex-shrink-0">
+<div class="relative flex items-center min-w-[260px]">
+<span class="material-symbols-outlined absolute left-3 text-on-surface-variant text-base pointer-events-none" data-icon="search">search</span>
+<input class="w-full h-8 pl-8 pr-12 rounded-full bg-surface-container border border-outline-variant text-on-surface placeholder:text-on-surface-variant text-xs focus:outline-none focus:border-primary transition-colors" placeholder="Search containers, ports, tags..." type="text"/>
+<span class="absolute right-2.5 px-1.5 py-0.5 bg-surface-container-highest border border-outline-variant rounded font-mono text-[9px] text-on-surface-variant">⌘K</span>
+</div>
+<button class="h-8 px-3 rounded-full bg-surface-container border border-outline-variant text-on-surface hover:text-primary text-xs inline-flex items-center gap-1.5 transition-colors" type="button">
+<span class="text-on-surface-variant">Sort:</span>
+<span class="font-medium">Status</span>
+<span class="material-symbols-outlined text-sm text-on-surface-variant" data-icon="expand_more">expand_more</span>
+</button>
+</div>
+</section>
+<!-- SERVICES BENTO / CARD GRID (3 Columns / 2 Rows, exact services preserved) -->
+<section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+<!-- 1. Jellyfin (Media Server) -->
+<article class="group rounded-2xl border border-outline-variant bg-surface p-4 flex flex-col justify-between hover:bg-surface-container hover:border-slate-600 transition-colors">
+<div>
+<div class="flex items-start justify-between gap-3 mb-3">
+<div class="flex items-center gap-3">
+<div class="w-11 h-11 rounded-xl bg-surface-container-high border border-outline-variant flex items-center justify-center text-primary flex-shrink-0">
+<span class="material-symbols-outlined text-2xl" data-icon="play_circle">play_circle</span>
+</div>
+<div>
+<h3 class="text-base font-semibold text-on-surface leading-tight">Jellyfin</h3>
+<span class="text-xs text-on-surface-variant">Media Server</span>
+</div>
+</div>
+<!-- M3 Switch: ON state with focus-visible compatibility -->
+<div class="relative w-[48px] h-[28px] rounded-full bg-primary flex items-center p-0.5 cursor-pointer flex-shrink-0 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface" tabindex="0" title="Toggle Service">
+<div class="w-6 h-6 rounded-full bg-on-primary ml-auto shadow-sm transition-transform"></div>
+</div>
+</div>
+<!-- Status & Latency -->
+<div class="flex items-center justify-between text-xs py-1.5 border-b border-outline-variant/60 font-mono-num">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<span class="text-on-surface font-sans font-medium">Active / Online</span>
+</div>
+<div class="flex items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined text-sm" data-icon="speed">speed</span>
+<span>4ms</span>
+</div>
+</div>
+<!-- Nested Metrics Subcard with Space Mono Tabular Figures -->
+<div class="mt-3 p-2.5 rounded-xl bg-surface-container-lowest border border-outline-variant grid grid-cols-3 gap-2 text-center font-mono-num">
+<div class="flex flex-col">
+<span class="text-[10px] uppercase font-sans text-on-surface-variant">Port</span>
+<span class="text-xs font-semibold text-on-surface">8096</span>
+</div>
+<div class="flex flex-col border-x border-outline-variant">
+<span class="text-[10px] uppercase font-sans text-on-surface-variant">CPU</span>
+<span class="text-xs font-semibold text-primary">2.1%</span>
+</div>
+<div class="flex flex-col">
+<span class="text-[10px] uppercase font-sans text-on-surface-variant">RAM</span>
+<span class="text-xs font-semibold text-on-surface">820 MB</span>
+</div>
+</div>
+</div>
+<!-- Action Buttons -->
+<div class="flex items-center gap-2 mt-4 pt-3 border-t border-outline-variant/60">
+<button class="flex-1 h-8 rounded-full bg-surface-container-high text-primary border border-primary/25 hover:bg-primary/20 text-xs inline-flex items-center justify-center gap-1.5 font-semibold transition-colors" type="button">
+<span class="material-symbols-outlined text-sm" data-icon="open_in_new">open_in_new</span>
+<span>Launch</span>
+</button>
+<button class="h-8 px-3.5 rounded-full border border-outline bg-transparent hover:bg-surface-container-high text-on-surface text-xs font-medium inline-flex items-center justify-center gap-1 transition-colors" type="button">
+<span class="material-symbols-outlined text-sm text-on-surface-variant" data-icon="article">article</span>
+<span>Logs</span>
+</button>
+</div>
+</article>
+<!-- 2. qBittorrent (BitTorrent Client) -->
+<article class="group rounded-2xl border border-outline-variant bg-surface p-4 flex flex-col justify-between hover:bg-surface-container hover:border-slate-600 transition-colors">
+<div>
+<div class="flex items-start justify-between gap-3 mb-3">
+<div class="flex items-center gap-3">
+<div class="w-11 h-11 rounded-xl bg-surface-container-high border border-outline-variant flex items-center justify-center text-primary flex-shrink-0">
+<span class="material-symbols-outlined text-2xl" data-icon="downloading">downloading</span>
+</div>
+<div>
+<h3 class="text-base font-semibold text-on-surface leading-tight">qBittorrent</h3>
+<span class="text-xs text-on-surface-variant">BitTorrent Client</span>
+</div>
+</div>
+<!-- M3 Switch: ON state -->
+<div class="relative w-[48px] h-[28px] rounded-full bg-primary flex items-center p-0.5 cursor-pointer flex-shrink-0 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface" tabindex="0" title="Toggle Service">
+<div class="w-6 h-6 rounded-full bg-on-primary ml-auto shadow-sm transition-transform"></div>
+</div>
+</div>
+<!-- Status & Latency -->
+<div class="flex items-center justify-between text-xs py-1.5 border-b border-outline-variant/60 font-mono-num">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<span class="text-on-surface font-sans font-medium">Active / Seeding 14</span>
+</div>
+<div class="flex items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined text-sm" data-icon="speed">speed</span>
+<span>1ms</span>
+</div>
+</div>
+<!-- Metrics -->
+<div class="mt-3 p-2.5 rounded-xl bg-surface-container-lowest border border-outline-variant grid grid-cols-3 gap-2 text-center font-mono-num">
+<div class="flex flex-col">
+<span class="text-[10px] uppercase font-sans text-on-surface-variant">Port</span>
+<span class="text-xs font-semibold text-on-surface">8080</span>
+</div>
+<div class="flex flex-col border-x border-outline-variant">
+<span class="text-[10px] uppercase font-sans text-on-surface-variant">DL Speed</span>
+<span class="text-xs font-semibold text-primary">18.2 MB/s</span>
+</div>
+<div class="flex flex-col">
+<span class="text-[10px] uppercase font-sans text-on-surface-variant">UL Speed</span>
+<span class="text-xs font-semibold text-secondary">4.1 MB/s</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-2 mt-4 pt-3 border-t border-outline-variant/60">
+<button class="flex-1 h-8 rounded-full bg-surface-container-high text-primary border border-primary/25 hover:bg-primary/20 text-xs inline-flex items-center justify-center gap-1.5 font-semibold transition-colors" type="button">
+<span class="material-symbols-outlined text-sm" data-icon="open_in_new">open_in_new</span>
+<span>Launch</span>
+</button>
+<button class="h-8 px-3.5 rounded-full border border-outline bg-transparent hover:bg-surface-container-high text-on-surface text-xs font-medium inline-flex items-center justify-center gap-1 transition-colors" type="button">
+<span class="material-symbols-outlined text-sm text-on-surface-variant" data-icon="article">article</span>
+<span>Logs</span>
+</button>
+</div>
+</article>
+<!-- 3. Suwayomi (Manga Reader Server) -->
+<article class="group rounded-2xl border border-outline-variant bg-surface p-4 flex flex-col justify-between hover:bg-surface-container hover:border-slate-600 transition-colors">
+<div>
+<div class="flex items-start justify-between gap-3 mb-3">
+<div class="flex items-center gap-3">
+<div class="w-11 h-11 rounded-xl bg-surface-container-high border border-outline-variant flex items-center justify-center text-primary flex-shrink-0">
+<span class="material-symbols-outlined text-2xl" data-icon="auto_stories">auto_stories</span>
+</div>
+<div>
+<h3 class="text-base font-semibold text-on-surface leading-tight">Suwayomi</h3>
+<span class="text-xs text-on-surface-variant">Manga Reader Server</span>
+</div>
+</div>
+<!-- M3 Switch: ON state (Pressed State Ref variant) -->
+<div class="relative w-[48px] h-[28px] rounded-full bg-primary flex items-center p-0.5 cursor-pointer flex-shrink-0 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface" tabindex="0" title="Toggle Service">
+<div class="w-6 h-6 rounded-full bg-on-primary ml-auto shadow-sm transition-transform"></div>
+</div>
+</div>
+<div class="flex items-center justify-between text-xs py-1.5 border-b border-outline-variant/60 font-mono-num">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<span class="text-on-surface font-sans font-medium">Active / Online</span>
+</div>
+<div class="flex items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined text-sm" data-icon="speed">speed</span>
+<span>12ms</span>
+</div>
+</div>
+<div class="mt-3 p-2.5 rounded-xl bg-surface-container-lowest border border-outline-variant grid grid-cols-2 gap-2 text-center font-mono-num">
+<div class="flex flex-col border-r border-outline-variant">
+<span class="text-[10px] uppercase font-sans text-on-surface-variant">Port</span>
+<span class="text-xs font-semibold text-on-surface">4567</span>
+</div>
+<div class="flex flex-col">
+<span class="text-[10px] uppercase font-sans text-on-surface-variant">Synced Content</span>
+<span class="text-xs font-semibold text-on-surface">48 chapters</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-2 mt-4 pt-3 border-t border-outline-variant/60">
+<button class="flex-1 h-8 rounded-full bg-surface-container-high text-primary border border-primary/25 hover:bg-primary/20 text-xs inline-flex items-center justify-center gap-1.5 font-semibold transition-colors" type="button">
+<span class="material-symbols-outlined text-sm" data-icon="open_in_new">open_in_new</span>
+<span>Launch</span>
+</button>
+<button class="h-8 px-3.5 rounded-full border border-outline bg-transparent hover:bg-surface-container-high text-on-surface text-xs font-medium inline-flex items-center justify-center gap-1 transition-colors" type="button">
+<span class="material-symbols-outlined text-sm text-on-surface-variant" data-icon="article">article</span>
+<span>Logs</span>
+</button>
+</div>
+</article>
+<!-- 4. Radarr (Movie Management) -->
+<article class="group rounded-2xl border border-outline-variant bg-surface p-4 flex flex-col justify-between hover:bg-surface-container hover:border-slate-600 transition-colors">
+<div>
+<div class="flex items-start justify-between gap-3 mb-3">
+<div class="flex items-center gap-3">
+<div class="w-11 h-11 rounded-xl bg-surface-container-high border border-outline-variant flex items-center justify-center text-primary flex-shrink-0">
+<span class="material-symbols-outlined text-2xl" data-icon="movie">movie</span>
+</div>
+<div>
+<h3 class="text-base font-semibold text-on-surface leading-tight">Radarr</h3>
+<span class="text-xs text-on-surface-variant">Movie Management</span>
+</div>
+</div>
+<!-- M3 Switch: ON state -->
+<div class="relative w-[48px] h-[28px] rounded-full bg-primary flex items-center p-0.5 cursor-pointer flex-shrink-0 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface" tabindex="0" title="Toggle Service">
+<div class="w-6 h-6 rounded-full bg-on-primary ml-auto shadow-sm transition-transform"></div>
+</div>
+</div>
+<div class="flex items-center justify-between text-xs py-1.5 border-b border-outline-variant/60 font-mono-num">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<span class="text-on-surface font-sans font-medium">Active / Online</span>
+</div>
+<div class="flex items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined text-sm" data-icon="speed">speed</span>
+<span>9ms</span>
+</div>
+</div>
+<div class="mt-3 p-2.5 rounded-xl bg-surface-container-lowest border border-outline-variant grid grid-cols-2 gap-2 text-center font-mono-num">
+<div class="flex flex-col border-r border-outline-variant">
+<span class="text-[10px] uppercase font-sans text-on-surface-variant">Port</span>
+<span class="text-xs font-semibold text-on-surface">7878</span>
+</div>
+<div class="flex flex-col">
+<span class="text-[10px] uppercase font-sans text-on-surface-variant">Library State</span>
+<span class="text-xs font-semibold text-on-surface">342 movies</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-2 mt-4 pt-3 border-t border-outline-variant/60">
+<button class="flex-1 h-8 rounded-full bg-surface-container-high text-primary border border-primary/25 hover:bg-primary/20 text-xs inline-flex items-center justify-center gap-1.5 font-semibold transition-colors" type="button">
+<span class="material-symbols-outlined text-sm" data-icon="open_in_new">open_in_new</span>
+<span>Launch</span>
+</button>
+<button class="h-8 px-3.5 rounded-full border border-outline bg-transparent hover:bg-surface-container-high text-on-surface text-xs font-medium inline-flex items-center justify-center gap-1 transition-colors" type="button">
+<span class="material-symbols-outlined text-sm text-on-surface-variant" data-icon="article">article</span>
+<span>Logs</span>
+</button>
+</div>
+</article>
+<!-- 5. Navidrome (Music Streamer) -->
+<article class="group rounded-2xl border border-outline-variant bg-surface p-4 flex flex-col justify-between hover:bg-surface-container hover:border-slate-600 transition-colors">
+<div>
+<div class="flex items-start justify-between gap-3 mb-3">
+<div class="flex items-center gap-3">
+<div class="w-11 h-11 rounded-xl bg-surface-container-high border border-outline-variant flex items-center justify-center text-primary flex-shrink-0">
+<span class="material-symbols-outlined text-2xl" data-icon="music_note">music_note</span>
+</div>
+<div>
+<h3 class="text-base font-semibold text-on-surface leading-tight">Navidrome</h3>
+<span class="text-xs text-on-surface-variant">Music Streamer</span>
+</div>
+</div>
+<!-- M3 Switch: ON state -->
+<div class="relative w-[48px] h-[28px] rounded-full bg-primary flex items-center p-0.5 cursor-pointer flex-shrink-0 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface" tabindex="0" title="Toggle Service">
+<div class="w-6 h-6 rounded-full bg-on-primary ml-auto shadow-sm transition-transform"></div>
+</div>
+</div>
+<div class="flex items-center justify-between text-xs py-1.5 border-b border-outline-variant/60 font-mono-num">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<span class="text-on-surface font-sans font-medium">Active / Online</span>
+</div>
+<div class="flex items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined text-sm" data-icon="speed">speed</span>
+<span>3ms</span>
+</div>
+</div>
+<div class="mt-3 p-2.5 rounded-xl bg-surface-container-lowest border border-outline-variant grid grid-cols-2 gap-2 text-center font-mono-num">
+<div class="flex flex-col border-r border-outline-variant">
+<span class="text-[10px] uppercase font-sans text-on-surface-variant">Port</span>
+<span class="text-xs font-semibold text-on-surface">4533</span>
+</div>
+<div class="flex flex-col">
+<span class="text-[10px] uppercase font-sans text-on-surface-variant">Tracks Indexed</span>
+<span class="text-xs font-semibold text-on-surface">12,450 audio</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-2 mt-4 pt-3 border-t border-outline-variant/60">
+<button class="flex-1 h-8 rounded-full bg-surface-container-high text-primary border border-primary/25 hover:bg-primary/20 text-xs inline-flex items-center justify-center gap-1.5 font-semibold transition-colors" type="button">
+<span class="material-symbols-outlined text-sm" data-icon="open_in_new">open_in_new</span>
+<span>Launch</span>
+</button>
+<button class="h-8 px-3.5 rounded-full border border-outline bg-transparent hover:bg-surface-container-high text-on-surface text-xs font-medium inline-flex items-center justify-center gap-1 transition-colors" type="button">
+<span class="material-symbols-outlined text-sm text-on-surface-variant" data-icon="article">article</span>
+<span>Logs</span>
+</button>
+</div>
+</article>
+<!-- 6. FileBrowser (Web File Manager) - Standby / Paused & Specific Btrfs / Port 8088 Ref -->
+<article class="group rounded-2xl border border-outline-variant bg-surface p-4 flex flex-col justify-between hover:bg-surface-container hover:border-slate-600 transition-colors opacity-90">
+<div>
+<div class="flex items-start justify-between gap-3 mb-3">
+<div class="flex items-center gap-3">
+<div class="w-11 h-11 rounded-xl bg-surface-container-high border border-outline-variant flex items-center justify-center text-on-surface-variant flex-shrink-0">
+<span class="material-symbols-outlined text-2xl" data-icon="folder_open">folder_open</span>
+</div>
+<div>
+<h3 class="text-base font-semibold text-on-surface leading-tight">FileBrowser</h3>
+<span class="text-xs text-on-surface-variant">Web File Manager</span>
+</div>
+</div>
+<!-- M3 Switch: OFF / Standby State -->
+<div class="relative w-[48px] h-[28px] rounded-full border-2 border-outline bg-surface-container-lowest flex items-center px-1 cursor-pointer flex-shrink-0 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface" tabindex="0" title="Toggle Service">
+<div class="w-4 h-4 rounded-full bg-outline transition-transform"></div>
+</div>
+</div>
+<div class="flex items-center justify-between text-xs py-1.5 border-b border-outline-variant/60 font-mono-num">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-amber-400"></span>
+<span class="text-amber-300 font-sans font-medium">Standby / Paused</span>
+</div>
+<div class="flex items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined text-sm" data-icon="speed">speed</span>
+<span>--</span>
+</div>
+</div>
+<!-- Btrfs and Port 8088 references preserved -->
+<div class="mt-3 p-2.5 rounded-xl bg-surface-container-lowest border border-outline-variant grid grid-cols-2 gap-2 text-center font-mono-num">
+<div class="flex flex-col border-r border-outline-variant">
+<span class="text-[10px] uppercase font-sans text-on-surface-variant">Port</span>
+<span class="text-xs font-semibold text-on-surface">8088</span>
+</div>
+<div class="flex flex-col">
+<span class="text-[10px] uppercase font-sans text-on-surface-variant">Storage Pool</span>
+<span class="text-xs font-semibold text-on-surface">3.8 TB Btrfs</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-2 mt-4 pt-3 border-t border-outline-variant/60">
+<button class="flex-1 h-8 rounded-full bg-surface-container text-on-surface-variant border border-outline hover:text-primary hover:border-primary/40 text-xs inline-flex items-center justify-center gap-1.5 font-medium transition-colors" type="button">
+<span class="material-symbols-outlined text-sm" data-icon="play_arrow">play_arrow</span>
+<span>Resume</span>
+</button>
+<button class="h-8 px-3.5 rounded-full border border-outline bg-transparent hover:bg-surface-container-high text-on-surface text-xs font-medium inline-flex items-center justify-center gap-1 transition-colors" type="button">
+<span class="material-symbols-outlined text-sm text-on-surface-variant" data-icon="article">article</span>
+<span>Logs</span>
+</button>
+</div>
+</article>
+</section>
+</div>
+</main>
+<!-- ========================================================================= -->
+<!-- FLOATING SERVICE DOCK                                                     -->
+<!-- ========================================================================= -->
+<div class="fixed bottom-5 left-[calc(16rem+(100vw-16rem)/2)] -translate-x-1/2 z-30 pointer-events-auto">
+<div class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface-container/95 border border-outline-variant backdrop-blur-md">
+<!-- Service shortcut icons -->
+<button class="w-8 h-8 rounded-full bg-surface-container-high hover:bg-primary/20 hover:text-primary text-on-surface flex items-center justify-center transition-colors" title="Jellyfin" type="button">
+<span class="material-symbols-outlined text-base" data-icon="play_circle">play_circle</span>
+</button>
+<button class="w-8 h-8 rounded-full bg-surface-container-high hover:bg-primary/20 hover:text-primary text-on-surface flex items-center justify-center transition-colors" title="qBittorrent" type="button">
+<span class="material-symbols-outlined text-base" data-icon="downloading">downloading</span>
+</button>
+<button class="w-8 h-8 rounded-full bg-surface-container-high hover:bg-primary/20 hover:text-primary text-on-surface flex items-center justify-center transition-colors" title="Radarr" type="button">
+<span class="material-symbols-outlined text-base" data-icon="movie">movie</span>
+</button>
+<button class="w-8 h-8 rounded-full bg-surface-container-high hover:bg-primary/20 hover:text-primary text-on-surface flex items-center justify-center transition-colors" title="Navidrome" type="button">
+<span class="material-symbols-outlined text-base" data-icon="music_note">music_note</span>
+</button>
+<div class="w-px h-4 bg-outline-variant mx-0.5"></div>
+<!-- Library Sync Indicator with Monospace timing -->
+<div class="flex items-center gap-2 px-2.5 py-1 rounded-full bg-surface-container-lowest border border-outline-variant text-xs text-on-surface font-mono-num">
+<span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+<span class="font-sans font-medium text-slate-200">Sync: Complete</span>
+<span class="text-on-surface-variant">0.1s ago</span>
+</div>
+<button class="w-8 h-8 rounded-full bg-surface-container-high hover:bg-surface-container-highest text-on-surface-variant hover:text-primary flex items-center justify-center transition-colors" title="Quick Terminal" type="button">
+<span class="material-symbols-outlined text-base font-mono-num" data-icon="terminal">terminal</span>
+</button>
+</div>
+</div>
+</div>
+</body></html>

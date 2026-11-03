@@ -276,19 +276,19 @@ export const SettingsManifest: React.FC<SettingsManifestProps> = ({
   return (
     <div className="space-y-6">
       <SpotlightCard
-        className="p-6 bg-[#0e1116] border-[#353c4a]"
+        className="p-6 bg-surface-container-low border-[#353c4a]"
         spotlightColor="rgb(var(--tinapple-accent-rgb) / 0.15)"
         borderColor="rgb(var(--tinapple-accent-rgb) / 0.45)"
       >
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-2xl bg-tinapple-gold/15 text-tinapple-gold border border-tinapple-gold/25 shadow-md shadow-tinapple-gold/10">
+            <div className="p-2.5 rounded-2xl bg-tinapple-gold/15 text-tinapple-gold border border-tinapple-gold/25 shadow-none shadow-tinapple-gold/10">
               <Settings className="w-5 h-5" />
             </div>
             <div>
               <div>
-                <h2 className="text-lg font-bold text-white tracking-tight font-mono uppercase">
+                <h2 className="text-lg font-bold text-on-surface tracking-tight font-mono uppercase">
                   SYSTEM MANIFEST ENGINE
                 </h2>
               </div>
@@ -348,9 +348,9 @@ export const SettingsManifest: React.FC<SettingsManifestProps> = ({
         )}
 
         {/* LIVE CONNECTIVITY & HARDWARE STATE */}
-        <div className="mb-6 p-4 rounded-2xl bg-slate-900/80 border border-slate-700/60 font-mono text-xs space-y-3">
+        <div className="mb-6 p-4 rounded-2xl bg-surface-container-low border border-slate-700/60 font-mono text-xs space-y-3">
           <div className="flex items-center justify-between pb-2 border-b border-slate-800">
-            <span className="text-slate-400 font-bold uppercase tracking-wider flex items-center gap-2">
+            <span className="text-on-surface-variant font-bold uppercase tracking-wider flex items-center gap-2">
               <Network className="w-4 h-4 text-emerald-400" />
               <span>Active Server Links & Remote Access</span>
             </span>
@@ -360,20 +360,20 @@ export const SettingsManifest: React.FC<SettingsManifestProps> = ({
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div className="p-3 rounded-xl bg-slate-950/70 border border-slate-800">
-              <span className="text-[10px] text-slate-500 block uppercase">Tailscale Mesh</span>
+            <div className="p-3 rounded-xl bg-surface-container-low border border-slate-800">
+              <span className="text-[10px] text-on-surface-variant block uppercase">Tailscale Mesh</span>
               <span className="text-emerald-300 font-bold text-xs">100.86.103.100</span>
               <span className="text-[10px] text-emerald-500/80 block mt-0.5">● Connected & Encrypted</span>
             </div>
 
-            <div className="p-3 rounded-xl bg-slate-950/70 border border-slate-800">
-              <span className="text-[10px] text-slate-500 block uppercase">Wi-Fi Hotspot Link</span>
+            <div className="p-3 rounded-xl bg-surface-container-low border border-slate-800">
+              <span className="text-[10px] text-on-surface-variant block uppercase">Wi-Fi Hotspot Link</span>
               <span className="text-blue-300 font-bold text-xs">10.178.125.71</span>
               <span className="text-[10px] text-blue-400/80 block mt-0.5">● Redmi Note 9 Pro Max</span>
             </div>
 
-            <div className="p-3 rounded-xl bg-slate-950/70 border border-slate-800">
-              <span className="text-[10px] text-slate-500 block uppercase">UFW Firewall</span>
+            <div className="p-3 rounded-xl bg-surface-container-low border border-slate-800">
+              <span className="text-[10px] text-on-surface-variant block uppercase">UFW Firewall</span>
               <span className="text-purple-300 font-bold text-xs">Active & Enforced</span>
               <span className="text-[10px] text-purple-400/80 block mt-0.5">Tailscale & Hotspot Allowed</span>
             </div>
@@ -391,7 +391,7 @@ export const SettingsManifest: React.FC<SettingsManifestProps> = ({
             {/* Hostname with inline validation */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-white uppercase tracking-wider">
+                <label className="text-xs font-bold text-on-surface uppercase tracking-wider">
                   Appliance Hostname <span className="text-red-400">*</span>
                 </label>
                 <span className="text-[10px] text-tinapple-muted">RFC 1123 compliant</span>
@@ -401,7 +401,7 @@ export const SettingsManifest: React.FC<SettingsManifestProps> = ({
                 value={hostname}
                 onChange={(e) => setHostname(e.target.value.toLowerCase())}
                 placeholder="e.g. tinapple-appliance"
-                className={`w-full px-3.5 py-2.5 rounded-xl bg-tinapple-dark/90 border text-xs text-white focus:outline-none transition-colors ${
+                className={`w-full px-3.5 py-2.5 rounded-xl bg-tinapple-dark/90 border text-xs text-on-surface focus:outline-none transition-colors ${
                   errors.hostname
                     ? 'border-red-500 bg-red-500/10 focus:border-red-400'
                     : 'border-tinapple-border focus:border-tinapple-gold'
@@ -418,7 +418,7 @@ export const SettingsManifest: React.FC<SettingsManifestProps> = ({
 
             {/* Display Session Mode (Niri Wayland Station) */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-white uppercase tracking-wider">
+              <label className="text-xs font-bold text-on-surface uppercase tracking-wider">
                 Session Mode (Niri Wayland / Headless)
               </label>
               <div className="grid grid-cols-3 gap-1.5 p-1 rounded-xl bg-tinapple-dark/90 border border-tinapple-border">
@@ -430,7 +430,7 @@ export const SettingsManifest: React.FC<SettingsManifestProps> = ({
                     className={`py-2 text-xs font-bold rounded-lg capitalize transition-all ${
                       sessionMode === mode
                         ? 'bg-tinapple-gold text-tinapple-dark shadow-sm'
-                        : 'text-tinapple-subtext hover:text-white'
+                        : 'text-tinapple-subtext hover:text-on-surface'
                     }`}
                   >
                     {mode === 'interactive' ? 'Niri Wayland' : mode}
@@ -451,7 +451,7 @@ export const SettingsManifest: React.FC<SettingsManifestProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5 font-mono">
             {/* Web Hub Port */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-white uppercase tracking-wider">
+              <label className="text-xs font-bold text-on-surface uppercase tracking-wider">
                 Web Hub Dashboard Port <span className="text-red-400">*</span>
               </label>
               <input
@@ -460,7 +460,7 @@ export const SettingsManifest: React.FC<SettingsManifestProps> = ({
                 max="65535"
                 value={webPort}
                 onChange={(e) => setWebPort(e.target.value)}
-                className={`w-full px-3.5 py-2.5 rounded-xl bg-tinapple-dark/90 border text-xs text-white focus:outline-none transition-colors ${
+                className={`w-full px-3.5 py-2.5 rounded-xl bg-tinapple-dark/90 border text-xs text-on-surface focus:outline-none transition-colors ${
                   errors.webPort
                     ? 'border-red-500 bg-red-500/10 focus:border-red-400'
                     : 'border-tinapple-border focus:border-tinapple-gold'
@@ -476,7 +476,7 @@ export const SettingsManifest: React.FC<SettingsManifestProps> = ({
 
             {/* SSH Daemon Port */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-white uppercase tracking-wider">
+              <label className="text-xs font-bold text-on-surface uppercase tracking-wider">
                 OpenSSH Server Port <span className="text-red-400">*</span>
               </label>
               <input
@@ -485,7 +485,7 @@ export const SettingsManifest: React.FC<SettingsManifestProps> = ({
                 max="65535"
                 value={sshPort}
                 onChange={(e) => setSshPort(e.target.value)}
-                className={`w-full px-3.5 py-2.5 rounded-xl bg-tinapple-dark/90 border text-xs text-white focus:outline-none transition-colors ${
+                className={`w-full px-3.5 py-2.5 rounded-xl bg-tinapple-dark/90 border text-xs text-on-surface focus:outline-none transition-colors ${
                   errors.sshPort
                     ? 'border-red-500 bg-red-500/10 focus:border-red-400'
                     : 'border-tinapple-border focus:border-tinapple-gold'
@@ -501,7 +501,7 @@ export const SettingsManifest: React.FC<SettingsManifestProps> = ({
 
             {/* IP Assignment Mode */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-white uppercase tracking-wider">
+              <label className="text-xs font-bold text-on-surface uppercase tracking-wider">
                 IP Address Assignment
               </label>
               <div className="grid grid-cols-2 gap-2">
@@ -511,7 +511,7 @@ export const SettingsManifest: React.FC<SettingsManifestProps> = ({
                   className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all ${
                     ipMode === 'dhcp'
                       ? 'bg-tinapple-gold text-tinapple-dark border-tinapple-gold'
-                      : 'bg-tinapple-dark/60 text-tinapple-subtext border-tinapple-border hover:text-white'
+                      : 'bg-tinapple-dark/60 text-tinapple-subtext border-tinapple-border hover:text-on-surface'
                   }`}
                 >
                   Dynamic (DHCP)
@@ -522,7 +522,7 @@ export const SettingsManifest: React.FC<SettingsManifestProps> = ({
                   className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all ${
                     ipMode === 'static'
                       ? 'bg-tinapple-gold text-tinapple-dark border-tinapple-gold'
-                      : 'bg-tinapple-dark/60 text-tinapple-subtext border-tinapple-border hover:text-white'
+                      : 'bg-tinapple-dark/60 text-tinapple-subtext border-tinapple-border hover:text-on-surface'
                   }`}
                 >
                   Static IP
@@ -534,7 +534,7 @@ export const SettingsManifest: React.FC<SettingsManifestProps> = ({
             {ipMode === 'static' && (
               <>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-white uppercase tracking-wider">
+                  <label className="text-xs font-bold text-on-surface uppercase tracking-wider">
                     Static IPv4 Address <span className="text-red-400">*</span>
                   </label>
                   <input
@@ -542,7 +542,7 @@ export const SettingsManifest: React.FC<SettingsManifestProps> = ({
                     value={staticIp}
                     onChange={(e) => setStaticIp(e.target.value)}
                     placeholder="e.g. 192.168.1.150"
-                    className={`w-full px-3.5 py-2.5 rounded-xl bg-tinapple-dark/90 border text-xs text-white focus:outline-none transition-colors ${
+                    className={`w-full px-3.5 py-2.5 rounded-xl bg-tinapple-dark/90 border text-xs text-on-surface focus:outline-none transition-colors ${
                       errors.staticIp
                         ? 'border-red-500 bg-red-500/10 focus:border-red-400'
                         : 'border-tinapple-border focus:border-tinapple-gold'
@@ -557,7 +557,7 @@ export const SettingsManifest: React.FC<SettingsManifestProps> = ({
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-white uppercase tracking-wider">
+                  <label className="text-xs font-bold text-on-surface uppercase tracking-wider">
                     Default Gateway IPv4
                   </label>
                   <input
@@ -565,7 +565,7 @@ export const SettingsManifest: React.FC<SettingsManifestProps> = ({
                     value={gatewayIp}
                     onChange={(e) => setGatewayIp(e.target.value)}
                     placeholder="e.g. 192.168.1.1"
-                    className={`w-full px-3.5 py-2.5 rounded-xl bg-tinapple-dark/90 border text-xs text-white focus:outline-none transition-colors ${
+                    className={`w-full px-3.5 py-2.5 rounded-xl bg-tinapple-dark/90 border text-xs text-on-surface focus:outline-none transition-colors ${
                       errors.gatewayIp
                         ? 'border-red-500 bg-red-500/10 focus:border-red-400'
                         : 'border-tinapple-border focus:border-tinapple-gold'
@@ -580,7 +580,7 @@ export const SettingsManifest: React.FC<SettingsManifestProps> = ({
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-white uppercase tracking-wider">
+                  <label className="text-xs font-bold text-on-surface uppercase tracking-wider">
                     Primary DNS Server
                   </label>
                   <input
@@ -588,7 +588,7 @@ export const SettingsManifest: React.FC<SettingsManifestProps> = ({
                     value={dnsIp}
                     onChange={(e) => setDnsIp(e.target.value)}
                     placeholder="e.g. 1.1.1.1"
-                    className={`w-full px-3.5 py-2.5 rounded-xl bg-tinapple-dark/90 border text-xs text-white focus:outline-none transition-colors ${
+                    className={`w-full px-3.5 py-2.5 rounded-xl bg-tinapple-dark/90 border text-xs text-on-surface focus:outline-none transition-colors ${
                       errors.dnsIp
                         ? 'border-red-500 bg-red-500/10 focus:border-red-400'
                         : 'border-tinapple-border focus:border-tinapple-gold'
@@ -617,7 +617,7 @@ export const SettingsManifest: React.FC<SettingsManifestProps> = ({
             {/* Battery Charge Limit */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-white uppercase tracking-wider">
+                <label className="text-xs font-bold text-on-surface uppercase tracking-wider">
                   Battery Charge Ceiling (%) <span className="text-red-400">*</span>
                 </label>
                 <span className="text-[10px] text-tinapple-muted">Range: 50% - 100%</span>
@@ -628,7 +628,7 @@ export const SettingsManifest: React.FC<SettingsManifestProps> = ({
                 max="100"
                 value={batteryLimit}
                 onChange={(e) => setBatteryLimit(e.target.value)}
-                className={`w-full px-3.5 py-2.5 rounded-xl bg-tinapple-dark/90 border text-xs text-white focus:outline-none transition-colors ${
+                className={`w-full px-3.5 py-2.5 rounded-xl bg-tinapple-dark/90 border text-xs text-on-surface focus:outline-none transition-colors ${
                   errors.batteryLimit
                     ? 'border-red-500 bg-red-500/10 focus:border-red-400'
                     : 'border-tinapple-border focus:border-tinapple-gold'
@@ -645,7 +645,7 @@ export const SettingsManifest: React.FC<SettingsManifestProps> = ({
             {/* Storage Usage Warning Threshold */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-white uppercase tracking-wider">
+                <label className="text-xs font-bold text-on-surface uppercase tracking-wider">
                   Disk Alert Threshold (%) <span className="text-red-400">*</span>
                 </label>
                 <span className="text-[10px] text-tinapple-muted">Range: 50% - 98%</span>
@@ -656,7 +656,7 @@ export const SettingsManifest: React.FC<SettingsManifestProps> = ({
                 max="98"
                 value={storageThreshold}
                 onChange={(e) => setStorageThreshold(e.target.value)}
-                className={`w-full px-3.5 py-2.5 rounded-xl bg-tinapple-dark/90 border text-xs text-white focus:outline-none transition-colors ${
+                className={`w-full px-3.5 py-2.5 rounded-xl bg-tinapple-dark/90 border text-xs text-on-surface focus:outline-none transition-colors ${
                   errors.storageThreshold
                     ? 'border-red-500 bg-red-500/10 focus:border-red-400'
                     : 'border-tinapple-border focus:border-tinapple-gold'
@@ -675,7 +675,7 @@ export const SettingsManifest: React.FC<SettingsManifestProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5">
             <div className="flex items-center justify-between p-4 rounded-xl bg-tinapple-dark/60 border border-tinapple-border">
               <div>
-                <span className="text-xs font-bold text-white block">
+                <span className="text-xs font-bold text-on-surface block">
                   CachyOS v3/v4 Repositories
                 </span>
                 <span className="text-[11px] text-tinapple-subtext font-mono">
@@ -687,7 +687,7 @@ export const SettingsManifest: React.FC<SettingsManifestProps> = ({
 
             <div className="flex items-center justify-between p-4 rounded-xl bg-tinapple-dark/60 border border-tinapple-border">
               <div>
-                <span className="text-xs font-bold text-white block">
+                <span className="text-xs font-bold text-on-surface block">
                   Automated Acoustic & Battery Tuning
                 </span>
                 <span className="text-[11px] text-tinapple-subtext font-mono">
@@ -708,7 +708,7 @@ export const SettingsManifest: React.FC<SettingsManifestProps> = ({
                   <div className="p-1.5 rounded-lg bg-tinapple-gold/15 text-tinapple-gold border border-tinapple-gold/25">
                     <Lock className="w-4 h-4" />
                   </div>
-                  <span className="text-xs font-bold text-white font-mono uppercase tracking-wider">
+                  <span className="text-xs font-bold text-on-surface font-mono uppercase tracking-wider">
                     4. Root & Administrator Security Credentials
                   </span>
                   <span className="px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold font-mono">
@@ -716,7 +716,7 @@ export const SettingsManifest: React.FC<SettingsManifestProps> = ({
                   </span>
                 </div>
                 <p className="text-[11px] text-tinapple-subtext font-mono pl-8">
-                  Account: <strong className="text-white">pineapple</strong> • Privilege Elevation: <strong className="text-tinapple-gold">pkexec (PolicyKit)</strong>
+                  Account: <strong className="text-on-surface">pineapple</strong> • Privilege Elevation: <strong className="text-tinapple-gold">pkexec (PolicyKit)</strong>
                 </p>
               </div>
 
@@ -726,7 +726,7 @@ export const SettingsManifest: React.FC<SettingsManifestProps> = ({
                 className={`px-3.5 py-2 rounded-xl text-xs font-mono font-bold flex items-center gap-2 transition-all border shrink-0 ${
                   changePassword
                     ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 shadow-sm'
-                    : 'bg-white/[0.06] text-zinc-300 border-white/10 hover:text-white hover:bg-white/10'
+                    : 'bg-white/[0.06] text-on-surface border-outline-variant/50 hover:text-on-surface hover:bg-white/10'
                 }`}
                 title={changePassword ? 'Cancel password update' : 'Modify administrator password'}
               >
@@ -739,7 +739,7 @@ export const SettingsManifest: React.FC<SettingsManifestProps> = ({
               <div className="pt-3 border-t border-tinapple-border/60">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 font-mono">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-white uppercase tracking-wider">
+                    <label className="text-xs font-bold text-on-surface uppercase tracking-wider">
                       New Admin Password <span className="text-red-400">*</span>
                     </label>
                     <div className="relative">
@@ -748,7 +748,7 @@ export const SettingsManifest: React.FC<SettingsManifestProps> = ({
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
                         placeholder="Minimum 6 characters"
-                        className={`w-full px-3.5 py-2.5 rounded-xl bg-slate-900/90 border text-xs text-white focus:outline-none transition-colors pr-10 ${
+                        className={`w-full px-3.5 py-2.5 rounded-xl bg-surface-container-low border text-xs text-on-surface focus:outline-none transition-colors pr-10 ${
                           errors.password
                             ? 'border-red-500 bg-red-500/10 focus:border-red-400'
                             : 'border-tinapple-border focus:border-tinapple-gold'
@@ -757,7 +757,7 @@ export const SettingsManifest: React.FC<SettingsManifestProps> = ({
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-2.5 text-tinapple-muted hover:text-white"
+                        className="absolute right-3 top-2.5 text-tinapple-muted hover:text-on-surface"
                       >
                         {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
@@ -765,7 +765,7 @@ export const SettingsManifest: React.FC<SettingsManifestProps> = ({
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-white uppercase tracking-wider">
+                    <label className="text-xs font-bold text-on-surface uppercase tracking-wider">
                       Confirm Password <span className="text-red-400">*</span>
                     </label>
                     <input
@@ -773,7 +773,7 @@ export const SettingsManifest: React.FC<SettingsManifestProps> = ({
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       placeholder="Re-enter password"
-                      className={`w-full px-3.5 py-2.5 rounded-xl bg-slate-900/90 border text-xs text-white focus:outline-none transition-colors ${
+                      className={`w-full px-3.5 py-2.5 rounded-xl bg-surface-container-low border text-xs text-on-surface focus:outline-none transition-colors ${
                         errors.password
                           ? 'border-red-500 bg-red-500/10 focus:border-red-400'
                           : 'border-tinapple-border focus:border-tinapple-gold'

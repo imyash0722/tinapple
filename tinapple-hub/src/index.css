@@ -37,13 +37,13 @@
 
   --tinapple-accent: var(--md-sys-color-primary);
   --tinapple-accent-rgb: 56 189 248;
-  --tinapple-accent-glow: rgba(56, 189, 248, 0.35);
+  --tinapple-accent-glow: transparent;
   --tinapple-accent-secondary: var(--md-sys-color-tertiary);
   --tinapple-secondary-rgb: 59 130 246;
-  --glass-bg: rgba(12, 18, 31, 0.94);
-  --glass-border: rgba(63, 71, 85, 0.22);
-  --glass-border-accent: rgba(56, 189, 248, 0.4);
-  --glass-filter: blur(12px) saturate(110%);
+  --glass-bg: var(--md-sys-color-surface-container-low);
+  --glass-border: var(--md-sys-color-outline-variant);
+  --glass-border-accent: var(--md-sys-color-outline);
+  --glass-filter: none;
 }
 
 html {
@@ -55,9 +55,9 @@ html {
 
 body {
   margin: 0;
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  background-color: #050814;
-  color: #e2e8f0;
+  font-family: 'Roboto Flex Variable', 'Google Sans', system-ui, sans-serif;
+  background: var(--md-sys-color-surface-container-lowest);
+  color: var(--md-sys-color-on-surface);
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -73,125 +73,68 @@ button, a, input, select, textarea {
   touch-action: manipulation;
 }
 
-/* Optimized Tabular Numbers for Metrics, Clocks, Percentages & Data */
-.font-mono,
-.tabular-nums {
-  font-variant-numeric: tabular-nums lining-nums;
-  -webkit-font-feature-settings: "tnum" 1, "lnum" 1;
-  font-feature-settings: "tnum" 1, "lnum" 1;
+:root { --m3-radius-card: 28px; --m3-card-padding: 16px; --m3-radius-inner: calc(var(--m3-radius-card) - var(--m3-card-padding)); }
+.font-mono, .tabular-nums, time { font-variant-numeric: tabular-nums lining-nums; }
+h1, h2, h3, h4 { font-family: 'Roboto Flex Variable', 'Google Sans', system-ui, sans-serif; }
+:where(button, a, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--md-sys-color-primary);
+  outline-offset: 3px;
+}
+:where(input[type="range"], input[type="checkbox"]) { accent-color: var(--md-sys-color-primary); }
+.scrollbar-none { scrollbar-width: none; }
+.scrollbar-none::-webkit-scrollbar { display: none; }
+
+/* Dynamic Material 3 Liquid Translucency & Glassmorphism for Components */
+.bg-surface-container-low {
+  --tw-bg-opacity: var(--m3-surface-opacity, 1) !important;
+  backdrop-filter: var(--m3-glass-filter, none);
+  -webkit-backdrop-filter: var(--m3-glass-filter, none);
 }
 
-/* Hide all scrollbars globally across Chrome, Safari, Edge, Firefox, and Opera while maintaining smooth scrolling */
-*::-webkit-scrollbar,
-::-webkit-scrollbar {
-  display: none !important;
-  width: 0 !important;
-  height: 0 !important;
+.bg-surface-container {
+  --tw-bg-opacity: var(--m3-surface-container-opacity, 1) !important;
+  backdrop-filter: var(--m3-glass-filter, none);
+  -webkit-backdrop-filter: var(--m3-glass-filter, none);
 }
 
-* {
-  -ms-overflow-style: none !important;
-  scrollbar-width: none !important;
+.hover\:bg-surface-container:hover {
+  --tw-bg-opacity: var(--m3-surface-hover-opacity, 1) !important;
 }
 
-.scrollbar-none {
-  -ms-overflow-style: none !important;
-  scrollbar-width: none !important;
+/* Preserve canvas coordinates; only the surface shell changes. */
+.tinapple-glass-card, .m3-card {
+  background: var(--glass-bg, var(--md-sys-color-surface-container-low)) !important;
+  border: 1px solid var(--glass-border, var(--md-sys-color-outline-variant)) !important;
+  border-radius: var(--m3-radius-card);
+  box-shadow: var(--glass-shadow, none) !important;
+  backdrop-filter: var(--glass-filter, none);
+  -webkit-backdrop-filter: var(--glass-filter, none);
+  transition: background-color 200ms, border-color 200ms, backdrop-filter 200ms;
 }
-.scrollbar-none::-webkit-scrollbar {
-  display: none !important;
-  width: 0 !important;
-  height: 0 !important;
+.tinapple-glass-card:hover, .m3-card:hover {
+  border-color: var(--glass-border-accent, var(--md-sys-color-outline)) !important;
 }
-
-/* Opacity variants are generated from the RGB variables in Tailwind. */
-.text-tinapple-gold { color: var(--tinapple-accent, #38bdf8) !important; }
-.bg-tinapple-gold { background-color: var(--tinapple-accent, #38bdf8) !important; }
-.border-tinapple-gold { border-color: var(--tinapple-accent, #38bdf8) !important; }
-
-/* Dynamic Material 3 surfaces & containers across all cards and widgets */
-.bg-tinapple-dark { background-color: var(--md-sys-color-surface, #090e18) !important; }
-.bg-tinapple-base { background-color: var(--md-sys-color-surface-container-lowest, #05070f) !important; }
-.bg-tinapple-surface { background-color: var(--md-sys-color-surface-container, #101828) !important; }
-.bg-tinapple-card { background-color: var(--md-sys-color-surface-container-high, #152034) !important; }
-.border-tinapple-border { border-color: var(--md-sys-color-outline-variant, rgba(63, 71, 85, 0.45)) !important; }
-
-.tinapple-glass-card {
-  background-color: var(--glass-bg, var(--md-sys-color-surface-container-low, #0c121f)) !important;
-  background-image: none !important;
-  backdrop-filter: var(--glass-filter, blur(12px) saturate(110%));
-  -webkit-backdrop-filter: var(--glass-filter, blur(12px) saturate(110%));
-  border: 1px solid var(--glass-border, rgba(63, 71, 85, 0.22)) !important;
-  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.08), 0 4px 20px -2px rgba(0, 0, 0, 0.4);
-  transition: all 0.25s cubic-bezier(0.2, 0, 0, 1);
-}
-
-.tinapple-glass-card:hover {
-  border-color: var(--glass-border-accent, var(--md-sys-color-outline, #8b939f)) !important;
-  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.14), 0 8px 28px -4px rgba(0, 0, 0, 0.55);
-}
-
-/* Material 3 Matte Overrides for Homarr Widgets and Containers */
-.bg-slate-900\/60,
-.bg-slate-900\/70,
-.bg-slate-900\/80,
-.bg-slate-900\/90 {
-  background-color: var(--md-sys-color-surface-container-low, #0c121f) !important;
-  border-color: var(--md-sys-color-outline-variant, rgba(63, 71, 85, 0.22)) !important;
-  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.08), 0 4px 20px -2px rgba(0, 0, 0, 0.45);
+.m3-card:focus-within { border-color: var(--md-sys-color-primary) !important; }
+[data-canvas-widget] > .w-full { border-radius: var(--m3-radius-card); }
+.m3-dock { background: var(--md-sys-color-surface-container-high) !important; border-radius: 9999px; }
+.appearance-drawer { background: var(--md-sys-color-surface-container-high); border-radius: 28px 0 0 28px; }
+.appearance-drawer::backdrop { background: rgb(0 0 0 / .6); }
+.m3-button { min-height: 40px; border-radius: 999px; padding: 8px 16px; font: 500 14px/20px 'Roboto Flex Variable', sans-serif; }
+.m3-button-filled { background: var(--md-sys-color-primary); color: var(--md-sys-color-on-primary); }
+.m3-button-tonal { background: var(--md-sys-color-secondary-container); color: var(--md-sys-color-on-secondary-container); }
+.m3-button-outlined { border: 1px solid var(--md-sys-color-outline); color: var(--md-sys-color-primary); }
+.bg-tinapple-gold.text-tinapple-dark { color: var(--md-sys-color-on-primary); }
+/* 52×32 track inside a 52×40 touch target; keyboard uses native button behavior. */
+.m3-switch { width: 52px; height: 40px; display: inline-flex; align-items: center; flex-shrink: 0; border-radius: 999px; cursor: pointer; padding: 0; }
+.m3-switch-track { width: 52px; height: 32px; position: relative; border-radius: 999px; border: 2px solid var(--md-sys-color-outline); background: var(--md-sys-color-surface-container-highest); transition: background-color 180ms, border-color 180ms; }
+.m3-switch-thumb { position: absolute; top: 50%; left: 6px; width: 16px; height: 16px; transform: translateY(-50%); border-radius: 50%; background: var(--md-sys-color-outline); transition: left 220ms cubic-bezier(.2,.8,.2,1), width 150ms, height 150ms, background-color 180ms; }
+.m3-switch[aria-checked="true"] .m3-switch-track { background: var(--md-sys-color-primary); border-color: var(--md-sys-color-primary); }
+.m3-switch[aria-checked="true"] .m3-switch-thumb { left: 22px; width: 24px; height: 24px; background: var(--md-sys-color-on-primary); }
+.m3-switch:active:not(:disabled) .m3-switch-thumb { width: 28px; height: 28px; left: 0; }
+.m3-switch[aria-checked="true"]:active:not(:disabled) .m3-switch-thumb { left: 20px; }
+.m3-switch:disabled { opacity: .38; cursor: not-allowed; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
 }
 
-.bg-slate-800\/50,
-.bg-slate-800\/60,
-.bg-slate-800\/80 {
-  background-color: var(--md-sys-color-surface-container, #101828) !important;
-  border-color: var(--md-sys-color-outline-variant, rgba(63, 71, 85, 0.22)) !important;
-  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.08), 0 4px 16px -2px rgba(0, 0, 0, 0.4);
-}
-
-.bg-slate-950\/80,
-.bg-slate-950\/85,
-.bg-slate-950\/90 {
-  background-color: var(--md-sys-color-surface-container-lowest, #05070f) !important;
-}
-
-.appearance-drawer::backdrop {
-  background: rgba(0, 0, 0, 0.45);
-  backdrop-filter: blur(4px);
-}
-
-/* Compatibility for legacy arbitrary accent utilities. New components use theme tokens. */
-[class*="text-[#e5b567]"],
-[class*="text-[#f59e0b]"] {
-  color: var(--tinapple-accent, #e5b567) !important;
-}
-[class*="bg-[#e5b567]"],
-[class*="bg-[#f59e0b]"] {
-  background-color: var(--tinapple-accent, #e5b567) !important;
-}
-[class*="border-[#e5b567]"],
-[class*="border-[#f59e0b]"] {
-  border-color: var(--tinapple-accent, #e5b567) !important;
-}
-[class*="ring-[#e5b567]"],
-[class*="ring-[#f59e0b]"] {
-  --tw-ring-color: var(--tinapple-accent, #e5b567) !important;
-}
-[class*="shadow-[#e5b567]"],
-[class*="shadow-[#f59e0b]"] {
-  --tw-shadow-color: var(--tinapple-accent-glow, rgba(229, 181, 103, 0.25)) !important;
-}
-[class*="from-[#e5b567]"],
-[class*="from-[#f59e0b]"] {
-  --tw-gradient-from: var(--tinapple-accent, #e5b567) var(--tw-gradient-from-position) !important;
-  --tw-gradient-to: transparent var(--tw-gradient-to-position) !important;
-  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
-}
-[class*="via-[#e5b567]"],
-[class*="via-[#f59e0b]"] {
-  --tw-gradient-stops: var(--tw-gradient-from), var(--tinapple-accent, #e5b567) var(--tw-gradient-via-position), var(--tw-gradient-to) !important;
-}
-[class*="to-[#f59e0b]"],
-[class*="to-[#e5b567]"] {
-  --tw-gradient-to: var(--tinapple-accent-secondary, var(--tinapple-accent, #7ec789)) var(--tw-gradient-to-position) !important;
-}
+pre, code, .xterm { font-family: 'JetBrains Mono', ui-monospace, monospace; }

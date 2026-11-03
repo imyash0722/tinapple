@@ -46,7 +46,7 @@ export const LogsModal: React.FC<LogsModalProps> = ({ serviceName, logs, onClose
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 10 }}
           transition={{ duration: 0.2, ease: 'easeOut' }}
-          className="w-full max-w-3xl rounded-2xl border border-tinapple-border bg-tinapple-card/95 backdrop-blur-2xl shadow-2xl flex flex-col overflow-hidden max-h-[85vh]"
+          className="w-full max-w-3xl rounded-2xl border border-tinapple-border bg-tinapple-card/95 backdrop-blur-2xl shadow-none flex flex-col overflow-hidden max-h-[85vh]"
         >
           {/* Header */}
           <div className="flex items-center justify-between px-5 py-3.5 border-b border-tinapple-border/70 bg-tinapple-dark/60">
@@ -55,7 +55,7 @@ export const LogsModal: React.FC<LogsModalProps> = ({ serviceName, logs, onClose
                 <Terminal className="w-4 h-4" />
               </div>
               <div>
-                <h3 className="text-xs font-bold text-white font-mono">
+                <h3 className="text-xs font-bold text-on-surface font-mono">
                   journalctl -u {serviceName}.service
                 </h3>
                 <span className="text-[10px] text-tinapple-subtext font-mono">
@@ -67,14 +67,14 @@ export const LogsModal: React.FC<LogsModalProps> = ({ serviceName, logs, onClose
             <div className="flex items-center gap-2">
               <button
                 onClick={handleCopy}
-                className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-mono text-tinapple-subtext hover:text-white bg-tinapple-surface border border-tinapple-border transition-colors"
+                className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-mono text-tinapple-subtext hover:text-on-surface bg-tinapple-surface border border-tinapple-border transition-colors"
               >
                 {copied ? <Check className="w-3.5 h-3.5 text-tinapple-green" /> : <Copy className="w-3.5 h-3.5" />}
                 <span>{copied ? 'Copied' : 'Copy'}</span>
               </button>
               <button
                 onClick={onClose}
-                className="p-1.5 rounded-lg text-tinapple-muted hover:text-white hover:bg-tinapple-surface transition-colors"
+                className="p-1.5 rounded-lg text-tinapple-muted hover:text-on-surface hover:bg-tinapple-surface transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>

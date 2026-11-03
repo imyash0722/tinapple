@@ -36,24 +36,24 @@ export const TorPrivacyWidget: React.FC = () => {
   };
 
   return (
-    <div className="tinapple-glass-card rounded-2xl bg-slate-900/60 border border-slate-800/80 p-4 sm:p-5 backdrop-blur-xl shadow-xl flex items-center justify-between gap-3">
+    <div className="tinapple-glass-card rounded-2xl bg-surface-container-low border border-slate-800/80 p-4 sm:p-5 backdrop-blur-xl shadow-none flex items-center justify-between gap-3">
       <div className="flex items-center gap-3">
         <div className="w-9 h-9 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-lg shrink-0">
           🧅
         </div>
         <div>
-          <h3 className="text-sm font-bold text-white tracking-wide">Tor Privacy & Anonymity Guard</h3>
-          <span className="text-[11px] text-slate-400 font-mono">Cloudflare DoT + Tor Circuit</span>
+          <h3 className="text-sm font-bold text-on-surface tracking-wide">Tor Privacy & Anonymity Guard</h3>
+          <span className="text-[11px] text-on-surface-variant font-sans tabular-nums">Cloudflare DoT + Tor Circuit</span>
         </div>
       </div>
 
       <button
         onClick={toggleTor}
         disabled={loading}
-        className={`px-3.5 py-1.5 rounded-xl text-xs font-mono font-semibold transition-all flex items-center gap-2 shrink-0 ${
+        className={`px-3.5 py-1.5 rounded-xl text-xs font-sans tabular-nums font-semibold transition-all flex items-center gap-2 shrink-0 ${
           torActive
-            ? 'bg-purple-600 hover:bg-purple-500 text-white shadow-lg shadow-purple-600/20'
-            : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700'
+            ? 'bg-purple-600 hover:bg-purple-500 text-on-surface shadow-none shadow-purple-600/20'
+            : 'bg-surface-container hover:bg-slate-700 text-on-surface border border-slate-700'
         }`}
       >
         <span

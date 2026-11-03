@@ -8,30 +8,61 @@ export default {
   theme: {
     extend: {
       colors: {
+        emerald: { 300: 'rgb(var(--md-sys-color-success-rgb, 126 199 137) / <alpha-value>)', 400: 'rgb(var(--md-sys-color-success-rgb, 126 199 137) / <alpha-value>)', 500: 'rgb(var(--md-sys-color-success-rgb, 126 199 137) / <alpha-value>)' },
+        green: { 300: 'rgb(var(--md-sys-color-success-rgb, 126 199 137) / <alpha-value>)', 400: 'rgb(var(--md-sys-color-success-rgb, 126 199 137) / <alpha-value>)', 500: 'rgb(var(--md-sys-color-success-rgb, 126 199 137) / <alpha-value>)' },
+        red: { 300: 'rgb(var(--md-sys-color-error-rgb, 255 180 171) / <alpha-value>)', 400: 'rgb(var(--md-sys-color-error-rgb, 255 180 171) / <alpha-value>)', 500: 'rgb(var(--md-sys-color-error-rgb, 255 180 171) / <alpha-value>)' },
+        amber: { 300: 'rgb(var(--md-sys-color-warning-rgb, 239 193 102) / <alpha-value>)', 400: 'rgb(var(--md-sys-color-warning-rgb, 239 193 102) / <alpha-value>)', 500: 'rgb(var(--md-sys-color-warning-rgb, 239 193 102) / <alpha-value>)' },
+        sky: { 300: 'rgb(var(--md-sys-color-primary-rgb, 144 206 243) / <alpha-value>)', 400: 'rgb(var(--md-sys-color-primary-rgb, 144 206 243) / <alpha-value>)', 500: 'rgb(var(--md-sys-color-primary-rgb, 144 206 243) / <alpha-value>)' },
+        blue: { 300: 'rgb(var(--md-sys-color-primary-rgb, 144 206 243) / <alpha-value>)', 400: 'rgb(var(--md-sys-color-primary-rgb, 144 206 243) / <alpha-value>)', 500: 'rgb(var(--md-sys-color-primary-rgb, 144 206 243) / <alpha-value>)' },
+        cyan: { 300: 'rgb(var(--md-sys-color-primary-rgb, 144 206 243) / <alpha-value>)', 400: 'rgb(var(--md-sys-color-primary-rgb, 144 206 243) / <alpha-value>)', 500: 'rgb(var(--md-sys-color-primary-rgb, 144 206 243) / <alpha-value>)' },
+        purple: { 300: 'rgb(var(--md-sys-color-tertiary-rgb, 202 193 233) / <alpha-value>)', 400: 'rgb(var(--md-sys-color-tertiary-rgb, 202 193 233) / <alpha-value>)', 500: 'rgb(var(--md-sys-color-tertiary-rgb, 202 193 233) / <alpha-value>)' },
+        'surface': 'rgb(var(--md-sys-color-surface-rgb, 9 14 24) / <alpha-value>)',
+        'surface-dim': 'rgb(var(--md-sys-color-surface-dim-rgb, 7 10 19) / <alpha-value>)',
+        'surface-bright': 'rgb(var(--md-sys-color-surface-bright-rgb, 42 50 66) / <alpha-value>)',
+        'surface-container-lowest': 'rgb(var(--md-sys-color-surface-container-lowest-rgb, 5 7 15) / <alpha-value>)',
+        'surface-container-low': 'rgb(var(--md-sys-color-surface-container-low-rgb, 12 18 31) / <alpha-value>)',
+        'surface-container': 'rgb(var(--md-sys-color-surface-container-rgb, 16 24 40) / <alpha-value>)',
+        'surface-container-high': 'rgb(var(--md-sys-color-surface-container-high-rgb, 21 32 52) / <alpha-value>)',
+        'surface-container-highest': 'rgb(var(--md-sys-color-surface-container-highest-rgb, 28 41 64) / <alpha-value>)',
+        'primary': 'rgb(var(--md-sys-color-primary-rgb, 143 205 247) / <alpha-value>)',
+        'on-primary': 'rgb(var(--md-sys-color-on-primary-rgb, 0 52 74) / <alpha-value>)',
+        'primary-container': 'rgb(var(--md-sys-color-primary-container-rgb, 0 76 106) / <alpha-value>)',
+        'on-primary-container': 'rgb(var(--md-sys-color-on-primary-container-rgb, 200 230 255) / <alpha-value>)',
+        'secondary': 'rgb(var(--md-sys-color-secondary-rgb, 185 201 215) / <alpha-value>)',
+        'on-secondary': 'rgb(var(--md-sys-color-on-secondary-rgb, 35 50 61) / <alpha-value>)',
+        'secondary-container': 'rgb(var(--md-sys-color-secondary-container-rgb, 58 73 84) / <alpha-value>)',
+        'on-secondary-container': 'rgb(var(--md-sys-color-on-secondary-container-rgb, 213 229 243) / <alpha-value>)',
+        'on-surface': 'rgb(var(--md-sys-color-on-surface-rgb, 224 229 237) / <alpha-value>)',
+        'on-surface-variant': 'rgb(var(--md-sys-color-on-surface-variant-rgb, 193 200 212) / <alpha-value>)',
+        'outline': 'rgb(var(--md-sys-color-outline-rgb, 139 147 159) / <alpha-value>)',
+        'outline-variant': 'rgb(var(--md-sys-color-outline-variant-rgb, 63 71 85) / <alpha-value>)',
+        'error': 'rgb(var(--md-sys-color-error-rgb, 255 180 171) / <alpha-value>)',
+        'on-error': 'rgb(var(--md-sys-color-on-error-rgb, 105 0 5) / <alpha-value>)',
         tinapple: {
-          dark: '#050a16',       // Deepest OLED midnight navy
-          base: '#070f22',       // Foundation deep navy
-          surface: '#0d1835',    // Raised dark blue panel
-          card: '#101f42',       // Glass dark blue card surface
-          cardhover: '#152854',  // Card active hover
-          border: 'rgba(56, 189, 248, 0.08)',
+          dark: 'rgb(var(--md-sys-color-surface-rgb, 9 14 24) / <alpha-value>)',       // Deepest OLED midnight navy
+          base: 'rgb(var(--md-sys-color-surface-container-lowest-rgb, 5 7 15) / <alpha-value>)',       // Foundation deep navy
+          surface: 'rgb(var(--md-sys-color-surface-container-rgb, 16 24 40) / <alpha-value>)',    // Raised dark blue panel
+          card: 'rgb(var(--md-sys-color-surface-container-low-rgb, 12 18 31) / <alpha-value>)',       // Glass dark blue card surface
+          cardhover: 'rgb(var(--md-sys-color-surface-container-high-rgb, 21 32 52) / <alpha-value>)',  // Card active hover
+          border: 'rgb(var(--md-sys-color-outline-variant-rgb, 63 71 85) / <alpha-value>)',
           'border-hover': 'rgba(56, 189, 248, 0.35)',
           'border-green': 'rgba(59, 130, 246, 0.35)',
           gold: 'rgb(var(--tinapple-accent-rgb, 56 189 248) / <alpha-value>)',
           amber: '#38bdf8',
-          green: 'rgb(var(--tinapple-secondary-rgb, 59 130 246) / <alpha-value>)',
+          green: 'rgb(var(--md-sys-color-success-rgb, 126 199 137) / <alpha-value>)',
           sage: '#60a5fa',
           emerald: '#38bdf8',
           teal: '#0ea5e9',
           red: '#f87171',
-          text: '#f1f5f9',       // High-contrast clean white
-          subtext: '#94a3b8',    // Clean legible slate blue
-          muted: '#475569',      // Subdued metadata
+          text: 'rgb(var(--md-sys-color-on-surface-rgb, 224 229 237) / <alpha-value>)',       // High-contrast clean white
+          subtext: 'rgb(var(--md-sys-color-on-surface-variant-rgb, 193 200 212) / <alpha-value>)',    // Clean legible slate blue
+          muted: 'rgb(var(--md-sys-color-on-surface-variant-rgb, 193 200 212) / <alpha-value>)',      // Subdued metadata
         }
       },
+      borderRadius: { 'm3-card': '28px', 'm3-inner': '12px' },
       fontFamily: {
         mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
-        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+        sans: ['Roboto Flex Variable', 'Google Sans', 'system-ui', '-apple-system', 'sans-serif'],
       },
       keyframes: {
         'shiny-text': {

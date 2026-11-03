@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Zap, ArrowDown, ArrowUp, ArrowRight } from 'lucide-react';
 import { getServiceHost } from '../../services/api';
 import { serviceRegistry } from '../../services/serviceRegistry';
 
@@ -123,37 +124,37 @@ export const TransfersWidget: React.FC = () => {
   };
 
   return (
-    <div className="tinapple-glass-card rounded-2xl bg-slate-900/60 border border-slate-800/80 p-5 backdrop-blur-xl shadow-xl flex flex-col justify-between">
+    <div className="rounded-[28px] bg-surface-container-low border border-outline-variant p-5 shadow-none flex flex-col justify-between">
       {/* Header with pill tabs */}
-      <div className="flex items-center justify-between pb-4 border-b border-slate-800/60">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-lg">
-            ⚡
+      <div className="flex items-center justify-between pb-4 border-b border-outline-variant">
+        <div className="flex items-center gap-2.5">
+          <div className="w-9 h-9 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
+            <Zap className="w-4 h-4 text-primary" />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-white tracking-wide">Transfers & Remote Queue</h3>
-            <span className="text-[11px] text-slate-400 font-mono">Pinedash Homarr Stack</span>
+            <h3 className="text-sm font-bold text-on-surface tracking-wide">Transfers & Remote Queue</h3>
+            <span className="text-[11px] text-on-surface-variant font-sans tabular-nums">Pinedash Homarr Stack</span>
           </div>
         </div>
 
         {/* Segmented Pill Tabs */}
-        <div className="flex items-center bg-slate-950/70 p-1 rounded-xl border border-slate-800/80">
+        <div className="flex items-center bg-surface-container-highest p-1 rounded-full border border-outline-variant">
           <button
             onClick={() => setActiveTab('qbit')}
-            className={`px-3 py-1 rounded-lg text-xs font-mono font-medium transition-all ${
+            className={`px-3 py-1 rounded-full text-xs font-sans tabular-nums font-medium transition-all ${
               activeTab === 'qbit'
-                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shadow-sm'
-                : 'text-slate-400 hover:text-slate-200'
+                ? 'bg-primary text-on-primary shadow-none'
+                : 'text-on-surface-variant hover:text-on-surface'
             }`}
           >
             qBittorrent
           </button>
           <button
             onClick={() => setActiveTab('jd')}
-            className={`px-3 py-1 rounded-lg text-xs font-mono font-medium transition-all ${
+            className={`px-3 py-1 rounded-full text-xs font-sans tabular-nums font-medium transition-all ${
               activeTab === 'jd'
-                ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30 shadow-sm'
-                : 'text-slate-400 hover:text-slate-200'
+                ? 'bg-primary text-on-primary shadow-none'
+                : 'text-on-surface-variant hover:text-on-surface'
             }`}
           >
             JDownloader 2
@@ -165,27 +166,29 @@ export const TransfersWidget: React.FC = () => {
       {activeTab === 'qbit' && (
         <div className="mt-4 space-y-4">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="p-3 rounded-xl bg-slate-950/50 border border-slate-800/60">
-              <span className="text-[11px] font-mono text-slate-400 block">Download Rate</span>
-              <span className="text-base font-bold font-mono text-emerald-400">
-                ↓ {formatSpeed(qbit.dl_speed)}
+            <div className="p-3 rounded-[12px] bg-surface-container border border-outline-variant">
+              <span className="text-[11px] font-sans tabular-nums text-on-surface-variant block">Download Rate</span>
+              <span className="text-base font-bold font-sans tabular-nums text-emerald-400 flex items-center gap-1 mt-0.5">
+                <ArrowDown className="w-3.5 h-3.5" />
+                {formatSpeed(qbit.dl_speed)}
               </span>
             </div>
-            <div className="p-3 rounded-xl bg-slate-950/50 border border-slate-800/60">
-              <span className="text-[11px] font-mono text-slate-400 block">Upload Rate</span>
-              <span className="text-base font-bold font-mono text-blue-400">
-                ↑ {formatSpeed(qbit.up_speed)}
+            <div className="p-3 rounded-[12px] bg-surface-container border border-outline-variant">
+              <span className="text-[11px] font-sans tabular-nums text-on-surface-variant block">Upload Rate</span>
+              <span className="text-base font-bold font-sans tabular-nums text-primary flex items-center gap-1 mt-0.5">
+                <ArrowUp className="w-3.5 h-3.5" />
+                {formatSpeed(qbit.up_speed)}
               </span>
             </div>
-            <div className="p-3 rounded-xl bg-slate-950/50 border border-slate-800/60">
-              <span className="text-[11px] font-mono text-slate-400 block">Active Torrents</span>
-              <span className="text-base font-bold font-mono text-white">
-                {qbit.active_torrents || 0} <span className="text-xs text-slate-500 font-normal">/ {qbit.total_torrents || 0}</span>
+            <div className="p-3 rounded-[12px] bg-surface-container border border-outline-variant">
+              <span className="text-[11px] font-sans tabular-nums text-on-surface-variant block">Active Torrents</span>
+              <span className="text-base font-bold font-sans tabular-nums text-on-surface mt-0.5 block">
+                {qbit.active_torrents || 0} <span className="text-xs text-on-surface-variant font-normal">/ {qbit.total_torrents || 0}</span>
               </span>
             </div>
-            <div className="p-3 rounded-xl bg-slate-950/50 border border-slate-800/60">
-              <span className="text-[11px] font-mono text-slate-400 block">DHT Nodes</span>
-              <span className="text-base font-bold font-mono text-purple-400">
+            <div className="p-3 rounded-[12px] bg-surface-container border border-outline-variant">
+              <span className="text-[11px] font-sans tabular-nums text-on-surface-variant block">DHT Nodes</span>
+              <span className="text-base font-bold font-sans tabular-nums text-secondary mt-0.5 block">
                 {qbit.dht_nodes || 0}
               </span>
             </div>
@@ -193,31 +196,31 @@ export const TransfersWidget: React.FC = () => {
 
           {/* Active Torrents Mini List */}
           <div className="space-y-2">
-            <span className="text-[11px] font-mono uppercase tracking-wider text-slate-400 block">
+            <span className="text-[11px] font-sans tabular-nums uppercase tracking-wider text-on-surface-variant block">
               Active Transfers ({qbit.torrents?.length || 0})
             </span>
             <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
               {qbit.torrents && qbit.torrents.length > 0 ? (
                 qbit.torrents.map((t, idx) => (
-                  <div key={idx} className="p-2.5 rounded-lg bg-slate-950/40 border border-slate-800/40 text-xs">
+                  <div key={idx} className="p-2.5 rounded-[12px] bg-surface-container border border-outline-variant text-xs">
                     <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-slate-200 font-medium truncate max-w-[240px]">{t.name}</span>
-                      <span className="text-[11px] font-mono text-emerald-400">{t.dlspeed}</span>
+                      <span className="text-on-surface font-medium truncate max-w-[240px]">{t.name}</span>
+                      <span className="text-[11px] font-sans tabular-nums text-emerald-400">{t.dlspeed}</span>
                     </div>
-                    <div className="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                    <div className="w-full bg-surface-container-highest rounded-full h-1.5 overflow-hidden">
                       <div
-                        className="bg-emerald-500 h-1.5 rounded-full transition-all duration-500"
+                        className="bg-primary h-1.5 rounded-full transition-all duration-500"
                         style={{ width: `${t.progress}%` }}
                       />
                     </div>
-                    <div className="flex items-center justify-between mt-1 text-[10px] text-slate-400 font-mono">
+                    <div className="flex items-center justify-between mt-1 text-[10px] text-on-surface-variant font-sans tabular-nums">
                       <span className="capitalize">{t.state}</span>
                       <span>{t.progress}% • {t.size}</span>
                     </div>
                   </div>
                 ))
               ) : (
-                <div className="p-4 rounded-xl bg-slate-950/40 border border-slate-800/40 text-center font-mono text-xs text-slate-400">
+                <div className="p-4 rounded-[12px] bg-surface-container border border-outline-variant text-center font-sans tabular-nums text-xs text-on-surface-variant">
                   No active torrents in queue.
                 </div>
               )}
@@ -229,10 +232,10 @@ export const TransfersWidget: React.FC = () => {
               href={serviceRegistry.resolveUrl('qbittorrent')}
               target="_blank"
               rel="noreferrer"
-              className="text-xs text-emerald-400 hover:text-emerald-300 font-mono flex items-center gap-1"
+              className="text-xs text-primary hover:text-primary/80 font-sans tabular-nums flex items-center gap-1 transition-colors"
             >
               <span>Open qBittorrent Web UI</span>
-              <span>→</span>
+              <ArrowRight className="w-3.5 h-3.5" />
             </a>
           </div>
         </div>
@@ -242,24 +245,25 @@ export const TransfersWidget: React.FC = () => {
       {activeTab === 'jd' && (
         <div className="mt-4 space-y-4">
           <div className="grid grid-cols-2 gap-3">
-            <div className="p-3 rounded-xl bg-slate-950/50 border border-slate-800/60">
-              <span className="text-[11px] font-mono text-slate-400 block">Daemon Status</span>
-              <span className="text-base font-bold font-mono text-blue-400 flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
+            <div className="p-3 rounded-[12px] bg-surface-container border border-outline-variant">
+              <span className="text-[11px] font-sans tabular-nums text-on-surface-variant block">Daemon Status</span>
+              <span className="text-base font-bold font-sans tabular-nums text-primary flex items-center gap-2 mt-0.5">
+                <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
                 {jd.state || 'RUNNING'}
               </span>
             </div>
-            <div className="p-3 rounded-xl bg-slate-950/50 border border-slate-800/60">
-              <span className="text-[11px] font-mono text-slate-400 block">Download Speed</span>
-              <span className="text-base font-bold font-mono text-blue-400">
-                ↓ {formatSpeed(jd.speed)}
+            <div className="p-3 rounded-[12px] bg-surface-container border border-outline-variant">
+              <span className="text-[11px] font-sans tabular-nums text-on-surface-variant block">Download Speed</span>
+              <span className="text-base font-bold font-sans tabular-nums text-primary flex items-center gap-1 mt-0.5">
+                <ArrowDown className="w-3.5 h-3.5" />
+                {formatSpeed(jd.speed)}
               </span>
             </div>
           </div>
 
           {/* Quick Add Link Bar */}
           <form onSubmit={handleAddJdLink} className="space-y-2">
-            <span className="text-[11px] font-mono uppercase tracking-wider text-slate-400 block">
+            <span className="text-[11px] font-sans tabular-nums uppercase tracking-wider text-on-surface-variant block">
               Quick Remote Download Link Grabber
             </span>
             <div className="flex gap-2">
@@ -268,48 +272,48 @@ export const TransfersWidget: React.FC = () => {
                 placeholder="Paste DDL, Mega, Rapidgator, or direct link..."
                 value={linkInput}
                 onChange={(e) => setLinkInput(e.target.value)}
-                className="flex-1 bg-slate-950/80 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-500 font-mono focus:outline-none focus:border-blue-500/60"
+                className="flex-1 bg-surface-container-highest border border-outline-variant rounded-full px-4 py-2 text-xs text-on-surface placeholder:text-on-surface-variant/50 font-sans tabular-nums focus:outline-none focus:border-primary"
               />
               <button
                 type="submit"
                 disabled={submitting || !linkInput.trim()}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-xl text-xs font-mono font-medium transition-all flex-shrink-0"
+                className="px-4 py-2 bg-primary hover:bg-primary/90 disabled:opacity-50 text-on-primary rounded-full text-xs font-sans tabular-nums font-medium transition-all flex-shrink-0"
               >
                 {submitting ? 'Adding...' : 'Add Link'}
               </button>
             </div>
             {submitMsg && (
-              <p className="text-[11px] text-emerald-400 font-mono animate-fadeIn">{submitMsg}</p>
+              <p className="text-[11px] text-emerald-400 font-sans tabular-nums animate-fadeIn">{submitMsg}</p>
             )}
           </form>
 
           {/* Active Packages */}
           <div className="space-y-2">
-            <span className="text-[11px] font-mono uppercase tracking-wider text-slate-400 block">
+            <span className="text-[11px] font-sans tabular-nums uppercase tracking-wider text-on-surface-variant block">
               Grabbed Packages ({jd.packages?.length || 0})
             </span>
             <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
               {jd.packages && jd.packages.length > 0 ? (
                 jd.packages.map((pkg, idx) => (
-                  <div key={idx} className="p-2.5 rounded-lg bg-slate-950/40 border border-slate-800/40 text-xs">
+                  <div key={idx} className="p-2.5 rounded-[12px] bg-surface-container border border-outline-variant text-xs">
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-slate-200 font-medium truncate max-w-[240px]">{pkg.name}</span>
-                      <span className="text-[11px] font-mono text-blue-400">{pkg.speed}</span>
+                      <span className="text-on-surface font-medium truncate max-w-[240px]">{pkg.name}</span>
+                      <span className="text-[11px] font-sans tabular-nums text-primary">{pkg.speed}</span>
                     </div>
-                    <div className="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                    <div className="w-full bg-surface-container-highest rounded-full h-1.5 overflow-hidden">
                       <div
-                        className="bg-blue-500 h-1.5 rounded-full transition-all duration-500"
+                        className="bg-primary h-1.5 rounded-full transition-all duration-500"
                         style={{ width: `${pkg.progress}%` }}
                       />
                     </div>
-                    <div className="flex items-center justify-between mt-1 text-[10px] text-slate-400 font-mono">
+                    <div className="flex items-center justify-between mt-1 text-[10px] text-on-surface-variant font-sans tabular-nums">
                       <span>ETA: {pkg.eta}</span>
                       <span>{pkg.progress}%</span>
                     </div>
                   </div>
                 ))
               ) : (
-                <div className="p-4 rounded-xl bg-slate-950/40 border border-slate-800/40 text-center font-mono text-xs text-slate-400">
+                <div className="p-4 rounded-[12px] bg-surface-container border border-outline-variant text-center font-sans tabular-nums text-xs text-on-surface-variant">
                   No active packages in download queue.
                 </div>
               )}

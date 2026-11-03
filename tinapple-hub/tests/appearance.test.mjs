@@ -12,13 +12,16 @@ test('stored settings reject invalid values and merge older settings with defaul
   assert.deepEqual(normalizeSettings(null), DEFAULT_SETTINGS);
   const restored = normalizeSettings({ mode: 'wallpaper', wallpaperDim: 4, accentColor: '#abc', secondaryColor: '#123456', enableGlass: 'false', enableParticles: false, wallpaperUrl: 'javascript:alert(1)' });
   assert.equal(restored.mode, 'wallpaper');
-  assert.equal(restored.wallpaperDim, 0.8);
+  assert.equal(restored.wallpaperDim, 0.85);
   assert.equal(restored.accentColor, DEFAULT_SETTINGS.accentColor);
   assert.equal(restored.secondaryColor, '#123456');
-  assert.equal(restored.enableGlass, true);
+  assert.equal(restored.enableGlass, DEFAULT_SETTINGS.enableGlass);
   assert.equal(restored.enableParticles, false);
   assert.equal(restored.wallpaperUrl, DEFAULT_SETTINGS.wallpaperUrl);
   assert.equal(normalizeSettings({ wallpaperDim: NaN, mode: 'broken' }).wallpaperDim, 0.5);
+  assert.equal(normalizeSettings({ wallpaperBlur: 25 }).wallpaperBlur, 25);
+  assert.equal(normalizeSettings({ wallpaperBlur: -10 }).wallpaperBlur, 0);
+  assert.equal(normalizeSettings({ wallpaperBlur: 100 }).wallpaperBlur, 60);
 });
 
 test('wallpaper URLs allow image paths and HTTPS but reject executable protocols', () => {

@@ -129,7 +129,7 @@ export const TailscaleModal: React.FC<TailscaleModalProps> = ({ isOpen, onClose 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
       <div
-        className="relative w-full max-w-2xl bg-[#091124] border border-[#1b2b52] rounded-3xl p-6 sm:p-8 shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
+        className="relative w-full max-w-2xl bg-[#091124] border border-[#1b2b52] rounded-3xl p-6 sm:p-8 shadow-none overflow-hidden max-h-[90vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Ambient Top Glow */}
@@ -143,19 +143,19 @@ export const TailscaleModal: React.FC<TailscaleModalProps> = ({ isOpen, onClose 
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-lg font-bold text-white tracking-wide font-mono">Tailscale Mesh VPN</h3>
+                <h3 className="text-lg font-bold text-on-surface tracking-wide font-mono">Tailscale Mesh VPN</h3>
                 <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-300 border border-sky-500/20">
                   {status?.version ? `v${status.version}` : 'WireGuard'}
                 </span>
               </div>
-              <p className="text-xs text-zinc-400 font-mono mt-0.5">
+              <p className="text-xs text-on-surface-variant font-mono mt-0.5">
                 Authenticate server to access dashboard remotely from any device.
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-xl text-zinc-400 hover:text-white hover:bg-white/10 transition-colors"
+            className="p-2 rounded-xl text-on-surface-variant hover:text-on-surface hover:bg-white/10 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -170,7 +170,7 @@ export const TailscaleModal: React.FC<TailscaleModalProps> = ({ isOpen, onClose 
                 ? 'bg-emerald-500/10 border-emerald-500/30'
                 : needsLogin
                 ? 'bg-amber-500/10 border-amber-500/30'
-                : 'bg-zinc-800/40 border-zinc-700/40'
+                : 'bg-surface-container border-zinc-700/40'
             }`}
           >
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -181,7 +181,7 @@ export const TailscaleModal: React.FC<TailscaleModalProps> = ({ isOpen, onClose 
                       ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400'
                       : needsLogin
                       ? 'bg-amber-500/20 border-amber-500/40 text-amber-400'
-                      : 'bg-zinc-800 border-zinc-700 text-zinc-400'
+                      : 'bg-surface-container border-zinc-700 text-on-surface-variant'
                   }`}
                 >
                   {isConnected ? (
@@ -203,7 +203,7 @@ export const TailscaleModal: React.FC<TailscaleModalProps> = ({ isOpen, onClose 
                           : 'bg-zinc-500'
                       }`}
                     />
-                    <h4 className="text-sm font-bold text-white font-mono uppercase tracking-wider">
+                    <h4 className="text-sm font-bold text-on-surface font-mono uppercase tracking-wider">
                       {isConnected
                         ? `Connected (${status?.tailnet || 'Tailnet'})`
                         : needsLogin
@@ -211,7 +211,7 @@ export const TailscaleModal: React.FC<TailscaleModalProps> = ({ isOpen, onClose 
                         : `State: ${status?.backendState || 'Stopped'}`}
                     </h4>
                   </div>
-                  <p className="text-xs text-zinc-300 font-mono mt-1">
+                  <p className="text-xs text-on-surface font-mono mt-1">
                     {isConnected
                       ? `Server is online and routing peer-to-peer traffic.`
                       : needsLogin
@@ -224,7 +224,7 @@ export const TailscaleModal: React.FC<TailscaleModalProps> = ({ isOpen, onClose 
               <div className="flex items-center gap-2 self-end sm:self-center">
                 <button
                   onClick={fetchStatus}
-                  className="p-2 rounded-xl bg-[#0e1b38] hover:bg-[#14264e] border border-[#1b2b52] text-zinc-300 hover:text-white transition-colors"
+                  className="p-2 rounded-xl bg-[#0e1b38] hover:bg-[#14264e] border border-[#1b2b52] text-on-surface hover:text-on-surface transition-colors"
                   title="Refresh state"
                 >
                   <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-sky-400' : ''}`} />
@@ -233,7 +233,7 @@ export const TailscaleModal: React.FC<TailscaleModalProps> = ({ isOpen, onClose 
                   <button
                     onClick={handleToggleState}
                     disabled={loading}
-                    className="px-3 py-1.5 rounded-xl text-xs font-mono font-semibold bg-zinc-800 hover:bg-zinc-700 border border-zinc-600 text-zinc-200 transition-colors"
+                    className="px-3 py-1.5 rounded-xl text-xs font-mono font-semibold bg-surface-container hover:bg-zinc-700 border border-zinc-600 text-on-surface transition-colors"
                   >
                     Disconnect
                   </button>
@@ -247,12 +247,12 @@ export const TailscaleModal: React.FC<TailscaleModalProps> = ({ isOpen, onClose 
                 {primaryIP && (
                   <div className="p-3 rounded-xl bg-black/40 border border-emerald-500/25 flex items-center justify-between">
                     <div>
-                      <span className="text-[10px] text-zinc-400 block uppercase">Tailscale IPv4</span>
+                      <span className="text-[10px] text-on-surface-variant block uppercase">Tailscale IPv4</span>
                       <span className="text-sm font-bold text-emerald-300">{primaryIP}</span>
                     </div>
                     <button
                       onClick={() => copyToClipboard(primaryIP, 'ip')}
-                      className="p-1.5 rounded-lg hover:bg-white/10 text-zinc-400 hover:text-white"
+                      className="p-1.5 rounded-lg hover:bg-white/10 text-on-surface-variant hover:text-on-surface"
                       title="Copy IP"
                     >
                       {copiedKey === 'ip' ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
@@ -263,14 +263,14 @@ export const TailscaleModal: React.FC<TailscaleModalProps> = ({ isOpen, onClose 
                 {status?.dnsName && (
                   <div className="p-3 rounded-xl bg-black/40 border border-emerald-500/25 flex items-center justify-between">
                     <div>
-                      <span className="text-[10px] text-zinc-400 block uppercase">MagicDNS Hostname</span>
-                      <span className="text-sm font-bold text-white truncate max-w-[170px] inline-block">
+                      <span className="text-[10px] text-on-surface-variant block uppercase">MagicDNS Hostname</span>
+                      <span className="text-sm font-bold text-on-surface truncate max-w-[170px] inline-block">
                         {status.dnsName}
                       </span>
                     </div>
                     <button
                       onClick={() => copyToClipboard(status.dnsName || '', 'dns')}
-                      className="p-1.5 rounded-lg hover:bg-white/10 text-zinc-400 hover:text-white"
+                      className="p-1.5 rounded-lg hover:bg-white/10 text-on-surface-variant hover:text-on-surface"
                       title="Copy MagicDNS"
                     >
                       {copiedKey === 'dns' ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
@@ -285,7 +285,7 @@ export const TailscaleModal: React.FC<TailscaleModalProps> = ({ isOpen, onClose 
                     <div className="sm:col-span-2 p-3 rounded-xl bg-sky-500/10 border border-sky-500/25 flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <Globe className="w-4 h-4 text-sky-400 shrink-0" />
-                        <span className="text-zinc-200">
+                        <span className="text-on-surface">
                           Remote Dashboard URL:{' '}
                           <a
                             href={remoteDashUrl}
@@ -317,7 +317,7 @@ export const TailscaleModal: React.FC<TailscaleModalProps> = ({ isOpen, onClose 
           {actionMsg && (
             <div className="p-3 rounded-xl bg-[#0d1c3a] border border-sky-500/30 text-xs font-mono text-sky-300 flex items-center justify-between animate-fade-in">
               <span>{actionMsg}</span>
-              <button onClick={() => setActionMsg(null)} className="text-zinc-400 hover:text-white">
+              <button onClick={() => setActionMsg(null)} className="text-on-surface-variant hover:text-on-surface">
                 <X className="w-3.5 h-3.5" />
               </button>
             </div>
@@ -330,11 +330,11 @@ export const TailscaleModal: React.FC<TailscaleModalProps> = ({ isOpen, onClose 
               <div className="p-5 rounded-2xl bg-[#0c162e] border border-[#1b2b52]">
                 <div className="flex items-start justify-between gap-4 mb-3">
                   <div>
-                    <h5 className="text-sm font-bold text-white font-mono flex items-center gap-2">
+                    <h5 className="text-sm font-bold text-on-surface font-mono flex items-center gap-2">
                       <ExternalLink className="w-4 h-4 text-sky-400" />
                       <span>Option 1: One-Click Browser Authorization</span>
                     </h5>
-                    <p className="text-xs text-zinc-400 font-mono mt-1">
+                    <p className="text-xs text-on-surface-variant font-mono mt-1">
                       Click below to open Tailscale's secure authentication in a new browser tab on your client PC.
                     </p>
                   </div>
@@ -347,7 +347,7 @@ export const TailscaleModal: React.FC<TailscaleModalProps> = ({ isOpen, onClose 
                   <button
                     onClick={handleOpenAuth}
                     disabled={loading}
-                    className="flex-1 flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-mono text-sm font-bold bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white shadow-lg shadow-sky-500/20 active:scale-[0.98] transition-all disabled:opacity-50"
+                    className="flex-1 flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-mono text-sm font-bold bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-on-surface shadow-none shadow-sky-500/20 active:scale-[0.98] transition-all disabled:opacity-50"
                   >
                     <span>Log in to Tailscale</span>
                     <ArrowRight className="w-4 h-4" />
@@ -356,7 +356,7 @@ export const TailscaleModal: React.FC<TailscaleModalProps> = ({ isOpen, onClose 
                   {status?.authUrl && (
                     <button
                       onClick={() => copyToClipboard(status.authUrl || '', 'authUrl')}
-                      className="px-4 py-3 rounded-xl font-mono text-xs font-semibold bg-[#112042] hover:bg-[#172c5a] border border-[#203666] text-zinc-200 flex items-center justify-center gap-1.5 transition-colors"
+                      className="px-4 py-3 rounded-xl font-mono text-xs font-semibold bg-[#112042] hover:bg-[#172c5a] border border-[#203666] text-on-surface flex items-center justify-center gap-1.5 transition-colors"
                       title="Copy authentication link"
                     >
                       {copiedKey === 'authUrl' ? (
@@ -375,7 +375,7 @@ export const TailscaleModal: React.FC<TailscaleModalProps> = ({ isOpen, onClose 
                 </div>
 
                 {status?.authUrl && (
-                  <div className="mt-3 p-2.5 rounded-lg bg-black/40 border border-[#1b2b52] flex items-center justify-between text-[11px] font-mono text-zinc-400 truncate">
+                  <div className="mt-3 p-2.5 rounded-lg bg-black/40 border border-[#1b2b52] flex items-center justify-between text-[11px] font-mono text-on-surface-variant truncate">
                     <span className="truncate mr-2">{status.authUrl}</span>
                     <a
                       href={status.authUrl}
@@ -391,11 +391,11 @@ export const TailscaleModal: React.FC<TailscaleModalProps> = ({ isOpen, onClose 
 
               {/* Option 2: Pre-authenticated Auth Key */}
               <div className="p-5 rounded-2xl bg-[#0c162e] border border-[#1b2b52]">
-                <h5 className="text-sm font-bold text-white font-mono flex items-center gap-2 mb-1">
+                <h5 className="text-sm font-bold text-on-surface font-mono flex items-center gap-2 mb-1">
                   <Key className="w-4 h-4 text-purple-400" />
                   <span>Option 2: Tailscale Auth Key</span>
                 </h5>
-                <p className="text-xs text-zinc-400 font-mono mb-3">
+                <p className="text-xs text-on-surface-variant font-mono mb-3">
                   Generate a reusable or ephemeral key in your Tailscale Admin Console (Settings &gt; Keys) and paste it here.
                 </p>
 
@@ -405,7 +405,7 @@ export const TailscaleModal: React.FC<TailscaleModalProps> = ({ isOpen, onClose 
                     placeholder="tskey-auth-..."
                     value={authKeyInput}
                     onChange={(e) => setAuthKeyInput(e.target.value)}
-                    className="flex-1 px-3.5 py-2.5 rounded-xl bg-black/40 border border-[#1b2b52] text-xs font-mono text-white placeholder:text-zinc-600 focus:outline-none focus:border-sky-500 transition-colors"
+                    className="flex-1 px-3.5 py-2.5 rounded-xl bg-black/40 border border-[#1b2b52] text-xs font-mono text-on-surface placeholder:text-zinc-600 focus:outline-none focus:border-sky-500 transition-colors"
                   />
                   <button
                     type="submit"
@@ -422,7 +422,7 @@ export const TailscaleModal: React.FC<TailscaleModalProps> = ({ isOpen, onClose 
           {/* Connected Extra Controls (Log out) */}
           {isConnected && (
             <div className="flex items-center justify-between pt-2">
-              <span className="text-xs text-zinc-500 font-mono">
+              <span className="text-xs text-on-surface-variant font-mono">
                 Device Endorsement: {status?.hostName || 'pineapple'}
               </span>
               <button

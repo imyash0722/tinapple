@@ -104,21 +104,21 @@ export const ServerToolsModal: React.FC<ServerToolsModalProps> = ({ isOpen, onCl
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="flex flex-col bg-[#070d1d]/95 border border-white/10 rounded-2xl shadow-2xl w-full max-w-4xl h-[85vh] max-h-[850px] overflow-hidden text-slate-200">
+      <div className="flex flex-col bg-[#070d1d]/95 border border-outline-variant/50 rounded-2xl shadow-none w-full max-w-4xl h-[85vh] max-h-[850px] overflow-hidden text-on-surface">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 bg-[#0a1329] border-b border-white/[0.08] select-none shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400/20 via-sky-500/20 to-purple-600/20 border border-white/10 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400/20 via-sky-500/20 to-purple-600/20 border border-outline-variant/50 flex items-center justify-center">
               <Wrench className="w-5 h-5 text-tinapple-gold" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="font-mono font-bold text-base text-white">Server Operations Center</h3>
+                <h3 className="font-mono font-bold text-base text-on-surface">Server Operations Center</h3>
                 <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 font-bold">
                   Zero Shell Required
                 </span>
               </div>
-              <p className="text-xs text-zinc-400 font-mono">
+              <p className="text-xs text-on-surface-variant font-mono">
                 Port matrix (ss -tulpn), automated maintenance tasks & unit diagnostics
               </p>
             </div>
@@ -126,7 +126,7 @@ export const ServerToolsModal: React.FC<ServerToolsModalProps> = ({ isOpen, onCl
 
           <button
             onClick={onClose}
-            className="p-1.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] text-zinc-400 hover:text-white transition-all"
+            className="p-1.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] text-on-surface-variant hover:text-on-surface transition-all"
             title="Close"
           >
             <X className="w-4 h-4" />
@@ -140,7 +140,7 @@ export const ServerToolsModal: React.FC<ServerToolsModalProps> = ({ isOpen, onCl
             className={`flex items-center gap-2 px-3.5 py-2 border-b-2 font-mono text-xs font-semibold transition-all ${
               activeTab === 'ports'
                 ? 'border-tinapple-gold text-tinapple-gold bg-tinapple-gold/5'
-                : 'border-transparent text-zinc-400 hover:text-white hover:bg-white/[0.03]'
+                : 'border-transparent text-on-surface-variant hover:text-on-surface hover:bg-white/[0.03]'
             }`}
           >
             <Network className="w-4 h-4" />
@@ -152,7 +152,7 @@ export const ServerToolsModal: React.FC<ServerToolsModalProps> = ({ isOpen, onCl
             className={`flex items-center gap-2 px-3.5 py-2 border-b-2 font-mono text-xs font-semibold transition-all ${
               activeTab === 'maintenance'
                 ? 'border-tinapple-gold text-tinapple-gold bg-tinapple-gold/5'
-                : 'border-transparent text-zinc-400 hover:text-white hover:bg-white/[0.03]'
+                : 'border-transparent text-on-surface-variant hover:text-on-surface hover:bg-white/[0.03]'
             }`}
           >
             <Wrench className="w-4 h-4" />
@@ -164,7 +164,7 @@ export const ServerToolsModal: React.FC<ServerToolsModalProps> = ({ isOpen, onCl
             className={`flex items-center gap-2 px-3.5 py-2 border-b-2 font-mono text-xs font-semibold transition-all ${
               activeTab === 'health'
                 ? 'border-tinapple-gold text-tinapple-gold bg-tinapple-gold/5'
-                : 'border-transparent text-zinc-400 hover:text-white hover:bg-white/[0.03]'
+                : 'border-transparent text-on-surface-variant hover:text-on-surface hover:bg-white/[0.03]'
             }`}
           >
             <Activity className="w-4 h-4" />
@@ -179,20 +179,20 @@ export const ServerToolsModal: React.FC<ServerToolsModalProps> = ({ isOpen, onCl
             <div className="space-y-4">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <div className="relative w-full sm:w-72">
-                  <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <Search className="w-4 h-4 text-on-surface-variant absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
                     type="text"
                     value={portFilter}
                     onChange={(e) => setPortFilter(e.target.value)}
                     placeholder="Filter port, process, service..."
-                    className="w-full pl-9 pr-3 py-1.5 bg-black/40 border border-white/10 rounded-xl text-xs font-mono text-white focus:outline-none focus:border-tinapple-gold/50"
+                    className="w-full pl-9 pr-3 py-1.5 bg-black/40 border border-outline-variant/50 rounded-xl text-xs font-mono text-on-surface focus:outline-none focus:border-tinapple-gold/50"
                   />
                 </div>
 
                 <button
                   onClick={loadPorts}
                   disabled={loadingPorts}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] text-xs font-mono text-zinc-300 hover:text-white transition-all disabled:opacity-50"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] text-xs font-mono text-on-surface hover:text-on-surface transition-all disabled:opacity-50"
                 >
                   <RotateCw className={`w-3.5 h-3.5 ${loadingPorts ? 'animate-spin' : ''}`} />
                   <span>Refresh Sockets</span>
@@ -202,13 +202,13 @@ export const ServerToolsModal: React.FC<ServerToolsModalProps> = ({ isOpen, onCl
               {loadingPorts && ports.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16 space-y-2">
                   <RotateCw className="w-6 h-6 text-tinapple-gold animate-spin" />
-                  <p className="font-mono text-xs text-zinc-400">Scanning network sockets (ss -tulpn)...</p>
+                  <p className="font-mono text-xs text-on-surface-variant">Scanning network sockets (ss -tulpn)...</p>
                 </div>
               ) : (
-                <div className="border border-white/10 rounded-xl overflow-hidden bg-black/30">
+                <div className="border border-outline-variant/50 rounded-xl overflow-hidden bg-black/30">
                   <div className="overflow-x-auto">
                     <table className="w-full text-left font-mono text-xs">
-                      <thead className="bg-[#0a1329] border-b border-white/[0.08] text-zinc-400 text-[11px] uppercase tracking-wider">
+                      <thead className="bg-[#0a1329] border-b border-white/[0.08] text-on-surface-variant text-[11px] uppercase tracking-wider">
                         <tr>
                           <th className="py-2.5 px-3">Port</th>
                           <th className="py-2.5 px-3">Proto</th>
@@ -221,7 +221,7 @@ export const ServerToolsModal: React.FC<ServerToolsModalProps> = ({ isOpen, onCl
                       <tbody className="divide-y divide-white/[0.05]">
                         {filteredPorts.length === 0 ? (
                           <tr>
-                            <td colSpan={6} className="py-8 text-center text-zinc-500 font-mono">
+                            <td colSpan={6} className="py-8 text-center text-on-surface-variant font-mono">
                               No open sockets matching search filter
                             </td>
                           </tr>
@@ -240,13 +240,13 @@ export const ServerToolsModal: React.FC<ServerToolsModalProps> = ({ isOpen, onCl
                                   {p.protocol}
                                 </span>
                               </td>
-                              <td className="py-2.5 px-3 font-semibold text-white">
+                              <td className="py-2.5 px-3 font-semibold text-on-surface">
                                 {p.label || p.process}
                               </td>
-                              <td className="py-2.5 px-3 text-zinc-400 text-[11px]">
+                              <td className="py-2.5 px-3 text-on-surface-variant text-[11px]">
                                 {p.localIp || p.address || '0.0.0.0'}
                               </td>
-                              <td className="py-2.5 px-3 text-zinc-400 text-[11px]">
+                              <td className="py-2.5 px-3 text-on-surface-variant text-[11px]">
                                 {p.process} {p.pid > 0 && <span className="text-zinc-600">({p.pid})</span>}
                               </td>
                               <td className="py-2.5 px-3 text-right">
@@ -292,8 +292,8 @@ export const ServerToolsModal: React.FC<ServerToolsModalProps> = ({ isOpen, onCl
                   <div className="w-8 h-8 rounded-lg bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center text-emerald-400 mb-2 group-hover:scale-105 transition-transform">
                     <Trash2 className="w-4 h-4" />
                   </div>
-                  <span className="font-mono font-bold text-xs text-white">Clean Cache</span>
-                  <span className="text-[11px] text-zinc-400 font-mono mt-1">
+                  <span className="font-mono font-bold text-xs text-on-surface">Clean Cache</span>
+                  <span className="text-[11px] text-on-surface-variant font-mono mt-1">
                     Free up gigabytes from pacman/paru cache
                   </span>
                 </button>
@@ -307,8 +307,8 @@ export const ServerToolsModal: React.FC<ServerToolsModalProps> = ({ isOpen, onCl
                   <div className="w-8 h-8 rounded-lg bg-sky-500/15 border border-sky-500/25 flex items-center justify-center text-sky-400 mb-2 group-hover:scale-105 transition-transform">
                     <HardDrive className="w-4 h-4" />
                   </div>
-                  <span className="font-mono font-bold text-xs text-white">Trim SSDs</span>
-                  <span className="text-[11px] text-zinc-400 font-mono mt-1">
+                  <span className="font-mono font-bold text-xs text-on-surface">Trim SSDs</span>
+                  <span className="text-[11px] text-on-surface-variant font-mono mt-1">
                     Run fstrim to optimize NVMe write wear
                   </span>
                 </button>
@@ -322,8 +322,8 @@ export const ServerToolsModal: React.FC<ServerToolsModalProps> = ({ isOpen, onCl
                   <div className="w-8 h-8 rounded-lg bg-purple-500/15 border border-purple-500/25 flex items-center justify-center text-purple-400 mb-2 group-hover:scale-105 transition-transform">
                     <RefreshCw className="w-4 h-4" />
                   </div>
-                  <span className="font-mono font-bold text-xs text-white">Reload Systemd</span>
-                  <span className="text-[11px] text-zinc-400 font-mono mt-1">
+                  <span className="font-mono font-bold text-xs text-on-surface">Reload Systemd</span>
+                  <span className="text-[11px] text-on-surface-variant font-mono mt-1">
                     Rescan unit files & drop-in overrides
                   </span>
                 </button>
@@ -337,8 +337,8 @@ export const ServerToolsModal: React.FC<ServerToolsModalProps> = ({ isOpen, onCl
                   <div className="w-8 h-8 rounded-lg bg-amber-500/15 border border-amber-500/25 flex items-center justify-center text-amber-400 mb-2 group-hover:scale-105 transition-transform">
                     <Wifi className="w-4 h-4" />
                   </div>
-                  <span className="font-mono font-bold text-xs text-white">Restart Network</span>
-                  <span className="text-[11px] text-zinc-400 font-mono mt-1">
+                  <span className="font-mono font-bold text-xs text-on-surface">Restart Network</span>
+                  <span className="text-[11px] text-on-surface-variant font-mono mt-1">
                     Re-bind Wi-Fi, Ethernet & DHCP leases
                   </span>
                 </button>
@@ -349,21 +349,21 @@ export const ServerToolsModal: React.FC<ServerToolsModalProps> = ({ isOpen, onCl
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Terminal className="w-4 h-4 text-tinapple-gold" />
-                    <span className="text-xs font-mono font-semibold text-zinc-300">
+                    <span className="text-xs font-mono font-semibold text-on-surface">
                       Maintenance Task Output
                     </span>
                   </div>
                   {maintenanceLogs && (
                     <button
                       onClick={() => setMaintenanceLogs('')}
-                      className="text-[11px] font-mono text-zinc-400 hover:text-white"
+                      className="text-[11px] font-mono text-on-surface-variant hover:text-on-surface"
                     >
                       Clear Log
                     </button>
                   )}
                 </div>
 
-                <div className="p-3 bg-black/60 border border-white/10 rounded-xl h-60 overflow-y-auto font-mono text-xs text-zinc-300 whitespace-pre-wrap select-text">
+                <div className="p-3 bg-black/60 border border-outline-variant/50 rounded-xl h-60 overflow-y-auto font-mono text-xs text-on-surface whitespace-pre-wrap select-text">
                   {maintenanceLogs || 'Ready. Click any maintenance action above to execute.'}
                 </div>
               </div>
@@ -374,13 +374,13 @@ export const ServerToolsModal: React.FC<ServerToolsModalProps> = ({ isOpen, onCl
           {activeTab === 'health' && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <h4 className="font-mono text-xs font-bold uppercase tracking-wider text-zinc-400">
+                <h4 className="font-mono text-xs font-bold uppercase tracking-wider text-on-surface-variant">
                   Systemd Unit Health
                 </h4>
                 <button
                   onClick={loadHealth}
                   disabled={loadingHealth}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] text-xs font-mono text-zinc-300 hover:text-white transition-all disabled:opacity-50"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] text-xs font-mono text-on-surface hover:text-on-surface transition-all disabled:opacity-50"
                 >
                   <RotateCw className={`w-3.5 h-3.5 ${loadingHealth ? 'animate-spin' : ''}`} />
                   <span>Refresh Health</span>
@@ -392,7 +392,7 @@ export const ServerToolsModal: React.FC<ServerToolsModalProps> = ({ isOpen, onCl
                   <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
                   <div>
                     <p className="font-mono font-bold text-xs text-emerald-300">All Units Operational</p>
-                    <p className="font-mono text-[11px] text-zinc-400">0 failed systemd service units detected on this node.</p>
+                    <p className="font-mono text-[11px] text-on-surface-variant">0 failed systemd service units detected on this node.</p>
                   </div>
                 </div>
               ) : (
@@ -413,14 +413,14 @@ export const ServerToolsModal: React.FC<ServerToolsModalProps> = ({ isOpen, onCl
 
               {/* Kernel Warning & Error Journal Logs */}
               <div className="space-y-2 pt-2">
-                <h4 className="font-mono text-xs font-bold uppercase tracking-wider text-zinc-400">
+                <h4 className="font-mono text-xs font-bold uppercase tracking-wider text-on-surface-variant">
                   Kernel & Hardware Journal Alerts (Priority ≤ 3)
                 </h4>
-                <div className="p-3 bg-black/60 border border-white/10 rounded-xl h-64 overflow-y-auto font-mono text-[11px] text-amber-300/90 whitespace-pre-wrap select-text leading-relaxed">
+                <div className="p-3 bg-black/60 border border-outline-variant/50 rounded-xl h-64 overflow-y-auto font-mono text-[11px] text-amber-300/90 whitespace-pre-wrap select-text leading-relaxed">
                   {kernelLogs && (Array.isArray(kernelLogs) ? kernelLogs.length > 0 : String(kernelLogs).trim().length > 0) ? (
                     Array.isArray(kernelLogs) ? kernelLogs.join('\n') : String(kernelLogs)
                   ) : (
-                    <span className="text-zinc-500">No critical kernel alerts in current boot cycle.</span>
+                    <span className="text-on-surface-variant">No critical kernel alerts in current boot cycle.</span>
                   )}
                 </div>
               </div>

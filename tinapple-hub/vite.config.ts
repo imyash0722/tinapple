@@ -38,6 +38,12 @@ export default defineConfig({
           if (id.includes('node_modules/react/') || id.includes('node_modules/react-dom/')) {
             return 'vendor-react';
           }
+          if (id.includes('@material/material-color-utilities')) {
+            return 'vendor-material';
+          }
+          if (id.includes('ogl')) {
+            return 'vendor-ogl';
+          }
         },
       },
     },

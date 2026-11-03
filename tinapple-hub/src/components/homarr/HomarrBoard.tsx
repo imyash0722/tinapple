@@ -81,21 +81,21 @@ const DEFAULT_HOMARR_BOOKMARKS: CustomBookmarkItem[] = [
     id: 'bm-github',
     name: 'GitHub Repository',
     url: 'https://github.com/imyash0722/tinapple',
-    icon: '🐙',
+    icon: 'GH',
     category: 'Development',
   },
   {
     id: 'bm-arch',
     name: 'Arch Linux Wiki',
     url: 'https://wiki.archlinux.org',
-    icon: '🐧',
+    icon: 'AL',
     category: 'Reference',
   },
   {
     id: 'bm-reddit-selfhosted',
     name: 'r/selfhosted',
     url: 'https://reddit.com/r/selfhosted',
-    icon: '🌐',
+    icon: 'RD',
     category: 'Community',
   },
 ];
@@ -133,14 +133,14 @@ interface SearchBang {
 }
 
 const SEARCH_BANGS: SearchBang[] = [
-  { prefix: '!yt', name: 'YouTube', url: 'https://www.youtube.com/results?search_query=', icon: '📺', description: 'Search YouTube videos' },
-  { prefix: '!g', name: 'Google', url: 'https://www.google.com/search?q=', icon: '🔍', description: 'Search Google web' },
-  { prefix: '!ddg', name: 'DuckDuckGo', url: 'https://duckduckgo.com/?q=', icon: '🦆', description: 'Privacy search on DuckDuckGo' },
-  { prefix: '!gh', name: 'GitHub', url: 'https://github.com/search?q=', icon: '🐙', description: 'Search GitHub repositories' },
-  { prefix: '!tmdb', name: 'The Movie Database', url: 'https://www.themoviedb.org/search?query=', icon: '🎬', description: 'Search TMDB Movies & Shows' },
-  { prefix: '!wiki', name: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Special:Search?search=', icon: '📖', description: 'Search Wikipedia encyclopedia' },
-  { prefix: '!nyaa', name: 'Nyaa Anime', url: 'https://nyaa.si/?f=0&c=0_0&q=', icon: '⛩️', description: 'Search Nyaa anime releases' },
-  { prefix: '!r', name: 'Reddit', url: 'https://www.reddit.com/search/?q=', icon: '💬', description: 'Search Reddit discussions' },
+  { prefix: '!yt', name: 'YouTube', url: 'https://www.youtube.com/results?search_query=', icon: 'YT', description: 'Search YouTube videos' },
+  { prefix: '!g', name: 'Google', url: 'https://www.google.com/search?q=', icon: 'G', description: 'Search Google web' },
+  { prefix: '!ddg', name: 'DuckDuckGo', url: 'https://duckduckgo.com/?q=', icon: 'DDG', description: 'Privacy search on DuckDuckGo' },
+  { prefix: '!gh', name: 'GitHub', url: 'https://github.com/search?q=', icon: 'GH', description: 'Search GitHub repositories' },
+  { prefix: '!tmdb', name: 'The Movie Database', url: 'https://www.themoviedb.org/search?query=', icon: 'TMDB', description: 'Search TMDB Movies & Shows' },
+  { prefix: '!wiki', name: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Special:Search?search=', icon: 'W', description: 'Search Wikipedia encyclopedia' },
+  { prefix: '!nyaa', name: 'Nyaa Anime', url: 'https://nyaa.si/?f=0&c=0_0&q=', icon: 'NY', description: 'Search Nyaa anime releases' },
+  { prefix: '!r', name: 'Reddit', url: 'https://www.reddit.com/search/?q=', icon: 'R', description: 'Search Reddit discussions' },
 ];
 
 // 1. Definition of Built-in Curated Homarr Appliance Tiles
@@ -759,51 +759,19 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
           />
         );
       case 'single_appliance':
-        return (
-          <HomarrSingleApplianceWidget
-            title={widget.title}
-            appId={widget.appId || widget.id}
-            tagline={widget.description}
-            port={widget.targetPort}
-            icon={widget.icon}
-            accentColor={widget.accentColor}
-            onOpenGuide={onOpenGuide}
-          />
-        );
+        return <HomarrSingleApplianceWidget appId={widget.customConfig?.appId || widget.id}
+          customTitle={widget.title} customIcon={widget.icon} customColor={widget.color} />;
       case 'custom_iframe':
-        return (
-          <CustomIframeWidget
-            url={widget.iframeUrl || ''}
-            title={widget.title}
-            refreshSeconds={widget.refreshSeconds}
-          />
-        );
+        return <CustomIframeWidget widget={widget} />;
       case 'custom_markdown':
-        return <CustomMarkdownWidget markdown={widget.markdown || ''} />;
+        return <CustomMarkdownWidget widget={widget} />;
       case 'custom_links':
-        return (
-          <CustomLinksWidget
-            links={widget.links || []}
-            isEditMode={isEditMode}
-            onUpdateLinks={(newLinks) => {
-              saveWidgets(
-                safeWidgets.map((w) => (w.id === widget.id ? { ...w, links: newLinks } : w))
-              );
-            }}
-          />
-        );
+        return <CustomLinksWidget widget={widget} />;
       case 'custom_monitor':
-        return (
-          <CustomMonitorWidget
-            endpoint={widget.pingEndpoint || ''}
-            port={widget.targetPort}
-            title={widget.title}
-            refreshSeconds={widget.refreshSeconds}
-          />
-        );
+        return <CustomMonitorWidget widget={widget} />;
       default:
         return (
-          <div className="p-4 text-zinc-400 font-mono text-xs">
+          <div className="p-4 text-on-surface-variant font-sans tabular-nums text-xs">
             Unknown widget type: {widget.type}
           </div>
         );
@@ -830,14 +798,14 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
     return (
       <div className="w-full">
         {/* View Mode Return Banner */}
-        <div className="mb-4 px-4 py-2.5 rounded-2xl bg-slate-900/80 border border-white/10 backdrop-blur-xl flex items-center justify-between font-mono text-xs">
+        <div className="mb-4 px-4 py-2.5 rounded-[12px] bg-surface-container-low border border-outline-variant flex items-center justify-between font-sans tabular-nums text-xs shadow-none">
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-            <span className="text-zinc-300 font-bold">2D Freeform Pannable Canvas Mode</span>
+            <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+            <span className="text-on-surface font-bold">2D Freeform Pannable Canvas Mode</span>
           </div>
           <button
             onClick={() => handleSetViewMode('grid')}
-            className="px-3 py-1.5 rounded-xl bg-tinapple-gold hover:bg-amber-400 text-slate-950 font-bold flex items-center gap-1.5 transition-all shadow-md active:scale-95"
+            className="px-3.5 py-1.5 rounded-full bg-primary text-on-primary font-bold flex items-center gap-1.5 transition-all shadow-none active:scale-95"
           >
             <LayoutGrid className="w-3.5 h-3.5" />
             <span>Switch to Homarr Full Page Board</span>
@@ -878,7 +846,7 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
       {/* ═══════════════════════════════════════════════════════════════
           1. AUTHENTIC HOMARR UNIFIED COMMAND & SEARCH BAR
           ═══════════════════════════════════════════════════════════════ */}
-      <header className="rounded-3xl bg-slate-950/75 border border-white/[0.08] p-4 sm:p-5 backdrop-blur-2xl shadow-2xl shadow-black/40 flex flex-col gap-4">
+      <header className="rounded-[28px] bg-surface-container-low border border-outline-variant p-4 sm:p-5 shadow-none flex flex-col gap-4">
         {/* Top Header Row: Server Identity, Status, and Controls */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           {/* Left: Branding & Status Badge */}
@@ -886,29 +854,29 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
             {/* Drawer Menu Button (Instant Access to App Store, Guides, Web Terminal, Settings) */}
             <button
               onClick={onOpenDrawer}
-              className="p-2.5 rounded-2xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 text-zinc-300 hover:text-white transition-all shadow-sm active:scale-95"
+              className="p-2.5 rounded-full bg-surface-container hover:bg-surface-container-high border border-outline-variant text-on-surface hover:text-on-surface transition-all active:scale-95"
               title="Open Appliance Navigation Drawer (Store, Guides, Terminal, Tools)"
             >
-              <Menu className="w-5 h-5 text-tinapple-gold" />
+              <Menu className="w-5 h-5 text-primary" />
             </button>
 
             {/* Server Node Icon */}
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-amber-500/20 via-purple-500/20 to-sky-500/20 border border-white/15 flex items-center justify-center text-xl shrink-0 shadow-inner">
-              🍎
+            <div className="w-11 h-11 rounded-2xl bg-primary-container border border-outline-variant flex items-center justify-center text-primary font-bold shrink-0">
+              <Layers className="w-5 h-5 text-primary" />
             </div>
 
             <div>
               <div className="flex items-center gap-2.5">
-                <h1 className="text-base sm:text-lg font-black text-white font-mono tracking-tight">
+                <h1 className="text-base sm:text-lg font-black text-on-surface font-sans tabular-nums tracking-tight">
                   {systemInfo?.hostname || 'tinapple-server'}
                 </h1>
                 {/* Live Online Badge */}
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-[11px] font-mono text-emerald-300 font-bold">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-[11px] font-sans tabular-nums text-emerald-300 font-bold">
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                   <span>{onlineServicesCount} Online</span>
                 </span>
                 {/* Headless Server / Niri Desktop Badge */}
-                <span className="hidden sm:inline-block px-2 py-0.5 rounded text-[10px] font-mono bg-white/[0.05] border border-white/10 text-zinc-400 font-semibold">
+                <span className="hidden sm:inline-block px-2 py-0.5 rounded-full text-[10px] font-sans tabular-nums bg-surface-container-highest border border-outline-variant text-on-surface-variant font-semibold">
                   {systemInfo?.sessionMode === 'headless' ? 'Headless Server' : 'Niri Desktop'}
                 </span>
               </div>
@@ -916,11 +884,11 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
           </div>
 
           {/* Right: Quick Action Controls */}
-          <div className="flex items-center flex-wrap gap-2 font-mono text-xs">
+          <div className="flex items-center flex-wrap gap-2 font-sans tabular-nums text-xs">
             {/* App Store Shortcut */}
             <button
               onClick={() => onNavigateTab('store')}
-              className="px-3 py-1.5 rounded-xl bg-purple-500/15 hover:bg-purple-500/25 text-purple-300 border border-purple-500/30 font-bold flex items-center gap-1.5 transition-all shadow-sm active:scale-95"
+              className="px-3 py-1.5 rounded-full bg-purple-500/15 hover:bg-purple-500/25 text-purple-300 border border-purple-500/30 font-bold flex items-center gap-1.5 transition-all shadow-sm active:scale-95"
               title="Open 1-Click ChaddyStore App & Pack Installer"
             >
               <ShoppingBag className="w-3.5 h-3.5 text-purple-400" />
@@ -930,7 +898,7 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
             {/* Setup Guides Shortcut */}
             <button
               onClick={() => onNavigateTab('guides')}
-              className="px-3 py-1.5 rounded-xl bg-sky-500/15 hover:bg-sky-500/25 text-sky-300 border border-sky-500/30 font-bold flex items-center gap-1.5 transition-all shadow-sm active:scale-95"
+              className="px-3 py-1.5 rounded-full bg-sky-500/15 hover:bg-sky-500/25 text-sky-300 border border-sky-500/30 font-bold flex items-center gap-1.5 transition-all shadow-sm active:scale-95"
               title="Open Interactive Appliance Setup Guides"
             >
               <BookOpen className="w-3.5 h-3.5 text-sky-400" />
@@ -940,7 +908,7 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
             {/* Web Terminal Shortcut */}
             <button
               onClick={onOpenTerminal}
-              className="p-2 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 text-emerald-400 transition-all active:scale-95"
+              className="p-2 rounded-full bg-surface-container hover:bg-surface-container-high border border-outline-variant text-emerald-400 transition-all active:scale-95"
               title="Open Interactive Web PTY Terminal"
             >
               <Terminal className="w-4 h-4" />
@@ -949,7 +917,7 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
             {/* Port Matrix & Tools */}
             <button
               onClick={onOpenTools}
-              className="p-2 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 text-tinapple-gold transition-all active:scale-95"
+              className="p-2 rounded-full bg-surface-container hover:bg-surface-container-high border border-outline-variant text-primary transition-all active:scale-95"
               title="Server Tools & Port Matrix"
             >
               <Wrench className="w-4 h-4" />
@@ -958,7 +926,7 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
             {/* Appearance / Theme Picker */}
             <button
               onClick={onOpenAppearance}
-              className="p-2 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 text-sky-400 transition-all active:scale-95"
+              className="p-2 rounded-full bg-surface-container hover:bg-surface-container-high border border-outline-variant text-sky-400 transition-all active:scale-95"
               title="Customize Wallpaper, Accent Colors & Glass Blur"
             >
               <Palette className="w-4 h-4" />
@@ -967,7 +935,7 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
             {/* Fullscreen Toggle */}
             <button
               onClick={toggleFullscreen}
-              className="p-2 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 text-zinc-300 hover:text-white transition-all active:scale-95"
+              className="p-2 rounded-full bg-surface-container hover:bg-surface-container-high border border-outline-variant text-on-surface-variant hover:text-on-surface transition-all active:scale-95"
               title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
             >
               {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
@@ -976,9 +944,9 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
             {/* Add Widget / Appliance */}
             <button
               onClick={() => setCreatorOpen(true)}
-              className="px-3.5 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 font-bold flex items-center gap-1.5 transition-all shadow-sm active:scale-95"
+              className="px-3.5 py-1.5 rounded-full bg-primary/20 hover:bg-primary/30 text-primary border border-primary/40 font-bold flex items-center gap-1.5 transition-all shadow-sm active:scale-95"
             >
-              <Plus className="w-3.5 h-3.5 text-tinapple-gold" />
+              <Plus className="w-3.5 h-3.5 text-primary" />
               <span>Add Widget</span>
             </button>
 
@@ -988,10 +956,10 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
                 setIsEditMode(!isEditMode);
                 AndroidBridge.performHaptic('medium');
               }}
-              className={`px-3.5 py-1.5 rounded-xl font-bold flex items-center gap-1.5 transition-all shadow-sm active:scale-95 ${
+              className={`px-3.5 py-1.5 rounded-full font-bold flex items-center gap-1.5 transition-all shadow-sm active:scale-95 ${
                 isEditMode
-                  ? 'bg-emerald-500 text-slate-950 shadow-emerald-500/20 hover:bg-emerald-400'
-                  : 'bg-white/5 hover:bg-white/10 text-zinc-300 hover:text-white border border-white/10'
+                  ? 'bg-primary text-on-primary border border-primary shadow-none hover:opacity-90'
+                  : 'bg-surface-container hover:bg-surface-container-high text-on-surface border border-outline-variant'
               }`}
             >
               {isEditMode ? (
@@ -1010,7 +978,7 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
             {/* View Mode Toggle (Grid Board <-> 2D Canvas) */}
             <button
               onClick={() => handleSetViewMode('canvas')}
-              className="px-3 py-1.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] text-zinc-300 border border-white/10 flex items-center gap-1.5 transition-all"
+              className="px-3 py-1.5 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface border border-outline-variant flex items-center gap-1.5 transition-all"
               title="Switch to 2D Freeform Pannable Canvas"
             >
               <Move className="w-3.5 h-3.5 text-purple-400" />
@@ -1021,10 +989,10 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
             <button
               onClick={onRefresh}
               disabled={isRefreshing}
-              className="p-2 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] text-zinc-400 hover:text-white transition-all disabled:opacity-50"
+              className="p-2 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-all disabled:opacity-50"
               title="Refresh Live Telemetry"
             >
-              <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin text-tinapple-gold' : ''}`} />
+              <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin text-primary' : ''}`} />
             </button>
           </div>
         </div>
@@ -1032,14 +1000,14 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
         {/* Center: Homarr Fast Interactive Search Bar with Bangs Support */}
         <form onSubmit={handleSearchSubmit} className="relative w-full">
           <div className="relative flex items-center">
-            <Search className="w-4 h-4 text-zinc-400 absolute left-4 pointer-events-none" />
+            <Search className="w-4 h-4 text-on-surface-variant absolute left-4 pointer-events-none" />
             <input
               ref={searchInputRef}
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search apps, daemons, or type bangs like '!yt query', '!g', '!tmdb'… (Press '/' to focus)"
-              className="w-full pl-11 pr-24 py-3 rounded-2xl bg-slate-900/90 border border-white/15 focus:border-tinapple-gold text-sm font-mono text-white placeholder-zinc-500 focus:outline-none transition-all shadow-inner"
+              className="w-full pl-11 pr-24 py-3 rounded-full bg-surface-container-highest border border-outline-variant focus:border-primary text-sm font-sans tabular-nums text-on-surface placeholder-zinc-500 focus:outline-none transition-all"
             />
             {/* Clear Button or Shortcut Pill */}
             <div className="absolute right-3.5 flex items-center gap-1.5">
@@ -1050,12 +1018,12 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
                     setSearchQuery('');
                     searchInputRef.current?.focus();
                   }}
-                  className="p-1 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 transition-colors"
+                  className="p-1 rounded-full text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors"
                 >
                   <X className="w-4 h-4" />
                 </button>
               ) : (
-                <kbd className="hidden sm:inline-block px-2 py-0.5 rounded text-[10px] font-mono bg-white/[0.08] text-zinc-400 border border-white/10">
+                <kbd className="hidden sm:inline-block px-2 py-0.5 rounded-full text-[10px] font-sans tabular-nums bg-surface-container text-on-surface-variant border border-outline-variant">
                   /
                 </kbd>
               )}
@@ -1064,14 +1032,14 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
 
           {/* Active Search Bang Preview Pill */}
           {activeBang && (
-            <div className="mt-2 flex items-center justify-between px-3 py-1.5 rounded-xl bg-purple-950/50 border border-purple-500/30 text-xs font-mono text-purple-200 animate-in fade-in">
+            <div className="mt-2 flex items-center justify-between px-3 py-1.5 rounded-full bg-surface-container border border-outline-variant text-xs font-sans tabular-nums text-on-surface animate-in fade-in">
               <div className="flex items-center gap-2">
-                <span>{activeBang.icon}</span>
+                <span className="font-bold text-primary">{activeBang.icon}</span>
                 <span>
-                  Search <strong>{activeBang.name}</strong> for: <em className="text-tinapple-gold not-italic font-bold">"{activeBang.query || '...'}"</em>
+                  Search <strong>{activeBang.name}</strong> for: <em className="text-primary not-italic font-bold">"{activeBang.query || '...'}"</em>
                 </span>
               </div>
-              <span className="text-[10px] px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30 font-bold">
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/30 font-bold">
                 Press Enter ↵
               </span>
             </div>
@@ -1079,11 +1047,11 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
 
           {/* Web Search fallback pill if user typed a non-bang query */}
           {!activeBang && searchQuery.trim().length > 0 && (
-            <div className="mt-2 flex items-center justify-between px-3 py-1.5 rounded-xl bg-slate-900/60 border border-white/10 text-xs font-mono text-zinc-400">
+            <div className="mt-2 flex items-center justify-between px-3 py-1.5 rounded-full bg-surface-container border border-outline-variant text-xs font-sans tabular-nums text-on-surface-variant">
               <div className="flex items-center gap-2">
                 <span>Filtering for <strong>"{searchQuery}"</strong></span>
                 {filteredAppliances.length > 0 && (
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/25">
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/25">
                     {filteredAppliances.length} app match{filteredAppliances.length > 1 ? 'es' : ''} (Press Enter to open first)
                   </span>
                 )}
@@ -1092,7 +1060,7 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
                 href={`https://duckduckgo.com/?q=${encodeURIComponent(searchQuery)}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-tinapple-gold hover:underline flex items-center gap-1 font-bold shrink-0"
+                className="text-primary hover:underline flex items-center gap-1 font-bold shrink-0"
               >
                 <span>Search Web</span>
                 <ExternalLink className="w-3 h-3" />
@@ -1102,7 +1070,7 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
 
           {/* Quick Search Bang Shortcuts when empty */}
           {!searchQuery && (
-            <div className="hidden sm:flex items-center gap-1.5 mt-2 font-mono text-[11px] text-zinc-500 overflow-x-auto scrollbar-none">
+            <div className="hidden sm:flex items-center gap-1.5 mt-2 font-sans tabular-nums text-[11px] text-on-surface-variant overflow-x-auto scrollbar-none">
               <span className="text-zinc-600">Quick Bangs:</span>
               {SEARCH_BANGS.slice(0, 6).map((b) => (
                 <button
@@ -1112,9 +1080,9 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
                     setSearchQuery(`${b.prefix} `);
                     searchInputRef.current?.focus();
                   }}
-                  className="px-2 py-0.5 rounded-lg bg-white/[0.03] hover:bg-white/[0.08] hover:text-zinc-300 transition-colors border border-white/5 flex items-center gap-1"
+                  className="px-2.5 py-0.5 rounded-full bg-surface-container hover:bg-surface-container-high hover:text-on-surface transition-colors border border-outline-variant flex items-center gap-1"
                 >
-                  <span>{b.icon}</span>
+                  <span className="font-bold text-primary">{b.icon}</span>
                   <span>{b.prefix}</span>
                 </button>
               ))}
@@ -1123,17 +1091,17 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
         </form>
 
         {/* Bottom Filter Row: Category Filter Pills */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none font-mono text-xs">
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none font-sans tabular-nums text-xs">
           {CATEGORIES.map((cat) => {
             const isSelected = selectedCategory === cat.id;
             return (
               <button
                 key={cat.id}
                 onClick={() => setSelectedCategory(cat.id)}
-                className={`px-3 py-1.5 rounded-xl border flex items-center gap-1.5 shrink-0 transition-all font-semibold ${
+                className={`px-3 py-1.5 rounded-full border flex items-center gap-1.5 shrink-0 transition-all font-semibold ${
                   isSelected
-                    ? 'bg-tinapple-gold text-slate-950 border-tinapple-gold shadow-md shadow-tinapple-gold/20'
-                    : 'bg-white/[0.04] hover:bg-white/[0.08] text-zinc-400 hover:text-white border-white/[0.08]'
+                    ? 'bg-primary text-on-primary border-primary shadow-none'
+                    : 'bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface border-outline-variant'
                 }`}
               >
                 {cat.icon}
@@ -1145,7 +1113,7 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
           {isEditMode && (
             <button
               onClick={handleResetBoard}
-              className="ml-auto px-3 py-1.5 rounded-xl bg-red-500/15 hover:bg-red-500/25 text-red-300 border border-red-500/30 flex items-center gap-1.5 shrink-0 transition-all font-bold"
+              className="ml-auto px-3 py-1.5 rounded-full bg-red-500/15 hover:bg-red-500/25 text-red-300 border border-red-500/30 flex items-center gap-1.5 shrink-0 transition-all font-medium"
               title="Reset Board to Default Layout"
             >
               <RotateCcw className="w-3.5 h-3.5" />
@@ -1158,12 +1126,12 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
       {/* ═══════════════════════════════════════════════════════════════
           LIVE SILICON METRICS & WEATHER HUD STRIP (GLANCE / HOMARR)
           ═══════════════════════════════════════════════════════════════ */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 font-mono text-xs">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 font-sans tabular-nums text-xs">
         {/* CPU */}
-        <div className="px-3.5 py-2 rounded-2xl bg-slate-950/60 border border-white/[0.08] backdrop-blur-xl flex items-center justify-between shadow-sm">
+        <div className="px-3.5 py-2.5 rounded-[12px] bg-surface-container border border-outline-variant flex items-center justify-between shadow-none">
           <div className="flex items-center gap-2">
             <Cpu className="w-3.5 h-3.5 text-sky-400" />
-            <span className="text-zinc-400 text-[11px]">CPU</span>
+            <span className="text-on-surface-variant text-[11px]">CPU</span>
           </div>
           <span className={`font-black tabular-nums ${cpuPercent > 80 ? 'text-red-400' : cpuPercent > 50 ? 'text-amber-400' : 'text-sky-300'}`}>
             {cpuPercent}%
@@ -1171,10 +1139,10 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
         </div>
 
         {/* RAM */}
-        <div className="px-3.5 py-2 rounded-2xl bg-slate-950/60 border border-white/[0.08] backdrop-blur-xl flex items-center justify-between shadow-sm">
+        <div className="px-3.5 py-2.5 rounded-[12px] bg-surface-container border border-outline-variant flex items-center justify-between shadow-none">
           <div className="flex items-center gap-2">
             <Activity className="w-3.5 h-3.5 text-purple-400" />
-            <span className="text-zinc-400 text-[11px]">RAM</span>
+            <span className="text-on-surface-variant text-[11px]">RAM</span>
           </div>
           <span className={`font-black tabular-nums ${ramPercent > 85 ? 'text-red-400' : 'text-purple-300'}`}>
             {ramPercent}%
@@ -1182,10 +1150,10 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
         </div>
 
         {/* Disk */}
-        <div className="px-3.5 py-2 rounded-2xl bg-slate-950/60 border border-white/[0.08] backdrop-blur-xl flex items-center justify-between shadow-sm">
+        <div className="px-3.5 py-2.5 rounded-[12px] bg-surface-container border border-outline-variant flex items-center justify-between shadow-none">
           <div className="flex items-center gap-2">
             <HardDrive className="w-3.5 h-3.5 text-emerald-400" />
-            <span className="text-zinc-400 text-[11px]">Disk</span>
+            <span className="text-on-surface-variant text-[11px]">Disk</span>
           </div>
           <span className={`font-black tabular-nums ${diskPercent > 85 ? 'text-red-400' : 'text-emerald-300'}`}>
             {diskPercent}%
@@ -1193,10 +1161,10 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
         </div>
 
         {/* Temp */}
-        <div className="px-3.5 py-2 rounded-2xl bg-slate-950/60 border border-white/[0.08] backdrop-blur-xl flex items-center justify-between shadow-sm">
+        <div className="px-3.5 py-2.5 rounded-[12px] bg-surface-container border border-outline-variant flex items-center justify-between shadow-none">
           <div className="flex items-center gap-2">
             <Thermometer className="w-3.5 h-3.5 text-amber-400" />
-            <span className="text-zinc-400 text-[11px]">Temp</span>
+            <span className="text-on-surface-variant text-[11px]">Temp</span>
           </div>
           <span className="font-black text-amber-300 tabular-nums">
             {tempC}
@@ -1204,10 +1172,10 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
         </div>
 
         {/* Uptime */}
-        <div className="px-3.5 py-2 rounded-2xl bg-slate-950/60 border border-white/[0.08] backdrop-blur-xl flex items-center justify-between shadow-sm">
+        <div className="px-3.5 py-2.5 rounded-[12px] bg-surface-container border border-outline-variant flex items-center justify-between shadow-none">
           <div className="flex items-center gap-2">
             <Clock className="w-3.5 h-3.5 text-indigo-400" />
-            <span className="text-zinc-400 text-[11px]">Uptime</span>
+            <span className="text-on-surface-variant text-[11px]">Uptime</span>
           </div>
           <span className="font-bold text-indigo-300 tabular-nums truncate max-w-[85px]">
             {formatUptime(systemInfo?.uptime || 0)}
@@ -1215,10 +1183,10 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
         </div>
 
         {/* Weather */}
-        <div className="px-3.5 py-2 rounded-2xl bg-slate-950/60 border border-white/[0.08] backdrop-blur-xl flex items-center justify-between shadow-sm col-span-2 sm:col-span-1">
+        <div className="px-3.5 py-2.5 rounded-[12px] bg-surface-container border border-outline-variant flex items-center justify-between shadow-none col-span-2 sm:col-span-1">
           <div className="flex items-center gap-1.5 min-w-0">
             <Sun className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-            <span className="text-zinc-400 text-[11px] shrink-0">Weather</span>
+            <span className="text-on-surface-variant text-[11px] shrink-0">Weather</span>
           </div>
           <span className="font-bold text-amber-300 text-[11px] truncate max-w-[110px]" title={weatherText}>
             {weatherText}
@@ -1234,19 +1202,19 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
           {/* Section Container Header */}
           <div
             onClick={() => toggleSectionCollapse('appliances')}
-            className="flex items-center justify-between px-3 py-2 rounded-2xl bg-slate-900/40 hover:bg-slate-900/60 border border-white/[0.06] backdrop-blur-md cursor-pointer transition-colors"
+            className="flex items-center justify-between px-3.5 py-2.5 rounded-[12px] bg-surface-container hover:bg-surface-container-high border border-outline-variant cursor-pointer transition-colors shadow-none"
           >
             <div className="flex items-center gap-2.5">
-              <span className="text-base">🚀</span>
-              <h2 className="text-sm font-bold text-white font-mono uppercase tracking-wider">
+              <Layers className="w-4 h-4 text-primary" />
+              <h2 className="text-sm font-bold text-on-surface font-sans tabular-nums uppercase tracking-wider">
                 Appliance Launchers & Daemons ({filteredAppliances.length})
               </h2>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 font-bold">
+              <span className="text-[10px] font-sans tabular-nums px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 font-bold">
                 Reverse Proxied
               </span>
             </div>
-            <div className="flex items-center gap-2 text-zinc-400">
-              <span className="text-xs font-mono hidden sm:inline">
+            <div className="flex items-center gap-2 text-on-surface-variant">
+              <span className="text-xs font-sans tabular-nums hidden sm:inline">
                 {collapsedSections['appliances'] ? 'Click to expand' : 'Click to collapse'}
               </span>
               {collapsedSections['appliances'] ? (
@@ -1302,19 +1270,19 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
           {/* Section Container Header */}
           <div
             onClick={() => toggleSectionCollapse('widgets')}
-            className="flex items-center justify-between px-3 py-2 rounded-2xl bg-slate-900/40 hover:bg-slate-900/60 border border-white/[0.06] backdrop-blur-md cursor-pointer transition-colors"
+            className="flex items-center justify-between px-3.5 py-2.5 rounded-[12px] bg-surface-container hover:bg-surface-container-high border border-outline-variant cursor-pointer transition-colors shadow-none"
           >
             <div className="flex items-center gap-2.5">
-              <span className="text-base">⚡</span>
-              <h2 className="text-sm font-bold text-white font-mono uppercase tracking-wider">
+              <Activity className="w-4 h-4 text-primary" />
+              <h2 className="text-sm font-bold text-on-surface font-sans tabular-nums uppercase tracking-wider">
                 Live Integration Widgets ({visibleWidgets.length})
               </h2>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-sky-500/15 text-sky-300 border border-sky-500/25 font-bold">
+              <span className="text-[10px] font-sans tabular-nums px-2 py-0.5 rounded-full bg-sky-500/15 text-sky-300 border border-sky-500/25 font-bold">
                 Real-Time SSE
               </span>
             </div>
-            <div className="flex items-center gap-2 text-zinc-400">
-              <span className="text-xs font-mono hidden sm:inline">
+            <div className="flex items-center gap-2 text-on-surface-variant">
+              <span className="text-xs font-sans tabular-nums hidden sm:inline">
                 {collapsedSections['widgets'] ? 'Click to expand' : 'Click to collapse'}
               </span>
               {collapsedSections['widgets'] ? (
@@ -1334,13 +1302,13 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
                 return (
                   <div
                     key={widget.id}
-                    className={`${colSpanClass} relative rounded-2xl bg-slate-900/50 hover:bg-slate-900/70 border border-white/[0.08] backdrop-blur-xl transition-all p-3 sm:p-4 shadow-xl shadow-black/20 flex flex-col justify-between`}
+                    className={`${colSpanClass} relative rounded-[28px] bg-surface-container-low border border-outline-variant transition-all p-3 sm:p-4 shadow-none flex flex-col justify-between`}
                     style={{ minHeight: '300px' }}
                   >
                     {/* Edit Mode Controls Overlay */}
                     {isEditMode && (
-                      <div className="mb-2 p-2 rounded-xl bg-slate-950/90 border border-white/10 flex items-center justify-between font-mono text-xs z-10">
-                        <div className="flex items-center gap-1.5 text-zinc-300 font-bold truncate">
+                      <div className="mb-2 p-2 rounded-[12px] bg-surface-container border border-outline-variant flex items-center justify-between font-sans tabular-nums text-xs z-10">
+                        <div className="flex items-center gap-1.5 text-on-surface font-bold truncate">
                           <span>{widget.icon}</span>
                           <span className="truncate">{widget.title}</span>
                         </div>
@@ -1348,7 +1316,7 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
                           {/* Move Up */}
                           <button
                             onClick={() => handleMoveWidget(widget.id, 'up')}
-                            className="p-1 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 transition-colors"
+                            className="p-1 rounded-full text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors"
                             title="Move widget backward"
                           >
                             <MoveUp className="w-3.5 h-3.5" />
@@ -1356,7 +1324,7 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
                           {/* Move Down */}
                           <button
                             onClick={() => handleMoveWidget(widget.id, 'down')}
-                            className="p-1 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 transition-colors"
+                            className="p-1 rounded-full text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors"
                             title="Move widget forward"
                           >
                             <MoveDown className="w-3.5 h-3.5" />
@@ -1364,7 +1332,7 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
                           {/* Toggle ColSpan */}
                           <button
                             onClick={() => handleToggleColSpan(widget.id)}
-                            className="p-1 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 transition-colors"
+                            className="p-1 rounded-full text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors"
                             title={`Resize width (Current: ${widget.colSpan || 6} cols)`}
                           >
                             {widget.colSpan === 12 ? (
@@ -1376,7 +1344,7 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
                           {/* Edit Properties */}
                           <button
                             onClick={() => setEditingWidget(widget)}
-                            className="p-1 rounded-lg text-zinc-400 hover:text-tinapple-gold hover:bg-white/10 transition-colors"
+                            className="p-1 rounded-full text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-colors"
                             title="Edit Widget Settings"
                           >
                             <Sliders className="w-3.5 h-3.5" />
@@ -1384,7 +1352,7 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
                           {/* Toggle Visibility */}
                           <button
                             onClick={() => handleToggleWidgetVisibility(widget.id)}
-                            className="p-1 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 transition-colors"
+                            className="p-1 rounded-full text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors"
                             title={widget.visible ? 'Hide widget' : 'Show widget'}
                           >
                             {widget.visible ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5 text-amber-400" />}
@@ -1392,7 +1360,7 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
                           {/* Delete */}
                           <button
                             onClick={() => handleDeleteWidget(widget.id)}
-                            className="p-1 rounded-lg text-red-400 hover:text-red-300 hover:bg-red-500/20 transition-colors"
+                            className="p-1 rounded-full text-red-400 hover:text-red-300 hover:bg-red-500/20 transition-colors"
                             title="Delete widget from board"
                           >
                             <X className="w-3.5 h-3.5" />
@@ -1415,10 +1383,12 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
 
       {/* No Search Matches Placeholder */}
       {filteredAppliances.length === 0 && visibleWidgets.length === 0 && (
-        <div className="text-center py-16 px-4 rounded-3xl bg-slate-950/60 border border-white/10 backdrop-blur-xl">
-          <div className="text-4xl mb-3">🔍</div>
-          <h3 className="text-lg font-bold text-white font-mono">No appliances or widgets found</h3>
-          <p className="text-xs text-zinc-400 font-mono mt-1">
+        <div className="text-center py-16 px-4 rounded-[28px] bg-surface-container-low border border-outline-variant shadow-none">
+          <div className="w-12 h-12 rounded-full bg-surface-container border border-outline-variant flex items-center justify-center mx-auto mb-3 text-on-surface-variant">
+            <Search className="w-6 h-6 text-on-surface-variant" />
+          </div>
+          <h3 className="text-lg font-bold text-on-surface font-sans tabular-nums">No appliances or widgets found</h3>
+          <p className="text-xs text-on-surface-variant font-sans tabular-nums mt-1">
             No items matched "{searchQuery}" in category "{selectedCategory}".
           </p>
           <div className="mt-4 flex items-center justify-center gap-2">
@@ -1427,7 +1397,7 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
                 setSearchQuery('');
                 setSelectedCategory('all');
               }}
-              className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-mono font-bold transition-all"
+              className="px-4 py-2 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface text-xs font-sans tabular-nums font-bold transition-all border border-outline-variant"
             >
               Clear All Filters
             </button>
@@ -1435,7 +1405,7 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
               href={`https://duckduckgo.com/?q=${encodeURIComponent(searchQuery)}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="px-4 py-2 rounded-xl bg-tinapple-gold hover:bg-amber-400 text-slate-950 text-xs font-mono font-bold transition-all flex items-center gap-1.5"
+              className="px-4 py-2 rounded-full bg-primary text-on-primary text-xs font-sans tabular-nums font-bold transition-all flex items-center gap-1.5"
             >
               <span>Search Web for "{searchQuery}"</span>
               <ExternalLink className="w-3.5 h-3.5" />

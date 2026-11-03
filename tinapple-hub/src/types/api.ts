@@ -68,6 +68,7 @@ export interface TelemetrySnapshot {
 }
 
 export interface ServiceInfo {
+  id?: string;
   name: string;
   displayName?: string;
   tagline?: string;
@@ -86,15 +87,17 @@ export interface ServiceInfo {
 }
 
 export interface InstallLogMessage {
+  id?: string;
   timestamp: string;
   level: 'info' | 'command' | 'warn' | 'error' | 'success';
-  appId: string;
+  appId?: string;
   message: string;
 }
 
 export interface InstallProgressState {
   status: 'idle' | 'running' | 'success' | 'error';
   activeApp: string;
+  appId?: string;
   appName?: string;
   logs: InstallLogMessage[];
 }

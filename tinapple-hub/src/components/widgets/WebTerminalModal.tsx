@@ -197,7 +197,7 @@ export const WebTerminalModal: React.FC<WebTerminalModalProps> = ({ isOpen, onCl
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
       <div
-        className={`flex flex-col bg-[#050a17]/95 border border-white/10 rounded-2xl shadow-2xl overflow-hidden transition-all duration-300 ${
+        className={`flex flex-col bg-[#050a17]/95 border border-outline-variant/50 rounded-2xl shadow-none overflow-hidden transition-all duration-300 ${
           isFullscreen
             ? 'w-full h-full max-w-full max-h-full rounded-none'
             : 'w-full max-w-4xl h-[82vh] max-h-[850px]'
@@ -227,7 +227,7 @@ export const WebTerminalModal: React.FC<WebTerminalModalProps> = ({ isOpen, onCl
             />
             <div className="hidden sm:flex items-center gap-2 ml-3">
               <TerminalIcon className="w-4 h-4 text-tinapple-gold" />
-              <span className="font-mono text-xs font-semibold text-slate-200">
+              <span className="font-mono text-xs font-semibold text-on-surface">
                 tinapple appliance pty
               </span>
             </div>
@@ -256,7 +256,7 @@ export const WebTerminalModal: React.FC<WebTerminalModalProps> = ({ isOpen, onCl
             {/* Reconnect button */}
             <button
               onClick={connect}
-              className="p-1.5 rounded-lg bg-white/[0.05] hover:bg-white/[0.1] text-zinc-300 hover:text-white transition-all text-xs"
+              className="p-1.5 rounded-lg bg-white/[0.05] hover:bg-white/[0.1] text-on-surface hover:text-on-surface transition-all text-xs"
               title="Restart PTY Session"
             >
               <RotateCw className={`w-3.5 h-3.5 ${connecting ? 'animate-spin' : ''}`} />
@@ -265,7 +265,7 @@ export const WebTerminalModal: React.FC<WebTerminalModalProps> = ({ isOpen, onCl
             {/* Fullscreen toggle */}
             <button
               onClick={() => setIsFullscreen((prev) => !prev)}
-              className="p-1.5 rounded-lg bg-white/[0.05] hover:bg-white/[0.1] text-zinc-300 hover:text-white transition-all text-xs"
+              className="p-1.5 rounded-lg bg-white/[0.05] hover:bg-white/[0.1] text-on-surface hover:text-on-surface transition-all text-xs"
               title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
             >
               {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
@@ -274,7 +274,7 @@ export const WebTerminalModal: React.FC<WebTerminalModalProps> = ({ isOpen, onCl
             {/* Close button */}
             <button
               onClick={onClose}
-              className="p-1.5 rounded-lg bg-white/[0.05] hover:bg-rose-500/20 text-zinc-300 hover:text-rose-300 transition-all text-xs"
+              className="p-1.5 rounded-lg bg-white/[0.05] hover:bg-rose-500/20 text-on-surface hover:text-rose-300 transition-all text-xs"
               title="Close"
             >
               <X className="w-3.5 h-3.5" />
@@ -288,7 +288,7 @@ export const WebTerminalModal: React.FC<WebTerminalModalProps> = ({ isOpen, onCl
             <span>{errorMsg}</span>
             <button
               onClick={connect}
-              className="underline hover:text-white ml-2 text-xs font-bold"
+              className="underline hover:text-on-surface ml-2 text-xs font-bold"
             >
               Retry
             </button>
@@ -303,11 +303,11 @@ export const WebTerminalModal: React.FC<WebTerminalModalProps> = ({ isOpen, onCl
 
         {/* Mobile & Phone Quick-Keys Bar (Virtual keys for ESC, TAB, CTRL, etc.) */}
         <div className="flex items-center gap-1 px-2.5 py-2 bg-[#060b18] border-t border-white/[0.06] overflow-x-auto scrollbar-none select-none shrink-0">
-          <span className="text-[10px] font-mono text-zinc-500 mr-1 hidden sm:inline">Keys:</span>
+          <span className="text-[10px] font-mono text-on-surface-variant mr-1 hidden sm:inline">Keys:</span>
           
           <button
             onClick={() => sendKey('\x1b')}
-            className="px-2 py-1 rounded bg-white/[0.06] hover:bg-white/[0.12] active:bg-tinapple-gold/20 text-zinc-300 hover:text-white text-[11px] font-mono font-bold transition-all shrink-0"
+            className="px-2 py-1 rounded bg-white/[0.06] hover:bg-white/[0.12] active:bg-tinapple-gold/20 text-on-surface hover:text-on-surface text-[11px] font-mono font-bold transition-all shrink-0"
             title="Escape"
           >
             ESC
@@ -315,7 +315,7 @@ export const WebTerminalModal: React.FC<WebTerminalModalProps> = ({ isOpen, onCl
 
           <button
             onClick={() => sendKey('\t')}
-            className="px-2 py-1 rounded bg-white/[0.06] hover:bg-white/[0.12] active:bg-tinapple-gold/20 text-zinc-300 hover:text-white text-[11px] font-mono font-bold transition-all shrink-0"
+            className="px-2 py-1 rounded bg-white/[0.06] hover:bg-white/[0.12] active:bg-tinapple-gold/20 text-on-surface hover:text-on-surface text-[11px] font-mono font-bold transition-all shrink-0"
             title="Tab Autocomplete"
           >
             TAB
@@ -331,7 +331,7 @@ export const WebTerminalModal: React.FC<WebTerminalModalProps> = ({ isOpen, onCl
 
           <button
             onClick={() => sendKey('\x1a')}
-            className="px-2 py-1 rounded bg-white/[0.06] hover:bg-white/[0.12] active:bg-tinapple-gold/20 text-zinc-300 hover:text-white text-[11px] font-mono font-bold transition-all shrink-0"
+            className="px-2 py-1 rounded bg-white/[0.06] hover:bg-white/[0.12] active:bg-tinapple-gold/20 text-on-surface hover:text-on-surface text-[11px] font-mono font-bold transition-all shrink-0"
             title="SIGTSTP (Suspend job)"
           >
             CTRL+Z
@@ -339,7 +339,7 @@ export const WebTerminalModal: React.FC<WebTerminalModalProps> = ({ isOpen, onCl
 
           <button
             onClick={() => sendKey('\x04')}
-            className="px-2 py-1 rounded bg-white/[0.06] hover:bg-white/[0.12] active:bg-tinapple-gold/20 text-zinc-300 hover:text-white text-[11px] font-mono font-bold transition-all shrink-0"
+            className="px-2 py-1 rounded bg-white/[0.06] hover:bg-white/[0.12] active:bg-tinapple-gold/20 text-on-surface hover:text-on-surface text-[11px] font-mono font-bold transition-all shrink-0"
             title="EOF (Exit shell)"
           >
             CTRL+D
@@ -347,35 +347,35 @@ export const WebTerminalModal: React.FC<WebTerminalModalProps> = ({ isOpen, onCl
 
           <button
             onClick={() => sendKey('|')}
-            className="px-2 py-1 rounded bg-white/[0.06] hover:bg-white/[0.12] active:bg-tinapple-gold/20 text-zinc-300 hover:text-white text-[11px] font-mono font-bold transition-all shrink-0"
+            className="px-2 py-1 rounded bg-white/[0.06] hover:bg-white/[0.12] active:bg-tinapple-gold/20 text-on-surface hover:text-on-surface text-[11px] font-mono font-bold transition-all shrink-0"
           >
             |
           </button>
 
           <button
             onClick={() => sendKey('~')}
-            className="px-2 py-1 rounded bg-white/[0.06] hover:bg-white/[0.12] active:bg-tinapple-gold/20 text-zinc-300 hover:text-white text-[11px] font-mono font-bold transition-all shrink-0"
+            className="px-2 py-1 rounded bg-white/[0.06] hover:bg-white/[0.12] active:bg-tinapple-gold/20 text-on-surface hover:text-on-surface text-[11px] font-mono font-bold transition-all shrink-0"
           >
             ~
           </button>
 
           <button
             onClick={() => sendKey('/')}
-            className="px-2 py-1 rounded bg-white/[0.06] hover:bg-white/[0.12] active:bg-tinapple-gold/20 text-zinc-300 hover:text-white text-[11px] font-mono font-bold transition-all shrink-0"
+            className="px-2 py-1 rounded bg-white/[0.06] hover:bg-white/[0.12] active:bg-tinapple-gold/20 text-on-surface hover:text-on-surface text-[11px] font-mono font-bold transition-all shrink-0"
           >
             /
           </button>
 
           <button
             onClick={() => sendKey('-')}
-            className="px-2 py-1 rounded bg-white/[0.06] hover:bg-white/[0.12] active:bg-tinapple-gold/20 text-zinc-300 hover:text-white text-[11px] font-mono font-bold transition-all shrink-0"
+            className="px-2 py-1 rounded bg-white/[0.06] hover:bg-white/[0.12] active:bg-tinapple-gold/20 text-on-surface hover:text-on-surface text-[11px] font-mono font-bold transition-all shrink-0"
           >
             -
           </button>
 
           <button
             onClick={() => sendKey('\x1b[A')}
-            className="px-2 py-1 rounded bg-white/[0.06] hover:bg-white/[0.12] active:bg-tinapple-gold/20 text-zinc-300 hover:text-white text-[11px] font-mono font-bold transition-all shrink-0"
+            className="px-2 py-1 rounded bg-white/[0.06] hover:bg-white/[0.12] active:bg-tinapple-gold/20 text-on-surface hover:text-on-surface text-[11px] font-mono font-bold transition-all shrink-0"
             title="History Up"
           >
             ▲
@@ -383,7 +383,7 @@ export const WebTerminalModal: React.FC<WebTerminalModalProps> = ({ isOpen, onCl
 
           <button
             onClick={() => sendKey('\x1b[B')}
-            className="px-2 py-1 rounded bg-white/[0.06] hover:bg-white/[0.12] active:bg-tinapple-gold/20 text-zinc-300 hover:text-white text-[11px] font-mono font-bold transition-all shrink-0"
+            className="px-2 py-1 rounded bg-white/[0.06] hover:bg-white/[0.12] active:bg-tinapple-gold/20 text-on-surface hover:text-on-surface text-[11px] font-mono font-bold transition-all shrink-0"
             title="History Down"
           >
             ▼

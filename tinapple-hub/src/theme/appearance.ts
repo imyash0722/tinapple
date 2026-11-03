@@ -3,13 +3,15 @@ import type { BackgroundSettings } from '../components/reactbits/FullWindowBackg
 export const THEME_STORAGE_KEY = 'tinapple_theme_settings';
 export const DEFAULT_SETTINGS: BackgroundSettings = {
   mode: 'plain',
+  colorMode: 'dark',
   wallpaperUrl: '/wallpapers/blue-night-fishbowl-room.jpg',
   wallpaperDim: 0.5,
+  wallpaperBlur: 0,
   accentColor: '#38bdf8',
   secondaryColor: '#3b82f6',
-  syncWallpaperColors: false,
+  syncWallpaperColors: true,
   enableParticles: false,
-  enableNebula: true,
+  enableNebula: false,
   enableGlass: true,
   glassBlur: 20,
   glassTranslucency: 45,
@@ -60,9 +62,13 @@ export function normalizeSettings(value: unknown): BackgroundSettings {
   const settings = { ...DEFAULT_SETTINGS };
   if (!value || typeof value !== 'object') return settings;
   const saved = value as Record<string, unknown>;
+  if (saved.colorMode === 'dark' || saved.colorMode === 'light') settings.colorMode = saved.colorMode;
   if (['plain', 'microslats', 'waves', 'wallpaper', 'none'].includes(saved.mode as string)) settings.mode = saved.mode as BackgroundSettings['mode'];
   if (isWallpaperUrl(saved.wallpaperUrl)) settings.wallpaperUrl = saved.wallpaperUrl;
-  if (typeof saved.wallpaperDim === 'number' && Number.isFinite(saved.wallpaperDim)) settings.wallpaperDim = Math.min(0.8, Math.max(0.2, saved.wallpaperDim));
+  if (typeof saved.wallpaperDim === 'number' && Number.isFinite(saved.wallpaperDim)) settings.wallpaperDim = Math.min(0.85, Math.max(0.1, saved.wallpaperDim));
+  if (typeof saved.wallpaperBlur === 'number' && Number.isFinite(saved.wallpaperBlur)) {
+    settings.wallpaperBlur = Math.min(60, Math.max(0, Math.round(saved.wallpaperBlur)));
+  }
   for (const key of ['accentColor', 'secondaryColor'] as const) {
     if (isHexColor(saved[key])) settings[key] = saved[key];
   }
@@ -76,17 +82,17 @@ export function normalizeSettings(value: unknown): BackgroundSettings {
     if (!Number.isNaN(legacyBlur) && legacyBlur >= 0 && legacyBlur <= 40) settings.glassBlur = legacyBlur;
   }
   if (typeof saved.glassTranslucency === 'number' && Number.isFinite(saved.glassTranslucency)) {
-    settings.glassTranslucency = Math.min(90, Math.max(10, Math.round(saved.glassTranslucency)));
+    settings.glassTranslucency = Math.min(90, Math.max(0, Math.round(saved.glassTranslucency)));
   } else if (typeof saved.glassOpacity === 'number' && Number.isFinite(saved.glassOpacity)) {
-    settings.glassTranslucency = Math.min(90, Math.max(10, Math.round(100 - saved.glassOpacity)));
+    settings.glassTranslucency = Math.min(90, Math.max(0, Math.round(100 - saved.glassOpacity)));
   } else if (typeof window !== 'undefined') {
     const legacyTrans = Number(localStorage.getItem('tinapple_translucency'));
-    if (!Number.isNaN(legacyTrans) && legacyTrans >= 10 && legacyTrans <= 90) {
+    if (!Number.isNaN(legacyTrans) && legacyTrans >= 0 && legacyTrans <= 90) {
       settings.glassTranslucency = legacyTrans;
     } else {
       const legacyOpacity = Number(localStorage.getItem('tinapple_opacity'));
-      if (!Number.isNaN(legacyOpacity) && legacyOpacity >= 20 && legacyOpacity <= 95) {
-        settings.glassTranslucency = Math.min(90, Math.max(10, Math.round(100 - legacyOpacity)));
+      if (!Number.isNaN(legacyOpacity) && legacyOpacity >= 10 && legacyOpacity <= 100) {
+        settings.glassTranslucency = Math.min(90, Math.max(0, Math.round(100 - legacyOpacity)));
       }
     }
   }
@@ -146,6 +152,14 @@ export function dominantColors(pixels: Uint8ClampedArray): [string, string] {
 }
 
 export function extractWallpaperColors(url: string, signal: AbortSignal): Promise<[string, string]> {
+  // 1. Fast zero-latency instant match for all bundled wallpapers
+  const cleanUrl = url.split('?')[0];
+  const filename = cleanUrl.split('/').pop() || '';
+  const bundled = BUNDLED_WALLPAPERS.find(b => b.url === cleanUrl || b.url.endsWith(filename));
+  if (bundled && bundled.defaultPrimary && bundled.defaultSecondary) {
+    return Promise.resolve([bundled.defaultPrimary, bundled.defaultSecondary]);
+  }
+
   return new Promise((resolve, reject) => {
     const image = new Image();
     image.crossOrigin = 'anonymous';
@@ -159,8 +173,23 @@ export function extractWallpaperColors(url: string, signal: AbortSignal): Promis
     const fail = (error: Error) => { cleanup(); image.src = ''; reject(error); };
     const abort = () => fail(new DOMException('Cancelled', 'AbortError'));
     signal.addEventListener('abort', abort, { once: true });
-    image.onload = () => {
+    image.onload = async () => {
       try {
+        // First try Google Material 3 official sourceColorFromImage
+        try {
+          const { sourceColorFromImage, hexFromArgb, Hct } = await import('@material/material-color-utilities');
+          const sourceArgb = await sourceColorFromImage(image);
+          if (sourceArgb) {
+            const prim = hexFromArgb(sourceArgb);
+            const hct = Hct.fromInt(sourceArgb);
+            const secHct = Hct.from((hct.hue + 25) % 360, Math.max(16, hct.chroma * 0.7), 60);
+            const sec = hexFromArgb(secHct.toInt());
+            cleanup();
+            resolve([prim, sec]);
+            return;
+          }
+        } catch { /* Fallback to canvas pixel sampling */ }
+
         const canvas = document.createElement('canvas');
         canvas.width = canvas.height = 64;
         const context = canvas.getContext('2d', { willReadFrequently: true });

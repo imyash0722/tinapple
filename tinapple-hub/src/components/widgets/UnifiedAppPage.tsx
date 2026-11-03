@@ -344,12 +344,13 @@ export const UnifiedAppPage: React.FC<UnifiedAppPageProps> = ({
     setIsRestarting(true);
     setActionMessage('Restarting service...');
     try {
-      await api.manageService(cleanId, 'restart');
+      const result = await api.controlService(cleanId, 'restart');
+      if (!result.ok) throw new Error(result.error || 'Restart failed');
       setActionMessage('Service restarted successfully!');
       setTimeout(() => setActionMessage(null), 3000);
       setServiceStatus('active');
     } catch (e) {
-      setActionMessage('Service restart triggered.');
+      setActionMessage(e instanceof Error ? e.message : 'Service restart failed.');
       setTimeout(() => setActionMessage(null), 3000);
     } finally {
       setIsRestarting(false);
@@ -374,17 +375,17 @@ export const UnifiedAppPage: React.FC<UnifiedAppPageProps> = ({
         <div className="flex items-center gap-3">
           <button
             onClick={onBack}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.08] text-sm font-medium text-slate-300 hover:text-white transition-all group"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.08] text-sm font-medium text-slate-300 hover:text-on-surface transition-all group"
           >
-            <ArrowLeft className="w-4 h-4 text-slate-400 group-hover:-translate-x-0.5 transition-transform" />
+            <ArrowLeft className="w-4 h-4 text-on-surface-variant group-hover:-translate-x-0.5 transition-transform" />
             <span>Back to Dashboard</span>
           </button>
-          <div className="hidden sm:flex items-center gap-2 text-xs text-slate-400 font-mono">
+          <div className="hidden sm:flex items-center gap-2 text-xs text-on-surface-variant font-mono">
             <span>Pineapple Hub</span>
             <ChevronRight className="w-3.5 h-3.5 text-slate-600" />
             <span>Apps</span>
             <ChevronRight className="w-3.5 h-3.5 text-slate-600" />
-            <span className="text-white font-semibold">{guide.title}</span>
+            <span className="text-on-surface font-semibold">{guide.title}</span>
           </div>
         </div>
 
@@ -421,7 +422,7 @@ export const UnifiedAppPage: React.FC<UnifiedAppPageProps> = ({
 
             <div className="space-y-1.5">
               <div className="flex flex-wrap items-center gap-2.5">
-                <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+                <h1 className="text-2xl sm:text-3xl font-extrabold text-on-surface tracking-tight">
                   {guide.title}
                 </h1>
                 <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wider font-mono bg-white/[0.08] text-slate-300 border border-white/[0.08]">
@@ -442,7 +443,7 @@ export const UnifiedAppPage: React.FC<UnifiedAppPageProps> = ({
                 {guide.subtitle}
               </p>
 
-              <div className="flex flex-wrap items-center gap-3 pt-1 text-xs text-slate-400 font-mono">
+              <div className="flex flex-wrap items-center gap-3 pt-1 text-xs text-on-surface-variant font-mono">
                 <span>Unit: <code className="text-slate-200">{meta.unit}</code></span>
                 <span>•</span>
                 <span>Port: <code className="text-slate-200">{meta.port}</code></span>
@@ -458,7 +459,7 @@ export const UnifiedAppPage: React.FC<UnifiedAppPageProps> = ({
               href={tailscaleHttpsUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold font-mono text-white bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 shadow-lg shadow-blue-500/25 transition-all transform hover:-translate-y-0.5 active:translate-y-0"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold font-mono text-on-surface bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 shadow-lg shadow-blue-500/25 transition-all transform hover:-translate-y-0.5 active:translate-y-0"
             >
               <span>Launch App</span>
               <ExternalLink className="w-4 h-4" />
@@ -470,7 +471,7 @@ export const UnifiedAppPage: React.FC<UnifiedAppPageProps> = ({
               className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-slate-200 bg-white/[0.06] hover:bg-white/[0.12] border border-white/[0.1] transition-all disabled:opacity-50"
               title="Restart systemd daemon"
             >
-              <RefreshCw className={`w-4 h-4 ${isRestarting ? 'animate-spin text-cyan-400' : 'text-slate-400'}`} />
+              <RefreshCw className={`w-4 h-4 ${isRestarting ? 'animate-spin text-cyan-400' : 'text-on-surface-variant'}`} />
               <span>Restart</span>
             </button>
 
@@ -518,12 +519,12 @@ export const UnifiedAppPage: React.FC<UnifiedAppPageProps> = ({
               TRUSTED SSL
             </span>
           </div>
-          <div className="text-sm font-mono text-white truncate select-all">{tailscaleHttpsUrl}</div>
+          <div className="text-sm font-mono text-on-surface truncate select-all">{tailscaleHttpsUrl}</div>
           <div className="mt-2.5 flex items-center justify-between">
-            <span className="text-[11px] text-slate-400">Zero port • Let's Encrypt</span>
+            <span className="text-[11px] text-on-surface-variant">Zero port • Let's Encrypt</span>
             <button
               onClick={() => handleCopy(tailscaleHttpsUrl)}
-              className="p-1.5 rounded-lg bg-white/[0.06] hover:bg-white/[0.12] text-slate-300 hover:text-white transition-colors"
+              className="p-1.5 rounded-lg bg-white/[0.06] hover:bg-white/[0.12] text-slate-300 hover:text-on-surface transition-colors"
               title="Copy URL"
             >
               {copiedText === tailscaleHttpsUrl ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
@@ -533,16 +534,16 @@ export const UnifiedAppPage: React.FC<UnifiedAppPageProps> = ({
 
         {/* Card 2: Direct Port IP Host */}
         <div className="rounded-2xl bg-slate-900/40 border border-white/[0.08] p-4 backdrop-blur-xl relative group hover:border-white/[0.15] transition-all">
-          <div className="flex items-center justify-between text-xs text-slate-400 font-mono mb-1.5">
+          <div className="flex items-center justify-between text-xs text-on-surface-variant font-mono mb-1.5">
             <span>Direct Tailscale IP Port</span>
             <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/[0.06]">NATIVE APPS</span>
           </div>
-          <div className="text-sm font-mono text-white truncate select-all">{directPortUrl}</div>
+          <div className="text-sm font-mono text-on-surface truncate select-all">{directPortUrl}</div>
           <div className="mt-2.5 flex items-center justify-between">
-            <span className="text-[11px] text-slate-400">For Plezy / Bitwarden / Apps</span>
+            <span className="text-[11px] text-on-surface-variant">For Plezy / Bitwarden / Apps</span>
             <button
               onClick={() => handleCopy(directPortUrl)}
-              className="p-1.5 rounded-lg bg-white/[0.06] hover:bg-white/[0.12] text-slate-300 hover:text-white transition-colors"
+              className="p-1.5 rounded-lg bg-white/[0.06] hover:bg-white/[0.12] text-slate-300 hover:text-on-surface transition-colors"
               title="Copy IP:Port"
             >
               {copiedText === directPortUrl ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
@@ -552,16 +553,16 @@ export const UnifiedAppPage: React.FC<UnifiedAppPageProps> = ({
 
         {/* Card 3: MagicDNS Port */}
         <div className="rounded-2xl bg-slate-900/40 border border-white/[0.08] p-4 backdrop-blur-xl relative group hover:border-white/[0.15] transition-all">
-          <div className="flex items-center justify-between text-xs text-slate-400 font-mono mb-1.5">
+          <div className="flex items-center justify-between text-xs text-on-surface-variant font-mono mb-1.5">
             <span>MagicDNS Host Port</span>
             <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/[0.06]">TAILNET</span>
           </div>
-          <div className="text-sm font-mono text-white truncate select-all">{magicDnsPortUrl}</div>
+          <div className="text-sm font-mono text-on-surface truncate select-all">{magicDnsPortUrl}</div>
           <div className="mt-2.5 flex items-center justify-between">
-            <span className="text-[11px] text-slate-400">Permanent Tailscale Domain</span>
+            <span className="text-[11px] text-on-surface-variant">Permanent Tailscale Domain</span>
             <button
               onClick={() => handleCopy(magicDnsPortUrl)}
-              className="p-1.5 rounded-lg bg-white/[0.06] hover:bg-white/[0.12] text-slate-300 hover:text-white transition-colors"
+              className="p-1.5 rounded-lg bg-white/[0.06] hover:bg-white/[0.12] text-slate-300 hover:text-on-surface transition-colors"
               title="Copy MagicDNS"
             >
               {copiedText === magicDnsPortUrl ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
@@ -571,16 +572,16 @@ export const UnifiedAppPage: React.FC<UnifiedAppPageProps> = ({
 
         {/* Card 4: Local LAN Host */}
         <div className="rounded-2xl bg-slate-900/40 border border-white/[0.08] p-4 backdrop-blur-xl relative group hover:border-white/[0.15] transition-all">
-          <div className="flex items-center justify-between text-xs text-slate-400 font-mono mb-1.5">
+          <div className="flex items-center justify-between text-xs text-on-surface-variant font-mono mb-1.5">
             <span>Local Home Wi-Fi LAN</span>
             <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/[0.06]">OFFLINE</span>
           </div>
-          <div className="text-sm font-mono text-white truncate select-all">{`http://10.3.2.105${meta.path.startsWith('/') ? meta.path : `:${meta.port}`}`}</div>
+          <div className="text-sm font-mono text-on-surface truncate select-all">{`http://10.3.2.105${meta.path.startsWith('/') ? meta.path : `:${meta.port}`}`}</div>
           <div className="mt-2.5 flex items-center justify-between">
-            <span className="text-[11px] text-slate-400">LAN Reverse Proxy (No Port)</span>
+            <span className="text-[11px] text-on-surface-variant">LAN Reverse Proxy (No Port)</span>
             <button
               onClick={() => handleCopy(`http://10.3.2.105${meta.path.startsWith('/') ? meta.path : `:${meta.port}`}`)}
-              className="p-1.5 rounded-lg bg-white/[0.06] hover:bg-white/[0.12] text-slate-300 hover:text-white transition-colors"
+              className="p-1.5 rounded-lg bg-white/[0.06] hover:bg-white/[0.12] text-slate-300 hover:text-on-surface transition-colors"
               title="Copy LAN address"
             >
               {copiedText === `http://10.3.2.105${meta.path.startsWith('/') ? meta.path : `:${meta.port}`}` ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
@@ -595,8 +596,8 @@ export const UnifiedAppPage: React.FC<UnifiedAppPageProps> = ({
           onClick={() => setActiveTab('guide')}
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
             activeTab === 'guide'
-              ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
-              : 'text-slate-400 hover:text-white hover:bg-white/[0.05]'
+              ? 'bg-blue-600 text-on-surface shadow-md shadow-blue-500/20'
+              : 'text-on-surface-variant hover:text-on-surface hover:bg-white/[0.05]'
           }`}
         >
           <Sparkles className="w-4 h-4" />
@@ -607,8 +608,8 @@ export const UnifiedAppPage: React.FC<UnifiedAppPageProps> = ({
           onClick={() => setActiveTab('endpoints')}
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
             activeTab === 'endpoints'
-              ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
-              : 'text-slate-400 hover:text-white hover:bg-white/[0.05]'
+              ? 'bg-blue-600 text-on-surface shadow-md shadow-blue-500/20'
+              : 'text-on-surface-variant hover:text-on-surface hover:bg-white/[0.05]'
           }`}
         >
           <Smartphone className="w-4 h-4" />
@@ -619,8 +620,8 @@ export const UnifiedAppPage: React.FC<UnifiedAppPageProps> = ({
           onClick={() => setActiveTab('diagnostics')}
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
             activeTab === 'diagnostics'
-              ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
-              : 'text-slate-400 hover:text-white hover:bg-white/[0.05]'
+              ? 'bg-blue-600 text-on-surface shadow-md shadow-blue-500/20'
+              : 'text-on-surface-variant hover:text-on-surface hover:bg-white/[0.05]'
           }`}
         >
           <Sliders className="w-4 h-4" />
@@ -633,7 +634,7 @@ export const UnifiedAppPage: React.FC<UnifiedAppPageProps> = ({
         <div className="space-y-6">
           {/* Guide Steps */}
           <div className="space-y-4">
-            <h3 className="text-lg font-bold text-white flex items-center gap-2">
+            <h3 className="text-lg font-bold text-on-surface flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-cyan-400" />
               <span>Step-by-Step Configuration</span>
             </h3>
@@ -649,7 +650,7 @@ export const UnifiedAppPage: React.FC<UnifiedAppPageProps> = ({
                       <span className="w-7 h-7 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 flex items-center justify-center text-xs font-mono font-bold shrink-0">
                         {idx + 1}
                       </span>
-                      <h4 className="text-base font-bold text-white">{step.title}</h4>
+                      <h4 className="text-base font-bold text-on-surface">{step.title}</h4>
                     </div>
                   </div>
 
@@ -663,7 +664,7 @@ export const UnifiedAppPage: React.FC<UnifiedAppPageProps> = ({
                         <pre className="overflow-x-auto select-all">{step.code}</pre>
                         <button
                           onClick={() => handleCopy(step.code!)}
-                          className="absolute top-2.5 right-2.5 p-1.5 rounded-lg bg-white/[0.08] hover:bg-white/[0.15] text-slate-300 hover:text-white transition-colors"
+                          className="absolute top-2.5 right-2.5 p-1.5 rounded-lg bg-white/[0.08] hover:bg-white/[0.15] text-slate-300 hover:text-on-surface transition-colors"
                           title="Copy command"
                         >
                           {copiedText === step.code ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
@@ -688,7 +689,7 @@ export const UnifiedAppPage: React.FC<UnifiedAppPageProps> = ({
           {/* Client Apps Download Grid */}
           {guide.clientApps && guide.clientApps.length > 0 && (
             <div className="space-y-4 pt-4">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+              <h3 className="text-lg font-bold text-on-surface flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-emerald-400" />
                 <span>Recommended Client Applications</span>
               </h3>
@@ -703,10 +704,10 @@ export const UnifiedAppPage: React.FC<UnifiedAppPageProps> = ({
                     className="flex items-center justify-between p-4 rounded-2xl bg-slate-900/40 border border-white/[0.08] hover:border-emerald-500/40 hover:bg-white/[0.04] transition-all group backdrop-blur-xl"
                   >
                     <div className="space-y-1">
-                      <div className="text-sm font-bold text-white group-hover:text-emerald-400 transition-colors">
+                      <div className="text-sm font-bold text-on-surface group-hover:text-emerald-400 transition-colors">
                         {app.name}
                       </div>
-                      <div className="text-xs text-slate-400 font-mono">{app.platform}</div>
+                      <div className="text-xs text-on-surface-variant font-mono">{app.platform}</div>
                     </div>
                     <div className="flex items-center gap-2">
                       {app.badge && (
@@ -725,7 +726,7 @@ export const UnifiedAppPage: React.FC<UnifiedAppPageProps> = ({
           {/* Advanced Configurations */}
           {guide.specialConfigs && guide.specialConfigs.length > 0 && (
             <div className="space-y-4 pt-4">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+              <h3 className="text-lg font-bold text-on-surface flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-purple-400" />
                 <span>Advanced Appliance Configuration</span>
               </h3>
@@ -737,13 +738,13 @@ export const UnifiedAppPage: React.FC<UnifiedAppPageProps> = ({
                     className="p-5 rounded-2xl bg-slate-900/40 border border-white/[0.08] backdrop-blur-xl space-y-2.5"
                   >
                     <h4 className="text-sm font-bold text-slate-200">{cfg.title}</h4>
-                    <p className="text-xs text-slate-400 leading-relaxed">{cfg.description}</p>
+                    <p className="text-xs text-on-surface-variant leading-relaxed">{cfg.description}</p>
                     {cfg.code && (
                       <div className="relative rounded-xl bg-slate-950/80 border border-white/[0.08] p-3 font-mono text-xs text-slate-200">
                         <pre className="overflow-x-auto select-all">{cfg.code}</pre>
                         <button
                           onClick={() => handleCopy(cfg.code!)}
-                          className="absolute top-2.5 right-2.5 p-1.5 rounded-lg bg-white/[0.08] hover:bg-white/[0.15] text-slate-300 hover:text-white transition-colors"
+                          className="absolute top-2.5 right-2.5 p-1.5 rounded-lg bg-white/[0.08] hover:bg-white/[0.15] text-slate-300 hover:text-on-surface transition-colors"
                         >
                           {copiedText === cfg.code ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
                         </button>
@@ -759,11 +760,11 @@ export const UnifiedAppPage: React.FC<UnifiedAppPageProps> = ({
 
       {activeTab === 'endpoints' && (
         <div className="space-y-4">
-          <h3 className="text-lg font-bold text-white">Full Connectivity & Endpoints Matrix</h3>
+          <h3 className="text-lg font-bold text-on-surface">Full Connectivity & Endpoints Matrix</h3>
           <div className="rounded-2xl bg-slate-900/50 border border-white/[0.08] overflow-hidden backdrop-blur-xl">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-white/[0.08] text-xs font-mono uppercase text-slate-400 bg-white/[0.02]">
+                <tr className="border-b border-white/[0.08] text-xs font-mono uppercase text-on-surface-variant bg-white/[0.02]">
                   <th className="p-4">Interface / Channel</th>
                   <th className="p-4">Address / URL</th>
                   <th className="p-4">Protocol</th>
@@ -772,9 +773,9 @@ export const UnifiedAppPage: React.FC<UnifiedAppPageProps> = ({
               </thead>
               <tbody className="divide-y divide-white/[0.05] text-sm font-mono">
                 <tr>
-                  <td className="p-4 font-bold text-white">Tailscale HTTPS</td>
+                  <td className="p-4 font-bold text-on-surface">Tailscale HTTPS</td>
                   <td className="p-4 text-emerald-400">{tailscaleHttpsUrl}</td>
-                  <td className="p-4 text-slate-400">HTTPS (443)</td>
+                  <td className="p-4 text-on-surface-variant">HTTPS (443)</td>
                   <td className="p-4 text-right">
                     <button
                       onClick={() => handleCopy(tailscaleHttpsUrl)}
@@ -785,9 +786,9 @@ export const UnifiedAppPage: React.FC<UnifiedAppPageProps> = ({
                   </td>
                 </tr>
                 <tr>
-                  <td className="p-4 font-bold text-white">Tailscale IP Host</td>
+                  <td className="p-4 font-bold text-on-surface">Tailscale IP Host</td>
                   <td className="p-4 text-slate-300">{directPortUrl}</td>
-                  <td className="p-4 text-slate-400">HTTP ({meta.port})</td>
+                  <td className="p-4 text-on-surface-variant">HTTP ({meta.port})</td>
                   <td className="p-4 text-right">
                     <button
                       onClick={() => handleCopy(directPortUrl)}
@@ -798,9 +799,9 @@ export const UnifiedAppPage: React.FC<UnifiedAppPageProps> = ({
                   </td>
                 </tr>
                 <tr>
-                  <td className="p-4 font-bold text-white">MagicDNS Host</td>
+                  <td className="p-4 font-bold text-on-surface">MagicDNS Host</td>
                   <td className="p-4 text-slate-300">{magicDnsPortUrl}</td>
-                  <td className="p-4 text-slate-400">HTTP ({meta.port})</td>
+                  <td className="p-4 text-on-surface-variant">HTTP ({meta.port})</td>
                   <td className="p-4 text-right">
                     <button
                       onClick={() => handleCopy(magicDnsPortUrl)}
@@ -811,9 +812,9 @@ export const UnifiedAppPage: React.FC<UnifiedAppPageProps> = ({
                   </td>
                 </tr>
                 <tr>
-                  <td className="p-4 font-bold text-white">Home LAN Wi-Fi</td>
+                  <td className="p-4 font-bold text-on-surface">Home LAN Wi-Fi</td>
                   <td className="p-4 text-slate-300">http://10.3.2.105:{meta.port}</td>
-                  <td className="p-4 text-slate-400">HTTP ({meta.port})</td>
+                  <td className="p-4 text-on-surface-variant">HTTP ({meta.port})</td>
                   <td className="p-4 text-right">
                     <button
                       onClick={() => handleCopy(`http://10.3.2.105:${meta.port}`)}
@@ -831,31 +832,31 @@ export const UnifiedAppPage: React.FC<UnifiedAppPageProps> = ({
 
       {activeTab === 'diagnostics' && (
         <div className="space-y-4">
-          <h3 className="text-lg font-bold text-white">App Diagnostics & Systemd Unit Controls</h3>
+          <h3 className="text-lg font-bold text-on-surface">App Diagnostics & Systemd Unit Controls</h3>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="p-5 rounded-2xl bg-slate-900/40 border border-white/[0.08] backdrop-blur-xl space-y-1">
-              <div className="text-xs font-mono text-slate-400 uppercase">Systemd Daemon</div>
-              <div className="text-lg font-bold font-mono text-white">{meta.unit}</div>
-              <div className="text-xs text-slate-400">Managed via systemctl</div>
+              <div className="text-xs font-mono text-on-surface-variant uppercase">Systemd Daemon</div>
+              <div className="text-lg font-bold font-mono text-on-surface">{meta.unit}</div>
+              <div className="text-xs text-on-surface-variant">Managed via systemctl</div>
             </div>
 
             <div className="p-5 rounded-2xl bg-slate-900/40 border border-white/[0.08] backdrop-blur-xl space-y-1">
-              <div className="text-xs font-mono text-slate-400 uppercase">Process Health</div>
+              <div className="text-xs font-mono text-on-surface-variant uppercase">Process Health</div>
               <div className="text-lg font-bold font-mono text-emerald-400">
                 {serviceStatus === 'active' ? 'Active (Running)' : 'Inactive / Stopped'}
               </div>
-              <div className="text-xs text-slate-400">Auto-restarts on failure</div>
+              <div className="text-xs text-on-surface-variant">Auto-restarts on failure</div>
             </div>
 
             <div className="p-5 rounded-2xl bg-slate-900/40 border border-white/[0.08] backdrop-blur-xl space-y-1">
-              <div className="text-xs font-mono text-slate-400 uppercase">Reverse Proxy Target</div>
+              <div className="text-xs font-mono text-on-surface-variant uppercase">Reverse Proxy Target</div>
               <div className="text-lg font-bold font-mono text-cyan-400">127.0.0.1:{meta.port}</div>
-              <div className="text-xs text-slate-400">Nginx path {meta.path}</div>
+              <div className="text-xs text-on-surface-variant">Nginx path {meta.path}</div>
             </div>
           </div>
 
           <div className="p-5 rounded-2xl bg-slate-900/40 border border-white/[0.08] backdrop-blur-xl space-y-3">
-            <h4 className="text-sm font-bold text-white">Quick Terminal Diagnostic Commands</h4>
+            <h4 className="text-sm font-bold text-on-surface">Quick Terminal Diagnostic Commands</h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 font-mono text-xs">
               <div className="p-3 rounded-xl bg-slate-950/80 border border-white/[0.08] flex items-center justify-between">
                 <span>systemctl status {meta.unit}</span>
