@@ -24,6 +24,7 @@ import {
   ShieldAlert,
   Pin,
   PinOff,
+  Menu,
 } from 'lucide-react';
 import { SystemInfo, ServiceInfo } from '../../types/api';
 import { AndroidBridge } from '../../services/androidBridge';
