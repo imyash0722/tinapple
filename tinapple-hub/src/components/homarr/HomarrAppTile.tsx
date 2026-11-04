@@ -58,7 +58,7 @@ export const HomarrAppTile: React.FC<HomarrAppTileProps> = React.memo(({
         return 'col-span-12 sm:col-span-6 lg:col-span-4';
       case 3:
       default:
-        return 'col-span-12 sm:col-span-6 md:col-span-4 lg:col-span-3';
+        return 'col-span-6 sm:col-span-6 md:col-span-4 lg:col-span-3';
     }
   };
 
@@ -85,8 +85,8 @@ export const HomarrAppTile: React.FC<HomarrAppTileProps> = React.memo(({
   return (
     <div
       onClick={handleCardClick}
-      className={`${getColSpanClass()} group relative rounded-[28px] bg-surface-container-low hover:bg-surface-container border border-outline-variant transition-all duration-200 p-4 flex flex-col justify-between overflow-hidden shadow-none ${
-        !isEditMode ? 'cursor-pointer' : ''
+      className={`${getColSpanClass()} group relative rounded-2xl sm:rounded-[28px] bg-surface-container-low hover:bg-surface-container border border-outline-variant transition-all duration-200 p-3 sm:p-4 flex flex-col justify-between overflow-hidden shadow-none ${
+        !isEditMode ? 'cursor-pointer active:scale-[0.98]' : ''
       }`}
     >
       {/* Edit Mode Grip & Controls Overlay */}
@@ -115,16 +115,16 @@ export const HomarrAppTile: React.FC<HomarrAppTileProps> = React.memo(({
 
       {/* Top Header Row: Icon, Status Ping Dot, Category */}
       <div className="relative z-10">
-        <div className="flex items-start justify-between gap-3 mb-3">
-          <div className="flex items-center gap-3 min-w-0">
+        <div className="flex items-start justify-between gap-2 sm:gap-3 mb-2 sm:mb-3">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             {/* App Icon Tile */}
-            <div className="w-11 h-11 rounded-2xl bg-surface-container-highest border border-outline-variant flex items-center justify-center text-xl shrink-0 group-hover:scale-105 transition-transform duration-200 overflow-hidden p-1.5">
-              <AppBrandIcon id={id} size={28} showBadge={false} />
+            <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl bg-surface-container-highest border border-outline-variant flex items-center justify-center text-xl shrink-0 group-hover:scale-105 transition-transform duration-200 overflow-hidden p-1 sm:p-1.5">
+              <AppBrandIcon id={id} size={24} className="sm:w-7 sm:h-7" showBadge={false} />
             </div>
 
             {/* App Title & Subtitle */}
             <div className="min-w-0">
-              <h4 className="font-bold text-on-surface text-sm truncate flex items-center gap-2">
+              <h4 className="font-bold text-on-surface text-xs sm:text-sm truncate flex items-center gap-1.5 sm:gap-2">
                 <span className="truncate">{name}</span>
                 {/* Luminous LED Status Indicator */}
                 <span className="relative flex h-2 w-2 shrink-0">
@@ -146,14 +146,14 @@ export const HomarrAppTile: React.FC<HomarrAppTileProps> = React.memo(({
                   />
                 </span>
               </h4>
-              {tagline && <p className="text-[11px] text-on-surface-variant truncate mt-0.5">{tagline}</p>}
+              {tagline && <p className="hidden sm:block text-[11px] text-on-surface-variant truncate mt-0.5">{tagline}</p>}
             </div>
           </div>
 
           {/* Category Badge (when not in edit mode) */}
           {!isEditMode && (
             <span
-              className={`text-[9px] font-sans tabular-nums uppercase px-2 py-0.5 rounded-full border shrink-0 font-bold ${
+              className={`hidden sm:inline-block text-[9px] font-sans tabular-nums uppercase px-2 py-0.5 rounded-full border shrink-0 font-bold ${
                 categoryBadgeColors[category] || categoryBadgeColors.custom
               }`}
             >
@@ -164,14 +164,14 @@ export const HomarrAppTile: React.FC<HomarrAppTileProps> = React.memo(({
       </div>
 
       {/* Bottom Footer Row: Port/Host info & Action buttons */}
-      <div className="pt-3 border-t border-outline-variant flex items-center justify-between gap-2 mt-2 relative z-10">
-        <div className="flex items-center gap-1.5 min-w-0 font-sans tabular-nums text-[11px] text-on-surface-variant truncate">
+      <div className="pt-2 sm:pt-3 border-t border-outline-variant flex items-center justify-between gap-1.5 sm:gap-2 mt-1 sm:mt-2 relative z-10">
+        <div className="flex items-center gap-1 sm:gap-1.5 min-w-0 font-sans tabular-nums text-[10px] sm:text-[11px] text-on-surface-variant truncate">
           {port && (
             <span className="px-1.5 py-0.5 rounded-full bg-surface-container-highest border border-outline-variant text-primary font-bold">
               :{port}
             </span>
           )}
-          <span className="truncate text-on-surface-variant">
+          <span className="truncate text-on-surface-variant max-w-[60px] sm:max-w-none">
             {serviceRegistry.get(id)?.getDisplayPath() || (url.startsWith('/') ? url : `/${id}`)}
           </span>
         </div>
@@ -180,7 +180,7 @@ export const HomarrAppTile: React.FC<HomarrAppTileProps> = React.memo(({
           {onOpenSettings && (
             <button
               onClick={onOpenSettings}
-              className="p-1.5 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-all active:scale-95 border border-outline-variant"
+              className="p-1 sm:p-1.5 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-all active:scale-95 border border-outline-variant"
               title={`Configure ${name} Service & Raw Config`}
             >
               <SettingsIcon className="w-3.5 h-3.5" />
@@ -190,7 +190,7 @@ export const HomarrAppTile: React.FC<HomarrAppTileProps> = React.memo(({
           {onOpenGuide && (
             <button
               onClick={onOpenGuide}
-              className="p-1.5 rounded-full bg-surface-container hover:bg-cyan-500/20 text-on-surface-variant hover:text-cyan-300 transition-all active:scale-95 border border-outline-variant"
+              className="hidden sm:flex p-1.5 rounded-full bg-surface-container hover:bg-cyan-500/20 text-on-surface-variant hover:text-cyan-300 transition-all active:scale-95 border border-outline-variant"
               title={`View ${name} Unified Guide & Endpoints`}
             >
               <BookOpen className="w-3.5 h-3.5" />
@@ -201,9 +201,9 @@ export const HomarrAppTile: React.FC<HomarrAppTileProps> = React.memo(({
             href={url}
             target={url.startsWith('/') && !url.startsWith('/guides/') ? '_self' : '_blank'}
             rel="noopener noreferrer"
-            className="px-3 py-1 rounded-full bg-primary/15 hover:bg-primary hover:text-on-primary border border-primary/30 text-primary text-xs font-sans tabular-nums font-bold flex items-center gap-1 transition-all active:scale-95 shadow-none"
+            className="px-2 py-1 sm:px-3 sm:py-1 rounded-full bg-primary/15 hover:bg-primary hover:text-on-primary border border-primary/30 text-primary text-[11px] sm:text-xs font-sans tabular-nums font-bold flex items-center gap-1 transition-all active:scale-95 shadow-none"
           >
-            <span>Open</span>
+            <span className="hidden sm:inline">Open</span>
             <ExternalLink className="w-3 h-3" />
           </a>
         </div>

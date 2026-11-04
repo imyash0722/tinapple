@@ -846,32 +846,32 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
       {/* ═══════════════════════════════════════════════════════════════
           1. AUTHENTIC HOMARR UNIFIED COMMAND & SEARCH BAR
           ═══════════════════════════════════════════════════════════════ */}
-      <header className="rounded-[28px] bg-surface-container-low border border-outline-variant p-4 sm:p-5 shadow-none flex flex-col gap-4">
+      <header className="rounded-2xl sm:rounded-[28px] bg-surface-container-low border border-outline-variant p-3.5 sm:p-5 shadow-none flex flex-col gap-3 sm:gap-4">
         {/* Top Header Row: Server Identity, Status, and Controls */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4">
           {/* Left: Branding & Status Badge */}
           <div className="flex items-center gap-3.5">
             {/* Drawer Menu Button (Instant Access to App Store, Guides, Web Terminal, Settings) */}
             <button
               onClick={onOpenDrawer}
-              className="p-2.5 rounded-full bg-surface-container hover:bg-surface-container-high border border-outline-variant text-on-surface hover:text-on-surface transition-all active:scale-95"
+              className="p-2 sm:p-2.5 rounded-full bg-surface-container hover:bg-surface-container-high border border-outline-variant text-on-surface hover:text-on-surface transition-all active:scale-95 shrink-0"
               title="Open Appliance Navigation Drawer (Store, Guides, Terminal, Tools)"
             >
               <Menu className="w-5 h-5 text-primary" />
             </button>
 
             {/* Server Node Icon */}
-            <div className="w-11 h-11 rounded-2xl bg-primary-container border border-outline-variant flex items-center justify-center text-primary font-bold shrink-0">
+            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-primary-container border border-outline-variant flex items-center justify-center text-primary font-bold shrink-0">
               <Layers className="w-5 h-5 text-primary" />
             </div>
 
-            <div>
-              <div className="flex items-center gap-2.5">
-                <h1 className="text-base sm:text-lg font-black text-on-surface font-sans tabular-nums tracking-tight">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap">
+                <h1 className="text-base sm:text-lg font-black text-on-surface font-sans tabular-nums tracking-tight truncate">
                   {systemInfo?.hostname || 'tinapple-server'}
                 </h1>
                 {/* Live Online Badge */}
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-[11px] font-sans tabular-nums text-emerald-300 font-bold">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-[11px] font-sans tabular-nums text-emerald-300 font-bold shrink-0">
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                   <span>{onlineServicesCount} Online</span>
                 </span>
@@ -884,11 +884,11 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
           </div>
 
           {/* Right: Quick Action Controls */}
-          <div className="flex items-center flex-wrap gap-2 font-sans tabular-nums text-xs">
+          <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar py-0.5 sm:py-0 sm:flex-wrap max-w-full font-sans tabular-nums text-xs">
             {/* App Store Shortcut */}
             <button
               onClick={() => onNavigateTab('store')}
-              className="px-3 py-1.5 rounded-full bg-purple-500/15 hover:bg-purple-500/25 text-purple-300 border border-purple-500/30 font-bold flex items-center gap-1.5 transition-all shadow-sm active:scale-95"
+              className="px-3 py-1.5 rounded-full bg-purple-500/15 hover:bg-purple-500/25 text-purple-300 border border-purple-500/30 font-bold flex items-center gap-1.5 transition-all shadow-sm active:scale-95 shrink-0"
               title="Open 1-Click ChaddyStore App & Pack Installer"
             >
               <ShoppingBag className="w-3.5 h-3.5 text-purple-400" />
@@ -898,7 +898,7 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
             {/* Setup Guides Shortcut */}
             <button
               onClick={() => onNavigateTab('guides')}
-              className="px-3 py-1.5 rounded-full bg-sky-500/15 hover:bg-sky-500/25 text-sky-300 border border-sky-500/30 font-bold flex items-center gap-1.5 transition-all shadow-sm active:scale-95"
+              className="px-3 py-1.5 rounded-full bg-sky-500/15 hover:bg-sky-500/25 text-sky-300 border border-sky-500/30 font-bold flex items-center gap-1.5 transition-all shadow-sm active:scale-95 shrink-0"
               title="Open Interactive Appliance Setup Guides"
             >
               <BookOpen className="w-3.5 h-3.5 text-sky-400" />
@@ -908,7 +908,7 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
             {/* Web Terminal Shortcut */}
             <button
               onClick={onOpenTerminal}
-              className="p-2 rounded-full bg-surface-container hover:bg-surface-container-high border border-outline-variant text-emerald-400 transition-all active:scale-95"
+              className="p-2 rounded-full bg-surface-container hover:bg-surface-container-high border border-outline-variant text-emerald-400 transition-all active:scale-95 shrink-0"
               title="Open Interactive Web PTY Terminal"
             >
               <Terminal className="w-4 h-4" />
@@ -917,7 +917,7 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
             {/* Port Matrix & Tools */}
             <button
               onClick={onOpenTools}
-              className="p-2 rounded-full bg-surface-container hover:bg-surface-container-high border border-outline-variant text-primary transition-all active:scale-95"
+              className="p-2 rounded-full bg-surface-container hover:bg-surface-container-high border border-outline-variant text-primary transition-all active:scale-95 shrink-0"
               title="Server Tools & Port Matrix"
             >
               <Wrench className="w-4 h-4" />
@@ -926,7 +926,7 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
             {/* Appearance / Theme Picker */}
             <button
               onClick={onOpenAppearance}
-              className="p-2 rounded-full bg-surface-container hover:bg-surface-container-high border border-outline-variant text-sky-400 transition-all active:scale-95"
+              className="p-2 rounded-full bg-surface-container hover:bg-surface-container-high border border-outline-variant text-sky-400 transition-all active:scale-95 shrink-0"
               title="Customize Wallpaper, Accent Colors & Glass Blur"
             >
               <Palette className="w-4 h-4" />
@@ -935,7 +935,7 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
             {/* Fullscreen Toggle */}
             <button
               onClick={toggleFullscreen}
-              className="p-2 rounded-full bg-surface-container hover:bg-surface-container-high border border-outline-variant text-on-surface-variant hover:text-on-surface transition-all active:scale-95"
+              className="p-2 rounded-full bg-surface-container hover:bg-surface-container-high border border-outline-variant text-on-surface-variant hover:text-on-surface transition-all active:scale-95 shrink-0"
               title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
             >
               {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
@@ -944,7 +944,7 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
             {/* Add Widget / Appliance */}
             <button
               onClick={() => setCreatorOpen(true)}
-              className="px-3.5 py-1.5 rounded-full bg-primary/20 hover:bg-primary/30 text-primary border border-primary/40 font-bold flex items-center gap-1.5 transition-all shadow-sm active:scale-95"
+              className="px-3.5 py-1.5 rounded-full bg-primary/20 hover:bg-primary/30 text-primary border border-primary/40 font-bold flex items-center gap-1.5 transition-all shadow-sm active:scale-95 shrink-0"
             >
               <Plus className="w-3.5 h-3.5 text-primary" />
               <span>Add Widget</span>
@@ -956,7 +956,7 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
                 setIsEditMode(!isEditMode);
                 AndroidBridge.performHaptic('medium');
               }}
-              className={`px-3.5 py-1.5 rounded-full font-bold flex items-center gap-1.5 transition-all shadow-sm active:scale-95 ${
+              className={`px-3.5 py-1.5 rounded-full font-bold flex items-center gap-1.5 transition-all shadow-sm active:scale-95 shrink-0 ${
                 isEditMode
                   ? 'bg-primary text-on-primary border border-primary shadow-none hover:opacity-90'
                   : 'bg-surface-container hover:bg-surface-container-high text-on-surface border border-outline-variant'
@@ -978,7 +978,7 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
             {/* View Mode Toggle (Grid Board <-> 2D Canvas) */}
             <button
               onClick={() => handleSetViewMode('canvas')}
-              className="px-3 py-1.5 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface border border-outline-variant flex items-center gap-1.5 transition-all"
+              className="px-3 py-1.5 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface border border-outline-variant flex items-center gap-1.5 transition-all shrink-0"
               title="Switch to 2D Freeform Pannable Canvas"
             >
               <Move className="w-3.5 h-3.5 text-purple-400" />
@@ -989,7 +989,7 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
             <button
               onClick={onRefresh}
               disabled={isRefreshing}
-              className="p-2 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-all disabled:opacity-50"
+              className="p-2 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-all disabled:opacity-50 shrink-0"
               title="Refresh Live Telemetry"
             >
               <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin text-primary' : ''}`} />
@@ -1091,7 +1091,7 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
         </form>
 
         {/* Bottom Filter Row: Category Filter Pills */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none font-sans tabular-nums text-xs">
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 font-sans tabular-nums text-xs">
           {CATEGORIES.map((cat) => {
             const isSelected = selectedCategory === cat.id;
             return (
@@ -1126,69 +1126,69 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
       {/* ═══════════════════════════════════════════════════════════════
           LIVE SILICON METRICS & WEATHER HUD STRIP (GLANCE / HOMARR)
           ═══════════════════════════════════════════════════════════════ */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 font-sans tabular-nums text-xs">
+      <div className="grid grid-cols-3 sm:grid-cols-3 lg:grid-cols-6 gap-1.5 sm:gap-2.5 font-sans tabular-nums text-xs">
         {/* CPU */}
-        <div className="px-3.5 py-2.5 rounded-[12px] bg-surface-container border border-outline-variant flex items-center justify-between shadow-none">
-          <div className="flex items-center gap-2">
-            <Cpu className="w-3.5 h-3.5 text-sky-400" />
-            <span className="text-on-surface-variant text-[11px]">CPU</span>
+        <div className="px-2 sm:px-3.5 py-2 sm:py-2.5 rounded-xl sm:rounded-[12px] bg-surface-container border border-outline-variant flex items-center justify-between shadow-none">
+          <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+            <Cpu className="w-3.5 h-3.5 text-sky-400 shrink-0" />
+            <span className="text-on-surface-variant text-[10px] sm:text-[11px]">CPU</span>
           </div>
-          <span className={`font-black tabular-nums ${cpuPercent > 80 ? 'text-red-400' : cpuPercent > 50 ? 'text-amber-400' : 'text-sky-300'}`}>
+          <span className={`font-black tabular-nums text-[11px] sm:text-xs ${cpuPercent > 80 ? 'text-red-400' : cpuPercent > 50 ? 'text-amber-400' : 'text-sky-300'}`}>
             {cpuPercent}%
           </span>
         </div>
 
         {/* RAM */}
-        <div className="px-3.5 py-2.5 rounded-[12px] bg-surface-container border border-outline-variant flex items-center justify-between shadow-none">
-          <div className="flex items-center gap-2">
-            <Activity className="w-3.5 h-3.5 text-purple-400" />
-            <span className="text-on-surface-variant text-[11px]">RAM</span>
+        <div className="px-2 sm:px-3.5 py-2 sm:py-2.5 rounded-xl sm:rounded-[12px] bg-surface-container border border-outline-variant flex items-center justify-between shadow-none">
+          <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+            <Activity className="w-3.5 h-3.5 text-purple-400 shrink-0" />
+            <span className="text-on-surface-variant text-[10px] sm:text-[11px]">RAM</span>
           </div>
-          <span className={`font-black tabular-nums ${ramPercent > 85 ? 'text-red-400' : 'text-purple-300'}`}>
+          <span className={`font-black tabular-nums text-[11px] sm:text-xs ${ramPercent > 85 ? 'text-red-400' : 'text-purple-300'}`}>
             {ramPercent}%
           </span>
         </div>
 
         {/* Disk */}
-        <div className="px-3.5 py-2.5 rounded-[12px] bg-surface-container border border-outline-variant flex items-center justify-between shadow-none">
-          <div className="flex items-center gap-2">
-            <HardDrive className="w-3.5 h-3.5 text-emerald-400" />
-            <span className="text-on-surface-variant text-[11px]">Disk</span>
+        <div className="px-2 sm:px-3.5 py-2 sm:py-2.5 rounded-xl sm:rounded-[12px] bg-surface-container border border-outline-variant flex items-center justify-between shadow-none">
+          <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+            <HardDrive className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+            <span className="text-on-surface-variant text-[10px] sm:text-[11px]">Disk</span>
           </div>
-          <span className={`font-black tabular-nums ${diskPercent > 85 ? 'text-red-400' : 'text-emerald-300'}`}>
+          <span className={`font-black tabular-nums text-[11px] sm:text-xs ${diskPercent > 85 ? 'text-red-400' : 'text-emerald-300'}`}>
             {diskPercent}%
           </span>
         </div>
 
         {/* Temp */}
-        <div className="px-3.5 py-2.5 rounded-[12px] bg-surface-container border border-outline-variant flex items-center justify-between shadow-none">
-          <div className="flex items-center gap-2">
-            <Thermometer className="w-3.5 h-3.5 text-amber-400" />
-            <span className="text-on-surface-variant text-[11px]">Temp</span>
+        <div className="px-2 sm:px-3.5 py-2 sm:py-2.5 rounded-xl sm:rounded-[12px] bg-surface-container border border-outline-variant flex items-center justify-between shadow-none">
+          <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+            <Thermometer className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+            <span className="text-on-surface-variant text-[10px] sm:text-[11px]">Temp</span>
           </div>
-          <span className="font-black text-amber-300 tabular-nums">
+          <span className="font-black text-amber-300 tabular-nums text-[11px] sm:text-xs">
             {tempC}
           </span>
         </div>
 
         {/* Uptime */}
-        <div className="px-3.5 py-2.5 rounded-[12px] bg-surface-container border border-outline-variant flex items-center justify-between shadow-none">
-          <div className="flex items-center gap-2">
-            <Clock className="w-3.5 h-3.5 text-indigo-400" />
-            <span className="text-on-surface-variant text-[11px]">Uptime</span>
+        <div className="px-2 sm:px-3.5 py-2 sm:py-2.5 rounded-xl sm:rounded-[12px] bg-surface-container border border-outline-variant flex items-center justify-between shadow-none">
+          <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+            <Clock className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+            <span className="text-on-surface-variant text-[10px] sm:text-[11px]">Up</span>
           </div>
-          <span className="font-bold text-indigo-300 tabular-nums truncate max-w-[85px]">
+          <span className="font-bold text-indigo-300 tabular-nums truncate max-w-[55px] sm:max-w-[85px] text-[10px] sm:text-xs">
             {formatUptime(systemInfo?.uptime || 0)}
           </span>
         </div>
 
         {/* Weather */}
-        <div className="px-3.5 py-2.5 rounded-[12px] bg-surface-container border border-outline-variant flex items-center justify-between shadow-none col-span-2 sm:col-span-1">
-          <div className="flex items-center gap-1.5 min-w-0">
+        <div className="px-2 sm:px-3.5 py-2 sm:py-2.5 rounded-xl sm:rounded-[12px] bg-surface-container border border-outline-variant flex items-center justify-between shadow-none col-span-1">
+          <div className="flex items-center gap-1 sm:gap-1.5 min-w-0">
             <Sun className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-            <span className="text-on-surface-variant text-[11px] shrink-0">Weather</span>
+            <span className="text-on-surface-variant text-[10px] sm:text-[11px] shrink-0">Wtr</span>
           </div>
-          <span className="font-bold text-amber-300 text-[11px] truncate max-w-[110px]" title={weatherText}>
+          <span className="font-bold text-amber-300 text-[10px] sm:text-[11px] truncate max-w-[50px] sm:max-w-[110px]" title={weatherText}>
             {weatherText}
           </span>
         </div>
@@ -1227,7 +1227,7 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
 
           {/* Grid of Appliance Tiles */}
           {!collapsedSections['appliances'] && (
-            <div className="grid grid-cols-12 gap-3.5">
+            <div className="grid grid-cols-12 gap-2.5 sm:gap-3.5">
               {filteredAppliances.map((app) => {
                 const serviceInfo = servicesMap.get(app.id);
                 const activeState = serviceInfo?.activeState || 'active';
@@ -1295,15 +1295,14 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
 
           {/* Grid of Modular Widgets */}
           {!collapsedSections['widgets'] && (
-            <div className="grid grid-cols-12 gap-4">
+            <div className="grid grid-cols-12 gap-3 sm:gap-4">
               {visibleWidgets.map((widget) => {
                 const colSpanClass = getColSpanClass(widget.colSpan);
 
                 return (
                   <div
                     key={widget.id}
-                    className={`${colSpanClass} relative rounded-[28px] bg-surface-container-low border border-outline-variant transition-all p-3 sm:p-4 shadow-none flex flex-col justify-between`}
-                    style={{ minHeight: '300px' }}
+                    className={`${colSpanClass} relative flex flex-col justify-between transition-all min-h-[240px] sm:min-h-[280px]`}
                   >
                     {/* Edit Mode Controls Overlay */}
                     {isEditMode && (

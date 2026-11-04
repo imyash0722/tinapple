@@ -26,6 +26,7 @@ import {
   PinOff,
 } from 'lucide-react';
 import { SystemInfo, ServiceInfo } from '../../types/api';
+import { AndroidBridge } from '../../services/androidBridge';
 
 export interface SidebarProps {
   isLandingPage?: boolean;
@@ -706,7 +707,7 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
       <div
         onMouseEnter={handleDrawerMouseEnter}
         onMouseLeave={handleDrawerMouseLeave}
-        className={`fixed inset-y-0 left-0 z-[51] w-72 max-w-[85vw] bg-surface-container-low border-r border-outline-variant shadow-none transition-transform duration-300 ease-out transform ${
+        className={`fixed inset-y-0 left-0 z-[51] w-72 max-w-[85vw] bg-surface-container-low border-r border-outline-variant shadow-none transition-transform duration-300 ease-out transform pt-[env(safe-area-inset-top,0px)] pb-[env(safe-area-inset-bottom,0px)] ${
           mobileOpen ? 'translate-x-0' : '-translate-x-full'
         } ${isSidebarPinned && !isLandingPage ? 'md:hidden' : ''}`}
       >
@@ -716,77 +717,92 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
       {/* D. MOBILE BOTTOM NAVIGATION DOCK (Thumb Friendly with Safe-Area support) */}
       <nav
         aria-label="Mobile Navigation"
-        className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-surface-container-low border-t border-outline-variant px-2 py-1.5 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))] flex items-center justify-around shadow-none"
+        className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-surface-container-high/90 backdrop-blur-2xl border-t border-outline-variant/60 px-2 py-1.5 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))] flex items-center justify-around shadow-lg"
       >
         <button
-          onClick={() => handleSelectTab('dashboard')}
+          onClick={() => {
+            AndroidBridge.performHaptic('light');
+            handleSelectTab('dashboard');
+          }}
           className={`flex-1 flex flex-col items-center justify-center py-1 px-1 rounded-xl transition-all active:scale-95 ${
             activeTab === 'dashboard'
-              ? 'text-primary font-bold scale-105'
-              : 'text-on-surface-variant hover:text-on-surface'
-          }`}
-        >
-          <Activity className="w-5 h-5 mb-0.5" />
-          <span className="text-[10px] font-sans">Dashboard</span>
-        </button>
-
-        <button
-          onClick={() => handleSelectTab('services')}
-          className={`flex-1 relative flex flex-col items-center justify-center py-1 px-1 rounded-xl transition-all active:scale-95 ${
-            activeTab === 'services'
-              ? 'text-primary font-bold scale-105'
-              : 'text-on-surface-variant hover:text-on-surface'
-          }`}
-        >
-          <div className="relative">
-            <Layers className="w-5 h-5 mb-0.5" />
-            {activeServicesCount > 0 && (
-              <span className="absolute -top-1 -right-2 px-1 text-[9px] font-sans font-black rounded-full bg-emerald-500 text-slate-950 leading-none">
-                {activeServicesCount}
-              </span>
-            )}
-          </div>
-          <span className="text-[10px] font-sans">Services</span>
-        </button>
-
-        <button
-          onClick={() => handleSelectTab('store')}
-          className={`flex-1 flex flex-col items-center justify-center py-1 px-1 rounded-xl transition-all active:scale-95 ${
-            activeTab === 'store'
-              ? 'text-primary font-bold scale-105'
-              : 'text-on-surface-variant hover:text-on-surface'
-          }`}
-        >
-          <ShoppingBag className="w-5 h-5 mb-0.5" />
-          <span className="text-[10px] font-sans">Store</span>
-        </button>
-
-        <button
-          onClick={() => handleSelectTab('guides')}
-          className={`flex-1 flex flex-col items-center justify-center py-1 px-1 rounded-xl transition-all active:scale-95 ${
-            activeTab === 'guides'
-              ? 'text-primary font-bold scale-105'
-              : 'text-on-surface-variant hover:text-on-surface'
-          }`}
-        >
-          <BookOpen className="w-5 h-5 mb-0.5" />
-          <span className="text-[10px] font-sans">Guides</span>
-        </button>
-
-        <button
-          onClick={() => setMobileOpen(true)}
-          className={`flex-1 flex flex-col items-center justify-center py-1 px-1 rounded-xl transition-all active:scale-95 ${
-            activeTab === 'hardware' || activeTab === 'settings'
               ? 'text-primary font-bold'
               : 'text-on-surface-variant hover:text-on-surface'
           }`}
         >
-          <div className="w-5 h-5 mb-0.5 flex flex-col justify-center items-center gap-1">
-            <span className="w-4 h-0.5 bg-current rounded-full" />
-            <span className="w-4 h-0.5 bg-current rounded-full" />
-            <span className="w-4 h-0.5 bg-current rounded-full" />
+          <div className={`p-1.5 rounded-xl transition-all ${activeTab === 'dashboard' ? 'bg-primary/20 text-primary border border-primary/30' : ''}`}>
+            <Layers className="w-4 h-4" />
           </div>
-          <span className="text-[10px] font-sans">More</span>
+          <span className="text-[10px] font-sans mt-0.5 font-medium">Board</span>
+        </button>
+
+        <button
+          onClick={() => {
+            AndroidBridge.performHaptic('light');
+            handleSelectTab('services');
+          }}
+          className={`flex-1 relative flex flex-col items-center justify-center py-1 px-1 rounded-xl transition-all active:scale-95 ${
+            activeTab === 'services'
+              ? 'text-primary font-bold'
+              : 'text-on-surface-variant hover:text-on-surface'
+          }`}
+        >
+          <div className={`relative p-1.5 rounded-xl transition-all ${activeTab === 'services' ? 'bg-primary/20 text-primary border border-primary/30' : ''}`}>
+            <Activity className="w-4 h-4" />
+            {activeServicesCount > 0 && (
+              <span className="absolute -top-1 -right-1 px-1 text-[8px] font-sans font-black rounded-full bg-emerald-500 text-slate-950 leading-none">
+                {activeServicesCount}
+              </span>
+            )}
+          </div>
+          <span className="text-[10px] font-sans mt-0.5 font-medium">Services</span>
+        </button>
+
+        <button
+          onClick={() => {
+            AndroidBridge.performHaptic('light');
+            handleSelectTab('store');
+          }}
+          className={`flex-1 flex flex-col items-center justify-center py-1 px-1 rounded-xl transition-all active:scale-95 ${
+            activeTab === 'store'
+              ? 'text-primary font-bold'
+              : 'text-on-surface-variant hover:text-on-surface'
+          }`}
+        >
+          <div className={`p-1.5 rounded-xl transition-all ${activeTab === 'store' ? 'bg-primary/20 text-primary border border-primary/30' : ''}`}>
+            <ShoppingBag className="w-4 h-4" />
+          </div>
+          <span className="text-[10px] font-sans mt-0.5 font-medium">Store</span>
+        </button>
+
+        <button
+          onClick={() => {
+            AndroidBridge.performHaptic('light');
+            handleSelectTab('hardware');
+          }}
+          className={`flex-1 flex flex-col items-center justify-center py-1 px-1 rounded-xl transition-all active:scale-95 ${
+            activeTab === 'hardware'
+              ? 'text-primary font-bold'
+              : 'text-on-surface-variant hover:text-on-surface'
+          }`}
+        >
+          <div className={`p-1.5 rounded-xl transition-all ${activeTab === 'hardware' ? 'bg-primary/20 text-primary border border-primary/30' : ''}`}>
+            <Cpu className="w-4 h-4" />
+          </div>
+          <span className="text-[10px] font-sans mt-0.5 font-medium">Hardware</span>
+        </button>
+
+        <button
+          onClick={() => {
+            AndroidBridge.performHaptic('medium');
+            setMobileOpen(true);
+          }}
+          className="flex-1 flex flex-col items-center justify-center py-1 px-1 rounded-xl transition-all active:scale-95 text-on-surface-variant hover:text-on-surface"
+        >
+          <div className="p-1.5 rounded-xl">
+            <Menu className="w-4 h-4" />
+          </div>
+          <span className="text-[10px] font-sans mt-0.5 font-medium">Menu</span>
         </button>
       </nav>
     </>

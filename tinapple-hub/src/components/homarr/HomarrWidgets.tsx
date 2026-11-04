@@ -59,7 +59,7 @@ export const HomarrResourceWidget: React.FC<HomarrResourceWidgetProps> = ({ tele
   const tempC = telemetry?.thermal?.cpuTemp ? `${Math.round(telemetry.thermal.cpuTemp)}°C` : 'Normal';
 
   return (
-    <div className="h-full rounded-[28px] bg-surface-container-low border border-outline-variant p-5 flex flex-col justify-between shadow-none">
+    <div className="h-full rounded-2xl sm:rounded-[28px] bg-surface-container-low border border-outline-variant p-3.5 sm:p-5 flex flex-col justify-between shadow-none">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2.5">
           <div className="p-2 rounded-xl bg-sky-500/10 border border-sky-500/20 text-sky-400">
@@ -170,7 +170,7 @@ export const HomarrClockWidget: React.FC<{ systemInfo: SystemInfo }> = ({ system
   };
 
   return (
-    <div className="h-full rounded-[28px] bg-surface-container-low border border-outline-variant p-5 flex flex-col justify-between shadow-none font-sans tabular-nums">
+    <div className="h-full rounded-2xl sm:rounded-[28px] bg-surface-container-low border border-outline-variant p-3.5 sm:p-5 flex flex-col justify-between shadow-none font-sans tabular-nums">
       <div className="flex items-center justify-between text-on-surface-variant text-xs">
         <span className="flex items-center gap-1.5 font-bold uppercase tracking-wider text-tinapple-gold">
           <Clock className="w-3.5 h-3.5" />
@@ -243,7 +243,7 @@ export const HomarrDownloadsWidget: React.FC = () => {
   const currentHost = getServiceHost();
 
   return (
-    <div className="h-full rounded-[28px] bg-surface-container-low border border-outline-variant p-5 flex flex-col justify-between shadow-none font-sans tabular-nums">
+    <div className="h-full rounded-2xl sm:rounded-[28px] bg-surface-container-low border border-outline-variant p-3.5 sm:p-5 flex flex-col justify-between shadow-none font-sans tabular-nums">
       <div className="flex items-center justify-between text-xs">
         <span className="flex items-center gap-1.5 font-bold uppercase tracking-wider text-sky-400">
           <Download className="w-3.5 h-3.5" />
@@ -355,7 +355,7 @@ export const HomarrNetworkGuardWidget: React.FC<{ onOpenTailscale?: () => void; 
   const currentHost = getServiceHost();
 
   return (
-    <div className="h-full rounded-[28px] bg-surface-container-low border border-outline-variant p-5 flex flex-col justify-between shadow-none font-sans tabular-nums">
+    <div className="h-full rounded-2xl sm:rounded-[28px] bg-surface-container-low border border-outline-variant p-3.5 sm:p-5 flex flex-col justify-between shadow-none font-sans tabular-nums">
       <div className="flex items-center justify-between text-xs mb-2.5">
         <span className="flex items-center gap-2 font-bold uppercase tracking-wider text-sky-400">
           <Shield className="w-4 h-4" />
@@ -531,7 +531,7 @@ export const HomarrSingleApplianceWidget: React.FC<HomarrSingleApplianceWidgetPr
   const accentColor = customColor || app?.accentColor || '#38bdf8';
 
   return (
-    <div className="h-full rounded-[28px] bg-surface-container-low border border-outline-variant p-5 flex flex-col justify-between shadow-none font-sans tabular-nums select-none relative overflow-hidden group">
+    <div className="h-full rounded-2xl sm:rounded-[28px] bg-surface-container-low border border-outline-variant p-3.5 sm:p-5 flex flex-col justify-between shadow-none font-sans tabular-nums select-none relative overflow-hidden group">
       {/* Ambient background glow */}
       <div
         className="absolute -top-12 -right-12 w-28 h-28 rounded-full blur-2xl opacity-20 pointer-events-none transition-opacity group-hover:opacity-35"
@@ -636,7 +636,7 @@ export const HomarrMediaWidget: React.FC<{ onOpenGuide?: (g: string) => void }> 
   const currentHost = getServiceHost();
 
   return (
-    <div className="h-full rounded-[28px] bg-surface-container-low border border-outline-variant p-5 flex flex-col justify-between shadow-none font-sans tabular-nums">
+    <div className="h-full rounded-2xl sm:rounded-[28px] bg-surface-container-low border border-outline-variant p-3.5 sm:p-5 flex flex-col justify-between shadow-none font-sans tabular-nums">
       <div className="flex items-center justify-between text-xs mb-3">
         <span className="flex items-center gap-2 font-bold uppercase tracking-wider text-purple-400">
           <Film className="w-4 h-4" />
@@ -702,7 +702,7 @@ export const HomarrMangaWidget: React.FC = () => {
   }, []);
 
   return (
-    <div className="h-full rounded-[28px] bg-surface-container-low border border-outline-variant p-5 flex flex-col justify-between shadow-none font-sans tabular-nums">
+    <div className="h-full rounded-2xl sm:rounded-[28px] bg-surface-container-low border border-outline-variant p-3.5 sm:p-5 flex flex-col justify-between shadow-none font-sans tabular-nums">
       <div className="flex items-center justify-between text-xs mb-3">
         <span className="flex items-center gap-2 font-bold uppercase tracking-wider text-tinapple-gold">
           <BookOpen className="w-4 h-4" />
@@ -755,7 +755,7 @@ export const HomarrSyncVaultWidget: React.FC = () => {
   const currentHost = getServiceHost();
 
   return (
-    <div className="h-full rounded-[28px] bg-surface-container-low border border-outline-variant p-5 flex flex-col justify-between shadow-none font-sans tabular-nums">
+    <div className="h-full rounded-2xl sm:rounded-[28px] bg-surface-container-low border border-outline-variant p-3.5 sm:p-5 flex flex-col justify-between shadow-none font-sans tabular-nums">
       <div className="flex items-center justify-between text-xs mb-3">
         <span className="flex items-center gap-2 font-bold uppercase tracking-wider text-emerald-400">
           <FolderSync className="w-4 h-4" />
@@ -808,7 +808,7 @@ export const HomarrHardwareWidget: React.FC<{ telemetry: TelemetrySnapshot }> = 
   const bat = telemetry?.battery;
 
   return (
-    <div className="h-full rounded-[28px] bg-surface-container-low border border-outline-variant p-5 flex flex-col justify-between shadow-none font-sans tabular-nums">
+    <div className="h-full rounded-2xl sm:rounded-[28px] bg-surface-container-low border border-outline-variant p-3.5 sm:p-5 flex flex-col justify-between shadow-none font-sans tabular-nums">
       <div className="flex items-center justify-between text-xs mb-3">
         <span className="flex items-center gap-2 font-bold uppercase tracking-wider text-rose-400">
           <Thermometer className="w-4 h-4" />
@@ -869,7 +869,7 @@ export const HomarrPortMatrixWidget: React.FC<{ onOpenTools?: () => void }> = ({
   ];
 
   return (
-    <div className="h-full rounded-[28px] bg-surface-container-low border border-outline-variant p-5 flex flex-col justify-between shadow-none font-sans tabular-nums">
+    <div className="h-full rounded-2xl sm:rounded-[28px] bg-surface-container-low border border-outline-variant p-3.5 sm:p-5 flex flex-col justify-between shadow-none font-sans tabular-nums">
       <div className="flex items-center justify-between text-xs mb-3">
         <span className="flex items-center gap-2 font-bold uppercase tracking-wider text-tinapple-gold">
           <Network className="w-4 h-4" />
@@ -911,7 +911,7 @@ export const HomarrPortMatrixWidget: React.FC<{ onOpenTools?: () => void }> = ({
 // 10. Homarr Mini Terminal Quick Launcher Widget
 export const HomarrTerminalWidget: React.FC<{ onOpenTerminal?: () => void }> = ({ onOpenTerminal }) => {
   return (
-    <div className="h-full rounded-[28px] bg-surface-container-low border border-outline-variant p-5 flex flex-col justify-between shadow-none font-sans tabular-nums">
+    <div className="h-full rounded-2xl sm:rounded-[28px] bg-surface-container-low border border-outline-variant p-3.5 sm:p-5 flex flex-col justify-between shadow-none font-sans tabular-nums">
       <div className="flex items-center justify-between text-xs mb-2">
         <span className="flex items-center gap-2 font-bold uppercase tracking-wider text-emerald-400">
           <Terminal className="w-4 h-4" />
@@ -960,7 +960,7 @@ export const HomarrJournalWidget: React.FC = () => {
   }, []);
 
   return (
-    <div className="h-full rounded-[28px] bg-surface-container-low border border-outline-variant p-5 flex flex-col justify-between shadow-none font-sans tabular-nums">
+    <div className="h-full rounded-2xl sm:rounded-[28px] bg-surface-container-low border border-outline-variant p-3.5 sm:p-5 flex flex-col justify-between shadow-none font-sans tabular-nums">
       <div className="flex items-center justify-between text-xs mb-2">
         <span className="flex items-center gap-2 font-bold uppercase tracking-wider text-amber-400">
           <AlertTriangle className="w-4 h-4" />
@@ -1017,7 +1017,7 @@ export const HomarrBookmarksWidget: React.FC<HomarrBookmarksWidgetProps> = ({
   const safeBookmarks = Array.isArray(bookmarks) ? bookmarks : [];
 
   return (
-    <div className="h-full rounded-[28px] bg-surface-container-low border border-outline-variant p-5 shadow-none font-sans tabular-nums">
+    <div className="h-full rounded-2xl sm:rounded-[28px] bg-surface-container-low border border-outline-variant p-3.5 sm:p-5 shadow-none font-sans tabular-nums">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <Bookmark className="w-4 h-4 text-primary shrink-0" />

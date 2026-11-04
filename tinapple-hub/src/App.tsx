@@ -766,8 +766,8 @@ export const App: React.FC = () => {
       <main
         className={`w-full max-w-full transition-all duration-300 ${
           isLandingPage || !isSidebarPinned
-            ? 'px-3 sm:px-6 lg:px-8 pt-4 sm:pt-6 pb-12'
-            : `px-3 sm:px-6 pt-4 sm:pt-5 pb-[calc(7rem+env(safe-area-inset-bottom,0px))] md:pb-12 ${
+            ? 'px-2.5 sm:px-6 lg:px-8 pt-3 sm:pt-6 pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))] md:pb-12'
+            : `px-2.5 sm:px-6 pt-3 sm:pt-5 pb-[calc(7rem+env(safe-area-inset-bottom,0px))] md:pb-12 ${
                 desktopSidebarCollapsed ? 'md:pl-24' : 'md:pl-72'
               }`
         }`}

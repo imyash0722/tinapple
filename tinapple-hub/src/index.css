@@ -84,6 +84,15 @@ h1, h2, h3, h4 { font-family: 'Roboto Flex Variable', 'Google Sans', system-ui, 
 .scrollbar-none { scrollbar-width: none; }
 .scrollbar-none::-webkit-scrollbar { display: none; }
 
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 /* Dynamic Material 3 Liquid Translucency & Glassmorphism for Components */
 .bg-surface-container-low {
   --tw-bg-opacity: var(--m3-surface-opacity, 1) !important;
