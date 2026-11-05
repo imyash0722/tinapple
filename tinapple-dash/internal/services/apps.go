@@ -11,6 +11,7 @@ import (
 	"os/exec"
 	"os/user"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -63,16 +64,88 @@ func ensurePacmanReliability() {
 	}
 }
 
-// applySuwayomiGovernor applies thermal protection drop-in overrides to suwayomi-server.service
-// to prevent Kotlin coroutines / Chromium CEF from saturating an entire CPU core and overheating the appliance.
+// applySuwayomiGovernor applies adaptive thermal and multi-core drop-in overrides to suwayomi-server.service.
+// For low-spec laptops (e.g. 2 cores / 4 threads), it strictly limits CPU and sets low priority (Nice=10)
+// to prevent overheating. On systems with 6+ threads, it allocates higher burst capacity and JVM memory.
 func applySuwayomiGovernor() error {
 	dropInDir := "/etc/systemd/system/suwayomi-server.service.d"
 	if err := os.MkdirAll(dropInDir, 0755); err != nil {
 		return err
 	}
-	content := "[Service]\n# Thermal & Multi-Core Protection: prevent single-core starvation and runaway coroutine loops\nCPUQuota=75%\nCPUWeight=50\nNice=10\n"
+
+	cores := runtime.NumCPU()
+	var quota string
+	var nice int
+	var weight int
+
+	switch {
+	case cores <= 2:
+		quota = "75%"
+		nice = 10
+		weight = 50
+	case cores <= 4:
+		// 1st gen mobile i5 / dual-core 4-thread laptops: preserve strict thermal limits
+		quota = "85%"
+		nice = 10
+		weight = 50
+	case cores <= 6:
+		quota = "175%"
+		nice = 5
+		weight = 80
+	default:
+		// 8+ threads: allow burst up to 2.5 cores, leaving 5.5+ cores completely free
+		quota = "250%"
+		nice = 5
+		weight = 100
+	}
+
+	var totalRamKB int64 = 4000000
+	if memData, err := os.ReadFile("/proc/meminfo"); err == nil {
+		for _, line := range strings.Split(string(memData), "\n") {
+			if strings.HasPrefix(line, "MemTotal:") {
+				parts := strings.Fields(line)
+				if len(parts) >= 2 {
+					if val, parseErr := strconv.ParseInt(parts[1], 10, 64); parseErr == nil {
+						totalRamKB = val
+					}
+				}
+				break
+			}
+		}
+	}
+
+	var javaMem string
+	if totalRamKB <= 4500000 {
+		javaMem = "-Xms128m -Xmx768m -XX:+UseG1GC -Dh2.cacheSize=65536 -Dh2.objectCache=true"
+	} else {
+		javaMem = "-Xms256m -Xmx1536m -XX:+UseG1GC -Dh2.cacheSize=131072 -Dh2.objectCache=true"
+	}
+
+	content := fmt.Sprintf(
+		"[Service]\n# Adaptive Governor: dynamically calculated for %d CPU threads & %dMB RAM\nCPUQuota=%s\nCPUWeight=%d\nNice=%d\nEnvironment=\"JAVA_ARGS=-Dsuwayomi.tachidesk.config.server.initialOpenInBrowserEnabled=false -Dsuwayomi.tachidesk.config.server.systemTrayEnabled=false %s\"\n",
+		cores, totalRamKB/1024, quota, weight, nice, javaMem,
+	)
+
 	if err := os.WriteFile(filepath.Join(dropInDir, "tinapple-override.conf"), []byte(content), 0644); err != nil {
 		return err
+	}
+	suwayomiConf := "/etc/suwayomi/server.conf"
+	if confBytes, err := os.ReadFile(suwayomiConf); err == nil {
+		confStr := string(confBytes)
+		newJavaArgs := fmt.Sprintf("JAVA_ARGS=\"-Dsuwayomi.tachidesk.config.server.initialOpenInBrowserEnabled=false -Dsuwayomi.tachidesk.config.server.systemTrayEnabled=false %s\"", javaMem)
+		lines := strings.Split(confStr, "\n")
+		found := false
+		for i, line := range lines {
+			if strings.HasPrefix(strings.TrimSpace(line), "JAVA_ARGS=") {
+				lines[i] = newJavaArgs
+				found = true
+				break
+			}
+		}
+		if !found {
+			lines = append(lines, newJavaArgs)
+		}
+		_ = os.WriteFile(suwayomiConf, []byte(strings.Join(lines, "\n")), 0644)
 	}
 	_ = exec.Command("systemctl", "daemon-reload").Run()
 	return nil
