@@ -24,7 +24,11 @@ export const DEFAULT_TAILSCALE_IP = '100.67.207.60';
 
 export function getTailscaleIp(): string {
   if (typeof window !== 'undefined') {
-    return localStorage.getItem('tinapple_tailscale_ip') || DEFAULT_TAILSCALE_IP;
+    const cached = localStorage.getItem('tinapple_tailscale_ip');
+    if (cached && cached !== '100.108.215.120') {
+      return cached;
+    }
+    return DEFAULT_TAILSCALE_IP;
   }
   return DEFAULT_TAILSCALE_IP;
 }
@@ -33,7 +37,13 @@ export function getActiveServerOrigin(): string {
   if (typeof window !== 'undefined') {
     const customUrl = localStorage.getItem('tinapple_server_url');
     if (customUrl) {
-      return customUrl.replace(/\/+$/, '');
+      if (customUrl.includes('100.108.215.120')) {
+        try {
+          localStorage.removeItem('tinapple_server_url');
+        } catch {}
+      } else {
+        return customUrl.replace(/\/+$/, '');
+      }
     }
     if (isStandaloneClient()) {
       return `http://${getTailscaleIp()}:8088`;
@@ -47,7 +57,13 @@ export function getApiBaseUrl(): string {
   if (typeof window !== 'undefined') {
     const customUrl = localStorage.getItem('tinapple_server_url');
     if (customUrl) {
-      return `${customUrl.replace(/\/+$/, '')}/api/v1`;
+      if (customUrl.includes('100.108.215.120')) {
+        try {
+          localStorage.removeItem('tinapple_server_url');
+        } catch {}
+      } else {
+        return `${customUrl.replace(/\/+$/, '')}/api/v1`;
+      }
     }
     if (isStandaloneClient()) {
       return `http://${getTailscaleIp()}:8088/api/v1`;
@@ -1596,9 +1612,13 @@ class ApiService {
 
   getServerUrl(): string {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('tinapple_server_url') || 'http://100.108.215.120:8088';
+      const custom = localStorage.getItem('tinapple_server_url');
+      if (custom && !custom.includes('100.108.215.120')) {
+        return custom;
+      }
+      return `http://${getTailscaleIp()}:8088`;
     }
-    return 'http://100.108.215.120:8088';
+    return `http://${DEFAULT_TAILSCALE_IP}:8088`;
   }
 
   setServerUrl(url: string): void {

@@ -30,9 +30,14 @@ if (typeof window !== 'undefined') {
   // Register Service Worker for offline PWA cache stack
   if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/sw.js').catch((err) => {
-        console.warn('[PWA] Service Worker registration failed:', err);
-      });
+      navigator.serviceWorker
+        .register('/sw.js')
+        .then((reg) => {
+          reg.update();
+        })
+        .catch((err) => {
+          console.warn('[PWA] Service Worker registration failed:', err);
+        });
     });
   }
 }

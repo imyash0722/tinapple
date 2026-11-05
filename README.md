@@ -512,7 +512,7 @@ Developer Workstation                                    tinapple Server
 ```
 
 ```bash
-./scripts/deploy-server.sh 100.108.215.120
+./scripts/deploy-server.sh 100.67.207.60
 ```
 
 ---
@@ -575,7 +575,7 @@ The Tauri desktop client (`org.tinapple.hub`) provides native desktop integratio
 
 - **Local Asset Serving**: Bundles static production assets directly into the binary (`frontendDist: "../dist"`). All application navigation, modal interactions, and canvas panning run with zero network overhead.
 - **Hardware Acceleration**: Automatically leverages native GPU-accelerated WebViews (WebKitGTK on Linux, WebView2 on Windows, WKWebView on macOS).
-- **Server Discovery & Dynamic Switching**: Automatically queries local appliance endpoints (`http://100.108.215.120:8088`, `http://192.168.4.1:8088`, or custom user-configured hostnames).
+- **Server Discovery & Dynamic Switching**: Automatically queries local appliance endpoints (`http://100.67.207.60:8088`, `http://192.168.4.1:8088`, or custom user-configured hostnames).
 
 #### Compiling Tauri Desktop Releases Locally:
 ```bash
