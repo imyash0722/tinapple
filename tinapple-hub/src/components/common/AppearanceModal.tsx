@@ -47,12 +47,23 @@ const modes: { id: BackgroundMode; label: string }[] = [
 const WALLPAPER_CATEGORIES = [
   'All',
   'Animated',
+  'Atmospheric',
   'Pixel Art',
   'Anime & Aesthetic',
   'Nature & Scenery',
   'Sci-Fi & Tech',
   'Pineapple',
 ];
+
+const DEFAULT_WALLPAPERS: WallpaperItem[] = BUNDLED_WALLPAPERS.map((b) => ({
+  id: b.name,
+  name: b.name,
+  file: b.url.replace('/wallpapers/', ''),
+  url: b.url,
+  isVideo: b.url.endsWith('.mp4') || b.url.endsWith('.webm'),
+  category: b.name.includes('Pineapple') ? 'Pineapple' : b.name.includes('Pixel') ? 'Pixel Art' : 'Nature & Scenery',
+  extension: '.' + b.url.split('.').pop(),
+}));
 
 const fieldClass =
   'w-full min-w-0 rounded-xl border border-outline-variant/50 bg-black/20 px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-tinapple-gold';
@@ -73,8 +84,8 @@ export const AppearanceModal: React.FC<AppearanceModalProps> = ({
   const [hex, setHex] = useState(settings.accentColor);
   const [hexError, setHexError] = useState('');
 
-  // Wallpaper Gallery States
-  const [gallery, setGallery] = useState<WallpaperItem[]>([]);
+  // Wallpaper Gallery States - pre-populated with bundled items so modal opens instantly without blank state
+  const [gallery, setGallery] = useState<WallpaperItem[]>(DEFAULT_WALLPAPERS);
   const [isLoadingGallery, setIsLoadingGallery] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -101,32 +112,9 @@ export const AppearanceModal: React.FC<AppearanceModalProps> = ({
         const items = await api.getWallpapers();
         if (isMounted && items && items.length > 0) {
           setGallery(items);
-        } else if (isMounted) {
-          // Fallback to bundled
-          const fallback: WallpaperItem[] = BUNDLED_WALLPAPERS.map((b) => ({
-            id: b.name,
-            name: b.name,
-            file: b.url.replace('/wallpapers/', ''),
-            url: b.url,
-            isVideo: b.url.endsWith('.mp4') || b.url.endsWith('.webm'),
-            category: b.name.includes('Pineapple') ? 'Pineapple' : b.name.includes('Pixel') ? 'Pixel Art' : 'Nature & Scenery',
-            extension: '.' + b.url.split('.').pop(),
-          }));
-          setGallery(fallback);
         }
       } catch {
-        if (isMounted) {
-          const fallback: WallpaperItem[] = BUNDLED_WALLPAPERS.map((b) => ({
-            id: b.name,
-            name: b.name,
-            file: b.url.replace('/wallpapers/', ''),
-            url: b.url,
-            isVideo: false,
-            category: 'Nature & Scenery',
-            extension: '.' + b.url.split('.').pop(),
-          }));
-          setGallery(fallback);
-        }
+        // Keep existing/fallback gallery on error
       } finally {
         if (isMounted) setIsLoadingGallery(false);
       }
@@ -482,11 +470,16 @@ export const AppearanceModal: React.FC<AppearanceModalProps> = ({
                 })}
               </div>
 
-              {filteredWallpapers.length === 0 && (
-                <div className="text-center py-8 text-xs font-sans text-on-surface-variant border border-dashed border-outline-variant/50 rounded-xl">
-                  No wallpapers found matching "{searchQuery}".
+              {isLoadingGallery && gallery.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 text-xs font-sans text-on-surface-variant gap-3 border border-outline-variant/40 rounded-xl bg-black/10">
+                  <Loader2 className="w-6 h-6 animate-spin text-tinapple-gold" />
+                  <span>Loading wallpaper collection...</span>
                 </div>
-              )}
+              ) : filteredWallpapers.length === 0 ? (
+                <div className="text-center py-8 text-xs font-sans text-on-surface-variant border border-dashed border-outline-variant/50 rounded-xl">
+                  {searchQuery ? `No wallpapers found matching "${searchQuery}".` : 'No wallpapers found in this category.'}
+                </div>
+              ) : null}
 
               {/* Custom Image URL Form */}
               <form

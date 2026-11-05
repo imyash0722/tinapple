@@ -19,6 +19,15 @@ export function isStandaloneClient(): boolean {
   return isCapacitor || isLocalhostWebView || isDevTauri || isCustomProtocol || h === '';
 }
 
+export const DEFAULT_TAILSCALE_IP = '100.67.207.60';
+
+export function getTailscaleIp(): string {
+  if (typeof window !== 'undefined') {
+    return localStorage.getItem('tinapple_tailscale_ip') || DEFAULT_TAILSCALE_IP;
+  }
+  return DEFAULT_TAILSCALE_IP;
+}
+
 export function getActiveServerOrigin(): string {
   if (typeof window !== 'undefined') {
     const customUrl = localStorage.getItem('tinapple_server_url');
@@ -26,11 +35,11 @@ export function getActiveServerOrigin(): string {
       return customUrl.replace(/\/+$/, '');
     }
     if (isStandaloneClient()) {
-      return 'http://100.108.215.120:8088';
+      return `http://${getTailscaleIp()}:8088`;
     }
     return window.location.origin;
   }
-  return 'http://100.108.215.120:8088';
+  return `http://${DEFAULT_TAILSCALE_IP}:8088`;
 }
 
 export function getApiBaseUrl(): string {
@@ -40,7 +49,7 @@ export function getApiBaseUrl(): string {
       return `${customUrl.replace(/\/+$/, '')}/api/v1`;
     }
     if (isStandaloneClient()) {
-      return 'http://100.108.215.120:8088/api/v1';
+      return `http://${getTailscaleIp()}:8088/api/v1`;
     }
   }
   return '/api/v1';
@@ -55,12 +64,12 @@ export function getWsTerminalUrl(): string {
       return `${isHttps ? 'wss:' : 'ws:'}//${host}/api/v1/terminal/ws`;
     }
     if (isStandaloneClient()) {
-      return 'ws://100.108.215.120:8088/api/v1/terminal/ws';
+      return `ws://${getTailscaleIp()}:8088/api/v1/terminal/ws`;
     }
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     return `${protocol}//${window.location.host}/api/v1/terminal/ws`;
   }
-  return 'ws://100.108.215.120:8088/api/v1/terminal/ws';
+  return `ws://${DEFAULT_TAILSCALE_IP}:8088/api/v1/terminal/ws`;
 }
 
 export function getServiceHost(): string {
@@ -76,11 +85,11 @@ export function getServiceHost(): string {
     // *.ts.net domains have HSTS preloaded in modern browsers which breaks connecting to plain HTTP on secondary service ports (:8096, :4567, :8080).
     // Standalone clients (Tauri desktop app, Android WebView, file://, dev port 1420) also use direct Tailscale IP.
     if (!h || isStandaloneClient() || h.endsWith('.ts.net') || h === 'tauri.localhost' || (h === 'localhost' && window.location.port === '1420')) {
-      return '100.108.215.120';
+      return getTailscaleIp();
     }
     return h;
   }
-  return '100.108.215.120';
+  return DEFAULT_TAILSCALE_IP;
 }
 
 export const SERVICE_PORT_MAP: Record<string, number> = {
@@ -679,20 +688,35 @@ class ApiService {
 
   async checkServerReachability(candidateUrl?: string): Promise<{ reachable: boolean; latencyMs?: number; url: string }> {
     const target = candidateUrl ? `${candidateUrl.replace(/\/+$/, '')}/api/v1` : getApiBaseUrl();
-    const start = performance.now();
-    try {
+    const probe = async (timeoutMs: number) => {
+      const start = performance.now();
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 3500);
-      const res = await fetch(`${target}/system/info`, {
-        signal: controller.signal,
-        headers: { Accept: 'application/json' },
-      });
-      clearTimeout(timer);
-      const latencyMs = Math.round(performance.now() - start);
-      return { reachable: res.ok, latencyMs, url: target.replace(/\/api\/v1\/?$/, '') };
-    } catch {
-      return { reachable: false, url: target.replace(/\/api\/v1\/?$/, '') };
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+      try {
+        const res = await fetch(`${target}/system/info`, {
+          signal: controller.signal,
+          headers: { Accept: 'application/json' },
+        });
+        clearTimeout(timer);
+        return { ok: res.ok, latencyMs: Math.round(performance.now() - start) };
+      } catch {
+        clearTimeout(timer);
+        return { ok: false, latencyMs: 0 };
+      }
+    };
+
+    // First attempt with 8s timeout
+    let res = await probe(8000);
+    if (!res.ok) {
+      // Second attempt with 8s timeout to handle Tailscale/cellular connection warmup
+      res = await probe(8000);
     }
+
+    return {
+      reachable: res.ok,
+      latencyMs: res.latencyMs,
+      url: target.replace(/\/api\/v1\/?$/, ''),
+    };
   }
 
   subscribeInstallStream(
@@ -967,16 +991,34 @@ class ApiService {
   }
 
   async getWallpapers(): Promise<WallpaperItem[]> {
-    try {
-      const res = await fetch(`${API_BASE}/wallpapers`);
-      if (res.ok) {
-        return await res.json();
+    const fetchWithTimeout = async (url: string) => {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 8000);
+      try {
+        const res = await fetch(url, { signal: controller.signal });
+        clearTimeout(timer);
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data) && data.length > 0) return data;
+        }
+      } catch {
+        clearTimeout(timer);
       }
-      const legacyRes = await fetch('/api/wallpapers');
-      if (legacyRes.ok) {
-        return await legacyRes.json();
-      }
-    } catch {}
+      return null;
+    };
+
+    // 1. Try standard API endpoint
+    const primary = await fetchWithTimeout(`${API_BASE}/wallpapers`);
+    if (primary) return primary;
+
+    // 2. Try direct /api/v1/wallpapers
+    const v1 = await fetchWithTimeout('/api/v1/wallpapers');
+    if (v1) return v1;
+
+    // 3. Try legacy endpoint
+    const legacy = await fetchWithTimeout('/api/wallpapers');
+    if (legacy) return legacy;
+
     return [];
   }
 
@@ -1095,7 +1137,15 @@ class ApiService {
   async getTailscaleStatus(): Promise<TailscaleStatus> {
     try {
       const res = await fetch(`${API_BASE}/tailscale/status`);
-      if (res.ok) return await res.json();
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.tailscaleIPs?.[0] && typeof window !== 'undefined') {
+          try {
+            localStorage.setItem('tinapple_tailscale_ip', data.tailscaleIPs[0]);
+          } catch {}
+        }
+        return data;
+      }
     } catch {}
     return {
       installed: true,

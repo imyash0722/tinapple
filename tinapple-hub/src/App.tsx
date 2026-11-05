@@ -398,17 +398,29 @@ export const App: React.FC = () => {
   // Initial load
   useEffect(() => {
     const loadInitialData = async () => {
-      const reachability = await api.checkServerReachability();
-      setIsServerReachable(reachability.reachable);
-
-      const [info, svcs, hw] = await Promise.all([
+      const [reachabilityRes, infoRes, svcsRes, hwRes] = await Promise.allSettled([
+        api.checkServerReachability(),
         api.getSystemInfo(),
         api.getServices(),
         api.getHardwareInfo(),
       ]);
-      setSystemInfo(info);
-      setServices(Array.isArray(svcs) ? svcs : []);
-      setHardware(hw);
+
+      const isReachable =
+        (reachabilityRes.status === 'fulfilled' && reachabilityRes.value.reachable) ||
+        (infoRes.status === 'fulfilled' && Boolean(infoRes.value?.hostname)) ||
+        (svcsRes.status === 'fulfilled' && Array.isArray(svcsRes.value) && svcsRes.value.length > 0);
+
+      setIsServerReachable(isReachable);
+
+      if (infoRes.status === 'fulfilled' && infoRes.value) {
+        setSystemInfo(infoRes.value);
+      }
+      if (svcsRes.status === 'fulfilled' && Array.isArray(svcsRes.value)) {
+        setServices(svcsRes.value);
+      }
+      if (hwRes.status === 'fulfilled' && hwRes.value) {
+        setHardware(hwRes.value);
+      }
     };
     loadInitialData();
 
@@ -429,17 +441,29 @@ export const App: React.FC = () => {
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      const reachability = await api.checkServerReachability();
-      setIsServerReachable(reachability.reachable);
-
-      const [info, tel, svcs] = await Promise.all([
+      const [reachabilityRes, infoRes, telRes, svcsRes] = await Promise.allSettled([
+        api.checkServerReachability(),
         api.getSystemInfo(),
         api.getTelemetry(),
         api.getServices(),
       ]);
-      setSystemInfo(info);
-      setTelemetry(tel);
-      setServices(Array.isArray(svcs) ? svcs : []);
+
+      const isReachable =
+        (reachabilityRes.status === 'fulfilled' && reachabilityRes.value.reachable) ||
+        (infoRes.status === 'fulfilled' && Boolean(infoRes.value?.hostname)) ||
+        (svcsRes.status === 'fulfilled' && Array.isArray(svcsRes.value) && svcsRes.value.length > 0);
+
+      setIsServerReachable(isReachable);
+
+      if (infoRes.status === 'fulfilled' && infoRes.value) {
+        setSystemInfo(infoRes.value);
+      }
+      if (telRes.status === 'fulfilled' && telRes.value) {
+        setTelemetry(telRes.value);
+      }
+      if (svcsRes.status === 'fulfilled' && Array.isArray(svcsRes.value)) {
+        setServices(svcsRes.value);
+      }
     } finally {
       setIsRefreshing(false);
     }

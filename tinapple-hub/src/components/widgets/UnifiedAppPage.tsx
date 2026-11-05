@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 import { GUIDES_CATALOG, GuideArticle } from '../../data/guidesCatalog';
 import { AppBrandIcon } from '../common/AppBrandIcons';
-import { api } from '../../services/api';
+import { api, getServiceHost } from '../../services/api';
 import { serviceRegistry } from '../../services/serviceRegistry';
 
 interface UnifiedAppPageProps {
@@ -365,7 +365,7 @@ export const UnifiedAppPage: React.FC<UnifiedAppPageProps> = ({
     return `https://pineapple-server.taildb42a2.ts.net${meta.path}`;
   }, [cleanId, meta.path]);
 
-  const directPortUrl = `http://100.108.215.120:${meta.port}`;
+  const directPortUrl = `http://${getServiceHost()}:${meta.port}`;
   const magicDnsPortUrl = `http://pineapple-server.taildb42a2.ts.net:${meta.port}`;
 
   return (
