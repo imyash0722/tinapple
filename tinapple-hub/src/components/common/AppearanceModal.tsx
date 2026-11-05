@@ -89,8 +89,13 @@ export const AppearanceModal: React.FC<AppearanceModalProps> = ({
   const [isLoadingGallery, setIsLoadingGallery] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [displayLimit, setDisplayLimit] = useState<number>(24);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadMessage, setUploadMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    setDisplayLimit(24);
+  }, [selectedCategory, searchQuery]);
 
   useEffect(() => {
     setUrl(settings.wallpaperUrl);
@@ -407,7 +412,7 @@ export const AppearanceModal: React.FC<AppearanceModalProps> = ({
 
               {/* Gallery Grid */}
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-[380px] overflow-y-auto pr-1 scrollbar-thin">
-                {filteredWallpapers.map((wallpaper) => {
+                {filteredWallpapers.slice(0, displayLimit).map((wallpaper) => {
                   const isSelected =
                     settings.wallpaperUrl === wallpaper.url ||
                     settings.wallpaperUrl.endsWith(wallpaper.file);
@@ -430,13 +435,24 @@ export const AppearanceModal: React.FC<AppearanceModalProps> = ({
                             src={wallpaper.url}
                             muted
                             loop
-                            autoPlay
+                            autoPlay={isSelected}
+                            preload="none"
                             playsInline
                             className="aspect-video w-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            onMouseEnter={(e) => {
+                              try {
+                                e.currentTarget.play().catch(() => {});
+                              } catch {}
+                            }}
+                            onMouseLeave={(e) => {
+                              try {
+                                if (!isSelected) e.currentTarget.pause();
+                              } catch {}
+                            }}
                           />
                           <span className="absolute top-1.5 left-1.5 flex items-center gap-1 px-1.5 py-0.5 rounded bg-purple-950/80 border border-purple-500/40 text-[9px] font-sans font-bold text-purple-300 backdrop-blur-sm">
                             <Film className="w-2.5 h-2.5" />
-                            <span>LOOP</span>
+                            <span>VIDEO</span>
                           </span>
                         </div>
                       ) : (
@@ -469,6 +485,19 @@ export const AppearanceModal: React.FC<AppearanceModalProps> = ({
                   );
                 })}
               </div>
+
+              {/* Show more wallpapers button if list exceeds display limit */}
+              {filteredWallpapers.length > displayLimit && (
+                <div className="text-center pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setDisplayLimit((prev) => prev + 24)}
+                    className="px-4 py-2 rounded-xl bg-surface-container hover:bg-surface-container-high border border-outline-variant text-xs font-sans font-semibold text-on-surface transition-all active:scale-95"
+                  >
+                    Load More Wallpapers ({filteredWallpapers.length - displayLimit} remaining)
+                  </button>
+                </div>
+              )}
 
               {isLoadingGallery && gallery.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 text-xs font-sans text-on-surface-variant gap-3 border border-outline-variant/40 rounded-xl bg-black/10">

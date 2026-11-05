@@ -48,6 +48,18 @@ export const ServerOfflineStandby: React.FC<ServerOfflineStandbyProps> = ({
     }, 500);
   };
 
+  const handleResetToDefault = () => {
+    try {
+      localStorage.removeItem('tinapple_server_url');
+    } catch {}
+    setCustomInput(window.location.origin);
+    setIsPinging(true);
+    setTimeout(() => {
+      onRetry();
+      setIsPinging(false);
+    }, 400);
+  };
+
   const handleApplyCustom = (e: React.FormEvent) => {
     e.preventDefault();
     setCustomError('');
@@ -57,7 +69,12 @@ export const ServerOfflineStandby: React.FC<ServerOfflineStandbyProps> = ({
       formatted = `http://${formatted}`;
     }
     try {
-      new URL(formatted);
+      const parsed = new URL(formatted);
+      // Auto-append port 8088 if plain hostname entered without explicit port
+      if (!parsed.port && parsed.hostname !== 'localhost' && !parsed.hostname.endsWith('.ts.net')) {
+        parsed.port = '8088';
+        formatted = parsed.toString().replace(/\/+$/, '');
+      }
       localStorage.setItem('tinapple_server_url', formatted);
       setIsPinging(true);
       setTimeout(() => {
@@ -164,7 +181,7 @@ export const ServerOfflineStandby: React.FC<ServerOfflineStandbyProps> = ({
         </form>
 
         {/* Action Controls */}
-        <div className="flex flex-col sm:flex-row items-center gap-3">
+        <div className="flex flex-col sm:flex-row items-center gap-2.5">
           <button
             onClick={() => {
               setIsPinging(true);
@@ -179,10 +196,18 @@ export const ServerOfflineStandby: React.FC<ServerOfflineStandbyProps> = ({
           </button>
 
           <button
-            onClick={onEnterCachedMode}
-            className="w-full sm:w-auto py-3 px-4 rounded-2xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 text-slate-300 hover:text-white font-semibold text-xs flex items-center justify-center gap-1.5 transition-all"
+            onClick={handleResetToDefault}
+            className="w-full sm:w-auto py-3 px-3.5 rounded-2xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 font-semibold text-xs flex items-center justify-center gap-1.5 transition-all"
+            title="Clear saved endpoint and auto-detect server origin"
           >
-            <span>View Offline Cache</span>
+            <span>Reset Default</span>
+          </button>
+
+          <button
+            onClick={onEnterCachedMode}
+            className="w-full sm:w-auto py-3 px-3.5 rounded-2xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 text-slate-300 hover:text-white font-semibold text-xs flex items-center justify-center gap-1.5 transition-all"
+          >
+            <span>Offline Cache</span>
           </button>
         </div>
 

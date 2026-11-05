@@ -3,9 +3,10 @@ import { serviceRegistry, ApplianceService } from './serviceRegistry';
 import { Capacitor } from '@capacitor/core';
 
 export const DEFAULT_SERVERS = [
-  { id: 'tailscale', label: 'Tailscale Mesh', url: 'http://100.108.215.120:8088', host: '100.108.215.120' },
+  { id: 'tailscale', label: 'Tailscale Mesh', url: 'http://100.67.207.60:8088', host: '100.67.207.60' },
+  { id: 'tsnet', label: 'Tailscale HTTPS', url: 'https://tinapple-server.tail3dee69.ts.net', host: 'tinapple-server.tail3dee69.ts.net' },
+  { id: 'lan', label: 'Local LAN / Hostname', url: 'http://tinapple-server:8088', host: 'tinapple-server' },
   { id: 'hotspot', label: 'Direct AP Hotspot', url: 'http://192.168.4.1:8088', host: '192.168.4.1' },
-  { id: 'lan', label: 'Local LAN / mDNS', url: 'http://pineapple-server:8088', host: 'pineapple-server' },
 ];
 
 export function isStandaloneClient(): boolean {
@@ -687,13 +688,15 @@ class ApiService {
   }
 
   async checkServerReachability(candidateUrl?: string): Promise<{ reachable: boolean; latencyMs?: number; url: string }> {
+    const custom = typeof window !== 'undefined' ? localStorage.getItem('tinapple_server_url') : null;
     const target = candidateUrl ? `${candidateUrl.replace(/\/+$/, '')}/api/v1` : getApiBaseUrl();
-    const probe = async (timeoutMs: number) => {
+
+    const probe = async (probeUrl: string, timeoutMs: number) => {
       const start = performance.now();
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), timeoutMs);
       try {
-        const res = await fetch(`${target}/system/info`, {
+        const res = await fetch(`${probeUrl}/system/info`, {
           signal: controller.signal,
           headers: { Accept: 'application/json' },
         });
@@ -706,10 +709,26 @@ class ApiService {
     };
 
     // First attempt with 8s timeout
-    let res = await probe(8000);
+    let res = await probe(target, 8000);
     if (!res.ok) {
       // Second attempt with 8s timeout to handle Tailscale/cellular connection warmup
-      res = await probe(8000);
+      res = await probe(target, 8000);
+    }
+
+    // Self-healing fallback: If customUrl is set but failing, test relative /api/v1
+    if (!res.ok && custom && typeof window !== 'undefined') {
+      const fallbackRes = await probe('/api/v1', 4000);
+      if (fallbackRes.ok) {
+        // The host origin is responding! Clear the stale custom URL
+        try {
+          localStorage.removeItem('tinapple_server_url');
+        } catch {}
+        return {
+          reachable: true,
+          latencyMs: fallbackRes.latencyMs,
+          url: window.location.origin,
+        };
+      }
     }
 
     return {
