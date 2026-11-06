@@ -110,3 +110,35 @@ https://100.67.207.60, https://192.168.1.17, https://localhost, https://tinapple
 	tls internal
 	import matrix_routes
 }
+
+
+# Jellyfin Emby/Legacy Client Compatibility Bridge (for Ombi and legacy clients)
+http://:8095 {
+	@has_emby_token header X-Emby-Token *
+	handle @has_emby_token {
+		reverse_proxy localhost:8096 {
+			header_up Authorization "MediaBrowser Token=\"{http.request.header.X-Emby-Token}\""
+		}
+	}
+	@has_mb_token header X-MediaBrowser-Token *
+	handle @has_mb_token {
+		reverse_proxy localhost:8096 {
+			header_up Authorization "MediaBrowser Token=\"{http.request.header.X-MediaBrowser-Token}\""
+		}
+	}
+	@has_query_key query api_key=*
+	handle @has_query_key {
+		reverse_proxy localhost:8096 {
+			header_up Authorization "MediaBrowser Token=\"{http.request.uri.query.api_key}\""
+		}
+	}
+	@has_query_key_cap query ApiKey=*
+	handle @has_query_key_cap {
+		reverse_proxy localhost:8096 {
+			header_up Authorization "MediaBrowser Token=\"{http.request.uri.query.ApiKey}\""
+		}
+	}
+	handle {
+		reverse_proxy localhost:8096
+	}
+}
