@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { BookOpen, ExternalLink, RefreshCw } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { BookOpen, ExternalLink, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
 import { getServiceHost } from '../../services/api';
 import { serviceRegistry } from '../../services/serviceRegistry';
 
@@ -26,6 +26,22 @@ export const MangaShelfWidget: React.FC = () => {
   const [readingList, setReadingList] = useState<MangaItem[]>([]);
   const [historyList, setHistoryList] = useState<MangaItem[]>([]);
   const [updatesList, setUpdatesList] = useState<MangaItem[]>([]);
+  const shelfRef = useRef<HTMLDivElement>(null);
+
+  const scrollShelf = (direction: 'left' | 'right') => {
+    if (shelfRef.current) {
+      const scrollAmount = direction === 'left' ? -380 : 380;
+      shelfRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    }
+  };
+
+  const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    if (e.deltaY !== 0) {
+      if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+        e.currentTarget.scrollLeft += e.deltaY;
+      }
+    }
+  };
 
   const fetchLibrary = () => {
     setLoading(true);
@@ -169,6 +185,23 @@ export const MangaShelfWidget: React.FC = () => {
             </button>
           </div>
 
+          <div className="hidden sm:flex items-center gap-1">
+            <button
+              onClick={() => scrollShelf('left')}
+              className="p-1.5 rounded-lg bg-[#0e1b38] hover:bg-[#14264e] border border-[#1b2b52] text-on-surface-variant hover:text-on-surface transition-colors"
+              title="Scroll shelf left"
+            >
+              <ChevronLeft className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={() => scrollShelf('right')}
+              className="p-1.5 rounded-lg bg-[#0e1b38] hover:bg-[#14264e] border border-[#1b2b52] text-on-surface-variant hover:text-on-surface transition-colors"
+              title="Scroll shelf right"
+            >
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
           <button
             onClick={fetchLibrary}
             className="p-1.5 rounded-lg bg-[#0e1b38] hover:bg-[#14264e] border border-[#1b2b52] text-on-surface-variant hover:text-on-surface transition-colors"
@@ -181,7 +214,11 @@ export const MangaShelfWidget: React.FC = () => {
 
       {/* Content: Shelf or Empty State */}
       {currentList.length > 0 ? (
-        <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-slate-800">
+        <div
+          ref={shelfRef}
+          onWheel={handleWheel}
+          className="flex gap-4 overflow-x-auto pb-3 shelf-scrollbar select-none"
+        >
           {currentList.map((manga, idx) => {
             let subtitle = manga.source || 'Suwayomi';
             if (activeTab === 'reading') {

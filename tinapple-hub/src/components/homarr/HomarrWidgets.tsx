@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useMemo, useRef, lazy, Suspense } from 'react';
 import { AppBrandIcon } from '../common/AppBrandIcons';
 import { SquishSwitch } from '../reactbits/SquishSwitch';
 const ProtonModal = lazy(() => import('../common/ProtonModal').then(m => ({ default: m.ProtonModal })));
@@ -36,6 +36,8 @@ import {
   Smartphone,
   Settings,
   Tv,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { TelemetrySnapshot, SystemInfo, ServiceInfo } from '../../types/api';
 
@@ -990,6 +992,22 @@ export const HomarrMangaWidget: React.FC = () => {
   const [readingList, setReadingList] = useState<MangaShelfItem[]>([]);
   const [historyList, setHistoryList] = useState<MangaShelfItem[]>([]);
   const [updatesList, setUpdatesList] = useState<MangaShelfItem[]>([]);
+  const shelfRef = useRef<HTMLDivElement>(null);
+
+  const scrollShelf = (direction: 'left' | 'right') => {
+    if (shelfRef.current) {
+      const scrollAmount = direction === 'left' ? -380 : 380;
+      shelfRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    }
+  };
+
+  const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    if (e.deltaY !== 0) {
+      if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+        e.currentTarget.scrollLeft += e.deltaY;
+      }
+    }
+  };
 
   const fetchManga = () => {
     setLoading(true);
@@ -1072,6 +1090,23 @@ export const HomarrMangaWidget: React.FC = () => {
             </button>
           </div>
 
+          <div className="hidden sm:flex items-center gap-1">
+            <button
+              onClick={() => scrollShelf('left')}
+              className="p-1.5 rounded-lg bg-slate-950/60 hover:bg-white/10 border border-white/10 text-zinc-400 hover:text-white transition-colors shrink-0"
+              title="Scroll shelf left"
+            >
+              <ChevronLeft className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={() => scrollShelf('right')}
+              className="p-1.5 rounded-lg bg-slate-950/60 hover:bg-white/10 border border-white/10 text-zinc-400 hover:text-white transition-colors shrink-0"
+              title="Scroll shelf right"
+            >
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
           <button
             onClick={fetchManga}
             className="p-1.5 rounded-lg bg-slate-950/60 hover:bg-white/10 border border-white/10 text-zinc-400 hover:text-white transition-colors shrink-0"
@@ -1083,9 +1118,13 @@ export const HomarrMangaWidget: React.FC = () => {
       </div>
 
       {/* Manga Covers Horizontal Shelf */}
-      <div className="my-2.5 flex-1 min-h-[140px] flex flex-col justify-center">
+      <div className="my-2 flex-1 min-h-[140px] flex flex-col justify-center">
         {currentList.length > 0 ? (
-          <div className="flex gap-3 overflow-x-auto pb-1.5 scrollbar-none">
+          <div
+            ref={shelfRef}
+            onWheel={handleWheel}
+            className="flex gap-3 overflow-x-auto pb-2.5 shelf-scrollbar"
+          >
             {currentList.map((manga, idx) => {
               const suwayomiMangaUrl = `${suwayomiWebUrl.replace(/\/$/, '')}/manga/${manga.id}`;
               const sourceLabel = typeof manga.source === 'object' ? manga.source?.name : manga.source || 'Suwayomi';

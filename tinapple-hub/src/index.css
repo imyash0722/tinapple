@@ -93,6 +93,34 @@ h1, h2, h3, h4 { font-family: 'Roboto Flex Variable', 'Google Sans', system-ui, 
   display: none;
 }
 
+/* Custom sleek horizontal scrollbar for shelf carousels */
+.shelf-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(249, 115, 22, 0.45) rgba(15, 23, 42, 0.7);
+}
+.shelf-scrollbar::-webkit-scrollbar {
+  height: 6px;
+}
+.shelf-scrollbar::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.7);
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  margin: 0 4px;
+}
+.shelf-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(249, 115, 22, 0.45);
+  border-radius: 9999px;
+  cursor: grab;
+  transition: background 0.2s;
+}
+.shelf-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(249, 115, 22, 0.85);
+}
+.shelf-scrollbar::-webkit-scrollbar-thumb:active {
+  background: rgba(249, 115, 22, 1);
+  cursor: grabbing;
+}
+
 /* Dynamic Material 3 Liquid Translucency & Glassmorphism for Components */
 .bg-surface-container-low {
   --tw-bg-opacity: var(--m3-surface-opacity, 1) !important;
