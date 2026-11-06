@@ -199,4 +199,4 @@ Downloaded files are organized into dedicated playlist folders with sanitized na
 ## 🛡️ License
 
 This project is licensed under the [MIT License](LICENSE).
-Copyright (c) 2026 Yash Sharma ([@imyash0722](https://github.com/imyash0722)).
+Copyright (c) 2026 Yashwanth Karthik ([@imyash0722](https://github.com/imyash0722)).

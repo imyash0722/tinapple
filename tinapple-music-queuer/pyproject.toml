@@ -8,7 +8,7 @@ version = "0.0.1"
 description = "Automated studio lossless FLAC audio resolver & queue daemon for Navidrome via Antra"
 readme = "README.md"
 authors = [
-    { name = "Yash Sharma", email = "imyash0722@gmail.com" }
+    { name = "Yashwanth Karthik", email = "imyash0722@gmail.com" }
 ]
 license = { text = "MIT" }
 classifiers = [
