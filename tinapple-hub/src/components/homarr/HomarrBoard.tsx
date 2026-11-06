@@ -160,7 +160,7 @@ interface CuratedAppliance {
 const CURATED_APPLIANCES: CuratedAppliance[] = [
   // Media & Streaming
   { id: 'jellyfin', name: 'Jellyfin Media Server', tagline: 'Hardware Transcoding & 4K DirectPlay', category: 'media', icon: '🎬', port: 8096, subpath: '/jellyfin', guideId: 'jellyfin' },
-  { id: 'seerr', name: 'Seerr Media Discovery', tagline: 'Automated 1-Click Requests & Approvals', category: 'media', icon: '👁️', port: 5055, subpath: '/seerr', guideId: 'jellyseerr' },
+  { id: 'ombi', name: 'Ombi Media Requests', tagline: 'Automated 1-Click Requests & User Management', category: 'media', icon: '🍿', port: 5000, subpath: '/ombi', guideId: 'seerr' },
   { id: 'navidrome', name: 'Navidrome Music Server', tagline: 'Lossless Audio & Subsonic API Streaming', category: 'media', icon: '🎵', port: 4533, subpath: '/navidrome', guideId: 'navidrome' },
   { id: 'pinchflat', name: 'Pinchflat YouTube Stack', tagline: 'Automated YouTube Channel Archiver', category: 'media', icon: '📺', port: 8945, subpath: '/pinchflat', guideId: 'pinchflat' },
   { id: 'suwayomi', name: 'Suwayomi Manga Server', tagline: 'Keiyoushi Extensions & Tachiyomi Sync', category: 'media', icon: '📖', port: 4567, subpath: '/suwayomi', guideId: 'suwayomi' },

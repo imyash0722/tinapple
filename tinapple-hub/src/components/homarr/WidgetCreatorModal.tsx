@@ -214,7 +214,7 @@ const TEMPLATES: WidgetTemplate[] = [
   },
   {
     type: 'media_requests',
-    title: 'Media Requests & Discovery (Seerr)',
+    title: 'Media Requests & Discovery (Ombi)',
     description: 'Track movie & show requests, automated Sonarr/Radarr pipeline, and trending media.',
     icon: '🍿',
     category: 'media',

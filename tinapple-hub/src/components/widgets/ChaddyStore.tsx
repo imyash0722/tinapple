@@ -369,17 +369,17 @@ const FALLBACK_APPS: AppInfo[] = [
     status: 'not_installed',
   },
   {
-    id: 'seerr',
-    name: 'Seerr Media Discovery & Requests',
+    id: 'ombi',
+    name: 'Ombi Media Requests',
     tagline: 'Media request & discovery platform for Jellyfin',
-    description: 'Clean media request and discovery portal for Jellyfin with integrated user management.',
+    description: 'Leading media request and user management portal connected to Jellyfin, Radarr, and Sonarr.',
     category: 'media',
-    package: 'seerr',
-    unit: 'seerr.service',
-    binary: 'seerr',
-    port: 5055,
-    icon: 'seerr',
-    accentColor: '#6366F1',
+    package: 'ombi-bin',
+    unit: 'ombi.service',
+    binary: 'Ombi',
+    port: 5000,
+    icon: 'ombi',
+    accentColor: '#E37200',
     installed: false,
     running: false,
     status: 'not_installed',
@@ -471,17 +471,17 @@ const FALLBACK_PACKS: AppliancePackStatus[] = [
     id: 'seerr-stack',
     name: 'Ultimate Streaming & Servarr Stack',
     tagline: 'Zero-touch 4K/1080p streaming cloud with automated discovery',
-    description: 'Complete media automation stack featuring Jellyfin streaming server, Jellyseerr discovery and user requests portal, Radarr & Sonarr automated indexers via Prowlarr, Bazarr subtitle synchronization, qBittorrent engine, and Pinchflat YouTube manager.',
+    description: 'Complete media automation stack featuring Jellyfin streaming server, Ombi discovery and user requests portal, Radarr & Sonarr automated indexers via Prowlarr, Bazarr subtitle synchronization, qBittorrent engine, and Pinchflat YouTube manager.',
     badge: 'STREAMING & MEDIA',
     accentColor: '#AA5CC3',
-    icon: 'seerr',
-    apps: ['jellyfin', 'seerr', 'radarr', 'sonarr', 'prowlarr', 'bazarr', 'qbittorrent', 'pinchflat'],
+    icon: 'ombi',
+    apps: ['jellyfin', 'ombi', 'radarr', 'sonarr', 'prowlarr', 'bazarr', 'qbittorrent', 'pinchflat'],
     features: [
       'Automated root libraries in /srv/media/{movies,shows,youtube}',
       'qBittorrent client authenticated and synced (:8080)',
       'Prowlarr public trackers (YTS, Nyaa, TPB, LimeTorrents) linked',
       'Bazarr multi-language subtitle automator connected',
-      'Jellyseerr 1-click requests linked to Jellyfin & Servarrs (:5055)',
+      'Ombi 1-click requests linked to Jellyfin & Servarrs (:5000)',
       'Pinchflat automated YouTube manager with Jellyfin NFO tags (:8945)',
     ],
     installedCount: 0,
@@ -1334,14 +1334,14 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({
                       {pack.id === 'seerr-stack' && (
                         <>
                           <a
-                            href={getAppUrl(5055)}
+                            href={getAppUrl(5000)}
                             target="_blank"
                             rel="noreferrer"
-                            className="flex items-center gap-1 px-3 py-2 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-200 border border-purple-500/40 text-xs font-mono font-bold transition-all shadow-sm"
-                            title="Open Jellyseerr Requests WebUI"
+                            className="flex items-center gap-1 px-3 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 border border-amber-500/40 text-xs font-mono font-bold transition-all shadow-sm"
+                            title="Open Ombi Requests WebUI"
                           >
                             <ExternalLink className="w-3 h-3" />
-                            Jellyseerr (:5055)
+                            Ombi (:5000)
                           </a>
                           <a
                             href={getAppUrl(8096)}

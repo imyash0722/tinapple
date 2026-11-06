@@ -174,8 +174,9 @@ func main() {
 
 			// Direct port service redirects for dev/8088 dashboard access
 			servicePortRedirects := map[string]int{
-				"/seerr":       5055,
-				"/jellyseerr":  5055,
+				"/ombi":        5000,
+				"/seerr":       5000,
+				"/jellyseerr":  5000,
 				"/jellyfin":    8096,
 				"/qbittorrent": 8080,
 				"/radarr":      7878,

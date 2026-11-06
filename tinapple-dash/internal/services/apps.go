@@ -549,18 +549,18 @@ func NewAppManager() *AppManager {
 			ConfigPath:  "/var/lib/bazarr/config/config.yaml",
 		},
 		{
-			ID:          "seerr",
-			Name:        "Seerr Media Request & Discovery",
-			Description: "Clean media request and discovery portal for Jellyfin with integrated user management.",
+			ID:          "ombi",
+			Name:        "Ombi Media Requests",
+			Description: "Leading media request and user management portal connected to Jellyfin, Radarr, and Sonarr.",
 			Tagline:     "Media request & discovery platform for Jellyfin",
 			Category:    "media",
-			Package:     "seerr",
-			Unit:        "seerr.service",
-			Binary:      "seerr",
-			Port:        5055,
-			Icon:        "seerr",
-			AccentColor: "#6366F1",
-			ConfigPath:  "/var/lib/seerr/settings.json",
+			Package:     "ombi-bin",
+			Unit:        "ombi.service",
+			Binary:      "Ombi",
+			Port:        5000,
+			Icon:        "ombi",
+			AccentColor: "#E37200",
+			ConfigPath:  "/var/lib/ombi/OmbiSettings.db",
 		},
 		{
 			ID:          "jdownloader",
@@ -654,22 +654,29 @@ func NewAppManager() *AppManager {
 		mgr.appOrder = append(mgr.appOrder, d.ID)
 	}
 
+	// Backward compatibility alias for seerr -> ombi
+	if ombiApp, exists := mgr.apps["ombi"]; exists {
+		seerrAlias := ombiApp
+		seerrAlias.ID = "seerr"
+		mgr.apps["seerr"] = seerrAlias
+	}
+
 	packDefs := []AppliancePack{
 		{
 			ID:          "seerr-stack",
 			Name:        "Ultimate Streaming & Servarr Stack",
 			Tagline:     "Zero-touch 4K/1080p streaming cloud with automated discovery",
-			Description: "Complete media automation stack featuring Jellyfin streaming server, Jellyseerr discovery and user requests portal, Radarr & Sonarr automated indexers via Prowlarr, Bazarr subtitle synchronization, qBittorrent engine, and Pinchflat YouTube manager.",
+			Description: "Complete media automation stack featuring Jellyfin streaming server, Ombi discovery and user requests portal, Radarr & Sonarr automated indexers via Prowlarr, Bazarr subtitle synchronization, qBittorrent engine, and Pinchflat YouTube manager.",
 			Badge:       "STREAMING & MEDIA",
 			AccentColor: "#AA5CC3",
-			Icon:        "seerr",
-			Apps:        []string{"jellyfin", "seerr", "radarr", "sonarr", "prowlarr", "bazarr", "qbittorrent", "pinchflat"},
+			Icon:        "ombi",
+			Apps:        []string{"jellyfin", "ombi", "radarr", "sonarr", "prowlarr", "bazarr", "qbittorrent", "pinchflat"},
 			Features: []string{
 				"Automated root libraries in /srv/media/{movies,shows,youtube}",
 				"qBittorrent client authenticated and synced (:8080)",
 				"Prowlarr public trackers (YTS, Nyaa, TPB, LimeTorrents) linked",
 				"Bazarr multi-language subtitle automator connected",
-				"Jellyseerr 1-click requests linked to Jellyfin & Servarrs (:5055)",
+				"Ombi 1-click requests linked to Jellyfin & Servarrs (:5000)",
 				"Pinchflat automated YouTube manager with Jellyfin NFO tags (:8945)",
 			},
 		},

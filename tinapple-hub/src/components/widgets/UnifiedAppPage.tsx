@@ -114,10 +114,17 @@ const APP_METADATA_MAP: Record<
     categoryName: 'Media & Video Downloader',
     description: 'Automated YouTube channel & playlist archiver directly integrated with your Jellyfin library.',
   },
+  ombi: {
+    unit: 'ombi.service',
+    path: '/ombi/',
+    port: 5000,
+    categoryName: 'Media & Requests',
+    description: 'Media discovery and automated request manager integrated with Jellyfin, Radarr, and Sonarr.',
+  },
   seerr: {
-    unit: 'jellyseerr.service',
-    path: '/seerr/',
-    port: 5055,
+    unit: 'ombi.service',
+    path: '/ombi/',
+    port: 5000,
     categoryName: 'Media & Requests',
     description: 'Media discovery and automated request manager integrated with Jellyfin, Radarr, and Sonarr.',
   },
@@ -260,7 +267,7 @@ export const UnifiedAppPage: React.FC<UnifiedAppPageProps> = ({
     if (raw.includes('qbittorrent')) raw = 'qbittorrent';
     if (raw.includes('syncthing')) raw = 'syncthing';
     if (raw.includes('adguard')) raw = 'adguard';
-    if (raw.includes('jellyseerr') || raw.includes('seerr')) raw = 'seerr';
+    if (raw.includes('ombi') || raw.includes('jellyseerr') || raw.includes('seerr')) raw = 'ombi';
     if (raw.includes('matrix') || raw.includes('element') || raw.includes('whatsapp') || raw.includes('signal') || raw.includes('telegram') || raw.includes('discord') || raw.includes('instagram')) raw = 'mautrix';
     if (raw.includes('suwayomi') || raw.includes('manga') || raw.includes('tsumiru')) raw = 'syncyomi';
     if (raw.includes('pinchflat') || raw.includes('youtube')) raw = 'pinchflat';

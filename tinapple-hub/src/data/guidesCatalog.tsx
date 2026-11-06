@@ -558,35 +558,34 @@ export const GUIDES_CATALOG: GuideArticle[] = [
   },
   {
     id: 'seerr',
-    title: 'Jellyseerr Media Discovery & 1-Click Requests',
-    subtitle: 'Unified discover portal for movies and shows with automated approval and download',
+    title: 'Ombi Media Discovery & Requests',
+    subtitle: 'Unified request portal for movies and shows with automated approval and Servarr pipeline',
     category: 'media',
-    icon: <Sparkles className="w-5 h-5 text-purple-400" />,
-    accentColor: '#c084fc',
+    icon: <Sparkles className="w-5 h-5 text-amber-400" />,
+    accentColor: '#f59e0b',
     htmlGuidePath: '/guides/seerr.html',
     endpoints: [
-      { label: 'Jellyseerr Web Portal', value: 'http://100.67.207.60:5055' },
+      { label: 'Ombi Web Portal', value: 'http://100.67.207.60:5000' },
       { label: 'Connected Jellyfin', value: 'http://127.0.0.1:8096' },
-      { label: 'Outbound Tor Proxy', value: 'http://127.0.0.1:8118' },
     ],
     steps: [
       {
         title: 'Sign In with Your Jellyfin Credentials',
-        description: 'Navigate to Jellyseerr on port 5055 and click "Sign In with Jellyfin". Enter your Jellyfin username and password to log in instantly.',
-        code: 'http://100.67.207.60:5055',
-        tip: 'Jellyseerr automatically syncs user accounts and permissions from Jellyfin.',
+        description: 'Navigate to Ombi on port 5000 and log in with your Jellyfin username and password.',
+        code: 'http://100.67.207.60:5000',
+        tip: 'Ombi connects directly to Jellyfin for authentication and library availability.',
       },
       {
         title: 'Browse Trending, Popular & Upcoming Titles',
-        description: 'Discover trending movies, anime, and series with TMDB metadata, trailers, cast lists, and streaming availability across Netflix, Disney+, Prime, and Apple TV.',
+        description: 'Discover trending movies, anime, and series with comprehensive metadata, posters, and trailers.',
       },
       {
         title: '1-Click Request & Automated Pipeline',
-        description: 'Click "Request" on any title. Jellyseerr routes the request to Radarr or Sonarr, grabs the highest quality release via Prowlarr, downloads it via qBittorrent, and sends a notification when it appears in Jellyfin.',
+        description: 'Click "Request" on any title. Ombi automatically routes requests to Radarr or Sonarr, grabs releases via Prowlarr, downloads via qBittorrent, and notifies you when ready in Jellyfin.',
       },
     ],
     clientApps: [
-      { name: 'Jellyseerr PWA (Mobile)', platform: 'Android / iOS / Chrome', link: 'http://100.67.207.60:5055', badge: 'PWA Installable' },
+      { name: 'Ombi Mobile (Android / iOS)', platform: 'Android / iOS', link: 'https://ombi.io', badge: 'Official App' },
       { name: 'Plezy Client', platform: 'Desktop Player', link: 'https://github.com/edde746/plezy' },
     ],
     specialConfigs: [

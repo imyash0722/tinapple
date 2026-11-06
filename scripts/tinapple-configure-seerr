@@ -563,7 +563,7 @@ if os.path.exists(seerr_cfg) and radarr_key and sonarr_key:
                 pass
         cfg.setdefault('network', {})
         cfg['network']['proxy'] = {
-            'enabled': True,
+            'enabled': False,
             'hostname': '127.0.0.1',
             'port': 8118,
             'useSsl': False,
@@ -678,8 +678,8 @@ if os.path.exists(seerr_cfg) and radarr_key and sonarr_key:
         with open(seerr_cfg, 'w') as f:
             json.dump(cfg, f, indent=2)
 
-        subprocess.run(['systemctl', 'restart', 'seerr'], check=False)
-        print("[✓] Jellyseerr configured & linked to Jellyfin, Radarr, and Sonarr")
+        # Seerr has been migrated to Ombi. Service remains stopped and masked.
+        print("[✓] Jellyseerr migrated to Ombi portal")
     except Exception as e:
         print(f"[!] Jellyseerr notice: {e}")
 

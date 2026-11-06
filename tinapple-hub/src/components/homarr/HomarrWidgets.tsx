@@ -1283,7 +1283,7 @@ export const HomarrPortMatrixWidget: React.FC<{ onOpenTools?: () => void }> = ({
     { name: 'Manga', port: 4567, path: serviceRegistry.resolveUrl('suwayomi'), color: 'text-amber-400' },
     { name: 'Torrent', port: 8080, path: serviceRegistry.resolveUrl('qbittorrent'), color: 'text-sky-400' },
     { name: 'Sync', port: 8384, path: serviceRegistry.resolveUrl('syncthing'), color: 'text-emerald-400' },
-    { name: 'Seerr', port: 5055, path: serviceRegistry.resolveUrl('seerr'), color: 'text-blue-400' },
+    { name: 'Ombi', port: 5000, path: serviceRegistry.resolveUrl('ombi'), color: 'text-amber-500' },
     { name: 'AdGuard', port: 3000, path: serviceRegistry.resolveUrl('adguard'), color: 'text-teal-400' },
     { name: 'Vault', port: 8000, path: serviceRegistry.resolveUrl('vaultwarden'), color: 'text-indigo-400' },
   ];
@@ -1501,13 +1501,13 @@ export const HomarrBookmarksWidget: React.FC<HomarrBookmarksWidgetProps> = ({
   );
 };
 
-// 13. Homarr Seerr Media Requests Widget
+// 13. Homarr Ombi Media Requests Widget
 export const HomarrRequestsWidget: React.FC = () => {
   const [online, setOnline] = useState<boolean>(true);
   const [requests, setRequests] = useState<any[]>([]);
 
   useEffect(() => {
-    fetch('/api/widgets/seerr')
+    fetch('/api/widgets/ombi')
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (data) {
@@ -1518,13 +1518,13 @@ export const HomarrRequestsWidget: React.FC = () => {
       .catch(() => setOnline(false));
   }, []);
 
-  const seerrUrl = serviceRegistry.resolveUrl('seerr');
+  const ombiUrl = serviceRegistry.resolveUrl('ombi');
 
   return (
     <div className="h-full rounded-2xl bg-slate-900/60 border border-white/[0.08] backdrop-blur-xl p-4 sm:p-5 flex flex-col justify-between shadow-lg shadow-black/20 font-mono">
       <div className="flex items-center justify-between text-xs mb-3">
         <div className="flex items-center gap-2">
-          <span className="p-1.5 rounded-lg bg-indigo-500/15 text-indigo-400 border border-indigo-500/25">
+          <span className="p-1.5 rounded-lg bg-amber-500/15 text-amber-400 border border-amber-500/25">
             <Film className="w-4 h-4" />
           </span>
           <div>
@@ -1532,17 +1532,17 @@ export const HomarrRequestsWidget: React.FC = () => {
               <span className="font-bold uppercase tracking-wider text-white">Media Requests & Discovery</span>
               <span className={`w-1.5 h-1.5 rounded-full ${online ? 'bg-emerald-400 animate-pulse' : 'bg-red-400'}`} />
             </div>
-            <span className="text-[10px] text-zinc-400">Jellyseerr • Radarr & Sonarr</span>
+            <span className="text-[10px] text-zinc-400">Ombi • Radarr & Sonarr</span>
           </div>
         </div>
 
         <a
-          href={seerrUrl}
+          href={ombiUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="px-2.5 py-1 rounded-lg bg-indigo-500/15 hover:bg-indigo-500/25 border border-indigo-500/30 text-indigo-300 text-xs font-bold flex items-center gap-1 transition-all"
+          className="px-2.5 py-1 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 text-xs font-bold flex items-center gap-1 transition-all"
         >
-          <span>Port 5055</span>
+          <span>Port 5000</span>
           <ExternalLink className="w-3 h-3" />
         </a>
       </div>
@@ -1552,26 +1552,29 @@ export const HomarrRequestsWidget: React.FC = () => {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
             {requests.slice(0, 4).map((req, idx) => {
               const statusLabel =
-                req.status === 2 ? 'Approved' : req.status === 4 ? 'Available' : req.status === 3 ? 'Declined' : 'Pending';
+                req.statusLabel ||
+                (req.status === 2 ? 'Approved' : req.status === 4 ? 'Available' : req.status === 3 ? 'Declined' : 'Pending');
               const statusColor =
                 req.status === 2
                   ? 'bg-sky-500/20 text-sky-300 border-sky-500/30'
                   : req.status === 4
                   ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+                  : req.status === 3
+                  ? 'bg-rose-500/20 text-rose-300 border-rose-500/30'
                   : 'bg-amber-500/20 text-amber-300 border-amber-500/30';
               return (
-                <div key={idx} className="p-2.5 rounded-xl bg-slate-950/50 border border-white/[0.06] space-y-1.5">
+                <div key={req.id || idx} className="p-2.5 rounded-xl bg-slate-950/50 border border-white/[0.06] space-y-1.5">
                   <div className="flex items-center justify-between text-[10px]">
                     <span className={`px-1.5 py-0.2 rounded font-bold border ${statusColor}`}>
                       {statusLabel}
                     </span>
-                    <span className="text-zinc-500 uppercase">{req.media?.mediaType || 'Media'}</span>
+                    <span className="text-zinc-500 uppercase">{req.type || req.media?.mediaType || 'Media'}</span>
                   </div>
-                  <h5 className="text-xs font-bold text-white truncate" title={req.media?.tmdbId || 'Requested Item'}>
-                    ID #{req.media?.tmdbId || req.id}
+                  <h5 className="text-xs font-bold text-white truncate" title={req.title || req.media?.tmdbId || 'Requested Item'}>
+                    {req.title || `ID #${req.media?.tmdbId || req.id}`}
                   </h5>
                   <p className="text-[10px] text-zinc-400 truncate">
-                    by {req.requestedBy?.displayName || 'User'}
+                    by {req.requestedBy?.displayName || req.requestedBy?.username || 'User'}
                   </p>
                 </div>
               );
@@ -1582,7 +1585,7 @@ export const HomarrRequestsWidget: React.FC = () => {
             <span className="text-sm">🍿</span>
             <h5 className="text-xs font-bold text-white">No Pending Requests</h5>
             <p className="text-[10px] text-zinc-400">
-              Open Seerr to search movies, anime, or series and trigger zero-touch downloads.
+              Open Ombi to search movies, anime, or series and trigger zero-touch downloads.
             </p>
           </div>
         )}
@@ -1591,10 +1594,10 @@ export const HomarrRequestsWidget: React.FC = () => {
       <div className="pt-2.5 border-t border-white/[0.06] flex items-center justify-between text-xs mt-auto">
         <span className="text-[11px] text-zinc-400">Automated Pipeline: Radarr • Sonarr • Bazarr</span>
         <a
-          href={seerrUrl}
+          href={ombiUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-indigo-400 hover:text-indigo-300 font-bold text-[11px] flex items-center gap-1"
+          className="text-amber-400 hover:text-amber-300 font-bold text-[11px] flex items-center gap-1"
         >
           <span>Request Media →</span>
         </a>
