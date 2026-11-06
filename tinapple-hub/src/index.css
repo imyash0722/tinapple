@@ -81,43 +81,77 @@ h1, h2, h3, h4 { font-family: 'Roboto Flex Variable', 'Google Sans', system-ui, 
   outline-offset: 3px;
 }
 :where(input[type="range"], input[type="checkbox"]) { accent-color: var(--md-sys-color-primary); }
-.scrollbar-none { scrollbar-width: none; }
-.scrollbar-none::-webkit-scrollbar { display: none; }
+.scrollbar-none { scrollbar-width: none !important; }
+.scrollbar-none::-webkit-scrollbar { display: none !important; }
 
 .no-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
   -webkit-overflow-scrolling: touch;
 }
 .no-scrollbar::-webkit-scrollbar {
-  display: none;
+  display: none !important;
 }
 
-/* Custom sleek horizontal scrollbar for shelf carousels */
-.shelf-scrollbar {
+/* Global scrollbar fallback following Matugen M3 dynamic theme */
+* {
   scrollbar-width: thin;
-  scrollbar-color: rgba(249, 115, 22, 0.45) rgba(15, 23, 42, 0.7);
+  scrollbar-color: rgb(var(--md-sys-color-primary-rgb, 56 189 248) / 0.4) transparent;
 }
-.shelf-scrollbar::-webkit-scrollbar {
+*::-webkit-scrollbar {
+  width: 6px;
   height: 6px;
 }
-.shelf-scrollbar::-webkit-scrollbar-track {
-  background: rgba(15, 23, 42, 0.7);
-  border-radius: 9999px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  margin: 0 4px;
+*::-webkit-scrollbar-track {
+  background: transparent;
 }
-.shelf-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(249, 115, 22, 0.45);
+*::-webkit-scrollbar-thumb {
+  background: rgb(var(--md-sys-color-primary-rgb, 56 189 248) / 0.35);
   border-radius: 9999px;
-  cursor: grab;
   transition: background 0.2s;
 }
-.shelf-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(249, 115, 22, 0.85);
+*::-webkit-scrollbar-thumb:hover {
+  background: rgb(var(--md-sys-color-primary-rgb, 56 189 248) / 0.75);
 }
-.shelf-scrollbar::-webkit-scrollbar-thumb:active {
-  background: rgba(249, 115, 22, 1);
+
+/* Dynamic Material 3 Matugen Theme-Adaptive Scrollbar */
+.shelf-scrollbar,
+.scrollbar-themed,
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(var(--md-sys-color-primary-rgb, 56 189 248) / 0.5) rgb(var(--md-sys-color-surface-container-highest-rgb, 28 41 64) / 0.6);
+}
+.shelf-scrollbar::-webkit-scrollbar,
+.scrollbar-themed::-webkit-scrollbar,
+.scrollbar-thin::-webkit-scrollbar {
+  height: 6px;
+  width: 6px;
+}
+.shelf-scrollbar::-webkit-scrollbar-track,
+.scrollbar-themed::-webkit-scrollbar-track,
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: rgb(var(--md-sys-color-surface-container-highest-rgb, 28 41 64) / 0.5);
+  border-radius: 9999px;
+  border: 1px solid var(--md-sys-color-outline-variant, rgba(255, 255, 255, 0.05));
+  margin: 1px 4px;
+}
+.shelf-scrollbar::-webkit-scrollbar-thumb,
+.scrollbar-themed::-webkit-scrollbar-thumb,
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgb(var(--md-sys-color-primary-rgb, 56 189 248) / 0.45);
+  border-radius: 9999px;
+  cursor: grab;
+  transition: background 0.2s, border-color 0.2s;
+}
+.shelf-scrollbar::-webkit-scrollbar-thumb:hover,
+.scrollbar-themed::-webkit-scrollbar-thumb:hover,
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: rgb(var(--md-sys-color-primary-rgb, 56 189 248) / 0.85);
+}
+.shelf-scrollbar::-webkit-scrollbar-thumb:active,
+.scrollbar-themed::-webkit-scrollbar-thumb:active,
+.scrollbar-thin::-webkit-scrollbar-thumb:active {
+  background: var(--md-sys-color-primary, #38bdf8);
   cursor: grabbing;
 }
 

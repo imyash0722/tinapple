@@ -323,8 +323,8 @@ export const HomarrDownloadsWidget: React.FC = () => {
       {/* Active Torrents Task List */}
       <div className="flex-1 my-1 overflow-hidden flex flex-col justify-center">
         {data.torrents.length > 0 ? (
-          <div className="space-y-2 max-h-40 overflow-y-auto scrollbar-none pr-1">
-            {data.torrents.slice(0, 4).map((t, idx) => {
+          <div className="space-y-2 max-h-40 overflow-y-auto shelf-scrollbar pr-1.5">
+            {data.torrents.map((t, idx) => {
               const progressPct = Math.round((t.progress || 0) * 100);
               const isDl = (t.dlspeed || 0) > 0;
               return (
@@ -751,6 +751,20 @@ export const HomarrMediaWidget: React.FC<{ onOpenGuide?: (g: string) => void }> 
   const [nowPlaying, setNowPlaying] = useState<JellyfinNowPlaying[]>([]);
   const [recent, setRecent] = useState<JellyfinRecentItem[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
+  const mediaShelfRef = useRef<HTMLDivElement>(null);
+
+  const scrollMediaShelf = (direction: 'left' | 'right') => {
+    if (mediaShelfRef.current) {
+      const scrollAmount = direction === 'left' ? -340 : 340;
+      mediaShelfRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    }
+  };
+
+  const handleMediaWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    if (e.deltaY !== 0 && Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+      e.currentTarget.scrollLeft += e.deltaY;
+    }
+  };
 
   const fetchJellyfin = async () => {
     try {
@@ -891,12 +905,32 @@ export const HomarrMediaWidget: React.FC<{ onOpenGuide?: (g: string) => void }> 
       {recent.length > 0 ? (
         <div className="space-y-2 my-2">
           <div className="flex items-center justify-between text-[11px] text-zinc-400">
-            <span className="font-bold text-zinc-300">Recently Added Media</span>
-            <span className="text-[10px] text-zinc-500">Click title to stream</span>
+            <span className="font-bold text-zinc-300">Recently Added Media ({recent.length})</span>
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => scrollMediaShelf('left')}
+                className="p-1 rounded-lg bg-slate-950/60 hover:bg-white/10 border border-white/10 text-zinc-400 hover:text-white transition-colors"
+                title="Scroll shelf left"
+              >
+                <ChevronLeft className="w-3 h-3" />
+              </button>
+              <button
+                onClick={() => scrollMediaShelf('right')}
+                className="p-1 rounded-lg bg-slate-950/60 hover:bg-white/10 border border-white/10 text-zinc-400 hover:text-white transition-colors"
+                title="Scroll shelf right"
+              >
+                <ChevronRight className="w-3 h-3" />
+              </button>
+              <span className="text-[10px] text-zinc-500 hidden sm:inline">Click to stream</span>
+            </div>
           </div>
 
-          <div className="flex gap-2.5 overflow-x-auto pb-1.5 scrollbar-none">
-            {recent.slice(0, 8).map((item) => {
+          <div
+            ref={mediaShelfRef}
+            onWheel={handleMediaWheel}
+            className="flex gap-2.5 overflow-x-auto pb-2.5 shelf-scrollbar select-none"
+          >
+            {recent.map((item) => {
               const itemUrl = `${jellyfinBase.replace(/\/$/, '')}/web/#/details?id=${item.id}`;
               return (
                 <a
@@ -1432,7 +1466,7 @@ export const HomarrJournalWidget: React.FC = () => {
         <span className="text-[10px] text-on-surface-variant">Priority ≤ 3</span>
       </div>
 
-      <div className="p-2.5 rounded-xl bg-surface-container-low border border-slate-800 space-y-1.5 text-[10px] text-on-surface max-h-28 overflow-y-auto scrollbar-none">
+      <div className="p-2.5 rounded-xl bg-surface-container-low border border-slate-800 space-y-1.5 text-[10px] text-on-surface max-h-28 overflow-y-auto shelf-scrollbar pr-1.5">
         {logs.length > 0 ? (
           logs.map((log, i) => (
             <div key={i} className="truncate text-amber-300/90">
@@ -1592,8 +1626,15 @@ export const HomarrRequestsWidget: React.FC = () => {
 
       <div className="my-2 flex-1 flex flex-col justify-center">
         {requests.length > 0 ? (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-            {requests.slice(0, 4).map((req, idx) => {
+          <div
+            onWheel={(e) => {
+              if (e.deltaY !== 0 && Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+                e.currentTarget.scrollLeft += e.deltaY;
+              }
+            }}
+            className="flex gap-2.5 overflow-x-auto pb-2.5 shelf-scrollbar select-none"
+          >
+            {requests.map((req, idx) => {
               const statusLabel =
                 req.statusLabel ||
                 (req.status === 2 ? 'Approved' : req.status === 4 ? 'Available' : req.status === 3 ? 'Declined' : 'Pending');
@@ -1606,7 +1647,7 @@ export const HomarrRequestsWidget: React.FC = () => {
                   ? 'bg-rose-500/20 text-rose-300 border-rose-500/30'
                   : 'bg-amber-500/20 text-amber-300 border-amber-500/30';
               return (
-                <div key={req.id || idx} className="p-2.5 rounded-xl bg-slate-950/50 border border-white/[0.06] space-y-1.5">
+                <div key={req.id || idx} className="flex-shrink-0 w-40 sm:w-48 p-2.5 rounded-xl bg-slate-950/50 border border-white/[0.06] space-y-1.5">
                   <div className="flex items-center justify-between text-[10px]">
                     <span className={`px-1.5 py-0.2 rounded font-bold border ${statusColor}`}>
                       {statusLabel}

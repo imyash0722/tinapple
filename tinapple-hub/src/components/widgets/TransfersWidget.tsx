@@ -199,7 +199,7 @@ export const TransfersWidget: React.FC = () => {
             <span className="text-[11px] font-sans tabular-nums uppercase tracking-wider text-on-surface-variant block">
               Active Transfers ({qbit.torrents?.length || 0})
             </span>
-            <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+            <div className="space-y-2 max-h-48 overflow-y-auto shelf-scrollbar pr-1.5">
               {qbit.torrents && qbit.torrents.length > 0 ? (
                 qbit.torrents.map((t, idx) => (
                   <div key={idx} className="p-2.5 rounded-[12px] bg-surface-container border border-outline-variant text-xs">
@@ -292,7 +292,7 @@ export const TransfersWidget: React.FC = () => {
             <span className="text-[11px] font-sans tabular-nums uppercase tracking-wider text-on-surface-variant block">
               Grabbed Packages ({jd.packages?.length || 0})
             </span>
-            <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
+            <div className="space-y-2 max-h-40 overflow-y-auto shelf-scrollbar pr-1.5">
               {jd.packages && jd.packages.length > 0 ? (
                 jd.packages.map((pkg, idx) => (
                   <div key={idx} className="p-2.5 rounded-[12px] bg-surface-container border border-outline-variant text-xs">

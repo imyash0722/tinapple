@@ -101,7 +101,7 @@ export const CustomMarkdownWidget: React.FC<{ widget: CanvasWidget }> = ({ widge
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto font-sans tabular-nums text-xs text-on-surface whitespace-pre-wrap leading-relaxed pr-1 selection:bg-purple-500/30">
+      <div className="flex-1 overflow-y-auto shelf-scrollbar font-sans tabular-nums text-xs text-on-surface whitespace-pre-wrap leading-relaxed pr-1 selection:bg-purple-500/30">
         {content}
       </div>
     </div>
@@ -122,7 +122,7 @@ export const CustomLinksWidget: React.FC<{ widget: CanvasWidget }> = ({ widget }
         </span>
       </div>
 
-      <div className="flex-1 overflow-y-auto space-y-1.5 pr-1">
+      <div className="flex-1 overflow-y-auto shelf-scrollbar space-y-1.5 pr-1">
         {links.length > 0 ? (
           links.map((link, idx) => (
             <a
