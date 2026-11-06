@@ -958,7 +958,7 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({
       );
     }
     return (
-      <span className="px-2.5 py-1 text-[11px] font-mono font-medium rounded-full bg-slate-800/80 text-slate-400 border border-slate-700/60 flex items-center gap-1.5 shadow-sm">
+      <span className="px-2.5 py-1 text-[11px] font-mono font-medium rounded-full bg-slate-800/80 text-on-surface-variant border border-slate-700/60 flex items-center gap-1.5 shadow-sm">
         <span className="w-2 h-2 rounded-full bg-slate-500" />
         NOT INSTALLED
       </span>
@@ -976,7 +976,7 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({
           </div>
 
           <div className="mb-1">
-            <h2 className="text-xl md:text-2xl font-black text-white tracking-tight font-mono uppercase">
+            <h2 className="text-xl md:text-2xl font-black text-on-surface tracking-tight font-mono uppercase">
               APPLIANCE STORE & LIFECYCLE
             </h2>
           </div>
@@ -994,7 +994,7 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({
               className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-mono font-bold transition-all ${
                 storeTab === 'packs'
                   ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-md'
-                  : 'text-tinapple-subtext hover:text-white'
+                  : 'text-tinapple-subtext hover:text-on-surface'
               }`}
             >
               <Zap className="w-3.5 h-3.5 fill-current" />
@@ -1005,7 +1005,7 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({
               className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-mono font-bold transition-all ${
                 storeTab === 'apps'
                   ? 'bg-tinapple-gold text-tinapple-dark shadow-md'
-                  : 'text-tinapple-subtext hover:text-white'
+                  : 'text-tinapple-subtext hover:text-on-surface'
               }`}
             >
               <Layers className="w-3.5 h-3.5" />
@@ -1026,7 +1026,7 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({
                     className={`px-3 py-1.5 rounded-lg text-xs font-semibold capitalize font-mono transition-all ${
                       filterCategory === c
                         ? 'bg-tinapple-gold text-tinapple-dark shadow-sm'
-                        : 'text-tinapple-subtext hover:text-white'
+                        : 'text-tinapple-subtext hover:text-on-surface'
                     }`}
                   >
                     {c}
@@ -1040,7 +1040,7 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({
                   className={`p-2 rounded-lg transition-all ${
                     viewMode === 'grid'
                       ? 'bg-tinapple-gold text-tinapple-dark shadow-sm'
-                      : 'text-tinapple-subtext hover:text-white'
+                      : 'text-tinapple-subtext hover:text-on-surface'
                   }`}
                   title="Bento Grid View"
                 >
@@ -1051,7 +1051,7 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({
                   className={`p-2 rounded-lg transition-all ${
                     viewMode === 'carousel'
                       ? 'bg-tinapple-gold text-tinapple-dark shadow-sm'
-                      : 'text-tinapple-subtext hover:text-white'
+                      : 'text-tinapple-subtext hover:text-on-surface'
                   }`}
                   title="3D Radial View"
                 >
@@ -1069,7 +1069,7 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({
           <div className="flex items-start gap-3">
             <AlertTriangle className="w-5 h-5 text-rose-400 flex-shrink-0 mt-0.5" />
             <div>
-              <div className="font-bold text-sm text-white font-mono">
+              <div className="font-bold text-sm text-on-surface font-mono">
                 Operation Failed: {actionError.name || actionError.id}
               </div>
               <div className="text-xs text-rose-300 font-mono mt-0.5 whitespace-pre-wrap">
@@ -1079,7 +1079,7 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({
           </div>
           <button
             onClick={() => setActionError(null)}
-            className="p-1 hover:bg-rose-500/20 rounded-lg text-rose-400 hover:text-white transition-colors"
+            className="p-1 hover:bg-rose-500/20 rounded-lg text-rose-400 hover:text-on-surface transition-colors"
             title="Dismiss error notice"
           >
             <X className="w-4 h-4" />
@@ -1136,12 +1136,12 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({
                         PARTIAL • {pack.installedCount}/{pack.totalCount} READY
                       </span>
                     ) : !hasLoadedPacks ? (
-                      <span className="px-2.5 py-1 text-[11px] font-mono font-medium rounded-full bg-slate-800/80 text-slate-400 border border-slate-700/60 flex items-center gap-1.5 shadow-sm">
+                      <span className="px-2.5 py-1 text-[11px] font-mono font-medium rounded-full bg-slate-800/80 text-on-surface-variant border border-slate-700/60 flex items-center gap-1.5 shadow-sm">
                         <Loader2 className="w-2.5 h-2.5 animate-spin text-tinapple-gold" />
                         CHECKING STATUS...
                       </span>
                     ) : (
-                      <span className="px-2.5 py-1 text-[11px] font-mono font-medium rounded-full bg-slate-800/80 text-slate-400 border border-slate-700/60 flex items-center gap-1.5 shadow-sm">
+                      <span className="px-2.5 py-1 text-[11px] font-mono font-medium rounded-full bg-slate-800/80 text-on-surface-variant border border-slate-700/60 flex items-center gap-1.5 shadow-sm">
                         <span className="w-2 h-2 rounded-full bg-slate-500" />
                         NOT INSTALLED ({pack.totalCount} APPS)
                       </span>
@@ -1152,7 +1152,7 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({
                   <div className="flex items-start gap-3.5 mb-2">
                     <AppBrandIcon id={pack.icon} size={46} showBadge />
                     <div>
-                      <h3 className="text-lg sm:text-xl font-black text-white tracking-tight flex items-center gap-2">
+                      <h3 className="text-lg sm:text-xl font-black text-on-surface tracking-tight flex items-center gap-2">
                         {pack.name}
                       </h3>
                       <p className="text-xs font-semibold text-tinapple-gold font-mono mt-0.5">
@@ -1265,7 +1265,7 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({
                         disabled={Boolean(loadingAction[pack.id])}
                         className="flex-1 sm:flex-none"
                       >
-                        <span className="flex items-center gap-2 font-mono text-xs font-bold text-white">
+                        <span className="flex items-center gap-2 font-mono text-xs font-bold text-on-surface">
                           {loadingAction[pack.id] === 'configure' ? (
                             <Loader2 className="w-4 h-4 animate-spin" />
                           ) : (
@@ -1520,7 +1520,7 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({
                 <AppBrandIcon id={selectedApp.id} size={56} showBadge />
                 <div>
                   <div className="flex items-center gap-3">
-                    <h2 className="text-2xl font-black text-white tracking-tight">{selectedApp.name}</h2>
+                    <h2 className="text-2xl font-black text-on-surface tracking-tight">{selectedApp.name}</h2>
                     {renderStatusBadge(selectedApp)}
                   </div>
                   <p className="text-sm font-semibold text-tinapple-gold font-mono mt-0.5">{selectedApp.tagline}</p>
@@ -1590,7 +1590,7 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({
                   <button
                     onClick={() => handleAction(selectedApp.id, 'install')}
                     disabled={Boolean(loadingAction[selectedApp.id])}
-                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs font-mono transition-all shadow-lg shadow-emerald-950/40"
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-on-surface font-semibold text-xs font-mono transition-all shadow-lg shadow-emerald-950/40"
                   >
                     {loadingAction[selectedApp.id] === 'install' ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
@@ -1681,7 +1681,7 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({
                     {renderStatusBadge(app)}
                   </div>
 
-                  <h3 className="text-base font-bold text-white tracking-tight">{app.name}</h3>
+                  <h3 className="text-base font-bold text-on-surface tracking-tight">{app.name}</h3>
                   <p className="text-xs font-semibold text-tinapple-gold mt-0.5 font-mono">{app.tagline}</p>
                   <p className="text-xs text-tinapple-subtext mt-2.5 leading-relaxed line-clamp-3">
                     {app.description}
@@ -1759,7 +1759,7 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({
                       <button
                         onClick={() => handleAction(app.id, 'install')}
                         disabled={isLoading}
-                        className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs font-mono flex items-center gap-1.5 shadow-sm transition-colors"
+                        className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-on-surface font-medium text-xs font-mono flex items-center gap-1.5 shadow-sm transition-colors"
                       >
                         {loadingAction[app.id] === 'install' ? (
                           <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -1844,13 +1844,13 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({
               <div className="flex items-center gap-3">
                 <AppBrandIcon id={configModalApp.id} size={36} showBadge />
                 <div>
-                  <h3 className="text-base font-bold text-white">{configModalApp.name} Configuration</h3>
+                  <h3 className="text-base font-bold text-on-surface">{configModalApp.name} Configuration</h3>
                   <span className="text-xs font-mono text-tinapple-gold">{configModalApp.unit}</span>
                 </div>
               </div>
               <button
                 onClick={() => setConfigModalApp(null)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                className="p-1.5 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-slate-800 transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1860,7 +1860,7 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({
             <div className="space-y-4">
               {/* Port configuration */}
               <div>
-                <label className="block text-xs font-mono uppercase tracking-wider text-slate-400 mb-1.5">
+                <label className="block text-xs font-mono uppercase tracking-wider text-on-surface-variant mb-1.5">
                   Service Listen Port
                 </label>
                 <input
@@ -1868,7 +1868,7 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({
                   value={editPort || ''}
                   onChange={(e) => setEditPort(parseInt(e.target.value) || 0)}
                   placeholder="e.g. 8096"
-                  className="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-sm font-mono text-white focus:outline-none focus:border-tinapple-gold"
+                  className="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-sm font-mono text-on-surface focus:outline-none focus:border-tinapple-gold"
                 />
                 <span className="text-[11px] text-slate-500 mt-1 block">
                   Updates systemd service drop-in environment <code>PORT={editPort}</code>.
@@ -1878,7 +1878,7 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({
               {/* System Config File Preview */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-xs font-mono uppercase tracking-wider text-slate-400">
+                  <span className="text-xs font-mono uppercase tracking-wider text-on-surface-variant">
                     Configuration File Preview
                   </span>
                   <span className="text-[10px] font-mono text-slate-500">

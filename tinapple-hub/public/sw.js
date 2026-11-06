@@ -1,5 +1,5 @@
 // Tinapple Hub — High-Performance Offline Cache Stack Service Worker
-const CACHE_NAME = 'tinapple-cache-v1';
+const CACHE_NAME = 'tinapple-cache-v2';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -18,7 +18,7 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// Activate: clean up older caches
+// Activate: clean up older caches immediately
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => {
@@ -40,6 +40,16 @@ self.addEventListener('fetch', (event) => {
 
   // Skip WebSocket connections, non-GET requests, or chrome-extension URLs
   if (req.method !== 'GET' || url.protocol.startsWith('chrome-extension')) {
+    return;
+  }
+
+  // Pass through all API requests, SSE telemetry streams, websockets, and dynamic backend routes
+  // NEVER impose artificial timeouts or synthetic 503 errors on control plane endpoints.
+  if (
+    url.pathname.startsWith('/api') ||
+    url.pathname.includes('/stream') ||
+    req.headers.get('Accept')?.includes('text/event-stream')
+  ) {
     return;
   }
 
@@ -66,7 +76,7 @@ self.addEventListener('fetch', (event) => {
               <head>
                 <meta charset="UTF-8"/>
                 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-                <title>Tinapple Hub — Offline</title>
+                <title>Tinapple Hub - Offline</title>
                 <style>
                   body { background: #050814; color: #f1f5f9; font-family: system-ui, sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; text-align: center; }
                   .card { background: #0b132b; border: 1px solid rgba(255,255,255,0.1); padding: 2rem; border-radius: 1.5rem; max-width: 420px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
@@ -77,7 +87,7 @@ self.addEventListener('fetch', (event) => {
               </head>
               <body>
                 <div class="card">
-                  <h1>🍎 Server Offline / Standby</h1>
+                  <h1>Server Offline / Standby</h1>
                   <p>Tinapple Hub server could not be reached. Check your Wi-Fi, Tailscale connection, or hotspot.</p>
                   <button onclick="window.location.reload()">Retry Connection</button>
                 </div>
@@ -90,33 +100,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 2. API requests (/api/v1/*) — Network-first with short timeout
-  if (url.pathname.startsWith('/api/v1/')) {
-    event.respondWith(
-      Promise.race([
-        fetch(req),
-        new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Network timeout')), 3500)
-        ),
-      ]).catch(() => {
-        return new Response(
-          JSON.stringify({
-            offline: true,
-            error: 'Appliance server unreachable',
-            timestamp: Date.now(),
-          }),
-          {
-            status: 503,
-            statusText: 'Service Unavailable',
-            headers: { 'Content-Type': 'application/json' },
-          }
-        );
-      })
-    );
-    return;
-  }
-
-  // 3. Static assets (JS, CSS, images, icons, fonts) — Stale-While-Revalidate / Cache-First
+  // 2. Static assets (JS, CSS, images, icons, fonts) - Cache-first with network revalidation
   event.respondWith(
     caches.match(req).then((cached) => {
       const fetchPromise = fetch(req)

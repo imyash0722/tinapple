@@ -72,7 +72,7 @@ export const GuidesModal: React.FC<GuidesModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="w-full max-w-5xl h-[92vh] max-h-[850px] rounded-3xl bg-[#090b11] border border-tinapple-border/90 shadow-2xl flex flex-col overflow-hidden">
+      <div className="w-full max-w-5xl h-[92vh] max-h-[850px] rounded-3xl bg-[#090b11] border border-tinapple-border/90 shadow-none flex flex-col overflow-hidden">
         {/* Modal Top Header */}
         <div className="px-5 py-4 bg-[#11151f] border-b border-tinapple-border flex items-center justify-between gap-4 shrink-0">
           <div className="flex items-center gap-3">
@@ -80,7 +80,7 @@ export const GuidesModal: React.FC<GuidesModalProps> = ({
               <BookOpen className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-base sm:text-lg font-bold text-white tracking-tight flex items-center gap-2">
+              <h2 className="text-base sm:text-lg font-bold text-on-surface tracking-tight flex items-center gap-2">
                 <span>Client Apps & Service Guides</span>
                 <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-tinapple-green/15 text-tinapple-green border border-tinapple-green/30 font-semibold">
                   Comprehensive Manual
@@ -94,7 +94,7 @@ export const GuidesModal: React.FC<GuidesModalProps> = ({
 
           <button
             onClick={onClose}
-            className="p-2 rounded-xl text-zinc-400 hover:text-white hover:bg-slate-800 transition-colors"
+            className="p-2 rounded-xl text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors"
             title="Close Guide"
           >
             <X className="w-5 h-5" />
@@ -108,13 +108,13 @@ export const GuidesModal: React.FC<GuidesModalProps> = ({
             {/* Search Input */}
             <div className="p-3 border-b border-tinapple-border/70">
               <div className="relative">
-                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" />
                 <input
                   type="text"
                   placeholder="Filter guides & apps..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-slate-900/90 border border-slate-700/70 text-xs font-mono text-white placeholder:text-zinc-500 focus:outline-none focus:border-tinapple-gold transition-colors"
+                  className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-surface-container-low border border-slate-700/70 text-xs font-mono text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:border-tinapple-gold transition-colors"
                 />
               </div>
             </div>
@@ -129,23 +129,23 @@ export const GuidesModal: React.FC<GuidesModalProps> = ({
                     onClick={() => setSelectedId(guide.id)}
                     className={`w-full text-left p-3 rounded-2xl flex items-start gap-3 transition-all ${
                       isSelected
-                        ? 'bg-gradient-to-r from-slate-800 to-slate-800/80 border border-tinapple-gold/40 text-white shadow-md'
-                        : 'text-zinc-400 hover:text-white hover:bg-slate-900/60 border border-transparent'
+                        ? 'bg-gradient-to-r from-slate-800 to-slate-800/80 border border-tinapple-gold/40 text-on-surface shadow-none'
+                        : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low border border-transparent'
                     }`}
                   >
-                    <div className="p-2 rounded-xl bg-slate-900 border border-slate-800 shrink-0 mt-0.5">
+                    <div className="p-2 rounded-xl bg-surface-container-low border border-slate-800 shrink-0 mt-0.5">
                       {guide.icon}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-1">
-                        <span className="text-xs font-bold font-mono truncate text-white">
+                        <span className="text-xs font-bold font-mono truncate text-on-surface">
                           {guide.title.split('&')[0].trim()}
                         </span>
                         {isSelected && (
                           <ChevronRight className="w-3.5 h-3.5 text-tinapple-gold shrink-0" />
                         )}
                       </div>
-                      <p className="text-[11px] text-zinc-400 line-clamp-1 mt-0.5">
+                      <p className="text-[11px] text-on-surface-variant line-clamp-1 mt-0.5">
                         {guide.subtitle}
                       </p>
                     </div>
@@ -161,7 +161,7 @@ export const GuidesModal: React.FC<GuidesModalProps> = ({
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-5 border-b border-tinapple-border/80">
               <div className="flex items-start gap-3.5">
                 <div
-                  className="w-12 h-12 rounded-2xl border flex items-center justify-center shrink-0 shadow-lg"
+                  className="w-12 h-12 rounded-2xl border flex items-center justify-center shrink-0 shadow-none"
                   style={{
                     backgroundColor: `${currentGuide.accentColor}18`,
                     borderColor: `${currentGuide.accentColor}40`,
@@ -170,7 +170,7 @@ export const GuidesModal: React.FC<GuidesModalProps> = ({
                   {currentGuide.icon}
                 </div>
                 <div>
-                  <h3 className="text-xl font-black text-white tracking-tight flex items-center gap-2">
+                  <h3 className="text-xl font-black text-on-surface tracking-tight flex items-center gap-2">
                     {currentGuide.title}
                   </h3>
                   <p className="text-xs text-tinapple-subtext mt-1 leading-relaxed">
@@ -197,7 +197,7 @@ export const GuidesModal: React.FC<GuidesModalProps> = ({
               {currentGuide.endpoints.map((ep, i) => (
                 <div
                   key={i}
-                  className="p-3.5 rounded-2xl bg-slate-900/60 border border-tinapple-border/70 flex flex-col justify-between gap-2"
+                  className="p-3.5 rounded-2xl bg-surface-container-low border border-tinapple-border/70 flex flex-col justify-between gap-2"
                 >
                   <span className="text-[10px] font-mono text-tinapple-muted uppercase tracking-wider">
                     {ep.label}
@@ -208,7 +208,7 @@ export const GuidesModal: React.FC<GuidesModalProps> = ({
                     </code>
                     <button
                       onClick={() => handleCopy(ep.value)}
-                      className="p-1 rounded-lg text-zinc-400 hover:text-white transition-colors shrink-0"
+                      className="p-1 rounded-lg text-on-surface-variant hover:text-on-surface transition-colors shrink-0"
                       title="Copy endpoint"
                     >
                       {copiedCode === ep.value ? (
@@ -224,7 +224,7 @@ export const GuidesModal: React.FC<GuidesModalProps> = ({
 
             {/* Step-by-Step Setup Pipeline */}
             <div className="space-y-4">
-              <h4 className="text-xs font-bold text-white uppercase tracking-wider font-mono flex items-center gap-2">
+              <h4 className="text-xs font-bold text-on-surface uppercase tracking-wider font-mono flex items-center gap-2">
                 <Terminal className="w-4 h-4 text-tinapple-gold" />
                 <span>1. Setup Instructions & Connection</span>
               </h4>
@@ -233,16 +233,16 @@ export const GuidesModal: React.FC<GuidesModalProps> = ({
                 {currentGuide.steps.map((st, idx) => (
                   <div
                     key={idx}
-                    className="p-4 rounded-2xl bg-slate-900/40 border border-slate-800/80 space-y-2.5"
+                    className="p-4 rounded-2xl bg-surface-container-low border border-slate-800/80 space-y-2.5"
                   >
                     <div className="flex items-center gap-2.5">
                       <span className="w-6 h-6 rounded-lg bg-tinapple-gold/20 text-tinapple-gold text-xs font-mono font-bold flex items-center justify-center shrink-0">
                         {idx + 1}
                       </span>
-                      <span className="text-sm font-bold text-white font-mono">{st.title}</span>
+                      <span className="text-sm font-bold text-on-surface font-mono">{st.title}</span>
                     </div>
 
-                    <p className="text-xs text-zinc-300 leading-relaxed pl-8">
+                    <p className="text-xs text-on-surface leading-relaxed pl-8">
                       {st.description}
                     </p>
 
@@ -251,7 +251,7 @@ export const GuidesModal: React.FC<GuidesModalProps> = ({
                         <code className="whitespace-pre-wrap">{st.code}</code>
                         <button
                           onClick={() => handleCopy(st.code!)}
-                          className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-zinc-300 text-[11px] font-sans flex items-center gap-1 shrink-0 transition-colors"
+                          className="px-2.5 py-1 rounded-lg bg-surface-container hover:bg-slate-700 text-on-surface text-[11px] font-sans flex items-center gap-1 shrink-0 transition-colors"
                         >
                           {copiedCode === st.code ? (
                             <>
@@ -282,7 +282,7 @@ export const GuidesModal: React.FC<GuidesModalProps> = ({
             {/* Client Applications Matrix */}
             {currentGuide.clientApps.length > 0 && (
               <div className="space-y-4 pt-2">
-                <h4 className="text-xs font-bold text-white uppercase tracking-wider font-mono flex items-center gap-2">
+                <h4 className="text-xs font-bold text-on-surface uppercase tracking-wider font-mono flex items-center gap-2">
                   <Smartphone className="w-4 h-4 text-emerald-400" />
                   <span>2. Client Applications & Downloads</span>
                 </h4>
@@ -294,14 +294,14 @@ export const GuidesModal: React.FC<GuidesModalProps> = ({
                       href={ca.link}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="p-3.5 rounded-2xl bg-slate-900/60 border border-tinapple-border/70 hover:border-emerald-500/40 hover:bg-slate-900/90 transition-all flex items-center justify-between gap-3 group"
+                      className="p-3.5 rounded-2xl bg-surface-container-low border border-tinapple-border/70 hover:border-emerald-500/40 hover:bg-surface-container-low transition-all flex items-center justify-between gap-3 group"
                     >
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
                           <Download className="w-4 h-4 group-hover:translate-y-0.5 transition-transform" />
                         </div>
                         <div>
-                          <div className="text-xs font-bold text-white flex items-center gap-2">
+                          <div className="text-xs font-bold text-on-surface flex items-center gap-2">
                             <span>{ca.name}</span>
                             {ca.badge && (
                               <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
@@ -309,10 +309,10 @@ export const GuidesModal: React.FC<GuidesModalProps> = ({
                               </span>
                             )}
                           </div>
-                          <span className="text-[11px] font-mono text-zinc-400">{ca.platform}</span>
+                          <span className="text-[11px] font-mono text-on-surface-variant">{ca.platform}</span>
                         </div>
                       </div>
-                      <ExternalLink className="w-4 h-4 text-zinc-500 group-hover:text-emerald-400 transition-colors shrink-0" />
+                      <ExternalLink className="w-4 h-4 text-on-surface-variant group-hover:text-emerald-400 transition-colors shrink-0" />
                     </a>
                   ))}
                 </div>
@@ -322,7 +322,7 @@ export const GuidesModal: React.FC<GuidesModalProps> = ({
             {/* Expert Tuning & Special Configurations */}
             {currentGuide.specialConfigs.length > 0 && (
               <div className="space-y-4 pt-2">
-                <h4 className="text-xs font-bold text-white uppercase tracking-wider font-mono flex items-center gap-2">
+                <h4 className="text-xs font-bold text-on-surface uppercase tracking-wider font-mono flex items-center gap-2">
                   <Sliders className="w-4 h-4 text-purple-400" />
                   <span>3. Special Configurations & Performance Tuning</span>
                 </h4>
@@ -336,7 +336,7 @@ export const GuidesModal: React.FC<GuidesModalProps> = ({
                       <h5 className="text-xs font-bold text-purple-200 font-mono">
                         {sc.title}
                       </h5>
-                      <p className="text-xs text-zinc-300 leading-relaxed">
+                      <p className="text-xs text-on-surface leading-relaxed">
                         {sc.description}
                       </p>
                       {sc.code && (
@@ -344,7 +344,7 @@ export const GuidesModal: React.FC<GuidesModalProps> = ({
                           <code>{sc.code}</code>
                           <button
                             onClick={() => handleCopy(sc.code!)}
-                            className="p-1 rounded text-zinc-400 hover:text-white transition-colors"
+                            className="p-1 rounded text-on-surface-variant hover:text-on-surface transition-colors"
                           >
                             {copiedCode === sc.code ? (
                               <Check className="w-3 h-3 text-emerald-400" />

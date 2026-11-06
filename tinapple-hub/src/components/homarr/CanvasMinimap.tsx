@@ -60,20 +60,20 @@ export const CanvasMinimap: React.FC<CanvasMinimapProps> = ({
   };
 
   return (
-    <div className="rounded-xl bg-slate-950/80 border border-white/10 p-1.5 shadow-2xl backdrop-blur-md select-none font-mono">
-      <div className="flex items-center justify-between px-1.5 pb-1 text-[9px] text-zinc-400 font-bold">
+    <div className="rounded-xl bg-surface-container-low border border-outline-variant/50 p-1.5 shadow-none backdrop-blur-md select-none font-sans tabular-nums">
+      <div className="flex items-center justify-between px-1.5 pb-1 text-[9px] text-on-surface-variant font-bold">
         <span className="flex items-center gap-1">
           <Navigation className="w-2.5 h-2.5 text-tinapple-gold" />
           <span>RADAR</span>
         </span>
-        <span className="text-zinc-500">{Math.round(viewport.zoom * 100)}%</span>
+        <span className="text-on-surface-variant">{Math.round(viewport.zoom * 100)}%</span>
       </div>
 
       <div
         ref={minimapRef}
         onClick={handleMinimapClick}
         style={{ width: `${mapW}px`, height: `${mapH}px` }}
-        className="relative bg-slate-900/90 rounded-lg border border-white/5 overflow-hidden cursor-crosshair"
+        className="relative bg-surface-container-low rounded-lg border border-outline-variant/50 overflow-hidden cursor-crosshair"
       >
         {/* Render dots/rects for each widget */}
         {widgets

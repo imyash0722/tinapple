@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import { AppBrandIcon } from '../common/AppBrandIcons';
 import { SquishSwitch } from '../reactbits/SquishSwitch';
-import { ProtonModal } from '../common/ProtonModal';
+const ProtonModal = lazy(() => import('../common/ProtonModal').then(m => ({ default: m.ProtonModal })));
 import { api, getServiceHost, getServiceUrl } from '../../services/api';
 import { serviceRegistry } from '../../services/serviceRegistry';
 import {
@@ -20,6 +20,7 @@ import {
   Terminal,
   Film,
   BookOpen,
+  Bookmark,
   FolderSync,
   Thermometer,
   Zap,
@@ -61,23 +62,23 @@ export const HomarrResourceWidget: React.FC<HomarrResourceWidgetProps> = ({ tele
   const tempC = telemetry?.thermal?.cpuTemp ? `${Math.round(telemetry.thermal.cpuTemp)}°C` : 'Normal';
 
   return (
-    <div className="h-full rounded-2xl bg-slate-900/60 border border-white/[0.08] backdrop-blur-xl p-5 flex flex-col justify-between shadow-lg shadow-black/20">
+    <div className="h-full rounded-2xl sm:rounded-[28px] bg-surface-container-low border border-outline-variant p-3.5 sm:p-5 flex flex-col justify-between shadow-none">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2.5">
           <div className="p-2 rounded-xl bg-sky-500/10 border border-sky-500/20 text-sky-400">
             <Activity className="w-5 h-5" />
           </div>
           <div>
-            <h4 className="font-bold text-white text-sm font-mono flex items-center gap-2">
+            <h4 className="font-bold text-on-surface text-sm font-sans tabular-nums flex items-center gap-2">
               <span>Silicon Telemetry</span>
               <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30">
                 LIVE
               </span>
             </h4>
-            <span className="text-[11px] text-zinc-400 font-mono">{systemInfo?.hostname || 'tinapple-node'}</span>
+            <span className="text-[11px] text-on-surface-variant font-sans tabular-nums">{systemInfo?.hostname || 'tinapple-node'}</span>
           </div>
         </div>
-        <div className="text-right font-mono text-[11px] text-zinc-400">
+        <div className="text-right font-sans tabular-nums text-[11px] text-on-surface-variant">
           <span>{coreCount} Cores</span>
           <span className="text-zinc-600 mx-1">|</span>
           <span className="text-tinapple-gold">{tempC}</span>
@@ -85,17 +86,17 @@ export const HomarrResourceWidget: React.FC<HomarrResourceWidgetProps> = ({ tele
       </div>
 
       {/* Progress Bars Matrix */}
-      <div className="space-y-3.5 font-mono text-xs">
+      <div className="space-y-3.5 font-sans tabular-nums text-xs">
         {/* CPU Meter */}
         <div>
-          <div className="flex justify-between items-center text-zinc-300 mb-1">
+          <div className="flex justify-between items-center text-on-surface mb-1">
             <span className="flex items-center gap-1.5">
               <Cpu className="w-3.5 h-3.5 text-sky-400" />
               <span>CPU Load</span>
             </span>
-            <span className="font-extrabold text-sm text-white tabular-nums">{cpuPercent}%</span>
+            <span className="font-extrabold text-sm text-on-surface tabular-nums">{cpuPercent}%</span>
           </div>
-          <div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden p-0.5">
+          <div className="h-2 w-full bg-surface-container rounded-full overflow-hidden p-0.5">
             <div
               className={`h-full rounded-full transition-all duration-500 ${
                 cpuPercent > 85 ? 'bg-red-500' : cpuPercent > 60 ? 'bg-amber-400' : 'bg-sky-400'
@@ -107,16 +108,16 @@ export const HomarrResourceWidget: React.FC<HomarrResourceWidgetProps> = ({ tele
 
         {/* RAM Meter */}
         <div>
-          <div className="flex justify-between items-center text-zinc-300 mb-1">
+          <div className="flex justify-between items-center text-on-surface mb-1">
             <span className="flex items-center gap-1.5">
               <Activity className="w-3.5 h-3.5 text-purple-400" />
               <span>Memory (RAM)</span>
             </span>
-            <span className="font-extrabold text-sm text-white tabular-nums">
-              {ramPercent}% <span className="text-[10px] text-zinc-400 font-normal">({formatBytes(telemetry?.memory?.usedBytes)})</span>
+            <span className="font-extrabold text-sm text-on-surface tabular-nums">
+              {ramPercent}% <span className="text-[10px] text-on-surface-variant font-normal">({formatBytes(telemetry?.memory?.usedBytes)})</span>
             </span>
           </div>
-          <div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden p-0.5">
+          <div className="h-2 w-full bg-surface-container rounded-full overflow-hidden p-0.5">
             <div
               className={`h-full rounded-full transition-all duration-500 ${
                 ramPercent > 85 ? 'bg-red-500' : ramPercent > 70 ? 'bg-amber-400' : 'bg-purple-400'
@@ -128,16 +129,16 @@ export const HomarrResourceWidget: React.FC<HomarrResourceWidgetProps> = ({ tele
 
         {/* Disk Meter */}
         <div>
-          <div className="flex justify-between items-center text-zinc-300 mb-1">
+          <div className="flex justify-between items-center text-on-surface mb-1">
             <span className="flex items-center gap-1.5">
               <HardDrive className="w-3.5 h-3.5 text-emerald-400" />
               <span>Root Storage</span>
             </span>
-            <span className="font-extrabold text-sm text-white tabular-nums">
-              {diskPercent}% <span className="text-[10px] text-zinc-400 font-normal">({formatBytes(telemetry?.disk?.usedBytes)})</span>
+            <span className="font-extrabold text-sm text-on-surface tabular-nums">
+              {diskPercent}% <span className="text-[10px] text-on-surface-variant font-normal">({formatBytes(telemetry?.disk?.usedBytes)})</span>
             </span>
           </div>
-          <div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden p-0.5">
+          <div className="h-2 w-full bg-surface-container rounded-full overflow-hidden p-0.5">
             <div
               className={`h-full rounded-full transition-all duration-500 ${
                 diskPercent > 90 ? 'bg-red-500' : 'bg-emerald-400'
@@ -172,23 +173,23 @@ export const HomarrClockWidget: React.FC<{ systemInfo: SystemInfo }> = ({ system
   };
 
   return (
-    <div className="h-full rounded-2xl bg-slate-900/60 border border-white/[0.08] backdrop-blur-xl p-5 flex flex-col justify-between shadow-lg shadow-black/20 font-mono">
-      <div className="flex items-center justify-between text-zinc-400 text-xs">
+    <div className="h-full rounded-2xl sm:rounded-[28px] bg-surface-container-low border border-outline-variant p-3.5 sm:p-5 flex flex-col justify-between shadow-none font-sans tabular-nums">
+      <div className="flex items-center justify-between text-on-surface-variant text-xs">
         <span className="flex items-center gap-1.5 font-bold uppercase tracking-wider text-tinapple-gold">
           <Clock className="w-3.5 h-3.5" />
           <span>Local Clock</span>
         </span>
-        <span className="px-2 py-0.5 rounded-full bg-white/[0.05] border border-white/10 text-[10px] text-zinc-300">
+        <span className="px-2 py-0.5 rounded-full bg-white/[0.05] border border-outline-variant/50 text-[10px] text-on-surface">
           UTC{time.getTimezoneOffset() <= 0 ? '+' : '-'}{Math.abs(Math.floor(time.getTimezoneOffset() / 60))}
         </span>
       </div>
 
       <div className="my-3 text-center sm:text-left">
-        <div className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight tabular-nums">{timeStr}</div>
-        <div className="text-[11px] sm:text-xs text-zinc-400 mt-1">{dateStr}</div>
+        <div className="text-2xl sm:text-3xl font-extrabold text-on-surface tracking-tight tabular-nums">{timeStr}</div>
+        <div className="text-[11px] sm:text-xs text-on-surface-variant mt-1">{dateStr}</div>
       </div>
 
-      <div className="pt-2.5 border-t border-white/[0.06] flex items-center justify-between text-[11px] text-zinc-400">
+      <div className="pt-2.5 border-t border-outline-variant flex items-center justify-between text-[11px] text-on-surface-variant">
         <span>Uptime:</span>
         <span className="text-emerald-400 font-bold tabular-nums">{formatUptime(systemInfo?.uptime || 0)}</span>
       </div>
@@ -265,7 +266,7 @@ export const HomarrDownloadsWidget: React.FC = () => {
   const qbitUrl = serviceRegistry.resolveUrl('qbittorrent');
 
   return (
-    <div className="h-full rounded-2xl bg-slate-900/60 border border-white/[0.08] backdrop-blur-xl p-4 sm:p-5 flex flex-col justify-between shadow-lg shadow-black/20 font-mono">
+    <div className="h-full rounded-2xl sm:rounded-[28px] bg-slate-900/60 border border-white/[0.08] backdrop-blur-xl p-4 sm:p-5 flex flex-col justify-between shadow-lg shadow-black/20 font-mono">
       {/* Header */}
       <div className="flex items-center justify-between text-xs mb-2">
         <div className="flex items-center gap-2">
@@ -442,7 +443,7 @@ export const HomarrNetworkGuardWidget: React.FC<{ onOpenTailscale?: () => void; 
   const currentHost = getServiceHost();
 
   return (
-    <div className="h-full rounded-2xl bg-slate-900/60 border border-white/[0.08] backdrop-blur-xl p-5 flex flex-col justify-between shadow-lg shadow-black/20 font-mono">
+    <div className="h-full rounded-2xl sm:rounded-[28px] bg-surface-container-low border border-outline-variant p-3.5 sm:p-5 flex flex-col justify-between shadow-none font-sans tabular-nums">
       <div className="flex items-center justify-between text-xs mb-2.5">
         <span className="flex items-center gap-2 font-bold uppercase tracking-wider text-sky-400">
           <Shield className="w-4 h-4" />
@@ -460,12 +461,12 @@ export const HomarrNetworkGuardWidget: React.FC<{ onOpenTailscale?: () => void; 
 
       <div className="space-y-2 text-xs">
         {/* MagicDNS Mesh Link */}
-        <div className="flex items-center justify-between p-2 rounded-xl bg-slate-800/50 border border-slate-700/60">
+        <div className="flex items-center justify-between p-2 rounded-xl bg-surface-container border border-slate-700/60">
           <div className="flex items-center gap-2 min-w-0">
             <Wifi className="w-3.5 h-3.5 text-sky-400 shrink-0" />
             <div className="min-w-0">
-              <span className="text-white font-bold block truncate">MagicDNS Mesh Link</span>
-              <span className="text-[10px] text-zinc-400 block truncate">pineapple-server.taildb42a2.ts.net</span>
+              <span className="text-on-surface font-bold block truncate">MagicDNS Mesh Link</span>
+              <span className="text-[10px] text-on-surface-variant block truncate">pineapple-server.taildb42a2.ts.net</span>
             </div>
           </div>
           <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold shrink-0">
@@ -474,16 +475,16 @@ export const HomarrNetworkGuardWidget: React.FC<{ onOpenTailscale?: () => void; 
         </div>
 
         {/* Proton VPN Privacy Exit Node */}
-        <div className="flex items-center justify-between p-2 rounded-xl bg-slate-800/50 border border-slate-700/60">
+        <div className="flex items-center justify-between p-2 rounded-xl bg-surface-container border border-slate-700/60">
           <div
             onClick={openProtonSetup}
             className="flex items-center gap-2 min-w-0 cursor-pointer group flex-1 mr-2"
             title="Click to configure Proton VPN and media unblocking"
           >
-            <span className="text-sm shrink-0 group-hover:scale-110 transition-transform">🛡️</span>
+            <Shield className="w-4 h-4 text-[#a48eff] shrink-0 group-hover:scale-110 transition-transform" />
             <div className="min-w-0">
               <div className="flex items-center gap-1.5">
-                <span className="text-white font-bold block truncate group-hover:text-[#a48eff] transition-colors">
+                <span className="text-on-surface font-bold block truncate group-hover:text-[#a48eff] transition-colors">
                   Proton Privacy Exit
                 </span>
                 {!protonConfigured && (
@@ -492,7 +493,7 @@ export const HomarrNetworkGuardWidget: React.FC<{ onOpenTailscale?: () => void; 
                   </span>
                 )}
               </div>
-              <span className="text-[10px] text-zinc-400 block truncate">
+              <span className="text-[10px] text-on-surface-variant block truncate">
                 {protonActive
                   ? (protonDetails || 'Swiss WireGuard Active • All Media Routed')
                   : protonConfigured
@@ -505,13 +506,13 @@ export const HomarrNetworkGuardWidget: React.FC<{ onOpenTailscale?: () => void; 
             <button
               type="button"
               onClick={openProtonSetup}
-              className="p-1 rounded-lg hover:bg-white/10 text-zinc-400 hover:text-white transition-colors"
+              className="p-1 rounded-lg hover:bg-white/10 text-on-surface-variant hover:text-on-surface transition-colors"
               title="Configure Proton VPN WireGuard & Account"
             >
               <Settings className="w-3.5 h-3.5" />
             </button>
             <SquishSwitch
-              checked={protonActive}
+              label="Proton VPN" checked={protonActive}
               onChange={handleToggleProton}
               disabled={isTogglingProton}
               variant="purple"
@@ -521,16 +522,16 @@ export const HomarrNetworkGuardWidget: React.FC<{ onOpenTailscale?: () => void; 
         </div>
 
         {/* Tor Privacy Exit Node */}
-        <div className="flex items-center justify-between p-2 rounded-xl bg-slate-800/50 border border-slate-700/60">
+        <div className="flex items-center justify-between p-2 rounded-xl bg-surface-container border border-slate-700/60">
           <div className="flex items-center gap-2 min-w-0">
-            <span className="text-sm shrink-0">🧅</span>
+            <Lock className="w-4 h-4 text-purple-400 shrink-0" />
             <div className="min-w-0">
-              <span className="text-white font-bold block truncate">Tor Privacy Exit</span>
-              <span className="text-[10px] text-zinc-400 block truncate">SOCKS5 127.0.0.1:9050</span>
+              <span className="text-on-surface font-bold block truncate">Tor Privacy Exit</span>
+              <span className="text-[10px] text-on-surface-variant block truncate">SOCKS5 127.0.0.1:9050</span>
             </div>
           </div>
           <SquishSwitch
-            checked={torActive}
+            label="Tor routing" checked={torActive}
             onChange={handleToggleTor}
             disabled={isTogglingTor}
             variant="amber"
@@ -539,7 +540,7 @@ export const HomarrNetworkGuardWidget: React.FC<{ onOpenTailscale?: () => void; 
         </div>
       </div>
 
-      <div className="pt-2 border-t border-white/[0.06] flex items-center justify-between text-[11px] text-zinc-400 mt-2">
+      <div className="pt-2 border-t border-outline-variant flex items-center justify-between text-[11px] text-on-surface-variant mt-2">
         <span>DNS Shield:</span>
         <a
           href={serviceRegistry.resolveUrl('adguard')}
@@ -552,15 +553,17 @@ export const HomarrNetworkGuardWidget: React.FC<{ onOpenTailscale?: () => void; 
         </a>
       </div>
 
-      <ProtonModal
-        isOpen={localProtonModalOpen}
-        onClose={() => setLocalProtonModalOpen(false)}
-        onStatusChange={(st) => {
-          setProtonActive(st.active);
-          setProtonConfigured(Boolean(st.configured || st.wireguard_config_exists || st.is_logged_in));
-          if (st.details) setProtonDetails(st.details);
-        }}
-      />
+      <Suspense fallback={null}>
+        <ProtonModal
+          isOpen={localProtonModalOpen}
+          onClose={() => setLocalProtonModalOpen(false)}
+          onStatusChange={(st) => {
+            setProtonActive(st.active);
+            setProtonConfigured(Boolean(st.configured || st.wireguard_config_exists || st.is_logged_in));
+            if (st.details) setProtonDetails(st.details);
+          }}
+        />
+      </Suspense>
     </div>
   );
 };
@@ -584,7 +587,7 @@ export const HomarrSingleApplianceWidget: React.FC<HomarrSingleApplianceWidgetPr
 
   const fetchApp = async () => {
     try {
-      const data = await api.getApp(appId);
+      const data = (await api.getApps()).find(item => item.id === appId);
       if (data) {
         setApp(data);
       }
@@ -616,7 +619,7 @@ export const HomarrSingleApplianceWidget: React.FC<HomarrSingleApplianceWidgetPr
   const accentColor = customColor || app?.accentColor || '#38bdf8';
 
   return (
-    <div className="h-full rounded-2xl bg-slate-900/70 border border-white/[0.08] backdrop-blur-xl p-5 flex flex-col justify-between shadow-xl shadow-black/25 font-mono select-none relative overflow-hidden group">
+    <div className="h-full rounded-2xl sm:rounded-[28px] bg-surface-container-low border border-outline-variant p-3.5 sm:p-5 flex flex-col justify-between shadow-none font-sans tabular-nums select-none relative overflow-hidden group">
       {/* Ambient background glow */}
       <div
         className="absolute -top-12 -right-12 w-28 h-28 rounded-full blur-2xl opacity-20 pointer-events-none transition-opacity group-hover:opacity-35"
@@ -628,7 +631,7 @@ export const HomarrSingleApplianceWidget: React.FC<HomarrSingleApplianceWidgetPr
         <div className="flex items-center gap-2.5 min-w-0">
           <AppBrandIcon id={customIcon || app?.icon || appId} size={30} />
           <div className="min-w-0">
-            <h4 className="text-sm font-black text-white truncate">
+            <h4 className="text-sm font-black text-on-surface truncate">
               {customTitle || app?.name || appId}
             </h4>
             <p className="text-[10px] text-tinapple-muted truncate">
@@ -642,7 +645,7 @@ export const HomarrSingleApplianceWidget: React.FC<HomarrSingleApplianceWidgetPr
               ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
               : isInstalled
               ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
-              : 'bg-slate-800 text-slate-400 border-slate-700'
+              : 'bg-surface-container text-on-surface-variant border-slate-700'
           }`}
         >
           <span
@@ -656,22 +659,22 @@ export const HomarrSingleApplianceWidget: React.FC<HomarrSingleApplianceWidgetPr
 
       {/* Metrics & Port badge */}
       <div className="grid grid-cols-2 gap-2 my-2.5">
-        <div className="p-2.5 rounded-xl bg-slate-950/60 border border-white/5 flex flex-col justify-between">
-          <span className="text-[10px] text-zinc-400">Assigned Port</span>
-          <span className="text-xs font-bold text-white mt-1">
+        <div className="p-2.5 rounded-xl bg-surface-container-low border border-outline-variant/50 flex flex-col justify-between">
+          <span className="text-[10px] text-on-surface-variant">Assigned Port</span>
+          <span className="text-xs font-bold text-on-surface mt-1">
             {port > 0 ? `:${port}` : 'None'}
           </span>
         </div>
-        <div className="p-2.5 rounded-xl bg-slate-950/60 border border-white/5 flex flex-col justify-between">
-          <span className="text-[10px] text-zinc-400">Active State</span>
-          <span className="text-xs font-bold text-zinc-200 mt-1 capitalize truncate">
+        <div className="p-2.5 rounded-xl bg-surface-container-low border border-outline-variant/50 flex flex-col justify-between">
+          <span className="text-[10px] text-on-surface-variant">Active State</span>
+          <span className="text-xs font-bold text-on-surface mt-1 capitalize truncate">
             {app?.activeState || (isRunning ? 'Active' : 'Inactive')}
           </span>
         </div>
       </div>
 
       {/* Footer Controls */}
-      <div className="pt-2.5 border-t border-white/[0.06] flex items-center justify-between gap-2">
+      <div className="pt-2.5 border-t border-outline-variant flex items-center justify-between gap-2">
         <div className="flex items-center gap-1.5">
           {isRunning ? (
             <button
@@ -693,7 +696,7 @@ export const HomarrSingleApplianceWidget: React.FC<HomarrSingleApplianceWidgetPr
           <button
             onClick={() => handleAction('restart')}
             disabled={Boolean(actionBusy) || !isInstalled}
-            className="p-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-zinc-300 hover:text-white border border-white/5 text-[10px] transition-all disabled:opacity-50"
+            className="p-1 rounded-lg bg-surface-container hover:bg-slate-700 text-on-surface hover:text-on-surface border border-outline-variant/50 text-[10px] transition-all disabled:opacity-50"
             title="Restart Service"
           >
             <RotateCw className={`w-3.5 h-3.5 ${actionBusy === 'restart' ? 'animate-spin' : ''}`} />
@@ -705,7 +708,7 @@ export const HomarrSingleApplianceWidget: React.FC<HomarrSingleApplianceWidgetPr
             href={webUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-tinapple-gold hover:bg-amber-400 text-slate-950 text-[10px] font-black transition-all shadow-md active:scale-95"
+            className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-tinapple-gold hover:bg-amber-400 text-slate-950 text-[10px] font-black transition-all shadow-none active:scale-95"
           >
             <span>Open UI</span>
             <ExternalLink className="w-3 h-3" />
@@ -783,7 +786,7 @@ export const HomarrMediaWidget: React.FC<{ onOpenGuide?: (g: string) => void }> 
   const activeStream = nowPlaying.length > 0 ? nowPlaying[0] : null;
 
   return (
-    <div className="h-full rounded-2xl bg-slate-900/60 border border-white/[0.08] backdrop-blur-xl p-4 sm:p-5 flex flex-col justify-between shadow-lg shadow-black/20 font-mono">
+    <div className="h-full rounded-2xl sm:rounded-[28px] bg-slate-900/60 border border-white/[0.08] backdrop-blur-xl p-4 sm:p-5 flex flex-col justify-between shadow-lg shadow-black/20 font-mono">
       {/* Header */}
       <div className="flex items-center justify-between text-xs mb-3">
         <div className="flex items-center gap-2">
@@ -1014,7 +1017,7 @@ export const HomarrMangaWidget: React.FC = () => {
   const suwayomiWebUrl = serviceRegistry.resolveUrl('suwayomi');
 
   return (
-    <div className="h-full rounded-2xl bg-slate-900/60 border border-white/[0.08] backdrop-blur-xl p-4 sm:p-5 flex flex-col justify-between shadow-lg shadow-black/20 font-mono">
+    <div className="h-full rounded-2xl sm:rounded-[28px] bg-slate-900/60 border border-white/[0.08] backdrop-blur-xl p-4 sm:p-5 flex flex-col justify-between shadow-lg shadow-black/20 font-mono">
       {/* Header with Tab Navigation */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 pb-2.5 border-b border-white/[0.06]">
         <div className="flex items-center gap-2">
@@ -1172,7 +1175,7 @@ export const HomarrSyncVaultWidget: React.FC = () => {
   const currentHost = getServiceHost();
 
   return (
-    <div className="h-full rounded-2xl bg-slate-900/60 border border-white/[0.08] backdrop-blur-xl p-5 flex flex-col justify-between shadow-lg shadow-black/20 font-mono">
+    <div className="h-full rounded-2xl sm:rounded-[28px] bg-surface-container-low border border-outline-variant p-3.5 sm:p-5 flex flex-col justify-between shadow-none font-sans tabular-nums">
       <div className="flex items-center justify-between text-xs mb-3">
         <span className="flex items-center gap-2 font-bold uppercase tracking-wider text-emerald-400">
           <FolderSync className="w-4 h-4" />
@@ -1185,17 +1188,17 @@ export const HomarrSyncVaultWidget: React.FC = () => {
 
       <div className="p-3 rounded-xl bg-emerald-500/[0.07] border border-emerald-500/20 space-y-1.5">
         <div className="flex items-center justify-between text-xs">
-          <span className="text-white font-bold">Encrypted File Sync</span>
+          <span className="text-on-surface font-bold">Encrypted File Sync</span>
           <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold">
             Continuous
           </span>
         </div>
-        <p className="text-[11px] text-zinc-400">
+        <p className="text-[11px] text-on-surface-variant">
           Zero-cloud direct sync to phone, laptop, and TrueNAS ZFS vault datasets.
         </p>
       </div>
 
-      <div className="pt-3 border-t border-white/[0.06] flex items-center justify-between gap-2 mt-2">
+      <div className="pt-3 border-t border-outline-variant flex items-center justify-between gap-2 mt-2">
         <a
           href="/pair.sh"
           target="_blank"
@@ -1225,43 +1228,43 @@ export const HomarrHardwareWidget: React.FC<{ telemetry: TelemetrySnapshot }> = 
   const bat = telemetry?.battery;
 
   return (
-    <div className="h-full rounded-2xl bg-slate-900/60 border border-white/[0.08] backdrop-blur-xl p-5 flex flex-col justify-between shadow-lg shadow-black/20 font-mono">
+    <div className="h-full rounded-2xl sm:rounded-[28px] bg-surface-container-low border border-outline-variant p-3.5 sm:p-5 flex flex-col justify-between shadow-none font-sans tabular-nums">
       <div className="flex items-center justify-between text-xs mb-3">
         <span className="flex items-center gap-2 font-bold uppercase tracking-wider text-rose-400">
           <Thermometer className="w-4 h-4" />
           <span>Hardware & Battery</span>
         </span>
-        <span className="text-[11px] text-zinc-400">Thermal Profile: Normal</span>
+        <span className="text-[11px] text-on-surface-variant">Thermal Profile: Normal</span>
       </div>
 
       <div className="grid grid-cols-2 gap-2 text-xs">
-        <div className="p-2.5 rounded-xl bg-slate-800/60 border border-slate-700/60">
-          <span className="text-[10px] text-zinc-400 uppercase block mb-1">CPU Temperature</span>
-          <span className={`text-base font-extrabold font-mono tabular-nums ${temp > 75 ? 'text-red-400' : 'text-emerald-400'}`}>
+        <div className="p-2.5 rounded-xl bg-surface-container border border-slate-700/60">
+          <span className="text-[10px] text-on-surface-variant uppercase block mb-1">CPU Temperature</span>
+          <span className={`text-base font-extrabold font-sans tabular-nums tabular-nums ${temp > 75 ? 'text-red-400' : 'text-emerald-400'}`}>
             {temp}°C
           </span>
         </div>
 
-        <div className="p-2.5 rounded-xl bg-slate-800/60 border border-slate-700/60">
-          <span className="text-[10px] text-zinc-400 uppercase block mb-1">Cooling Fan</span>
-          <span className="text-base font-extrabold font-mono text-sky-400 tabular-nums">{fan} RPM</span>
+        <div className="p-2.5 rounded-xl bg-surface-container border border-slate-700/60">
+          <span className="text-[10px] text-on-surface-variant uppercase block mb-1">Cooling Fan</span>
+          <span className="text-base font-extrabold font-sans tabular-nums text-sky-400 tabular-nums">{fan} RPM</span>
         </div>
 
         {bat?.present && (
-          <div className="col-span-2 p-2.5 rounded-xl bg-slate-800/60 border border-slate-700/60 flex items-center justify-between">
+          <div className="col-span-2 p-2.5 rounded-xl bg-surface-container border border-slate-700/60 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Zap className="w-4 h-4 text-tinapple-gold" />
               <div>
-                <span className="text-white font-bold block">Battery Threshold</span>
-                <span className="text-[10px] text-zinc-400 block tabular-nums">Charge limit {bat.chargeLimit}%</span>
+                <span className="text-on-surface font-bold block">Battery Threshold</span>
+                <span className="text-[10px] text-on-surface-variant block tabular-nums">Charge limit {bat.chargeLimit}%</span>
               </div>
             </div>
-            <span className="text-base font-extrabold font-mono text-white tabular-nums">{bat.percent}%</span>
+            <span className="text-base font-extrabold font-sans tabular-nums text-on-surface tabular-nums">{bat.percent}%</span>
           </div>
         )}
       </div>
 
-      <div className="pt-2.5 border-t border-white/[0.06] flex items-center justify-between text-[11px] text-zinc-400 mt-2">
+      <div className="pt-2.5 border-t border-outline-variant flex items-center justify-between text-[11px] text-on-surface-variant mt-2">
         <span>Hardware Nonce:</span>
         <span className="text-emerald-400 font-bold">TPM 2.0 Sealed</span>
       </div>
@@ -1286,7 +1289,7 @@ export const HomarrPortMatrixWidget: React.FC<{ onOpenTools?: () => void }> = ({
   ];
 
   return (
-    <div className="h-full rounded-2xl bg-slate-900/60 border border-white/[0.08] backdrop-blur-xl p-5 flex flex-col justify-between shadow-lg shadow-black/20 font-mono">
+    <div className="h-full rounded-2xl sm:rounded-[28px] bg-surface-container-low border border-outline-variant p-3.5 sm:p-5 flex flex-col justify-between shadow-none font-sans tabular-nums">
       <div className="flex items-center justify-between text-xs mb-3">
         <span className="flex items-center gap-2 font-bold uppercase tracking-wider text-tinapple-gold">
           <Network className="w-4 h-4" />
@@ -1309,15 +1312,15 @@ export const HomarrPortMatrixWidget: React.FC<{ onOpenTools?: () => void }> = ({
             href={p.path}
             target="_blank"
             rel="noopener noreferrer"
-            className="p-2 rounded-xl bg-slate-800/60 hover:bg-slate-700/80 border border-slate-700/60 transition-all flex flex-col items-center justify-center text-center group"
+            className="p-2 rounded-xl bg-surface-container hover:bg-slate-700/80 border border-slate-700/60 transition-all flex flex-col items-center justify-center text-center group"
           >
-            <span className="text-[10px] text-zinc-400 group-hover:text-white truncate w-full">{p.name}</span>
+            <span className="text-[10px] text-on-surface-variant group-hover:text-on-surface truncate w-full">{p.name}</span>
             <span className={`font-bold ${p.color} text-xs mt-0.5`}>:{p.port}</span>
           </a>
         ))}
       </div>
 
-      <div className="pt-2.5 border-t border-white/[0.06] flex items-center justify-between text-[11px] text-zinc-400 mt-2">
+      <div className="pt-2.5 border-t border-outline-variant flex items-center justify-between text-[11px] text-on-surface-variant mt-2">
         <span>Verified Listeners:</span>
         <span className="text-emerald-400 font-bold">TCP 0.0.0.0</span>
       </div>
@@ -1328,7 +1331,7 @@ export const HomarrPortMatrixWidget: React.FC<{ onOpenTools?: () => void }> = ({
 // 10. Homarr Mini Terminal Quick Launcher Widget
 export const HomarrTerminalWidget: React.FC<{ onOpenTerminal?: () => void }> = ({ onOpenTerminal }) => {
   return (
-    <div className="h-full rounded-2xl bg-slate-900/60 border border-white/[0.08] backdrop-blur-xl p-5 flex flex-col justify-between shadow-lg shadow-black/20 font-mono">
+    <div className="h-full rounded-2xl sm:rounded-[28px] bg-surface-container-low border border-outline-variant p-3.5 sm:p-5 flex flex-col justify-between shadow-none font-sans tabular-nums">
       <div className="flex items-center justify-between text-xs mb-2">
         <span className="flex items-center gap-2 font-bold uppercase tracking-wider text-emerald-400">
           <Terminal className="w-4 h-4" />
@@ -1339,17 +1342,17 @@ export const HomarrTerminalWidget: React.FC<{ onOpenTerminal?: () => void }> = (
         </span>
       </div>
 
-      <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800 text-[11px] text-emerald-400/90 leading-relaxed font-mono">
+      <div className="p-3 rounded-xl bg-surface-container-low border border-slate-800 text-[11px] text-emerald-400/90 leading-relaxed font-sans tabular-nums">
         <div>$ node-status --verified</div>
-        <div className="text-zinc-500">Kernel: 6.12.8-cachyos-tinapple</div>
-        <div className="text-zinc-400">Interactive PTY shell available</div>
+        <div className="text-on-surface-variant">Kernel: 6.12.8-cachyos-tinapple</div>
+        <div className="text-on-surface-variant">Interactive PTY shell available</div>
       </div>
 
-      <div className="pt-3 border-t border-white/[0.06] flex items-center justify-end mt-2">
+      <div className="pt-3 border-t border-outline-variant flex items-center justify-end mt-2">
         {onOpenTerminal && (
           <button
             onClick={onOpenTerminal}
-            className="w-full py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-black flex items-center justify-center gap-1.5 transition-all shadow-md shadow-emerald-500/20"
+            className="w-full py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-black flex items-center justify-center gap-1.5 transition-all shadow-none shadow-emerald-500/20"
           >
             <Play className="w-3.5 h-3.5" />
             <span>Launch Web Terminal</span>
@@ -1377,16 +1380,16 @@ export const HomarrJournalWidget: React.FC = () => {
   }, []);
 
   return (
-    <div className="h-full rounded-2xl bg-slate-900/60 border border-white/[0.08] backdrop-blur-xl p-5 flex flex-col justify-between shadow-lg shadow-black/20 font-mono">
+    <div className="h-full rounded-2xl sm:rounded-[28px] bg-surface-container-low border border-outline-variant p-3.5 sm:p-5 flex flex-col justify-between shadow-none font-sans tabular-nums">
       <div className="flex items-center justify-between text-xs mb-2">
         <span className="flex items-center gap-2 font-bold uppercase tracking-wider text-amber-400">
           <AlertTriangle className="w-4 h-4" />
           <span>Kernel & Journal Alerts</span>
         </span>
-        <span className="text-[10px] text-zinc-500">Priority ≤ 3</span>
+        <span className="text-[10px] text-on-surface-variant">Priority ≤ 3</span>
       </div>
 
-      <div className="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800 space-y-1.5 text-[10px] text-zinc-300 max-h-28 overflow-y-auto scrollbar-none">
+      <div className="p-2.5 rounded-xl bg-surface-container-low border border-slate-800 space-y-1.5 text-[10px] text-on-surface max-h-28 overflow-y-auto scrollbar-none">
         {logs.length > 0 ? (
           logs.map((log, i) => (
             <div key={i} className="truncate text-amber-300/90">
@@ -1401,7 +1404,7 @@ export const HomarrJournalWidget: React.FC = () => {
         )}
       </div>
 
-      <div className="pt-2.5 border-t border-white/[0.06] flex items-center justify-between text-[11px] text-zinc-400 mt-2">
+      <div className="pt-2.5 border-t border-outline-variant flex items-center justify-between text-[11px] text-on-surface-variant mt-2">
         <span>System Log State:</span>
         <span className="text-emerald-400 font-bold">Healthy</span>
       </div>
@@ -1434,18 +1437,18 @@ export const HomarrBookmarksWidget: React.FC<HomarrBookmarksWidgetProps> = ({
   const safeBookmarks = Array.isArray(bookmarks) ? bookmarks : [];
 
   return (
-    <div className="h-full rounded-2xl bg-slate-900/40 border border-white/[0.08] backdrop-blur-xl p-5 shadow-lg shadow-black/20 font-mono">
+    <div className="h-full rounded-2xl sm:rounded-[28px] bg-surface-container-low border border-outline-variant p-3.5 sm:p-5 shadow-none font-sans tabular-nums">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <span className="text-base">🔖</span>
-          <h4 className="font-bold text-white text-sm tracking-wide uppercase">
+          <Bookmark className="w-4 h-4 text-primary shrink-0" />
+          <h4 className="font-bold text-on-surface text-sm tracking-wide uppercase">
             Homelab Bookmarks & Web Services ({safeBookmarks.length})
           </h4>
         </div>
         {isEditMode && onAddBookmark && (
           <button
             onClick={onAddBookmark}
-            className="px-3 py-1 rounded-xl bg-tinapple-gold hover:bg-amber-400 text-slate-950 font-mono text-xs font-bold flex items-center gap-1 shadow-md transition-all"
+            className="px-3 py-1 rounded-xl bg-tinapple-gold hover:bg-amber-400 text-slate-950 font-sans tabular-nums text-xs font-bold flex items-center gap-1 shadow-none transition-all"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>New Bookmark</span>
@@ -1457,7 +1460,7 @@ export const HomarrBookmarksWidget: React.FC<HomarrBookmarksWidgetProps> = ({
         {safeBookmarks.map((bm) => (
           <div
             key={bm.id}
-            className="group relative rounded-xl bg-slate-800/40 hover:bg-slate-800/80 border border-white/[0.06] hover:border-white/20 p-3 transition-all flex items-center justify-between gap-2"
+            className="group relative rounded-xl bg-surface-container hover:bg-surface-container border border-white/[0.06] hover:border-outline-variant/50 p-3 transition-all flex items-center justify-between gap-2"
           >
             <a
               href={bm.url}
@@ -1465,12 +1468,12 @@ export const HomarrBookmarksWidget: React.FC<HomarrBookmarksWidgetProps> = ({
               rel="noopener noreferrer"
               className="flex items-center gap-2.5 min-w-0 flex-1"
             >
-              <div className="w-8 h-8 rounded-lg bg-white/[0.05] border border-white/10 flex items-center justify-center text-base shrink-0 group-hover:scale-105 transition-transform">
-                {bm.icon || '🌐'}
+              <div className="w-8 h-8 rounded-lg bg-surface-container-highest border border-outline-variant flex items-center justify-center text-xs font-bold text-primary shrink-0 group-hover:scale-105 transition-transform">
+                {bm.icon || <Globe className="w-4 h-4 text-primary" />}
               </div>
               <div className="min-w-0">
-                <span className="text-xs font-bold text-white block truncate">{bm.name}</span>
-                <span className="text-[10px] text-zinc-500 font-mono block truncate">
+                <span className="text-xs font-bold text-on-surface block truncate">{bm.name}</span>
+                <span className="text-[10px] text-on-surface-variant font-sans tabular-nums block truncate">
                   {bm.url.replace(/^https?:\/\//, '')}
                 </span>
               </div>
@@ -1489,7 +1492,7 @@ export const HomarrBookmarksWidget: React.FC<HomarrBookmarksWidgetProps> = ({
         ))}
 
         {safeBookmarks.length === 0 && !isEditMode && (
-          <div className="col-span-full py-4 text-center text-xs text-zinc-500">
+          <div className="col-span-full py-4 text-center text-xs text-on-surface-variant">
             No custom bookmarks yet. Enable Edit Mode to add your homelab portals.
           </div>
         )}

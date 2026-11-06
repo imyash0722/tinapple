@@ -743,7 +743,7 @@ export const HomarrCanvas: React.FC<HomarrCanvasProps> = ({
         return <CustomMonitorWidget widget={widget} />;
       default:
         return (
-          <div className="p-4 rounded-xl bg-slate-900 border border-white/10 font-mono text-xs text-zinc-400">
+          <div className="p-4 rounded-xl bg-surface-container-low border border-outline-variant/50 font-sans tabular-nums text-xs text-on-surface-variant">
             <span>{widget.title}</span>
           </div>
         );
@@ -757,25 +757,25 @@ export const HomarrCanvas: React.FC<HomarrCanvasProps> = ({
   return (
     <div className="space-y-4 relative select-none">
       {/* 1. Canvas Top HUD Control Bar */}
-      <div className="rounded-2xl bg-slate-900/70 border border-white/10 p-3.5 sm:p-4 backdrop-blur-xl shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-3">
+      <div className="rounded-2xl bg-surface-container-low border border-outline-variant/50 p-3.5 sm:p-4 backdrop-blur-xl shadow-none flex flex-col md:flex-row md:items-center justify-between gap-3">
         {/* Left: Canvas Title & Node Status */}
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500/20 via-purple-500/20 to-sky-500/20 border border-white/10 flex items-center justify-center text-lg shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500/20 via-purple-500/20 to-sky-500/20 border border-outline-variant/50 flex items-center justify-center text-lg shrink-0">
             🗺️
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-sm font-bold text-white uppercase font-mono tracking-wider">
+              <h2 className="text-sm font-bold text-on-surface uppercase font-sans tabular-nums tracking-wider">
                 Interactive Homarr Canvas
               </h2>
-              <span className="px-2 py-0.5 rounded-full text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/30 font-mono font-bold">
+              <span className="px-2 py-0.5 rounded-full text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/30 font-sans tabular-nums font-bold">
                 2D Pannable Space
               </span>
-              <span className="hidden sm:inline-block px-1.5 py-0.5 rounded text-[10px] bg-sky-500/15 text-sky-300 font-mono">
+              <span className="hidden sm:inline-block px-1.5 py-0.5 rounded text-[10px] bg-sky-500/15 text-sky-300 font-sans tabular-nums">
                 Kotlin & Android Ready
               </span>
             </div>
-            <p className="text-xs text-zinc-400 mt-0.5 font-mono">
+            <p className="text-xs text-on-surface-variant mt-0.5 font-sans tabular-nums">
               {isEditMode
                 ? 'Drag cards to position anywhere. Drag bottom-right corner to resize.'
                 : 'Hold left click & drag background to pan smoothly. Click widgets to launch appliances.'}
@@ -784,7 +784,7 @@ export const HomarrCanvas: React.FC<HomarrCanvasProps> = ({
         </div>
 
         {/* Right: Floating Control Actions */}
-        <div className="flex items-center flex-wrap gap-2 shrink-0 font-mono text-xs">
+        <div className="flex items-center flex-wrap gap-2 shrink-0 font-sans tabular-nums text-xs">
           {/* Add Individual Appliance Widget */}
           <button
             onClick={() => {
@@ -819,7 +819,7 @@ export const HomarrCanvas: React.FC<HomarrCanvasProps> = ({
             className={`px-3.5 py-1.5 rounded-xl font-bold flex items-center gap-1.5 transition-all shadow-sm active:scale-95 ${
               isEditMode
                 ? 'bg-emerald-500 text-slate-950 shadow-emerald-500/20 hover:bg-emerald-400'
-                : 'bg-white/5 hover:bg-white/10 text-zinc-300 hover:text-white border border-white/10'
+                : 'bg-white/5 hover:bg-white/10 text-on-surface hover:text-on-surface border border-outline-variant/50'
             }`}
           >
             {isEditMode ? (
@@ -836,27 +836,27 @@ export const HomarrCanvas: React.FC<HomarrCanvasProps> = ({
           </button>
 
           {/* Canvas Viewport Zoom & Reset Controls */}
-          <div className="flex items-center gap-1 bg-slate-950/80 rounded-xl p-1 border border-white/10">
+          <div className="flex items-center gap-1 bg-surface-container-low rounded-xl p-1 border border-outline-variant/50">
             <button
               onClick={() => handleZoom(-0.15)}
-              className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 transition-colors"
+              className="p-1.5 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-white/10 transition-colors"
               title="Zoom Out"
             >
               <ZoomOut className="w-3.5 h-3.5" />
             </button>
-            <span className="text-[11px] font-bold text-zinc-300 px-1 w-10 text-center">
+            <span className="text-[11px] font-bold text-on-surface px-1 w-10 text-center">
               {Math.round(viewport.zoom * 100)}%
             </span>
             <button
               onClick={() => handleZoom(0.15)}
-              className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 transition-colors"
+              className="p-1.5 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-white/10 transition-colors"
               title="Zoom In"
             >
               <ZoomIn className="w-3.5 h-3.5" />
             </button>
             <button
               onClick={handleCenterView}
-              className="p-1.5 rounded-lg text-zinc-400 hover:text-tinapple-gold hover:bg-white/10 transition-colors ml-0.5"
+              className="p-1.5 rounded-lg text-on-surface-variant hover:text-tinapple-gold hover:bg-white/10 transition-colors ml-0.5"
               title="Center / Reset View"
             >
               <Target className="w-3.5 h-3.5" />
@@ -866,7 +866,7 @@ export const HomarrCanvas: React.FC<HomarrCanvasProps> = ({
           {/* Reset Board */}
           <button
             onClick={handleResetBoard}
-            className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-zinc-400 hover:text-white transition-colors"
+            className="p-2 rounded-xl bg-surface-container hover:bg-slate-700 text-on-surface-variant hover:text-on-surface transition-colors"
             title="Reset to Factory Layout"
           >
             <RotateCcw className="w-3.5 h-3.5" />
@@ -881,7 +881,7 @@ export const HomarrCanvas: React.FC<HomarrCanvasProps> = ({
         onTouchStart={handleCanvasTouchStart}
         onWheel={handleWheel}
         style={{ height: 'calc(100vh - 13.5rem)', minHeight: '620px' }}
-        className={`w-full rounded-2xl bg-slate-950/90 border border-white/10 overflow-hidden relative shadow-2xl backdrop-blur-xl ${
+        className={`w-full rounded-2xl bg-surface-container-low border border-outline-variant/50 overflow-hidden relative shadow-none backdrop-blur-xl ${
           isPanning ? 'cursor-grabbing' : 'cursor-grab'
         }`}
       >
@@ -924,18 +924,18 @@ export const HomarrCanvas: React.FC<HomarrCanvasProps> = ({
                   }}
                   className={`group transition-shadow duration-150 ${
                     isDraggingThis
-                      ? 'shadow-2xl shadow-purple-500/20 ring-2 ring-tinapple-gold opacity-95'
-                      : 'hover:shadow-2xl hover:shadow-black/60'
+                      ? 'shadow-none shadow-purple-500/20 ring-2 ring-tinapple-gold opacity-95'
+                      : 'hover:shadow-none hover:shadow-black/60'
                   }`}
                 >
                   {/* Floating Customizer Toolbar on Widget */}
                   {isEditMode && (
-                    <div className="absolute -top-3 right-3 z-30 flex items-center gap-1 bg-slate-950/90 backdrop-blur-md rounded-xl p-1 border border-white/15 shadow-xl font-mono text-xs">
+                    <div className="absolute -top-3 right-3 z-30 flex items-center gap-1 bg-surface-container-low backdrop-blur-md rounded-xl p-1 border border-white/15 shadow-none font-sans tabular-nums text-xs">
                       {/* Drag Handle */}
                       <div
                         onMouseDown={(e) => startWidgetDrag(e, widget)}
                         onTouchStart={(e) => startWidgetDrag(e, widget)}
-                        className="p-1 rounded-lg text-zinc-400 hover:text-white cursor-grab active:cursor-grabbing hover:bg-white/10 transition-colors"
+                        className="p-1 rounded-lg text-on-surface-variant hover:text-on-surface cursor-grab active:cursor-grabbing hover:bg-white/10 transition-colors"
                         title="Drag to reposition widget"
                       >
                         <GripVertical className="w-3.5 h-3.5" />
@@ -947,7 +947,7 @@ export const HomarrCanvas: React.FC<HomarrCanvasProps> = ({
                           e.stopPropagation();
                           setEditingWidget(widget);
                         }}
-                        className="p-1 rounded-lg text-zinc-400 hover:text-tinapple-gold hover:bg-white/10 transition-colors"
+                        className="p-1 rounded-lg text-on-surface-variant hover:text-tinapple-gold hover:bg-white/10 transition-colors"
                         title="Customize Widget Settings & Size"
                       >
                         <Sliders className="w-3.5 h-3.5" />
@@ -959,7 +959,7 @@ export const HomarrCanvas: React.FC<HomarrCanvasProps> = ({
                           e.stopPropagation();
                           handleDuplicateWidget(widget);
                         }}
-                        className="p-1 rounded-lg text-zinc-400 hover:text-sky-300 hover:bg-white/10 transition-colors"
+                        className="p-1 rounded-lg text-on-surface-variant hover:text-sky-300 hover:bg-white/10 transition-colors"
                         title="Duplicate Widget"
                       >
                         <Plus className="w-3.5 h-3.5" />
@@ -989,10 +989,10 @@ export const HomarrCanvas: React.FC<HomarrCanvasProps> = ({
                     <div
                       onMouseDown={(e) => startWidgetResize(e, widget)}
                       onTouchStart={(e) => startWidgetResize(e, widget)}
-                      className="absolute -bottom-1.5 -right-1.5 z-30 w-5 h-5 bg-tinapple-gold hover:bg-amber-400 rounded-br-lg rounded-tl-md flex items-center justify-center cursor-nwse-resize shadow-md transition-transform hover:scale-110 active:scale-95"
+                      className="absolute -bottom-1.5 -right-1.5 z-30 w-5 h-5 bg-tinapple-gold hover:bg-amber-400 rounded-br-lg rounded-tl-md flex items-center justify-center cursor-nwse-resize shadow-none transition-transform hover:scale-110 active:scale-95"
                       title="Drag to resize widget"
                     >
-                      <div className="w-1.5 h-1.5 bg-slate-950 rounded-full" />
+                      <div className="w-1.5 h-1.5 bg-surface-container-low rounded-full" />
                     </div>
                   )}
                 </div>
@@ -1018,7 +1018,7 @@ export const HomarrCanvas: React.FC<HomarrCanvasProps> = ({
           )}
 
           {/* Canvas Bottom-Left HUD Badge */}
-          <div className="absolute bottom-4 left-4 z-40 flex items-center gap-2 bg-slate-950/80 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/10 font-mono text-[11px] text-zinc-400 shadow-lg pointer-events-none">
+          <div className="absolute bottom-4 left-4 z-40 flex items-center gap-2 bg-surface-container-low backdrop-blur-md px-3 py-1.5 rounded-xl border border-outline-variant/50 font-sans tabular-nums text-[11px] text-on-surface-variant shadow-none pointer-events-none">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
             <span>
               Canvas: {CANVAS_WIDTH}×{CANVAS_HEIGHT}px • {visibleWidgets.length} Active Cards

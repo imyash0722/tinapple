@@ -62,9 +62,11 @@ export function loadDashboardLayout(): DashboardLayoutState {
 
   try {
     let raw = localStorage.getItem(STORAGE_KEY);
+    let isV2 = false;
     if (!raw) {
       // Check legacy storage keys
-      raw = localStorage.getItem('tinapple_dashboard_layout_v3') || localStorage.getItem('tinapple_dashboard_layout_v2');
+      raw = localStorage.getItem('tinapple_dashboard_layout_v3');
+      if (!raw) { raw = localStorage.getItem('tinapple_dashboard_layout_v2'); isV2 = Boolean(raw); }
     }
 
     if (raw) {

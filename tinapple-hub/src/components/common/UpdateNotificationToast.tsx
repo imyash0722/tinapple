@@ -4,9 +4,11 @@ import { X, ExternalLink, RefreshCw, Sparkles, GitCommit, ArrowUpRight } from 'l
 import { AppUpdateService } from '../../services/appUpdate';
 
 const DISMISSED_SHA_KEY = 'tinapple_dismissed_update_sha';
+const SESSION_DISMISSED_KEY = 'tinapple_update_toast_session_dismissed';
 
 interface GitHubCommitInfo {
   sha: string;
+  fullSha: string;
   message: string;
   date: string;
   author: string;
@@ -23,6 +25,13 @@ export const UpdateNotificationToast: React.FC<UpdateNotificationToastProps> = (
   const isAndroid = AppUpdateService.isNativeAndroid();
 
   const checkRepoUpdates = useCallback(async () => {
+    // If dismissed in this session, never show again
+    try {
+      if (sessionStorage.getItem(SESSION_DISMISSED_KEY) === 'true') {
+        return;
+      }
+    } catch {}
+
     try {
       const res = await fetch('https://api.github.com/repos/imyash0722/tinapple/commits/main', {
         headers: { Accept: 'application/vnd.github.v3+json' },
@@ -30,21 +39,24 @@ export const UpdateNotificationToast: React.FC<UpdateNotificationToastProps> = (
       if (!res.ok) return;
 
       const data = await res.json();
-      const sha = data.sha;
+      const sha = data.sha || '';
       const shortSha = sha ? sha.substring(0, 7) : '';
       const message = data.commit?.message?.split('\n')[0] || 'New updates pushed to repository';
       const date = data.commit?.committer?.date || '';
       const author = data.commit?.author?.name || 'imyash0722';
       const url = data.html_url || 'https://github.com/imyash0722/tinapple/commits/main';
 
-      // Check if user already dismissed this commit
-      const dismissed = localStorage.getItem(DISMISSED_SHA_KEY);
-      if (dismissed === sha) {
-        return;
-      }
+      // Check if user already dismissed this commit (supports both full and short sha)
+      try {
+        const dismissed = localStorage.getItem(DISMISSED_SHA_KEY);
+        if (dismissed && (dismissed === sha || dismissed === shortSha || sha.startsWith(dismissed))) {
+          return;
+        }
+      } catch {}
 
       setLatestCommit({
         sha: shortSha,
+        fullSha: sha,
         message,
         date,
         author,
@@ -57,28 +69,31 @@ export const UpdateNotificationToast: React.FC<UpdateNotificationToastProps> = (
   }, []);
 
   useEffect(() => {
-    // Initial check after 3 seconds
-    const initialTimer = setTimeout(() => {
-      checkRepoUpdates();
-    }, 3000);
+    // Check once after initial dashboard load (4s delay)
+    try {
+      if (sessionStorage.getItem(SESSION_DISMISSED_KEY) === 'true') {
+        return;
+      }
+    } catch {}
 
-    // Periodic check every 5 minutes
-    const interval = setInterval(() => {
+    const timer = setTimeout(() => {
       checkRepoUpdates();
-    }, 5 * 60 * 1000);
+    }, 4000);
 
     return () => {
-      clearTimeout(initialTimer);
-      clearInterval(interval);
+      clearTimeout(timer);
     };
   }, [checkRepoUpdates]);
 
   const handleDismiss = () => {
-    if (latestCommit?.sha) {
-      try {
+    try {
+      if (latestCommit?.fullSha) {
+        localStorage.setItem(DISMISSED_SHA_KEY, latestCommit.fullSha);
+      } else if (latestCommit?.sha) {
         localStorage.setItem(DISMISSED_SHA_KEY, latestCommit.sha);
-      } catch {}
-    }
+      }
+      sessionStorage.setItem(SESSION_DISMISSED_KEY, 'true');
+    } catch {}
     setIsVisible(false);
   };
 

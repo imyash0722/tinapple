@@ -135,21 +135,21 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="flex flex-col bg-[#070d1d]/95 border border-white/10 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden text-slate-200">
+      <div className="flex flex-col bg-[#070d1d]/95 border border-outline-variant/50 rounded-2xl shadow-none w-full max-w-2xl max-h-[90vh] overflow-hidden text-on-surface">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 bg-[#0a1329] border-b border-white/[0.08] select-none shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-tinapple-gold/20 via-sky-500/20 to-purple-600/20 border border-white/10 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-tinapple-gold/20 via-sky-500/20 to-purple-600/20 border border-outline-variant/50 flex items-center justify-center">
               <Settings className="w-5 h-5 text-tinapple-gold" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="font-mono font-bold text-base text-white">{displayName}</h3>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/[0.06] border border-white/10 text-zinc-300">
+                <h3 className="font-mono font-bold text-base text-on-surface">{displayName}</h3>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/[0.06] border border-outline-variant/50 text-on-surface">
                   {config?.unit || `${appId}.service`}
                 </span>
               </div>
-              <p className="text-xs text-zinc-400 font-mono">
+              <p className="text-xs text-on-surface-variant font-mono">
                 Independent Service Configuration & Raw Config Editor
               </p>
             </div>
@@ -157,7 +157,7 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({
 
           <button
             onClick={onClose}
-            className="p-1.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] text-zinc-400 hover:text-white transition-all"
+            className="p-1.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] text-on-surface-variant hover:text-on-surface transition-all"
             title="Close"
           >
             <X className="w-4 h-4" />
@@ -171,7 +171,7 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({
             className={`flex items-center gap-2 px-3.5 py-2 border-b-2 font-mono text-xs font-semibold transition-all ${
               activeTab === 'advanced'
                 ? 'border-tinapple-gold text-tinapple-gold bg-tinapple-gold/5'
-                : 'border-transparent text-zinc-400 hover:text-white hover:bg-white/[0.03]'
+                : 'border-transparent text-on-surface-variant hover:text-on-surface hover:bg-white/[0.03]'
             }`}
           >
             <Sliders className="w-4 h-4" />
@@ -183,7 +183,7 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({
             className={`flex items-center gap-2 px-3.5 py-2 border-b-2 font-mono text-xs font-semibold transition-all ${
               activeTab === 'rawConfig'
                 ? 'border-tinapple-gold text-tinapple-gold bg-tinapple-gold/5'
-                : 'border-transparent text-zinc-400 hover:text-white hover:bg-white/[0.03]'
+                : 'border-transparent text-on-surface-variant hover:text-on-surface hover:bg-white/[0.03]'
             }`}
           >
             <FileCode className="w-4 h-4" />
@@ -196,7 +196,7 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({
           {loading ? (
             <div className="flex flex-col items-center justify-center py-16 space-y-3">
               <RotateCw className="w-8 h-8 text-tinapple-gold animate-spin" />
-              <p className="font-mono text-xs text-zinc-400">Loading {displayName} configuration...</p>
+              <p className="font-mono text-xs text-on-surface-variant">Loading {displayName} configuration...</p>
             </div>
           ) : (
             <>
@@ -220,11 +220,11 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({
                   {/* Option 1: Port Configuration */}
                   <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.06] space-y-2">
                     <div className="flex items-center justify-between">
-                      <label className="text-xs font-mono font-semibold text-zinc-200 flex items-center gap-2">
+                      <label className="text-xs font-mono font-semibold text-on-surface flex items-center gap-2">
                         <HardDrive className="w-4 h-4 text-tinapple-gold" />
                         <span>Listening Port</span>
                       </label>
-                      <span className="text-[11px] font-mono text-zinc-400">
+                      <span className="text-[11px] font-mono text-on-surface-variant">
                         Default: {config?.port || 'Dynamic'}
                       </span>
                     </div>
@@ -236,17 +236,17 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({
                         value={port || ''}
                         onChange={(e) => setPort(parseInt(e.target.value) || 0)}
                         placeholder="e.g. 8080"
-                        className="flex-1 px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-sm font-mono text-white focus:outline-none focus:border-tinapple-gold/50"
+                        className="flex-1 px-3 py-2 bg-black/40 border border-outline-variant/50 rounded-lg text-sm font-mono text-on-surface focus:outline-none focus:border-tinapple-gold/50"
                       />
                       <button
                         type="button"
                         onClick={() => setPort(config?.port || 0)}
-                        className="px-3 py-2 rounded-lg bg-white/[0.05] hover:bg-white/[0.1] text-xs font-mono text-zinc-300 hover:text-white transition-all"
+                        className="px-3 py-2 rounded-lg bg-white/[0.05] hover:bg-white/[0.1] text-xs font-mono text-on-surface hover:text-on-surface transition-all"
                       >
                         Reset Default
                       </button>
                     </div>
-                    <p className="text-[11px] text-zinc-400 font-mono">
+                    <p className="text-[11px] text-on-surface-variant font-mono">
                       Overrides the port in the systemd environment or config file.
                     </p>
                   </div>
@@ -254,16 +254,16 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({
                   {/* Option 2: Autostart on Boot */}
                   <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-between">
                     <div className="space-y-0.5">
-                      <label className="text-xs font-mono font-semibold text-zinc-200 flex items-center gap-2">
+                      <label className="text-xs font-mono font-semibold text-on-surface flex items-center gap-2">
                         <Power className="w-4 h-4 text-emerald-400" />
                         <span>Autostart on Boot (systemd enabled)</span>
                       </label>
-                      <p className="text-[11px] text-zinc-400 font-mono">
+                      <p className="text-[11px] text-on-surface-variant font-mono">
                         Automatically launch {displayName} when the server starts up.
                       </p>
                     </div>
                     <SquishSwitch
-                      checked={autostart}
+                      label="Start automatically" checked={autostart}
                       onChange={setAutostart}
                       variant="emerald"
                       size="sm"
@@ -273,7 +273,7 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({
                   {/* Option 3: CPU Weight & Thermal Ceiling */}
                   <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.06] space-y-3">
                     <div className="flex items-center justify-between">
-                      <label className="text-xs font-mono font-semibold text-zinc-200 flex items-center gap-2">
+                      <label className="text-xs font-mono font-semibold text-on-surface flex items-center gap-2">
                         <Cpu className="w-4 h-4 text-sky-400" />
                         <span>CPU Weight & Scheduling Priority</span>
                       </label>
@@ -290,7 +290,7 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({
                       onChange={(e) => setCpuWeight(parseInt(e.target.value))}
                       className="w-full accent-tinapple-gold cursor-pointer"
                     />
-                    <div className="flex justify-between text-[10px] font-mono text-zinc-400">
+                    <div className="flex justify-between text-[10px] font-mono text-on-surface-variant">
                       <span>Low (Background: 50)</span>
                       <span>Balanced (Standard: 100)</span>
                       <span>High Priority (500)</span>
@@ -339,12 +339,12 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({
                             <ShieldCheck className="w-4 h-4 text-amber-400" />
                             <span>TrueNAS & Windows Sync: Ignore Permissions</span>
                           </label>
-                          <p className="text-[11px] text-zinc-400 font-mono">
+                          <p className="text-[11px] text-on-surface-variant font-mono">
                             Sets <code className="text-amber-300">&lt;ignorePerms&gt;true&lt;/ignorePerms&gt;</code> in config.xml to avoid POSIX/NTFS permission conflicts with Windows or TrueNAS SMB shares.
                           </p>
                         </div>
                         <SquishSwitch
-                          checked={ignorePerms}
+                          label="Ignore permissions" checked={ignorePerms}
                           onChange={setIgnorePerms}
                           variant="amber"
                           size="sm"
@@ -355,11 +355,11 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({
 
                   {/* Option 5: Storage & Configuration Paths */}
                   <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.06] space-y-1.5 text-xs font-mono">
-                    <div className="flex items-center gap-2 text-zinc-300 font-semibold mb-2">
+                    <div className="flex items-center gap-2 text-on-surface font-semibold mb-2">
                       <Folder className="w-4 h-4 text-purple-400" />
                       <span>Configuration File Path</span>
                     </div>
-                    <div className="p-2.5 rounded-lg bg-black/40 border border-white/5 text-[11px] text-zinc-300 font-mono break-all select-all">
+                    <div className="p-2.5 rounded-lg bg-black/40 border border-outline-variant/50 text-[11px] text-on-surface font-mono break-all select-all">
                       {config?.configPath || 'Managed by systemd service unit'}
                     </div>
                   </div>
@@ -369,10 +369,10 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-mono font-semibold text-zinc-300">
+                      <span className="text-xs font-mono font-semibold text-on-surface">
                         Config File Contents:
                       </span>
-                      <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-white/[0.06] text-zinc-400 truncate max-w-xs">
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-white/[0.06] text-on-surface-variant truncate max-w-xs">
                         {config?.configPath || 'Default Configuration'}
                       </span>
                     </div>
@@ -391,7 +391,7 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({
                       <button
                         type="button"
                         onClick={handleCopy}
-                        className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/[0.05] hover:bg-white/[0.1] text-zinc-300 hover:text-white text-[11px] font-mono transition-all"
+                        className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/[0.05] hover:bg-white/[0.1] text-on-surface hover:text-on-surface text-[11px] font-mono transition-all"
                         title="Copy configuration"
                       >
                         {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
@@ -400,7 +400,7 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({
                     </div>
                   </div>
 
-                  <p className="text-[11px] font-mono text-zinc-400">
+                  <p className="text-[11px] font-mono text-on-surface-variant">
                     Paste or edit configuration directly below. Changes are saved to disk and the service is automatically reloaded.
                   </p>
 
@@ -410,7 +410,7 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({
                       onChange={(e) => setRawConfig(e.target.value)}
                       rows={14}
                       placeholder={`# Paste ${displayName} configuration here...`}
-                      className="w-full p-3.5 bg-black/60 border border-white/10 rounded-xl font-mono text-xs text-slate-100 placeholder-zinc-600 focus:outline-none focus:border-tinapple-gold/50 resize-y leading-relaxed"
+                      className="w-full p-3.5 bg-black/60 border border-outline-variant/50 rounded-xl font-mono text-xs text-on-surface placeholder-zinc-600 focus:outline-none focus:border-tinapple-gold/50 resize-y leading-relaxed"
                       spellCheck={false}
                     />
                   </div>
@@ -422,7 +422,7 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({
 
         {/* Footer Actions */}
         <div className="flex items-center justify-between px-5 py-3.5 bg-[#0a1329] border-t border-white/[0.08] shrink-0">
-          <div className="flex items-center gap-1.5 text-[11px] font-mono text-zinc-400">
+          <div className="flex items-center gap-1.5 text-[11px] font-mono text-on-surface-variant">
             <Info className="w-3.5 h-3.5 text-tinapple-gold" />
             <span>Applies automatically on save</span>
           </div>
@@ -431,7 +431,7 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] text-zinc-300 hover:text-white text-xs font-mono font-semibold transition-all"
+              className="px-4 py-2 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] text-on-surface hover:text-on-surface text-xs font-mono font-semibold transition-all"
             >
               Cancel
             </button>
@@ -440,7 +440,7 @@ export const AppSettingsModal: React.FC<AppSettingsModalProps> = ({
               type="button"
               onClick={handleSave}
               disabled={saving || loading}
-              className="flex items-center gap-2 px-5 py-2 rounded-xl bg-gradient-to-r from-tinapple-gold to-amber-500 hover:from-tinapple-gold/90 hover:to-amber-500/90 text-slate-950 text-xs font-mono font-bold shadow-lg shadow-tinapple-gold/20 transition-all active:scale-95 disabled:opacity-50"
+              className="flex items-center gap-2 px-5 py-2 rounded-xl bg-gradient-to-r from-tinapple-gold to-amber-500 hover:from-tinapple-gold/90 hover:to-amber-500/90 text-slate-950 text-xs font-mono font-bold shadow-none shadow-tinapple-gold/20 transition-all active:scale-95 disabled:opacity-50"
             >
               {saving ? (
                 <>

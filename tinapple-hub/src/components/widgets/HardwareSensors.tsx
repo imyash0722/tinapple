@@ -66,19 +66,19 @@ export const HardwareSensors: React.FC<HardwareSensorsProps> = ({
       {/* Hardware Center Header */}
       <div className="p-6 rounded-2xl bg-gradient-to-r from-tinapple-card/95 via-tinapple-surface/90 to-tinapple-card/95 border border-tinapple-border backdrop-blur-2xl flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-tinapple-gold/15 text-tinapple-gold border border-tinapple-gold/25 text-xs mb-2.5 font-mono">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-tinapple-gold/15 text-tinapple-gold border border-tinapple-gold/25 text-xs mb-2.5 font-sans tabular-nums">
             <Cpu className="w-3.5 h-3.5" />
             <span>Silicon Hardware & Thermal Center</span>
           </div>
-          <h2 className="text-xl md:text-2xl font-black font-mono tracking-tight text-white uppercase">
+          <h2 className="text-xl md:text-2xl font-black font-sans tabular-nums tracking-tight text-on-surface uppercase">
             HARDWARE TELEMETRY & TOPOLOGY
           </h2>
-          <p className="text-xs text-tinapple-subtext font-mono mt-1">
+          <p className="text-xs text-tinapple-subtext font-sans tabular-nums mt-1">
             Real-time thermals, fan curves, power policies, silicon attestation, and PCI bus topology.
           </p>
         </div>
 
-        <div className="flex items-center gap-2 font-mono text-xs text-tinapple-green bg-tinapple-green/10 px-3.5 py-2 rounded-xl border border-tinapple-green/20 self-start md:self-center shadow-sm">
+        <div className="flex items-center gap-2 font-sans tabular-nums text-xs text-tinapple-green bg-tinapple-green/10 px-3.5 py-2 rounded-xl border border-tinapple-green/20 self-start md:self-center shadow-sm">
           <span className="w-2 h-2 rounded-full bg-tinapple-green animate-pulse" />
           <span>Silicon Integrity Verified</span>
         </div>
@@ -88,7 +88,7 @@ export const HardwareSensors: React.FC<HardwareSensorsProps> = ({
       <div>
         <div className="flex items-center gap-2 mb-3">
           <span className="w-2 h-2 rounded-full bg-tinapple-gold animate-pulse" />
-          <h3 className="text-sm font-bold text-white uppercase tracking-wider font-mono">
+          <h3 className="text-sm font-bold text-on-surface uppercase tracking-wider font-sans tabular-nums">
             Live Thermal Governance & BMS Sensors
           </h3>
         </div>
@@ -102,28 +102,28 @@ export const HardwareSensors: React.FC<HardwareSensorsProps> = ({
                   <Thermometer className="w-5 h-5 text-tinapple-gold" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-white tracking-wide uppercase font-mono">Thermals & Acoustic</h3>
-                  <p className="text-xs text-tinapple-subtext font-mono">Dynamic Fan Curves</p>
+                  <h3 className="text-sm font-bold text-on-surface tracking-wide uppercase font-sans tabular-nums">Thermals & Acoustic</h3>
+                  <p className="text-xs text-tinapple-subtext font-sans tabular-nums">Dynamic Fan Curves</p>
                 </div>
               </div>
-              <span className="text-xs px-2.5 py-1 rounded-xl bg-tinapple-dark/80 text-tinapple-gold border border-tinapple-border font-mono font-semibold">
+              <span className="text-xs px-2.5 py-1 rounded-xl bg-tinapple-dark/80 text-tinapple-gold border border-tinapple-border font-sans tabular-nums font-semibold">
                 {cpuTemp}°C
               </span>
             </div>
 
             {/* Fan Status */}
-            <div className="flex items-center justify-between p-3 rounded-xl bg-tinapple-dark/70 border border-tinapple-border mb-4 font-mono">
+            <div className="flex items-center justify-between p-3 rounded-xl bg-tinapple-dark/70 border border-tinapple-border mb-4 font-sans tabular-nums">
               <div className="flex items-center gap-2 text-xs text-tinapple-subtext">
                 <Fan className="w-4 h-4 text-tinapple-green animate-spin" />
                 <span>Cooling Fan</span>
               </div>
-              <span className="text-xs font-bold text-white">
+              <span className="text-xs font-bold text-on-surface">
                 {telemetry?.thermal?.fanRpm ? `${telemetry.thermal.fanRpm} RPM` : '1200 RPM'}
               </span>
             </div>
 
             {/* Thermal Sensor Readings */}
-            <div className="grid grid-cols-2 gap-2 mb-4 font-mono">
+            <div className="grid grid-cols-2 gap-2 mb-4 font-sans tabular-nums">
               <div className="p-2.5 rounded-xl bg-tinapple-dark/50 border border-tinapple-border">
                 <div className="flex items-center gap-1.5 text-xs text-tinapple-subtext mb-1">
                   <Cpu className="w-3.5 h-3.5 text-tinapple-gold" />
@@ -146,10 +146,10 @@ export const HardwareSensors: React.FC<HardwareSensorsProps> = ({
 
             {/* Thermal Profiles Switcher */}
             <div>
-              <label className="text-[11px] font-mono uppercase tracking-wider text-tinapple-muted block mb-2">
+              <label className="text-[11px] font-sans tabular-nums uppercase tracking-wider text-tinapple-muted block mb-2">
                 Acoustic / Fan Curve
               </label>
-              <div className="grid grid-cols-3 gap-1.5 p-1 rounded-xl bg-tinapple-dark/90 border border-tinapple-border font-mono">
+              <div className="grid grid-cols-3 gap-1.5 p-1 rounded-xl bg-tinapple-dark/90 border border-tinapple-border font-sans tabular-nums">
                 {(['quiet', 'balanced', 'performance'] as const).map((p) => (
                   <button
                     key={p}
@@ -159,7 +159,7 @@ export const HardwareSensors: React.FC<HardwareSensorsProps> = ({
                     }}
                     className={`py-2 text-xs font-semibold rounded-lg capitalize transition-all ${
                       thermalProfile === p
-                        ? 'bg-tinapple-gold text-tinapple-dark shadow-md font-bold'
+                        ? 'bg-tinapple-gold text-tinapple-dark shadow-none font-bold'
                         : 'text-tinapple-subtext hover:text-tinapple-text hover:bg-tinapple-surface/60'
                     }`}
                   >
@@ -178,22 +178,22 @@ export const HardwareSensors: React.FC<HardwareSensorsProps> = ({
                   <Zap className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-white tracking-wide uppercase font-mono">Power Policy</h3>
-                  <p className="text-xs text-tinapple-subtext font-mono">CPU Frequency Governor</p>
+                  <h3 className="text-sm font-bold text-on-surface tracking-wide uppercase font-sans tabular-nums">Power Policy</h3>
+                  <p className="text-xs text-tinapple-subtext font-sans tabular-nums">CPU Frequency Governor</p>
                 </div>
               </div>
-              <span className="text-xs px-2.5 py-1 rounded-xl bg-tinapple-dark/80 text-tinapple-green border border-tinapple-border font-mono font-semibold capitalize">
+              <span className="text-xs px-2.5 py-1 rounded-xl bg-tinapple-dark/80 text-tinapple-green border border-tinapple-border font-sans tabular-nums font-semibold capitalize">
                 Gov: {localPower === 'performance' ? 'performance' : localPower === 'power-saver' ? 'powersave' : 'schedutil'}
               </span>
             </div>
 
-            <p className="text-xs text-tinapple-subtext mb-4 leading-relaxed font-mono">
+            <p className="text-xs text-tinapple-subtext mb-4 leading-relaxed font-sans tabular-nums">
               Dynamically scales frequency residency across cores via Linux cpufreq scaling governors.
             </p>
 
             {/* Power Profile Selector */}
-            <div className="space-y-2 mb-4 font-mono">
-              <label className="text-[11px] font-mono uppercase tracking-wider text-tinapple-muted block">
+            <div className="space-y-2 mb-4 font-sans tabular-nums">
+              <label className="text-[11px] font-sans tabular-nums uppercase tracking-wider text-tinapple-muted block">
                 Select Active Profile
               </label>
               <div className="grid grid-cols-3 gap-1.5 p-1 rounded-xl bg-tinapple-dark/90 border border-tinapple-border">
@@ -210,7 +210,7 @@ export const HardwareSensors: React.FC<HardwareSensorsProps> = ({
                     }}
                     className={`py-2 text-xs font-semibold rounded-lg transition-all ${
                       localPower === p.id
-                        ? 'bg-tinapple-green text-tinapple-dark font-bold shadow-md'
+                        ? 'bg-tinapple-green text-tinapple-dark font-bold shadow-none'
                         : 'text-tinapple-subtext hover:text-tinapple-text hover:bg-tinapple-surface/60 active:scale-95'
                     }`}
                   >
@@ -220,7 +220,7 @@ export const HardwareSensors: React.FC<HardwareSensorsProps> = ({
               </div>
             </div>
 
-            <div className="p-2.5 rounded-xl bg-tinapple-dark/70 border border-tinapple-border flex items-center justify-between text-xs font-mono text-tinapple-muted">
+            <div className="p-2.5 rounded-xl bg-tinapple-dark/70 border border-tinapple-border flex items-center justify-between text-xs font-sans tabular-nums text-tinapple-muted">
               <span>Driver: acpi-cpufreq</span>
               <span className="text-tinapple-green font-bold">Residency: Schedutil</span>
             </div>
@@ -238,18 +238,18 @@ export const HardwareSensors: React.FC<HardwareSensorsProps> = ({
                   )}
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-white tracking-wide uppercase font-mono">BMS Battery Guard</h3>
-                  <p className="text-xs text-tinapple-subtext font-mono">
+                  <h3 className="text-sm font-bold text-on-surface tracking-wide uppercase font-sans tabular-nums">BMS Battery Guard</h3>
+                  <p className="text-xs text-tinapple-subtext font-sans tabular-nums">
                     {battery?.charging ? 'Charging via AC' : 'Battery Mode'}
                   </p>
                 </div>
               </div>
-              <div className="font-mono text-xl font-black text-tinapple-gold">
+              <div className="font-sans tabular-nums text-xl font-black text-tinapple-gold">
                 {battery?.percent ?? 100}%
               </div>
             </div>
 
-            <div className="space-y-4 font-mono">
+            <div className="space-y-4 font-sans tabular-nums">
               <div className="flex justify-between items-center text-xs text-tinapple-subtext">
                 <span>Cell Health State:</span>
                 <span className="text-tinapple-green font-bold">
@@ -287,12 +287,12 @@ export const HardwareSensors: React.FC<HardwareSensorsProps> = ({
                   <div className="p-3 rounded-xl bg-tinapple-dark/80 border border-tinapple-border/80 space-y-2">
                     <div className="flex justify-between items-center text-xs">
                       <span className="text-tinapple-muted">Cutoff Limit:</span>
-                      <span className="text-white font-bold">100% (Non-Draggable)</span>
+                      <span className="text-on-surface font-bold">100% (Non-Draggable)</span>
                     </div>
                     <div className="w-full h-2 rounded-full bg-tinapple-dark border border-tinapple-border overflow-hidden">
                       <div className="h-full bg-gradient-to-r from-amber-500 to-tinapple-gold rounded-full w-full" />
                     </div>
-                    <p className="text-[10px] text-zinc-400 leading-normal font-sans">
+                    <p className="text-[10px] text-on-surface-variant leading-normal font-sans">
                       Motherboard Embedded Controller (EC) does not support programmable battery charge cutoff registers. Charging is permanently managed at 100% by system BIOS.
                     </p>
                   </div>
@@ -307,7 +307,7 @@ export const HardwareSensors: React.FC<HardwareSensorsProps> = ({
       <div>
         <div className="flex items-center gap-2 mb-3">
           <span className="w-2 h-2 rounded-full bg-tinapple-green animate-pulse" />
-          <h3 className="text-sm font-bold text-white uppercase tracking-wider font-mono">
+          <h3 className="text-sm font-bold text-on-surface uppercase tracking-wider font-sans tabular-nums">
             Platform Architecture & Real Specifications
           </h3>
         </div>
@@ -320,16 +320,16 @@ export const HardwareSensors: React.FC<HardwareSensorsProps> = ({
                 <Server className="w-5 h-5" />
               </div>
               <div>
-                <h4 className="text-xs font-bold text-tinapple-subtext uppercase tracking-wider font-mono">
+                <h4 className="text-xs font-bold text-tinapple-subtext uppercase tracking-wider font-sans tabular-nums">
                   Platform Architecture
                 </h4>
-                <p className="text-sm font-bold text-white mt-0.5">Laptop / Mobile Appliance</p>
+                <p className="text-sm font-bold text-on-surface mt-0.5">Laptop / Mobile Appliance</p>
               </div>
             </div>
-            <div className="space-y-2 pt-3 border-t border-tinapple-border/70 text-xs font-mono">
+            <div className="space-y-2 pt-3 border-t border-tinapple-border/70 text-xs font-sans tabular-nums">
               <div className="flex justify-between text-tinapple-subtext">
                 <span>Instruction Set:</span>
-                <span className="text-white font-bold">amd64 (VMX, SSE4_2, AES)</span>
+                <span className="text-on-surface font-bold">amd64 (VMX, SSE4_2, AES)</span>
               </div>
               <div className="flex justify-between text-tinapple-subtext">
                 <span>Core Topology:</span>
@@ -351,13 +351,13 @@ export const HardwareSensors: React.FC<HardwareSensorsProps> = ({
                 <Shield className="w-5 h-5" />
               </div>
               <div>
-                <h4 className="text-xs font-bold text-tinapple-subtext uppercase tracking-wider font-mono">
+                <h4 className="text-xs font-bold text-tinapple-subtext uppercase tracking-wider font-sans tabular-nums">
                   Hardware Security
                 </h4>
-                <p className="text-sm font-bold text-white mt-0.5">Standard Silicon Security</p>
+                <p className="text-sm font-bold text-on-surface mt-0.5">Standard Silicon Security</p>
               </div>
             </div>
-            <div className="space-y-2 pt-3 border-t border-tinapple-border/70 text-xs font-mono">
+            <div className="space-y-2 pt-3 border-t border-tinapple-border/70 text-xs font-sans tabular-nums">
               <div className="flex items-center justify-between">
                 <span className="text-tinapple-subtext">TPM 2.0 State:</span>
                 {hardware.tpm2Present ? (
@@ -393,18 +393,18 @@ export const HardwareSensors: React.FC<HardwareSensorsProps> = ({
                 <CircuitBoard className="w-5 h-5" />
               </div>
               <div>
-                <h4 className="text-xs font-bold text-tinapple-subtext uppercase tracking-wider font-mono">
+                <h4 className="text-xs font-bold text-tinapple-subtext uppercase tracking-wider font-sans tabular-nums">
                   GPU Acceleration
                 </h4>
-                <p className="text-sm font-bold text-white mt-0.5 truncate max-w-[200px]" title={hardware.gpu?.model || 'Intel Ivy Bridge GT2'}>
+                <p className="text-sm font-bold text-on-surface mt-0.5 truncate max-w-[200px]" title={hardware.gpu?.model || 'Intel Ivy Bridge GT2'}>
                   {hardware.gpu?.model || 'Intel HD Graphics 4000'}
                 </p>
               </div>
             </div>
-            <div className="space-y-2 pt-3 border-t border-tinapple-border/70 text-xs font-mono">
+            <div className="space-y-2 pt-3 border-t border-tinapple-border/70 text-xs font-sans tabular-nums">
               <div className="flex justify-between text-tinapple-subtext">
                 <span>Display Driver:</span>
-                <span className="text-white font-bold">{hardware.gpu?.driver || 'i915'}</span>
+                <span className="text-on-surface font-bold">{hardware.gpu?.driver || 'i915'}</span>
               </div>
               <div className="flex justify-between text-tinapple-subtext">
                 <span>Hardware Video:</span>
@@ -427,25 +427,25 @@ export const HardwareSensors: React.FC<HardwareSensorsProps> = ({
       <SpotlightCard className="p-6" spotlightColor="rgb(var(--tinapple-accent-rgb) / 0.2)" borderColor="rgb(var(--tinapple-accent-rgb) / 0.45)">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-5">
-            <div className="relative w-20 h-20 rounded-2xl bg-tinapple-dark/90 border border-tinapple-border overflow-hidden p-2 flex items-center justify-center shadow-lg shadow-tinapple-gold/10 shrink-0">
+            <div className="relative w-20 h-20 rounded-2xl bg-tinapple-dark/90 border border-tinapple-border overflow-hidden p-2 flex items-center justify-center shadow-none shadow-tinapple-gold/10 shrink-0">
               <Cpu className="w-10 h-10 text-tinapple-gold" />
             </div>
 
             <div>
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-tinapple-gold/15 text-tinapple-gold border border-tinapple-gold/25 text-[10px] font-mono mb-1.5">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-tinapple-gold/15 text-tinapple-gold border border-tinapple-gold/25 text-[10px] font-sans tabular-nums mb-1.5">
                 <CheckCircle2 className="w-3 h-3 text-emerald-400" />
                 <span>INTEL X86_64 MOBILE APPLIANCE</span>
               </div>
-              <h3 className="text-base font-bold text-white tracking-tight">
+              <h3 className="text-base font-bold text-on-surface tracking-tight">
                 {telemetry?.cpu?.modelName || hardware.cpu.model || 'Intel Core i5-3210M @ 2.50GHz'}
               </h3>
-              <p className="text-xs text-tinapple-subtext mt-1 max-w-xl font-mono">
+              <p className="text-xs text-tinapple-subtext mt-1 max-w-xl font-sans tabular-nums">
                 Bare-metal Ivy Bridge mobile station running native Linux 6.x kernel. Direct i915 driver acceleration provides hardware VA-API video transcoding for Jellyfin.
               </p>
             </div>
           </div>
 
-          <div className="p-3.5 rounded-xl bg-tinapple-dark/70 border border-tinapple-border font-mono text-xs space-y-1.5 min-w-[260px] w-full md:w-auto">
+          <div className="p-3.5 rounded-xl bg-tinapple-dark/70 border border-tinapple-border font-sans tabular-nums text-xs space-y-1.5 min-w-[260px] w-full md:w-auto">
             <div className="flex justify-between text-[11px]">
               <span className="text-tinapple-muted">Firmware Boot:</span>
               <span className="text-tinapple-gold font-bold">
@@ -454,11 +454,11 @@ export const HardwareSensors: React.FC<HardwareSensorsProps> = ({
             </div>
             <div className="flex justify-between text-[11px]">
               <span className="text-tinapple-muted">Graphics Acceleration:</span>
-              <span className="text-white font-semibold">Intel i915 VA-API</span>
+              <span className="text-on-surface font-semibold">Intel i915 VA-API</span>
             </div>
             <div className="flex justify-between text-[11px]">
               <span className="text-tinapple-muted">Platform Root:</span>
-              <span className="text-white">{hardware.profile || 'Laptop / Mobile Appliance'}</span>
+              <span className="text-on-surface">{hardware.profile || 'Laptop / Mobile Appliance'}</span>
             </div>
             <div className="flex justify-between text-[11px]">
               <span className="text-tinapple-muted">Operational State:</span>
@@ -476,16 +476,16 @@ export const HardwareSensors: React.FC<HardwareSensorsProps> = ({
               <HardDrive className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-white font-mono uppercase tracking-wide">
+              <h3 className="text-sm font-bold text-on-surface font-sans tabular-nums uppercase tracking-wide">
                 Physical Storage Controller & Attached Drives
               </h3>
-              <p className="text-xs text-tinapple-subtext font-mono">
+              <p className="text-xs text-tinapple-subtext font-sans tabular-nums">
                 Samsung SSD 860 EVO 250GB (/dev/sda) • SATA 6 Gb/s Interface
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 font-mono">
+          <div className="flex items-center gap-2 font-sans tabular-nums">
             <span className="px-2.5 py-1 rounded-lg bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 text-xs font-bold inline-flex items-center gap-1">
               <CheckCircle2 className="w-3.5 h-3.5" />
               <span>S.M.A.R.T. Health: PASSED</span>
@@ -497,14 +497,14 @@ export const HardwareSensors: React.FC<HardwareSensorsProps> = ({
         </div>
 
         {/* Visual Segmented Storage Bar */}
-        <div className="space-y-2 font-mono mb-5">
+        <div className="space-y-2 font-sans tabular-nums mb-5">
           <div className="flex justify-between items-center text-xs">
             <span className="text-tinapple-subtext">Filesystem Capacity Breakdown:</span>
-            <span className="text-white font-bold">
+            <span className="text-on-surface font-bold">
               {formatGb(usedDiskBytes)} GB Used ({diskUsagePercent}%) • {formatGb(freeDiskBytes)} GB Free
             </span>
           </div>
-          <div className="w-full h-3 rounded-full bg-slate-900 border border-white/10 overflow-hidden flex shadow-inner">
+          <div className="w-full h-3 rounded-full bg-surface-container-low border border-outline-variant/50 overflow-hidden flex shadow-inner">
             <div
               className="h-full bg-tinapple-green transition-all"
               style={{ width: `${Math.max(12, diskUsagePercent)}%` }}
@@ -521,12 +521,12 @@ export const HardwareSensors: React.FC<HardwareSensorsProps> = ({
               title="Swap partition: 4 GB"
             />
             <div
-              className="h-full bg-slate-800 transition-all"
+              className="h-full bg-surface-container transition-all"
               style={{ width: `${100 - Math.max(12, diskUsagePercent) - 5}%` }}
               title={`Available storage: ${formatGb(freeDiskBytes)} GB`}
             />
           </div>
-          <div className="flex flex-wrap items-center gap-4 text-[11px] text-zinc-400 pt-1">
+          <div className="flex flex-wrap items-center gap-4 text-[11px] text-on-surface-variant pt-1">
             <div className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-tinapple-green inline-block" />
               <span>/ (Root ext4: {formatGb(usedDiskBytes)} GB used)</span>
@@ -547,19 +547,19 @@ export const HardwareSensors: React.FC<HardwareSensorsProps> = ({
         </div>
 
         {/* Partition Details Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 font-mono">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 font-sans tabular-nums">
           <div className="p-3.5 rounded-xl bg-tinapple-dark/90 border border-tinapple-border space-y-1.5">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-white">/dev/sda3</span>
+              <span className="text-xs font-bold text-on-surface">/dev/sda3</span>
               <span className="px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold">
                 Mount: /
               </span>
             </div>
             <div className="text-xs text-tinapple-subtext flex justify-between">
               <span>Filesystem: ext4</span>
-              <span className="text-white font-semibold">227.9 GB</span>
+              <span className="text-on-surface font-semibold">227.9 GB</span>
             </div>
-            <div className="text-[11px] text-zinc-400 flex justify-between pt-1 border-t border-white/5">
+            <div className="text-[11px] text-on-surface-variant flex justify-between pt-1 border-t border-outline-variant/50">
               <span>Available: {formatGb(freeDiskBytes)} GB</span>
               <span className="text-tinapple-green font-bold">{diskUsagePercent}% Used</span>
             </div>
@@ -567,16 +567,16 @@ export const HardwareSensors: React.FC<HardwareSensorsProps> = ({
 
           <div className="p-3.5 rounded-xl bg-tinapple-dark/90 border border-tinapple-border space-y-1.5">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-white">/dev/sda1</span>
+              <span className="text-xs font-bold text-on-surface">/dev/sda1</span>
               <span className="px-2 py-0.5 rounded bg-sky-500/15 text-sky-400 border border-sky-500/30 text-[10px] font-bold">
                 Mount: /boot
               </span>
             </div>
             <div className="text-xs text-tinapple-subtext flex justify-between">
               <span>Filesystem: vfat</span>
-              <span className="text-white font-semibold">1.0 GB</span>
+              <span className="text-on-surface font-semibold">1.0 GB</span>
             </div>
-            <div className="text-[11px] text-zinc-400 flex justify-between pt-1 border-t border-white/5">
+            <div className="text-[11px] text-on-surface-variant flex justify-between pt-1 border-t border-outline-variant/50">
               <span>Available: 973 MB</span>
               <span className="text-sky-300 font-bold">5% Used</span>
             </div>
@@ -584,16 +584,16 @@ export const HardwareSensors: React.FC<HardwareSensorsProps> = ({
 
           <div className="p-3.5 rounded-xl bg-tinapple-dark/90 border border-tinapple-border space-y-1.5">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-white">/dev/sda2</span>
+              <span className="text-xs font-bold text-on-surface">/dev/sda2</span>
               <span className="px-2 py-0.5 rounded bg-purple-500/15 text-purple-400 border border-purple-500/30 text-[10px] font-bold">
                 Mount: [SWAP]
               </span>
             </div>
             <div className="text-xs text-tinapple-subtext flex justify-between">
               <span>Virtual Memory: swap</span>
-              <span className="text-white font-semibold">4.0 GB</span>
+              <span className="text-on-surface font-semibold">4.0 GB</span>
             </div>
-            <div className="text-[11px] text-zinc-400 flex justify-between pt-1 border-t border-white/5">
+            <div className="text-[11px] text-on-surface-variant flex justify-between pt-1 border-t border-outline-variant/50">
               <span>Swap Space: Active</span>
               <span className="text-purple-300 font-bold">Online</span>
             </div>

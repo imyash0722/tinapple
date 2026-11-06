@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Tinapple Material Dashboard - Appearance &amp; Themes</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Flex:wght,GRAD,XOPQ,XTRA,YOPQ,YTAS,YTDE,YTFI,YTLC,YTUC@100..1000,0,96,468,79,750,-203,738,514,712&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "outline-variant": "#3e484f",
+            "surface-container-low": "#0c121f",
+            "on-tertiary-fixed-variant": "#653e00",
+            "error": "#f87171",
+            "primary-fixed": "#c4e7ff",
+            "on-background": "#dee3e8",
+            "on-tertiary-fixed": "#2a1700",
+            "secondary-container": "#434958",
+            "surface-container-high": "#252b2e",
+            "surface-bright": "#343a3e",
+            "on-tertiary": "#472a00",
+            "tertiary-container": "#f1a02b",
+            "surface-container-highest": "#303539",
+            "on-error": "#450a0a",
+            "secondary-fixed": "#dde2f5",
+            "inverse-surface": "#dee3e8",
+            "on-secondary-container": "#cbd5e1",
+            "tertiary-fixed-dim": "#ffb960",
+            "on-surface": "#dee3e8",
+            "inverse-primary": "#00668a",
+            "secondary-fixed-dim": "#c1c6d8",
+            "secondary": "#c1c6d8",
+            "on-secondary-fixed-variant": "#414756",
+            "tertiary": "#ffc176",
+            "on-primary": "#00354a",
+            "on-surface-variant": "#94a3b8",
+            "surface": "#101828",
+            "primary-container": "#38bdf8",
+            "error-container": "#93000a",
+            "on-secondary-fixed": "#161b29",
+            "on-tertiary-container": "#613b00",
+            "outline": "#334155",
+            "surface-dim": "#0f1418",
+            "surface-variant": "#303539",
+            "background": "#0f1418",
+            "surface-container-lowest": "#0a0f12",
+            "on-error-container": "#ffdad6",
+            "on-primary-container": "#e0f2fe",
+            "tertiary-fixed": "#ffddb8",
+            "surface-container": "#101828",
+            "on-primary-fixed-variant": "#004c69",
+            "inverse-on-surface": "#2c3135",
+            "primary-fixed-dim": "#7bd0ff",
+            "on-secondary": "#2a303e",
+            "primary": "#38bdf8",
+            "on-primary-fixed": "#001e2c",
+            "surface-tint": "#7bd0ff"
+          },
+          "borderRadius": {
+            "DEFAULT": "1rem",
+            "lg": "2rem",
+            "xl": "3rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "space-sm": "0.5rem",
+            "space-md": "1rem",
+            "margin": "1.5rem",
+            "gutter": "1rem",
+            "space-xl": "2rem",
+            "space-xs": "0.25rem",
+            "space-lg": "1.5rem"
+          },
+          "fontFamily": {
+            "title-medium": ["Roboto Flex"],
+            "headline-md": ["Roboto Flex"],
+            "title-large": ["Roboto Flex"],
+            "headline-lg": ["Roboto Flex"],
+            "label-medium": ["Roboto Flex"],
+            "body-medium": ["Roboto Flex"]
+          },
+          "fontSize": {
+            "title-medium": ["16px", { "lineHeight": "24px", "fontWeight": "500" }],
+            "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "500" }],
+            "title-large": ["22px", { "lineHeight": "28px", "fontWeight": "500" }],
+            "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "500" }],
+            "label-medium": ["12px", { "lineHeight": "16px", "fontWeight": "500" }],
+            "body-medium": ["14px", { "lineHeight": "20px", "fontWeight": "400" }]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    .tabular-nums {
+      font-variant-numeric: tabular-nums;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background-color: #3e484f;
+      border-radius: 9999px;
+    }
+  </style>
+</head>
+<body class="bg-background text-on-surface antialiased selection:bg-primary-container selection:text-on-primary-container overflow-hidden w-[1440px] h-[900px] mx-auto relative flex">
+<!-- ========================================== -->
+<!-- 1. LEFT SIDEBAR COMPONENT (Shared Anchor)   -->
+<!-- ========================================== -->
+<aside class="fixed top-0 left-0 h-full w-64 z-40 flex flex-col justify-between p-space-md bg-surface-container border-r border-outline-variant select-none">
+<div class="flex flex-col gap-space-md">
+<!-- Header / Brand -->
+<div class="flex items-center gap-3 px-2 py-1">
+<div class="w-10 h-10 rounded-full bg-primary-container/15 flex items-center justify-center border border-primary/30 text-primary">
+<span class="material-symbols-outlined text-primary text-[22px]">dns</span>
+</div>
+<div class="flex flex-col">
+<span class="font-title-large text-title-large font-bold text-on-surface tracking-tight leading-none">Tinapple Core</span>
+<div class="flex items-center gap-2 mt-1">
+<span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+<span class="font-label-medium text-label-medium text-on-surface-variant">v4.2.1 • Primary Node</span>
+</div>
+</div>
+</div>
+<!-- Quick Action Pills Row -->
+<div class="flex flex-wrap gap-1 px-1 py-1">
+<span class="px-2.5 py-1 rounded-full bg-surface-container-high text-on-surface-variant font-label-medium text-label-medium border border-outline-variant/60 flex items-center gap-1.5 cursor-pointer hover:bg-surface-container-highest transition-colors duration-200">
+<span class="material-symbols-outlined text-[14px] text-primary">build</span>
+          Server Tools
+        </span>
+<span class="px-2.5 py-1 rounded-full bg-surface-container-high text-on-surface-variant font-label-medium text-label-medium border border-outline-variant/60 flex items-center gap-1.5 cursor-pointer hover:bg-surface-container-highest transition-colors duration-200">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+          Tailscale
+        </span>
+</div>
+<!-- Primary Navigation Rail (Settings Active via Style Injection) -->
+<nav class="flex flex-col gap-1 mt-2">
+<a class="flex items-center gap-3 px-4 py-3 rounded-DEFAULT text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high/60 transition-colors duration-200 font-body-medium text-body-medium" href="#">
+<span class="material-symbols-outlined text-[20px]">dashboard</span>
+<span>Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-DEFAULT text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high/60 transition-colors duration-200 font-body-medium text-body-medium" href="#">
+<span class="material-symbols-outlined text-[20px]">dns</span>
+<span>Services</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-DEFAULT text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high/60 transition-colors duration-200 font-body-medium text-body-medium" href="#">
+<span class="material-symbols-outlined text-[20px]">storefront</span>
+<span>App Store</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-DEFAULT text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high/60 transition-colors duration-200 font-body-medium text-body-medium" href="#">
+<span class="material-symbols-outlined text-[20px]">menu_book</span>
+<span>Guides</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-DEFAULT text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high/60 transition-colors duration-200 font-body-medium text-body-medium" href="#">
+<span class="material-symbols-outlined text-[20px]">memory</span>
+<span>Hardware</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-DEFAULT text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high/60 transition-colors duration-200 font-body-medium text-body-medium" href="#">
+<span class="material-symbols-outlined text-[20px]">terminal</span>
+<span>Terminal</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-DEFAULT text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high/60 transition-colors duration-200 font-body-medium text-body-medium" href="#">
+<span class="material-symbols-outlined text-[20px]">bug_report</span>
+<span>Error Logger</span>
+</a>
+<!-- Active Tab: Settings (Appearance) -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-DEFAULT bg-primary-container/15 text-primary font-title-medium text-title-medium transition-all duration-200 ease-out active:scale-[0.98]" href="#">
+<span class="material-symbols-outlined text-[20px]" data-weight="fill">settings</span>
+<span class="font-medium">Settings</span>
+</a>
+</nav>
+</div>
+<!-- Sidebar Footer -->
+<div class="flex flex-col gap-1 border-t border-outline-variant/60 pt-space-md">
+<a class="flex items-center gap-3 px-4 py-2.5 rounded-DEFAULT text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high/60 transition-colors duration-200 font-body-medium text-body-medium" href="#">
+<span class="material-symbols-outlined text-[18px]">vpn_lock</span>
+<span>Proton VPN</span>
+</a>
+<a class="flex items-center justify-between px-4 py-2.5 rounded-DEFAULT bg-surface-container-high text-primary font-body-medium text-body-medium border border-outline-variant/40" href="#">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[18px]" data-weight="fill">palette</span>
+<span class="font-medium">Theme</span>
+</div>
+<span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+</a>
+<div class="flex items-center justify-between px-2 pt-2 mt-1">
+<div class="flex items-center gap-2.5">
+<div class="w-8 h-8 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-container border border-outline-variant">
+<span class="material-symbols-outlined text-[18px]">account_circle</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-medium text-label-medium text-on-surface leading-tight">Admin</span>
+<span class="font-label-medium text-label-medium text-on-surface-variant leading-tight">Root Node</span>
+</div>
+</div>
+<button class="p-1.5 rounded-full hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-colors" title="Pin Sidebar">
+<span class="material-symbols-outlined text-[18px]">push_pin</span>
+</button>
+</div>
+</div>
+</aside>
+<!-- ========================================== -->
+<!-- 2. TOP STATUS BAR (Shared Anchor)          -->
+<!-- ========================================== -->
+<header class="fixed top-0 left-64 right-0 h-16 z-30 px-space-lg flex items-center justify-between bg-surface-container-lowest/90 backdrop-blur-md border-b border-outline-variant">
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-primary animate-pulse"></span>
+<span class="font-title-medium text-title-medium font-semibold text-primary">tinapple-node-01</span>
+</div>
+<!-- Network & System Stats Bar -->
+<div class="hidden xl:flex items-center gap-5 text-on-surface-variant font-label-medium text-label-medium tabular-nums border-l border-outline-variant pl-5">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[14px]">router</span>
+<span>LAN: 192.168.1.120</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[14px]">lock</span>
+<span>Tailscale: 100.92.14.8</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[14px]">schedule</span>
+<span>Uptime: 42d 18h</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[14px]">speed</span>
+<span>Load: 0.42</span>
+</div>
+</div>
+</div>
+<!-- Trailing Actions -->
+<div class="flex items-center gap-3">
+<div class="px-3 py-1 rounded-full bg-tertiary/15 text-tertiary border border-tertiary/30 font-label-medium text-label-medium flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[14px]">system_update</span>
+<span>Update Available</span>
+</div>
+<button class="px-3 py-1.5 rounded-full bg-surface-container-high hover:bg-surface-container-highest text-on-surface font-label-medium text-label-medium border border-outline-variant flex items-center gap-1 transition-colors">
+<span>Quick Actions</span>
+<span class="material-symbols-outlined text-[16px]">expand_more</span>
+</button>
+<div class="flex items-center gap-1 text-on-surface-variant border-l border-outline-variant pl-2">
+<button class="p-1.5 rounded-full hover:bg-surface-container-high hover:text-on-surface transition-colors" title="Refresh">
+<span class="material-symbols-outlined text-[18px]">refresh</span>
+</button>
+<button class="p-1.5 rounded-full hover:bg-surface-container-high hover:text-on-surface relative transition-colors" title="Notifications">
+<span class="material-symbols-outlined text-[18px]">notifications</span>
+<span class="absolute top-1 right-1 w-2 h-2 rounded-full bg-primary"></span>
+</button>
+<button class="p-1.5 rounded-full hover:bg-surface-container-high hover:text-on-surface transition-colors" title="Settings">
+<span class="material-symbols-outlined text-[18px]">tune</span>
+</button>
+</div>
+</div>
+</header>
+<!-- ========================================== -->
+<!-- 3. DASHBOARD CANVAS (Dimmed behind drawer) -->
+<!-- ========================================== -->
+<main class="ml-64 mt-16 w-[1184px] h-[836px] p-6 overflow-hidden relative opacity-35 filter brightness-75 select-none pointer-events-none">
+<div class="grid grid-cols-12 gap-4 h-full pb-16">
+<!-- Telemetry Bento: CPU & RAM -->
+<div class="col-span-4 bg-surface-container rounded-[28px] p-4 border border-outline-variant flex flex-col justify-between">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[20px]">memory</span>
+<span class="font-title-medium text-title-medium text-on-surface">Telemetry Dial</span>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-high text-primary font-label-medium text-label-medium">Nominal</span>
+</div>
+<div class="grid grid-cols-2 gap-3 my-2">
+<div class="bg-surface-container-low p-3 rounded-[12px] border border-outline-variant/60 flex flex-col items-center justify-center">
+<span class="font-label-medium text-label-medium text-on-surface-variant">CPU Load</span>
+<span class="font-headline-md text-headline-md font-semibold text-primary tabular-nums mt-1">18%</span>
+<span class="font-label-medium text-label-medium text-on-surface-variant">45°C • 8 Cores</span>
+</div>
+<div class="bg-surface-container-low p-3 rounded-[12px] border border-outline-variant/60 flex flex-col items-center justify-center">
+<span class="font-label-medium text-label-medium text-on-surface-variant">RAM Used</span>
+<span class="font-headline-md text-headline-md font-semibold text-on-surface tabular-nums mt-1">64%</span>
+<span class="font-label-medium text-label-medium text-on-surface-variant">20.4 / 32 GB</span>
+</div>
+</div>
+<div class="bg-surface-container-low p-2.5 rounded-[12px] border border-outline-variant/60 flex justify-between items-center text-on-surface-variant font-label-medium text-label-medium">
+<span>Throughput: <strong class="text-on-surface tabular-nums">1.2 MB/s</strong></span>
+<span>Storage Pool: <strong class="text-on-surface tabular-nums">3.8 TB / 8 TB</strong></span>
+</div>
+</div>
+<!-- QuickConnect & Docker Services Grid -->
+<div class="col-span-8 bg-surface-container rounded-[28px] p-4 border border-outline-variant flex flex-col justify-between">
+<div class="flex items-center justify-between mb-2">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[20px]">layers</span>
+<span class="font-title-medium text-title-medium text-on-surface">Docker Containers (5 Running)</span>
+</div>
+<span class="font-label-medium text-label-medium text-on-surface-variant">HomarrBoard v2.4</span>
+</div>
+<!-- Containers Bento -->
+<div class="grid grid-cols-3 gap-3">
+<div class="p-3 bg-surface-container-low rounded-[12px] border border-outline-variant/60 flex items-center justify-between">
+<div class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-tertiary text-[24px]">movie</span>
+<div>
+<p class="font-body-medium text-body-medium font-medium text-on-surface leading-tight">Plex Server</p>
+<p class="font-label-medium text-label-medium text-on-surface-variant">Port 32400</p>
+</div>
+</div>
+<span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+</div>
+<div class="p-3 bg-surface-container-low rounded-[12px] border border-outline-variant/60 flex items-center justify-between">
+<div class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-primary text-[24px]">cloud_sync</span>
+<div>
+<p class="font-body-medium text-body-medium font-medium text-on-surface leading-tight">Nextcloud</p>
+<p class="font-label-medium text-label-medium text-on-surface-variant">Port 8080</p>
+</div>
+</div>
+<span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+</div>
+<div class="p-3 bg-surface-container-low rounded-[12px] border border-outline-variant/60 flex items-center justify-between">
+<div class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-emerald-400 text-[24px]">shield</span>
+<div>
+<p class="font-body-medium text-body-medium font-medium text-on-surface leading-tight">AdGuard Home</p>
+<p class="font-label-medium text-label-medium text-on-surface-variant">DNS Guarded</p>
+</div>
+</div>
+<span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+</div>
+</div>
+<!-- Lower telemetry row -->
+<div class="grid grid-cols-2 gap-3 mt-3">
+<div class="p-3 bg-surface-container-low rounded-[12px] border border-outline-variant/60 flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-on-surface-variant text-[18px]">downloading</span>
+<span class="font-body-medium text-body-medium text-on-surface">Active Transfers</span>
+</div>
+<span class="font-label-medium text-label-medium text-primary tabular-nums">4 Torrents (8.4 MB/s)</span>
+</div>
+<div class="p-3 bg-surface-container-low rounded-[12px] border border-outline-variant/60 flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-on-surface-variant text-[18px]">security</span>
+<span class="font-body-medium text-body-medium text-on-surface">Tor Hidden Service</span>
+</div>
+<span class="font-label-medium text-label-medium text-emerald-400">Active Routing</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Floating Service Dock Visible in Canvas -->
+<div class="absolute bottom-6 left-1/2 -translate-x-1/2 bg-surface-container-high border border-outline-variant/80 rounded-full px-5 py-2.5 flex items-center gap-4">
+<span class="material-symbols-outlined text-primary text-[20px]">terminal</span>
+<span class="material-symbols-outlined text-on-surface-variant text-[20px]">folder</span>
+<span class="material-symbols-outlined text-on-surface-variant text-[20px]">analytics</span>
+<div class="w-px h-5 bg-outline-variant"></div>
+<span class="material-symbols-outlined text-on-surface-variant text-[20px]">restart_alt</span>
+<span class="material-symbols-outlined text-on-surface-variant text-[20px]">power_settings_new</span>
+</div>
+</main>
+<!-- ========================================================================= -->
+<!-- 4. RIGHT SLIDE-OVER DRAWER (Appearance & Theme customization, z-50)       -->
+<!-- ========================================================================= -->
+<aside class="fixed right-0 top-0 bottom-0 w-[470px] z-50 bg-[#152034] rounded-l-[28px] border-l border-outline-variant/40 flex flex-col justify-between overflow-hidden">
+<!-- Drawer Header -->
+<div class="p-space-lg pb-4 border-b border-outline-variant/30 flex items-start justify-between bg-surface-container-high/60 backdrop-blur-sm">
+<div class="flex flex-col">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[22px]" data-weight="fill">palette</span>
+<h2 class="font-title-large text-title-large font-medium text-on-surface">Appearance &amp; Themes</h2>
+</div>
+<p class="font-label-medium text-label-medium text-on-surface-variant mt-1">Material 3 Expressive • Matugen dynamic color engine</p>
+</div>
+<button class="w-8 h-8 rounded-full flex items-center justify-center hover:bg-surface-container-highest text-on-surface-variant hover:text-on-surface transition-colors" title="Close Drawer">
+<span class="material-symbols-outlined text-[20px]">close</span>
+</button>
+</div>
+<!-- Drawer Scrollable Content -->
+<div class="flex-1 overflow-y-auto custom-scrollbar p-space-md flex flex-col gap-6">
+<!-- SECTION A: Wallpaper & Dynamic Seed Palette -->
+<section class="flex flex-col gap-3">
+<div class="flex items-center justify-between">
+<span class="font-title-medium text-title-medium font-medium text-on-surface">Wallpaper &amp; Seed Palette</span>
+<span class="font-label-medium text-label-medium text-primary">Matugen v2.1</span>
+</div>
+<!-- Wallpaper Gallery (4 items) -->
+<div class="grid grid-cols-4 gap-2.5">
+<!-- Thumbnail 1: Deep Cosmos (Active) -->
+<div class="relative group cursor-pointer rounded-[12px] overflow-hidden aspect-[4/3] ring-2 ring-primary border border-primary/40 bg-surface-container-low flex flex-col justify-end p-1.5">
+<div class="absolute inset-0 bg-gradient-to-tr from-[#05070f] via-[#0c121f] to-[#1e293b]"></div>
+<div class="absolute top-1 right-1 w-4 h-4 rounded-full bg-primary text-on-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[11px] font-bold">check</span>
+</div>
+<span class="relative z-10 font-label-medium text-[10px] text-primary-fixed truncate font-medium">Cosmos</span>
+</div>
+<!-- Thumbnail 2: Nordic Aurora -->
+<div class="relative group cursor-pointer rounded-[12px] overflow-hidden aspect-[4/3] border border-outline-variant/50 hover:border-outline-variant bg-surface-container-low flex flex-col justify-end p-1.5 transition-colors">
+<div class="absolute inset-0 bg-gradient-to-tr from-[#091e1d] via-[#0e3b37] to-[#134e4a]"></div>
+<span class="relative z-10 font-label-medium text-[10px] text-on-surface-variant truncate">Aurora</span>
+</div>
+<!-- Thumbnail 3: Minimalist Matte -->
+<div class="relative group cursor-pointer rounded-[12px] overflow-hidden aspect-[4/3] border border-outline-variant/50 hover:border-outline-variant bg-surface-container-low flex flex-col justify-end p-1.5 transition-colors">
+<div class="absolute inset-0 bg-gradient-to-tr from-[#111827] via-[#1f2937] to-[#374151]"></div>
+<span class="relative z-10 font-label-medium text-[10px] text-on-surface-variant truncate">Matte</span>
+</div>
+<!-- Thumbnail 4: Cyber Slate -->
+<div class="relative group cursor-pointer rounded-[12px] overflow-hidden aspect-[4/3] border border-outline-variant/50 hover:border-outline-variant bg-surface-container-low flex flex-col justify-end p-1.5 transition-colors">
+<div class="absolute inset-0 bg-gradient-to-tr from-[#020617] via-[#0f172a] to-[#1e1b4b]"></div>
+<span class="relative z-10 font-label-medium text-[10px] text-on-surface-variant truncate">Cyber</span>
+</div>
+</div>
+<!-- Matugen HCT Seed Palette Swatches -->
+<div class="p-3 bg-surface-container rounded-[12px] border border-outline-variant/40 flex flex-col gap-3">
+<div class="flex items-center justify-between">
+<span class="font-label-medium text-label-medium text-on-surface-variant">HCT Seed Accents</span>
+<span class="font-label-medium text-label-medium text-primary tabular-nums">Hue 200° • Tone 80</span>
+</div>
+<div class="flex items-center justify-between px-1">
+<!-- Sky (Default / Active) -->
+<button class="w-8 h-8 rounded-full bg-[#38bdf8] ring-2 ring-primary ring-offset-2 ring-offset-surface-container flex items-center justify-center transition-transform hover:scale-105" title="Default Sky #38bdf8">
+<span class="material-symbols-outlined text-[#00354a] text-[16px] font-bold">check</span>
+</button>
+<!-- Emerald -->
+<button class="w-8 h-8 rounded-full bg-[#34d399] transition-transform hover:scale-105" title="Emerald #34d399"></button>
+<!-- Coral -->
+<button class="w-8 h-8 rounded-full bg-[#fb7185] transition-transform hover:scale-105" title="Coral #fb7185"></button>
+<!-- Amber -->
+<button class="w-8 h-8 rounded-full bg-[#fbbf24] transition-transform hover:scale-105" title="Amber #fbbf24"></button>
+<!-- Violet -->
+<button class="w-8 h-8 rounded-full bg-[#a78bfa] transition-transform hover:scale-105" title="Violet #a78bfa"></button>
+<!-- Indigo -->
+<button class="w-8 h-8 rounded-full bg-[#818cf8] transition-transform hover:scale-105" title="Indigo #818cf8"></button>
+</div>
+<!-- Custom Hex input and Sample Wallpaper action -->
+<div class="flex items-center gap-2 pt-1 border-t border-outline-variant/30">
+<div class="w-8 h-8 rounded-[8px] bg-primary border border-outline-variant shrink-0"></div>
+<div class="relative flex-1">
+<input class="w-full bg-surface-container-low border border-outline-variant rounded-DEFAULT px-3 py-1.5 font-label-medium text-label-medium text-on-surface tabular-nums tracking-wider focus:outline-none focus:border-primary" readonly="" type="text" value="#38bdf8"/>
+</div>
+<button class="px-3 py-1.5 rounded-DEFAULT bg-secondary-container text-on-secondary-container hover:bg-surface-container-highest font-label-medium text-label-medium flex items-center gap-1 transition-colors shrink-0">
+<span class="material-symbols-outlined text-[15px]">colorize</span>
+<span>Sample</span>
+</button>
+</div>
+</div>
+</section>
+<!-- SECTION B: Material You Tonal Roles Preview -->
+<section class="flex flex-col gap-2.5">
+<div class="flex items-center justify-between">
+<span class="font-title-medium text-title-medium font-medium text-on-surface">Material You Tonal Roles</span>
+<span class="font-label-medium text-label-medium text-on-surface-variant">HCT System Spec</span>
+</div>
+<div class="p-3 bg-surface-container rounded-[12px] border border-outline-variant/40 flex flex-col gap-3">
+<!-- Tonal swatches strip -->
+<div class="grid grid-cols-7 gap-1.5 text-center">
+<div class="flex flex-col items-center gap-1">
+<div class="w-full h-8 rounded-[8px] bg-[#e0f2fe] border border-outline-variant/30 flex items-center justify-center">
+<span class="text-[10px] text-[#00354a] font-bold">90</span>
+</div>
+<span class="font-label-medium text-[10px] text-on-surface-variant truncate w-full">On-Cont</span>
+</div>
+<div class="flex flex-col items-center gap-1">
+<div class="w-full h-8 rounded-[8px] bg-[#38bdf8] flex items-center justify-center shadow-sm">
+<span class="text-[10px] text-[#00354a] font-bold">80</span>
+</div>
+<span class="font-label-medium text-[10px] text-primary truncate w-full font-medium">Primary</span>
+</div>
+<div class="flex flex-col items-center gap-1">
+<div class="w-full h-8 rounded-[8px] bg-[#0284c7] flex items-center justify-center">
+<span class="text-[10px] text-white font-bold">70</span>
+</div>
+<span class="font-label-medium text-[10px] text-on-surface-variant truncate w-full">Tone 70</span>
+</div>
+<div class="flex flex-col items-center gap-1">
+<div class="w-full h-8 rounded-[8px] bg-[#0369a1] flex items-center justify-center">
+<span class="text-[10px] text-white font-bold">40</span>
+</div>
+<span class="font-label-medium text-[10px] text-on-surface-variant truncate w-full">Tone 40</span>
+</div>
+<div class="flex flex-col items-center gap-1">
+<div class="w-full h-8 rounded-[8px] bg-[#004c69] flex items-center justify-center border border-primary/20">
+<span class="text-[10px] text-[#e0f2fe] font-bold">30</span>
+</div>
+<span class="font-label-medium text-[10px] text-on-surface-variant truncate w-full">Container</span>
+</div>
+<div class="flex flex-col items-center gap-1">
+<div class="w-full h-8 rounded-[8px] bg-[#00354a] flex items-center justify-center">
+<span class="text-[10px] text-[#7bd0ff] font-bold">20</span>
+</div>
+<span class="font-label-medium text-[10px] text-on-surface-variant truncate w-full">On-Prim</span>
+</div>
+<div class="flex flex-col items-center gap-1">
+<div class="w-full h-8 rounded-[8px] bg-[#001e2c] flex items-center justify-center border border-outline-variant/40">
+<span class="text-[10px] text-[#7bd0ff] font-bold">10</span>
+</div>
+<span class="font-label-medium text-[10px] text-on-surface-variant truncate w-full">Tone 10</span>
+</div>
+</div>
+<div class="flex items-center justify-between text-[11px] text-on-surface-variant border-t border-outline-variant/30 pt-2 font-label-medium">
+<span>Primary Tone: <strong>80 (#38bdf8)</strong></span>
+<span>Container: <strong>Tone 30 / On 90</strong></span>
+</div>
+</div>
+</section>
+<!-- SECTION C: Surfaces & Tonal Elevation Preview -->
+<section class="flex flex-col gap-2.5">
+<div class="flex items-center justify-between">
+<span class="font-title-medium text-title-medium font-medium text-on-surface">Surfaces &amp; Tonal Elevation</span>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-highest text-on-surface font-label-medium text-[11px]">Levels 0–5</span>
+</div>
+<div class="grid grid-cols-5 gap-2">
+<!-- Level 0 -->
+<div class="bg-surface-container-lowest p-2 rounded-[12px] border border-outline-variant/50 flex flex-col items-center justify-center gap-1 text-center">
+<span class="font-label-medium text-[10px] text-on-surface-variant">Lvl 0</span>
+<span class="font-label-medium text-[11px] font-mono text-on-surface">#05070f</span>
+<span class="font-label-medium text-[9px] text-on-surface-variant/80">Lowest</span>
+</div>
+<!-- Level 1 -->
+<div class="bg-surface-container-low p-2 rounded-[12px] border border-outline-variant/50 flex flex-col items-center justify-center gap-1 text-center">
+<span class="font-label-medium text-[10px] text-on-surface-variant">Lvl 1</span>
+<span class="font-label-medium text-[11px] font-mono text-on-surface">#0c121f</span>
+<span class="font-label-medium text-[9px] text-on-surface-variant/80">Low</span>
+</div>
+<!-- Level 2 -->
+<div class="bg-surface-container p-2 rounded-[12px] border border-outline-variant/60 ring-1 ring-primary/40 flex flex-col items-center justify-center gap-1 text-center">
+<span class="font-label-medium text-[10px] text-primary font-bold">Lvl 2</span>
+<span class="font-label-medium text-[11px] font-mono text-on-surface">#101828</span>
+<span class="font-label-medium text-[9px] text-primary">Container</span>
+</div>
+<!-- Level 3 -->
+<div class="bg-surface-container-high p-2 rounded-[12px] border border-outline-variant/50 flex flex-col items-center justify-center gap-1 text-center">
+<span class="font-label-medium text-[10px] text-on-surface-variant">Lvl 3</span>
+<span class="font-label-medium text-[11px] font-mono text-on-surface">#152034</span>
+<span class="font-label-medium text-[9px] text-on-surface-variant/80">High</span>
+</div>
+<!-- Level 4/5 -->
+<div class="bg-surface-container-highest p-2 rounded-[12px] border border-outline-variant/50 flex flex-col items-center justify-center gap-1 text-center">
+<span class="font-label-medium text-[10px] text-on-surface-variant">Lvl 4/5</span>
+<span class="font-label-medium text-[11px] font-mono text-on-surface">#1c2940</span>
+<span class="font-label-medium text-[9px] text-on-surface-variant/80">Highest</span>
+</div>
+</div>
+<div class="p-2.5 bg-surface-container rounded-[12px] border border-outline-variant/30 flex items-center justify-between font-label-medium text-label-medium">
+<span class="text-on-surface-variant">Corner Specification:</span>
+<span class="text-primary font-mono">Cards: 28px outer, 12px inner</span>
+</div>
+</section>
+<!-- SECTION D: Display & Visual Effects -->
+<section class="flex flex-col gap-3">
+<span class="font-title-medium text-title-medium font-medium text-on-surface">Display &amp; Visual Effects</span>
+<!-- Blur & Translucency slider -->
+<div class="p-3 bg-surface-container rounded-[12px] border border-outline-variant/40 flex flex-col gap-2">
+<div class="flex items-center justify-between">
+<label class="font-body-medium text-body-medium text-on-surface">Backdrop Blur &amp; Translucency</label>
+<span class="px-2 py-0.5 rounded-full bg-primary/15 text-primary font-label-medium text-[11px] font-medium">Subtle (12px)</span>
+</div>
+<div class="relative flex items-center mt-1">
+<input class="w-full h-1.5 bg-surface-container-highest rounded-lg appearance-none cursor-pointer accent-primary" max="3" min="0" type="range" value="1"/>
+</div>
+<div class="flex justify-between text-[10px] text-on-surface-variant font-label-medium px-0.5">
+<span>Off</span>
+<span class="text-primary font-medium">Subtle 12px</span>
+<span>Balanced 24px</span>
+<span>Deep 40px</span>
+</div>
+</div>
+<!-- UI Scale Selector -->
+<div class="p-3 bg-surface-container rounded-[12px] border border-outline-variant/40 flex items-center justify-between">
+<div>
+<label class="font-body-medium text-body-medium text-on-surface block">UI Scale</label>
+<span class="font-label-medium text-label-medium text-on-surface-variant">Density &amp; Text Proportions</span>
+</div>
+<div class="flex items-center bg-surface-container-low p-1 rounded-full border border-outline-variant/50">
+<button class="px-2.5 py-1 rounded-full text-on-surface-variant font-label-medium text-label-medium hover:text-on-surface">90%</button>
+<button class="px-3 py-1 rounded-full bg-primary text-on-primary font-label-medium text-label-medium font-medium shadow-sm">100%</button>
+<button class="px-2.5 py-1 rounded-full text-on-surface-variant font-label-medium text-label-medium hover:text-on-surface">110%</button>
+<button class="px-2.5 py-1 rounded-full text-on-surface-variant font-label-medium text-label-medium hover:text-on-surface">125%</button>
+</div>
+</div>
+<!-- M3 Switches Container -->
+<div class="p-3 bg-surface-container rounded-[12px] border border-outline-variant/40 flex flex-col gap-3">
+<!-- Switch 1: Matte Anti-Glare Surfaces (ON) -->
+<div class="flex items-center justify-between">
+<div class="flex flex-col">
+<span class="font-body-medium text-body-medium font-medium text-on-surface">Matte Anti-Glare Surfaces</span>
+<span class="font-label-medium text-label-medium text-on-surface-variant">Restrains reflection &amp; harsh outer shadows</span>
+</div>
+<!-- M3 Switch 52x32px (ON) -->
+<button aria-checked="true" class="w-[52px] h-[32px] rounded-full bg-primary p-1 flex items-center justify-end transition-colors duration-200 focus:outline-none" role="switch">
+<span class="w-[24px] h-[24px] rounded-full bg-on-primary shadow-sm flex items-center justify-center">
+<span class="material-symbols-outlined text-[16px] text-primary font-bold">check</span>
+</span>
+</button>
+</div>
+<div class="h-px bg-outline-variant/30"></div>
+<!-- Switch 2: Reduce Motion (OFF) -->
+<div class="flex items-center justify-between">
+<div class="flex flex-col">
+<span class="font-body-medium text-body-medium font-medium text-on-surface">Reduce Motion</span>
+<span class="font-label-medium text-label-medium text-on-surface-variant">Minimize spring transitions to 0ms</span>
+</div>
+<!-- M3 Switch 52x32px (OFF) -->
+<button aria-checked="false" class="w-[52px] h-[32px] rounded-full bg-surface-container-highest border border-outline p-1 flex items-center justify-start transition-colors duration-200 focus:outline-none" role="switch">
+<span class="w-[16px] h-[16px] rounded-full bg-outline"></span>
+</button>
+</div>
+<div class="h-px bg-outline-variant/30"></div>
+<!-- Switch 3: High Contrast Mode (OFF) -->
+<div class="flex items-center justify-between">
+<div class="flex flex-col">
+<span class="font-body-medium text-body-medium font-medium text-on-surface">High Contrast Mode</span>
+<span class="font-label-medium text-label-medium text-on-surface-variant">Enforces 7:1 ratio on critical status elements</span>
+</div>
+<!-- M3 Switch 52x32px (OFF) -->
+<button aria-checked="false" class="w-[52px] h-[32px] rounded-full bg-surface-container-highest border border-outline p-1 flex items-center justify-start transition-colors duration-200 focus:outline-none" role="switch">
+<span class="w-[16px] h-[16px] rounded-full bg-outline"></span>
+</button>
+</div>
+<div class="h-px bg-outline-variant/30"></div>
+<!-- Switch 4: Tabular Numbers in Telemetry (ON) -->
+<div class="flex items-center justify-between">
+<div class="flex flex-col">
+<span class="font-body-medium text-body-medium font-medium text-on-surface">Tabular Numbers in Telemetry</span>
+<span class="font-label-medium text-label-medium text-on-surface-variant">Fixed-width numerical alignment</span>
+</div>
+<!-- M3 Switch 52x32px (ON) -->
+<button aria-checked="true" class="w-[52px] h-[32px] rounded-full bg-primary p-1 flex items-center justify-end transition-colors duration-200 focus:outline-none" role="switch">
+<span class="w-[24px] h-[24px] rounded-full bg-on-primary shadow-sm flex items-center justify-center">
+<span class="material-symbols-outlined text-[16px] text-primary font-bold">check</span>
+</span>
+</button>
+</div>
+</div>
+</section>
+</div>
+<!-- Drawer Footer Actions -->
+<div class="p-space-md border-t border-outline-variant/30 bg-surface-container-high/90 backdrop-blur-md flex items-center justify-between gap-3">
+<button class="h-10 px-5 rounded-full bg-secondary-container text-on-secondary-container hover:bg-surface-container-highest font-title-medium text-title-medium font-medium flex items-center gap-1.5 transition-colors">
+<span class="material-symbols-outlined text-[18px]">restore</span>
+<span>Reset to Defaults</span>
+</button>
+<button class="h-10 px-6 rounded-full bg-primary text-on-primary hover:bg-primary-fixed-dim font-title-medium text-title-medium font-medium flex items-center gap-1.5 shadow-sm transition-all active:scale-95">
+<span class="material-symbols-outlined text-[18px]" data-weight="fill">check</span>
+<span>Save Theme</span>
+</button>
+</div>
+</aside>
+</body></html>

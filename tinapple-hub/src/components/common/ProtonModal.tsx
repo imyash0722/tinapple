@@ -191,37 +191,37 @@ export const ProtonModal: React.FC<ProtonModalProps> = ({ isOpen, onClose, onSta
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in select-none">
-      <div className="w-full max-w-2xl rounded-2xl bg-[#090e1a] border border-[#6D4AFF]/40 shadow-2xl shadow-[#6D4AFF]/10 overflow-hidden font-mono text-xs flex flex-col max-h-[92vh]">
+      <div className="w-full max-w-2xl rounded-2xl bg-[#090e1a] border border-[#6D4AFF]/40 shadow-none shadow-[#6D4AFF]/10 overflow-hidden font-sans tabular-nums text-xs flex flex-col max-h-[92vh]">
         {/* Header Bar */}
-        <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between bg-gradient-to-r from-[#0d1428] via-[#12102b] to-[#1a113d] shrink-0">
+        <div className="px-5 py-4 border-b border-outline-variant/50 flex items-center justify-between bg-gradient-to-r from-[#0d1428] via-[#12102b] to-[#1a113d] shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-[#6D4AFF]/20 border border-[#6D4AFF]/40 flex items-center justify-center text-xl shadow-inner">
               🛡️
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="font-bold text-white text-sm tracking-wide">
+                <h3 className="font-bold text-on-surface text-sm tracking-wide">
                   Proton Privacy Exit & Media Tunnel
                 </h3>
                 <span className="px-2 py-0.5 rounded-full bg-[#6D4AFF]/25 text-[#9d85ff] border border-[#6D4AFF]/40 text-[10px] font-bold">
                   SWISS WIREGUARD
                 </span>
               </div>
-              <p className="text-[11px] text-zinc-400 mt-0.5">
+              <p className="text-[11px] text-on-surface-variant mt-0.5">
                 Route all media services through Proton VPN to bypass network blocks & ISP restrictions.
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="text-zinc-400 hover:text-white p-1 rounded-lg hover:bg-white/10 transition-colors"
+            className="text-on-surface-variant hover:text-on-surface p-1 rounded-lg hover:bg-white/10 transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Live Tunnel Status Card */}
-        <div className="p-4 bg-slate-950/70 border-b border-white/[0.06] shrink-0">
+        <div className="p-4 bg-surface-container-low border-b border-white/[0.06] shrink-0">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <div className="relative">
@@ -236,7 +236,7 @@ export const ProtonModal: React.FC<ProtonModalProps> = ({ isOpen, onClose, onSta
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="font-bold text-white text-xs">
+                  <span className="font-bold text-on-surface text-xs">
                     {isConnected
                       ? 'TUNNEL ACTIVE • ALL SERVICES ROUTED'
                       : isConfigured
@@ -249,7 +249,7 @@ export const ProtonModal: React.FC<ProtonModalProps> = ({ isOpen, onClose, onSta
                     </span>
                   )}
                 </div>
-                <p className="text-[11px] text-zinc-400 mt-0.5">
+                <p className="text-[11px] text-on-surface-variant mt-0.5">
                   {isConnected
                     ? `Public Egress: ${status?.exit_ip || 'Fetching...'} ${
                         status?.country ? `• Country: ${status.country}` : ''
@@ -273,7 +273,7 @@ export const ProtonModal: React.FC<ProtonModalProps> = ({ isOpen, onClose, onSta
                 onClick={fetchState}
                 disabled={loading}
                 title="Refresh Status"
-                className="p-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-zinc-400 hover:text-white border border-white/5 transition-all"
+                className="p-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-on-surface-variant hover:text-on-surface border border-outline-variant/50 transition-all"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
               </button>
@@ -282,13 +282,13 @@ export const ProtonModal: React.FC<ProtonModalProps> = ({ isOpen, onClose, onSta
         </div>
 
         {/* Tab Selection */}
-        <div className="flex border-b border-white/[0.06] bg-slate-950/40 px-4 pt-2 shrink-0 gap-2">
+        <div className="flex border-b border-white/[0.06] bg-surface-container-low px-4 pt-2 shrink-0 gap-2">
           <button
             onClick={() => setActiveTab('wireguard')}
             className={`pb-2.5 px-3 font-bold border-b-2 transition-all flex items-center gap-1.5 ${
               activeTab === 'wireguard'
                 ? 'border-[#6D4AFF] text-[#a48eff]'
-                : 'border-transparent text-zinc-400 hover:text-zinc-200'
+                : 'border-transparent text-on-surface-variant hover:text-on-surface'
             }`}
           >
             <FileCode className="w-3.5 h-3.5" />
@@ -302,7 +302,7 @@ export const ProtonModal: React.FC<ProtonModalProps> = ({ isOpen, onClose, onSta
             className={`pb-2.5 px-3 font-bold border-b-2 transition-all flex items-center gap-1.5 ${
               activeTab === 'account'
                 ? 'border-[#6D4AFF] text-[#a48eff]'
-                : 'border-transparent text-zinc-400 hover:text-zinc-200'
+                : 'border-transparent text-on-surface-variant hover:text-on-surface'
             }`}
           >
             <LogIn className="w-3.5 h-3.5" />
@@ -316,7 +316,7 @@ export const ProtonModal: React.FC<ProtonModalProps> = ({ isOpen, onClose, onSta
             className={`pb-2.5 px-3 font-bold border-b-2 transition-all flex items-center gap-1.5 ${
               activeTab === 'routing'
                 ? 'border-[#6D4AFF] text-[#a48eff]'
-                : 'border-transparent text-zinc-400 hover:text-zinc-200'
+                : 'border-transparent text-on-surface-variant hover:text-on-surface'
             }`}
           >
             <Layers className="w-3.5 h-3.5" />
@@ -345,7 +345,7 @@ export const ProtonModal: React.FC<ProtonModalProps> = ({ isOpen, onClose, onSta
                     <ExternalLink className="w-3 h-3" />
                   </a>
                 </div>
-                <p className="text-[11px] text-zinc-300 leading-relaxed">
+                <p className="text-[11px] text-on-surface leading-relaxed">
                   WireGuard runs natively inside the Linux kernel with minimal CPU overhead and zero background daemons.
                   Log into your Proton VPN dashboard, select <strong>WireGuard</strong>, choose your desired country (e.g., Switzerland, Netherlands, US), and download or copy the configuration.
                 </p>
@@ -356,15 +356,15 @@ export const ProtonModal: React.FC<ProtonModalProps> = ({ isOpen, onClose, onSta
                   <div className="space-y-0.5">
                     <div className="flex items-center gap-2">
                       <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                      <span className="font-bold text-white">WireGuard Profile Installed</span>
+                      <span className="font-bold text-on-surface">WireGuard Profile Installed</span>
                       <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[10px]">
                         /etc/wireguard/proton.conf
                       </span>
                     </div>
-                    <div className="text-[11px] text-zinc-400 pl-6 flex flex-wrap gap-x-4">
-                      {wgInfo.endpoint && <span>Endpoint: <strong className="text-zinc-200">{wgInfo.endpoint}</strong></span>}
-                      {wgInfo.address && <span>Internal IP: <strong className="text-zinc-200">{wgInfo.address}</strong></span>}
-                      {wgInfo.dns && <span>Proton DNS: <strong className="text-zinc-200">{wgInfo.dns}</strong></span>}
+                    <div className="text-[11px] text-on-surface-variant pl-6 flex flex-wrap gap-x-4">
+                      {wgInfo.endpoint && <span>Endpoint: <strong className="text-on-surface">{wgInfo.endpoint}</strong></span>}
+                      {wgInfo.address && <span>Internal IP: <strong className="text-on-surface">{wgInfo.address}</strong></span>}
+                      {wgInfo.dns && <span>Proton DNS: <strong className="text-on-surface">{wgInfo.dns}</strong></span>}
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
@@ -373,7 +373,7 @@ export const ProtonModal: React.FC<ProtonModalProps> = ({ isOpen, onClose, onSta
                         type="button"
                         onClick={() => handleToggleConnect(true)}
                         disabled={connecting}
-                        className="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold font-mono transition-all"
+                        className="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold font-sans tabular-nums transition-all"
                       >
                         {connecting ? 'Connecting...' : 'Connect WireGuard'}
                       </button>
@@ -381,7 +381,7 @@ export const ProtonModal: React.FC<ProtonModalProps> = ({ isOpen, onClose, onSta
                     <button
                       type="button"
                       onClick={handleClearWireGuard}
-                      className="px-2.5 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 font-mono transition-all"
+                      className="px-2.5 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 font-sans tabular-nums transition-all"
                     >
                       Delete
                     </button>
@@ -408,11 +408,11 @@ export const ProtonModal: React.FC<ProtonModalProps> = ({ isOpen, onClose, onSta
 
               <form onSubmit={handleSaveWireGuard} className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <label className="text-zinc-300 font-bold flex items-center gap-1.5">
-                    <FileCode className="w-3.5 h-3.5 text-zinc-400" />
+                  <label className="text-on-surface font-bold flex items-center gap-1.5">
+                    <FileCode className="w-3.5 h-3.5 text-on-surface-variant" />
                     <span>Paste Raw WireGuard Configuration:</span>
                   </label>
-                  <label className="cursor-pointer px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-zinc-300 hover:text-white border border-white/5 transition-all text-[11px] flex items-center gap-1.5">
+                  <label className="cursor-pointer px-2.5 py-1 rounded-lg bg-surface-container hover:bg-slate-700 text-on-surface hover:text-on-surface border border-outline-variant/50 transition-all text-[11px] flex items-center gap-1.5">
                     <Upload className="w-3 h-3 text-[#a48eff]" />
                     <span>Upload .conf</span>
                     <input
@@ -429,17 +429,17 @@ export const ProtonModal: React.FC<ProtonModalProps> = ({ isOpen, onClose, onSta
                   value={rawWgConfig}
                   onChange={(e) => setRawWgConfig(e.target.value)}
                   placeholder={`[Interface]\nPrivateKey = aaaaaa...\nAddress = 10.2.0.2/32\nDNS = 10.2.0.1\n\n[Peer]\nPublicKey = bbbbbb...\nAllowedIPs = 0.0.0.0/0\nEndpoint = 185.159.157.1:51820`}
-                  className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white font-mono text-[11px] leading-relaxed focus:outline-none focus:border-[#6D4AFF] placeholder:text-zinc-600"
+                  className="w-full px-3 py-2.5 rounded-xl bg-surface-container-low border border-slate-700 text-on-surface font-sans tabular-nums text-[11px] leading-relaxed focus:outline-none focus:border-[#6D4AFF] placeholder:text-zinc-600"
                 />
 
                 <div className="flex items-center justify-between pt-1">
-                  <span className="text-[10px] text-zinc-500">
+                  <span className="text-[10px] text-on-surface-variant">
                     Routing rules will automatically preserve Tailscale & LAN connections.
                   </span>
                   <button
                     type="submit"
                     disabled={wgSaving || !rawWgConfig.trim()}
-                    className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#6D4AFF] to-[#8B5CF6] hover:from-[#5B3CE6] hover:to-[#7C3AED] text-white font-bold font-mono transition-all shadow-lg shadow-[#6D4AFF]/20 disabled:opacity-50 flex items-center gap-2"
+                    className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#6D4AFF] to-[#8B5CF6] hover:from-[#5B3CE6] hover:to-[#7C3AED] text-on-surface font-bold font-sans tabular-nums transition-all shadow-none shadow-[#6D4AFF]/20 disabled:opacity-50 flex items-center gap-2"
                   >
                     {wgSaving ? (
                       <>
@@ -461,12 +461,12 @@ export const ProtonModal: React.FC<ProtonModalProps> = ({ isOpen, onClose, onSta
           {/* TAB 2: PROTON ACCOUNT LOGIN */}
           {activeTab === 'account' && (
             <div className="space-y-4">
-              <div className="p-3.5 rounded-xl bg-slate-900/60 border border-white/[0.08] space-y-1">
-                <span className="font-bold text-white flex items-center gap-1.5">
+              <div className="p-3.5 rounded-xl bg-surface-container-low border border-white/[0.08] space-y-1">
+                <span className="font-bold text-on-surface flex items-center gap-1.5">
                   <Lock className="w-3.5 h-3.5 text-[#6D4AFF]" />
                   <span>Proton VPN CLI Account Authentication</span>
                 </span>
-                <p className="text-[11px] text-zinc-400">
+                <p className="text-[11px] text-on-surface-variant">
                   Authenticate using your Proton credentials. The official CLI daemon handles certificate renewal, server rotation, and P2P server connections automatically.
                 </p>
               </div>
@@ -476,8 +476,8 @@ export const ProtonModal: React.FC<ProtonModalProps> = ({ isOpen, onClose, onSta
                   <div className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
                     <div>
-                      <span className="font-bold text-white">Authenticated to Proton VPN</span>
-                      <p className="text-[11px] text-zinc-400">
+                      <span className="font-bold text-on-surface">Authenticated to Proton VPN</span>
+                      <p className="text-[11px] text-on-surface-variant">
                         Account: <strong className="text-emerald-300">{status.account_name}</strong>
                       </p>
                     </div>
@@ -488,7 +488,7 @@ export const ProtonModal: React.FC<ProtonModalProps> = ({ isOpen, onClose, onSta
                         type="button"
                         onClick={() => handleToggleConnect(true)}
                         disabled={connecting}
-                        className="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold font-mono transition-all"
+                        className="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold font-sans tabular-nums transition-all"
                       >
                         {connecting ? 'Connecting...' : 'Connect VPN'}
                       </button>
@@ -497,7 +497,7 @@ export const ProtonModal: React.FC<ProtonModalProps> = ({ isOpen, onClose, onSta
                       type="button"
                       onClick={handleSignOut}
                       disabled={authLoading}
-                      className="px-3 py-1.5 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/30 font-mono transition-all flex items-center gap-1.5"
+                      className="px-3 py-1.5 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/30 font-sans tabular-nums transition-all flex items-center gap-1.5"
                     >
                       <LogOut className="w-3.5 h-3.5" />
                       <span>Sign Out</span>
@@ -525,7 +525,7 @@ export const ProtonModal: React.FC<ProtonModalProps> = ({ isOpen, onClose, onSta
 
               <form onSubmit={handleSignIn} className="space-y-3.5">
                 <div>
-                  <label className="text-zinc-300 block mb-1 font-bold">
+                  <label className="text-on-surface block mb-1 font-bold">
                     Proton Username or Email:
                   </label>
                   <input
@@ -534,12 +534,12 @@ export const ProtonModal: React.FC<ProtonModalProps> = ({ isOpen, onClose, onSta
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     placeholder="user@proton.me or username"
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white focus:outline-none focus:border-[#6D4AFF]"
+                    className="w-full px-3 py-2 rounded-xl bg-surface-container-low border border-slate-700 text-on-surface focus:outline-none focus:border-[#6D4AFF]"
                   />
                 </div>
 
                 <div>
-                  <label className="text-zinc-300 block mb-1 font-bold">
+                  <label className="text-on-surface block mb-1 font-bold">
                     Proton Password:
                   </label>
                   <input
@@ -548,7 +548,7 @@ export const ProtonModal: React.FC<ProtonModalProps> = ({ isOpen, onClose, onSta
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••••••••••"
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white focus:outline-none focus:border-[#6D4AFF]"
+                    className="w-full px-3 py-2 rounded-xl bg-surface-container-low border border-slate-700 text-on-surface focus:outline-none focus:border-[#6D4AFF]"
                   />
                 </div>
 
@@ -563,7 +563,7 @@ export const ProtonModal: React.FC<ProtonModalProps> = ({ isOpen, onClose, onSta
                       value={totp}
                       onChange={(e) => setTotp(e.target.value)}
                       placeholder="6-digit authenticator code"
-                      className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-amber-500/50 text-white focus:outline-none focus:border-amber-400 font-mono tracking-widest text-center"
+                      className="w-full px-3 py-2 rounded-xl bg-surface-container-low border border-amber-500/50 text-on-surface focus:outline-none focus:border-amber-400 font-sans tabular-nums tracking-widest text-center"
                     />
                   </div>
                 )}
@@ -572,7 +572,7 @@ export const ProtonModal: React.FC<ProtonModalProps> = ({ isOpen, onClose, onSta
                   <button
                     type="submit"
                     disabled={authLoading || !username.trim() || !password.trim()}
-                    className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#6D4AFF] to-[#8B5CF6] hover:from-[#5B3CE6] hover:to-[#7C3AED] text-white font-bold font-mono transition-all shadow-lg shadow-[#6D4AFF]/20 disabled:opacity-50 flex items-center gap-2"
+                    className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#6D4AFF] to-[#8B5CF6] hover:from-[#5B3CE6] hover:to-[#7C3AED] text-on-surface font-bold font-sans tabular-nums transition-all shadow-none shadow-[#6D4AFF]/20 disabled:opacity-50 flex items-center gap-2"
                   >
                     {authLoading ? (
                       <>
@@ -594,12 +594,12 @@ export const ProtonModal: React.FC<ProtonModalProps> = ({ isOpen, onClose, onSta
           {/* TAB 3: ROUTED SERVICES */}
           {activeTab === 'routing' && (
             <div className="space-y-4">
-              <div className="p-3 rounded-xl bg-slate-900/60 border border-white/[0.08] flex items-center justify-between">
+              <div className="p-3 rounded-xl bg-surface-container-low border border-white/[0.08] flex items-center justify-between">
                 <div>
-                  <span className="font-bold text-white block">
+                  <span className="font-bold text-on-surface block">
                     Zero-Leak Media Platform Routing Matrix
                   </span>
-                  <span className="text-[11px] text-zinc-400">
+                  <span className="text-[11px] text-on-surface-variant">
                     When Proton Privacy Exit is active, default routing (0.0.0.0/0) directs all outgoing internet traffic through the Swiss tunnel.
                   </span>
                 </div>
@@ -607,7 +607,7 @@ export const ProtonModal: React.FC<ProtonModalProps> = ({ isOpen, onClose, onSta
                   className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
                     isConnected
                       ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                      : 'bg-zinc-800 text-zinc-400'
+                      : 'bg-surface-container text-on-surface-variant'
                   }`}
                 >
                   {isConnected ? 'TUNNEL ACTIVE' : 'TUNNEL INACTIVE'}
@@ -655,15 +655,15 @@ export const ProtonModal: React.FC<ProtonModalProps> = ({ isOpen, onClose, onSta
                 ].map((svc) => (
                   <div
                     key={svc.name}
-                    className="p-3 rounded-xl bg-slate-950 border border-white/[0.06] flex items-start gap-2.5"
+                    className="p-3 rounded-xl bg-surface-container-low border border-white/[0.06] flex items-start gap-2.5"
                   >
                     <span className="text-xl shrink-0 mt-0.5">{svc.icon}</span>
                     <div className="min-w-0">
                       <div className="flex items-center gap-1.5">
-                        <strong className="text-white text-xs">{svc.name}</strong>
-                        <span className="text-[10px] text-zinc-500 font-mono">{svc.port}</span>
+                        <strong className="text-on-surface text-xs">{svc.name}</strong>
+                        <span className="text-[10px] text-on-surface-variant font-sans tabular-nums">{svc.port}</span>
                       </div>
-                      <p className="text-[11px] text-zinc-400 leading-snug mt-0.5">
+                      <p className="text-[11px] text-on-surface-variant leading-snug mt-0.5">
                         {svc.benefit}
                       </p>
                     </div>
@@ -672,11 +672,11 @@ export const ProtonModal: React.FC<ProtonModalProps> = ({ isOpen, onClose, onSta
               </div>
 
               {/* Network Safeguards Verified */}
-              <div className="p-3.5 rounded-xl bg-slate-900/40 border border-white/[0.05] space-y-2">
-                <span className="text-[11px] font-bold text-zinc-300 block">
+              <div className="p-3.5 rounded-xl bg-surface-container-low border border-white/[0.05] space-y-2">
+                <span className="text-[11px] font-bold text-on-surface block">
                   Hardened Coexistence Safeguards:
                 </span>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] text-zinc-400">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] text-on-surface-variant">
                   <div className="flex items-center gap-1.5">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                     <span>Tailscale Mesh traffic protected (table 52)</span>
@@ -700,8 +700,8 @@ export const ProtonModal: React.FC<ProtonModalProps> = ({ isOpen, onClose, onSta
         </div>
 
         {/* Footer Bar */}
-        <div className="px-5 py-3 border-t border-white/10 bg-slate-950 flex items-center justify-between shrink-0">
-          <div className="text-[10px] text-zinc-500">
+        <div className="px-5 py-3 border-t border-outline-variant/50 bg-surface-container-low flex items-center justify-between shrink-0">
+          <div className="text-[10px] text-on-surface-variant">
             {isConnected ? (
               <span className="text-emerald-400 font-semibold">
                 ● Connected to Proton VPN • All traffic encrypted
@@ -712,7 +712,7 @@ export const ProtonModal: React.FC<ProtonModalProps> = ({ isOpen, onClose, onSta
           </div>
           <button
             onClick={onClose}
-            className="px-4 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-zinc-200 hover:text-white font-mono text-xs transition-colors"
+            className="px-4 py-1.5 rounded-xl bg-surface-container hover:bg-slate-700 text-on-surface hover:text-on-surface font-sans tabular-nums text-xs transition-colors"
           >
             Close
           </button>

@@ -5,6 +5,19 @@
 
 export type ServiceCategory = 'media' | 'downloads' | 'storage' | 'network' | 'system' | 'custom';
 
+export const DEFAULT_TAILSCALE_IP = '100.67.207.60';
+
+export function getTailscaleIp(): string {
+  if (typeof window !== 'undefined') {
+    const cached = localStorage.getItem('tinapple_tailscale_ip');
+    if (cached && cached !== '100.108.215.120') {
+      return cached;
+    }
+    return DEFAULT_TAILSCALE_IP;
+  }
+  return DEFAULT_TAILSCALE_IP;
+}
+
 export interface ApplianceServiceOptions {
   id: string;
   name: string;
@@ -56,13 +69,13 @@ export class ApplianceService {
    * Otherwise resolves clean subpath for reverse proxies without double slashes.
    */
   getOpenUrl(currentOrigin?: string): string {
-    let hostname = '100.108.215.120';
+    let hostname = getTailscaleIp();
     let isDirectPortAccess = true;
 
     if (typeof window !== 'undefined' && window.location) {
       const h = window.location.hostname;
       if (!h || h.endsWith('.ts.net') || h === 'tauri.localhost' || (h === 'localhost' && window.location.port === '1420')) {
-        hostname = '100.108.215.120';
+        hostname = getTailscaleIp();
       } else {
         hostname = h;
       }
@@ -75,7 +88,7 @@ export class ApplianceService {
         const u = new URL(currentOrigin);
         hostname = u.hostname;
         if (hostname.endsWith('.ts.net')) {
-          hostname = '100.108.215.120';
+          hostname = getTailscaleIp();
         }
         isDirectPortAccess = u.port === '8088' || this.directPortPreferred;
       } catch {
@@ -182,7 +195,7 @@ export class ApplianceServiceRegistry {
     if (typeof idOrPort === 'number') {
       const match = this.getByPort(idOrPort);
       if (match) return match.getOpenUrl();
-      const host = typeof window !== 'undefined' ? window.location.hostname : '100.108.215.120';
+      const host = typeof window !== 'undefined' ? window.location.hostname : getTailscaleIp();
       return `http://${host}:${idOrPort}/`;
     }
     const match = this.get(idOrPort);

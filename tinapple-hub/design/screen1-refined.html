@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Tinapple OS - Master Bento Dashboard</title>
+<!-- Material Symbols Outlined font -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts Roboto Flex -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wght@8..144,300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS v3 with plugins -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "tertiary-fixed": "#ffddb8",
+            "on-surface-variant": "#94a3b8",
+            "surface-container-low": "#171c20",
+            "secondary-fixed-dim": "#c1c6d8",
+            "primary-fixed": "#c4e7ff",
+            "surface-container": "#1b2024",
+            "on-surface": "#f8fafc",
+            "on-primary-container": "#e0f2fe",
+            "on-tertiary-fixed": "#2a1700",
+            "on-background": "#dee3e8",
+            "on-error": "#690005",
+            "error": "#f87171",
+            "surface-container-lowest": "#05070f",
+            "primary-container": "#38bdf8",
+            "on-tertiary-fixed-variant": "#653e00",
+            "surface-container-highest": "#1c2940",
+            "surface-container-high": "#252b2e",
+            "on-primary-fixed-variant": "#004c69",
+            "primary": "#38bdf8",
+            "on-primary": "#032d42",
+            "surface-bright": "#343a3e",
+            "surface-dim": "#0f1418",
+            "inverse-on-surface": "#2c3135",
+            "outline-variant": "#3e484f",
+            "on-secondary": "#2a303e",
+            "secondary-container": "#434958",
+            "on-tertiary": "#472a00",
+            "tertiary": "#ffc176",
+            "inverse-primary": "#00668a",
+            "surface": "#101828",
+            "on-primary-fixed": "#001e2c",
+            "error-container": "#93000a",
+            "inverse-surface": "#dee3e8",
+            "secondary": "#c1c6d8",
+            "on-tertiary-container": "#613b00",
+            "surface-tint": "#7bd0ff",
+            "tertiary-fixed-dim": "#ffb960",
+            "primary-fixed-dim": "#7bd0ff",
+            "on-secondary-container": "#b3b8ca",
+            "on-error-container": "#ffdad6",
+            "tertiary-container": "#f1a02b",
+            "surface-variant": "#303539",
+            "on-secondary-fixed-variant": "#414756",
+            "outline": "#334155",
+            "background": "#0f1418",
+            "secondary-fixed": "#dde2f5",
+            "on-secondary-fixed": "#161b29"
+          },
+          "borderRadius": {
+            "DEFAULT": "1rem",
+            "lg": "2rem",
+            "xl": "3rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "margin": "1.5rem",
+            "space-lg": "1.5rem",
+            "space-sm": "0.5rem",
+            "space-xs": "0.25rem",
+            "space-xl": "2rem",
+            "space-md": "1rem",
+            "gutter": "1rem"
+          },
+          "fontFamily": {
+            "headline-md": ["Roboto Flex"],
+            "title-medium": ["Roboto Flex"],
+            "headline-lg": ["Roboto Flex"],
+            "label-medium": ["Roboto Flex"],
+            "body-medium": ["Roboto Flex"],
+            "title-large": ["Roboto Flex"]
+          },
+          "fontSize": {
+            "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "500" }],
+            "title-medium": ["16px", { "lineHeight": "24px", "fontWeight": "500" }],
+            "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "500" }],
+            "label-medium": ["12px", { "lineHeight": "16px", "fontWeight": "500" }],
+            "body-medium": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+            "title-large": ["22px", { "lineHeight": "28px", "fontWeight": "500" }]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    .font-tabular {
+      font-variant-numeric: tabular-nums;
+    }
+    .custom-scroll::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #3e484f;
+      border-radius: 9999px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: transparent;
+    }
+  </style>
+</head>
+<body class="bg-background text-on-surface antialiased flex min-h-screen overflow-x-hidden selection:bg-primary-container/20 selection:text-primary">
+<!-- LEFT COLLAPSIBLE SIDEBAR NAVIGATION (w-64) -->
+<aside class="fixed top-0 left-0 h-screen w-64 border-r border-outline-variant bg-surface-container-low flex flex-col justify-between p-space-md z-40">
+<div class="flex flex-col gap-space-md">
+<!-- Brand Header -->
+<div class="flex items-center gap-space-sm px-space-xs py-space-xs">
+<div class="w-10 h-10 rounded-DEFAULT bg-primary-container/20 border border-primary/40 flex items-center justify-center text-primary flex-shrink-0">
+<span class="material-symbols-outlined text-primary" data-icon="dns">dns</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="text-title-medium font-title-medium font-medium text-on-surface tracking-tight truncate">Tinapple OS</span>
+<span class="text-label-medium font-label-medium text-on-surface-variant truncate font-tabular">tinapple-node</span>
+</div>
+</div>
+<!-- Quick Action CTA & Tools Chips -->
+<div class="flex flex-col gap-space-xs pt-space-xs">
+<button class="w-full flex items-center justify-between px-space-md py-space-sm rounded-DEFAULT bg-surface-container-high hover:bg-surface-variant border border-outline-variant text-on-surface text-label-medium font-label-medium transition-colors duration-200 active:scale-[0.98]">
+<span class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-primary text-[18px]" data-icon="build">build</span>
+            Server Tools
+          </span>
+<span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+</button>
+<div class="flex flex-wrap gap-1 mt-1">
+<span class="px-2 py-0.5 rounded-full bg-surface-container-highest text-on-surface-variant text-[11px] font-tabular border border-outline-variant">Tailscale</span>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-highest text-on-surface-variant text-[11px] font-tabular border border-outline-variant">Logs</span>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-highest text-on-surface-variant text-[11px] font-tabular border border-outline-variant">Proton VPN</span>
+</div>
+</div>
+<!-- Navigation Links -->
+<nav class="flex flex-col gap-1 mt-space-xs">
+<!-- Active: Dashboard -->
+<a class="flex items-center gap-space-md px-space-md py-space-sm rounded-DEFAULT bg-primary-container/15 text-primary font-medium transition-colors duration-200" href="#dashboard">
+<span class="material-symbols-outlined" data-icon="dashboard" style="font-variation-settings: 'FILL' 1;">dashboard</span>
+<span class="text-label-medium font-label-medium">Dashboard</span>
+</a>
+<!-- Inactive: Services -->
+<a class="flex items-center gap-space-md px-space-md py-space-sm rounded-DEFAULT text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors duration-200" href="#services">
+<span class="material-symbols-outlined" data-icon="dns">dns</span>
+<span class="text-label-medium font-label-medium">Services</span>
+</a>
+<!-- Inactive: App Store -->
+<a class="flex items-center gap-space-md px-space-md py-space-sm rounded-DEFAULT text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors duration-200" href="#store">
+<span class="material-symbols-outlined" data-icon="storefront">storefront</span>
+<span class="text-label-medium font-label-medium">App Store</span>
+</a>
+<!-- Inactive: Guides -->
+<a class="flex items-center gap-space-md px-space-md py-space-sm rounded-DEFAULT text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors duration-200" href="#guides">
+<span class="material-symbols-outlined" data-icon="menu_book">menu_book</span>
+<span class="text-label-medium font-label-medium">Guides</span>
+</a>
+<!-- Inactive: Hardware -->
+<a class="flex items-center gap-space-md px-space-md py-space-sm rounded-DEFAULT text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors duration-200" href="#hardware">
+<span class="material-symbols-outlined" data-icon="memory">memory</span>
+<span class="text-label-medium font-label-medium">Hardware</span>
+</a>
+<!-- Inactive: Terminal -->
+<a class="flex items-center gap-space-md px-space-md py-space-sm rounded-DEFAULT text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors duration-200" href="#terminal">
+<span class="material-symbols-outlined" data-icon="terminal">terminal</span>
+<span class="text-label-medium font-label-medium">Terminal</span>
+</a>
+<!-- Inactive: Error Logger -->
+<a class="flex items-center gap-space-md px-space-md py-space-sm rounded-DEFAULT text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors duration-200" href="#logs">
+<span class="material-symbols-outlined" data-icon="bug_report">bug_report</span>
+<span class="text-label-medium font-label-medium">Error Logger</span>
+</a>
+<!-- Inactive: Settings -->
+<a class="flex items-center gap-space-md px-space-md py-space-sm rounded-DEFAULT text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors duration-200" href="#settings">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="text-label-medium font-label-medium">Settings</span>
+</a>
+</nav>
+</div>
+<!-- Bottom Controls & Footer -->
+<div class="flex flex-col gap-space-xs pt-space-md border-t border-outline-variant">
+<div class="flex items-center justify-between px-space-sm py-space-xs rounded-DEFAULT bg-surface-container-high/60 border border-outline-variant/60">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-container">
+<span class="material-symbols-outlined text-[18px]" data-icon="account_circle">account_circle</span>
+</div>
+<div class="flex flex-col">
+<span class="text-label-medium font-label-medium text-on-surface">Profile</span>
+<span class="text-[10px] text-primary font-tabular">sysadmin</span>
+</div>
+</div>
+<div class="flex items-center gap-1">
+<button class="w-7 h-7 rounded-full flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors" title="Dark Theme">
+<span class="material-symbols-outlined text-[16px]" data-icon="dark_mode">dark_mode</span>
+</button>
+<button class="w-7 h-7 rounded-full flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors" title="Pin Drawer">
+<span class="material-symbols-outlined text-[16px]" data-icon="push_pin">push_pin</span>
+</button>
+</div>
+</div>
+</div>
+</aside>
+<!-- MAIN WRAPPER & CANVAS (Desktop 1440px target layout) -->
+<div class="ml-64 flex-1 flex flex-col min-w-0 bg-background pb-28">
+<!-- TOP SYSTEM STATUS BAR -->
+<header class="sticky top-0 w-full border-b border-outline-variant bg-surface-container z-30">
+<div class="flex items-center justify-between px-space-lg py-space-sm w-full">
+<!-- Brand & Hostname Status -->
+<div class="flex items-center gap-space-md">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+<span class="text-title-medium font-title-medium text-on-surface font-medium">tinapple-node</span>
+</div>
+<!-- Network Badges -->
+<div class="hidden lg:flex items-center gap-2 font-tabular">
+<span class="px-2.5 py-1 rounded-DEFAULT bg-surface-container-high border border-outline-variant text-label-medium font-label-medium text-on-surface-variant flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[14px] text-primary" data-icon="wifi">wifi</span>
+              192.168.1.42
+            </span>
+<span class="px-2.5 py-1 rounded-DEFAULT bg-surface-container-high border border-outline-variant text-label-medium font-label-medium text-on-surface-variant flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[14px] text-primary" data-icon="hub">hub</span>
+              100.72.18.4
+            </span>
+<span class="px-2.5 py-1 rounded-DEFAULT bg-surface-container-high border border-outline-variant text-label-medium font-label-medium text-on-surface-variant">
+              Up 4d 06:24
+            </span>
+<span class="px-2.5 py-1 rounded-DEFAULT bg-surface-container-high border border-outline-variant text-label-medium font-label-medium text-on-surface-variant">
+              Load 0.42
+            </span>
+</div>
+</div>
+<!-- Trailing System Actions -->
+<div class="flex items-center gap-space-sm">
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary-container/20 border border-primary/40 text-primary text-label-medium font-label-medium hover:bg-primary-container/30 transition-colors duration-200 active:scale-[0.98]"><span class="material-symbols-outlined text-[16px]" data-icon="system_update">system_update</span>
+            v0.0.1 Available</button>
+<button class="p-2 rounded-full hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-colors" title="Quick Terminal">
+<span class="material-symbols-outlined text-[20px]" data-icon="terminal">terminal</span>
+</button>
+<button class="p-2 rounded-full hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-colors" title="Notifications">
+<span class="material-symbols-outlined text-[20px]" data-icon="notifications">notifications</span>
+</button>
+<div class="h-6 w-px bg-outline-variant mx-1"></div>
+<button class="px-3 py-1 rounded-DEFAULT bg-surface-container-high hover:bg-surface-variant text-error border border-outline-variant text-label-medium font-label-medium transition-colors">
+            Reboot
+          </button>
+</div>
+</div>
+</header>
+<!-- MAIN BENTO CONTENT CANVAS (HomarrBoard Desktop 1440px) -->
+<main class="w-full max-w-[1440px] mx-auto p-space-lg flex flex-col gap-space-lg">
+<!-- SECTION 1: TELEMETRY CARDS (ROW 1: 4 COLUMNS) -->
+<section class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-space-md">
+<!-- CPU Usage Card -->
+<div class="bg-surface-container rounded-[28px] p-space-md border border-outline-variant flex flex-col justify-between">
+<div class="flex items-center justify-between mb-space-sm">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[20px]" data-icon="memory">memory</span>
+<span class="text-label-medium font-label-medium text-on-surface-variant">CPU Usage</span>
+</div>
+<span class="text-[11px] font-tabular px-2 py-0.5 rounded-full bg-surface-container-high text-primary border border-outline-variant">42°C</span>
+</div>
+<div class="flex items-baseline justify-between">
+<div class="flex items-baseline gap-2">
+<span class="text-headline-lg font-headline-lg font-bold font-tabular text-on-surface">34%</span>
+<span class="text-label-medium font-label-medium text-on-surface-variant">Core i7-12700T</span>
+</div>
+<span class="text-label-medium font-label-medium text-emerald-400 font-tabular">8 active</span>
+</div>
+<!-- Sparkline representation & core tracks -->
+<div class="mt-space-sm bg-surface-container-low p-2 rounded-[12px] border border-outline-variant/60 flex flex-col gap-1.5">
+<div class="w-full bg-surface-container-high h-2 rounded-full overflow-hidden">
+<div class="bg-primary h-full rounded-full transition-all duration-500" style="width: 34%;"></div>
+</div>
+<div class="flex justify-between items-center text-[10px] text-on-surface-variant font-tabular">
+<span>Freq: 2.40 GHz</span>
+<span>Gov: schedutil</span>
+<span>Loads: 0.42, 0.38, 0.31</span>
+</div>
+</div>
+</div>
+<!-- Memory / RAM Card -->
+<div class="bg-surface-container rounded-[28px] p-space-md border border-outline-variant flex flex-col justify-between">
+<div class="flex items-center justify-between mb-space-sm">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[20px]" data-icon="developer_board">developer_board</span>
+<span class="text-label-medium font-label-medium text-on-surface-variant">System Memory</span>
+</div>
+<span class="text-[11px] font-tabular px-2 py-0.5 rounded-full bg-surface-container-high text-emerald-400 border border-outline-variant">Swap 0%</span>
+</div>
+<div class="flex items-baseline justify-between">
+<div class="flex items-baseline gap-1">
+<span class="text-headline-lg font-headline-lg font-bold font-tabular text-on-surface">18.4</span>
+<span class="text-label-medium font-label-medium text-on-surface-variant">/ 32 GB</span>
+</div>
+<span class="text-title-medium font-title-medium font-tabular text-primary">57%</span>
+</div>
+<div class="mt-space-sm bg-surface-container-low p-2 rounded-[12px] border border-outline-variant/60 flex flex-col gap-1.5">
+<div class="w-full bg-surface-container-high h-2 rounded-full overflow-hidden flex">
+<div class="bg-primary h-full" style="width: 57%;"></div>
+<div class="bg-tertiary h-full" style="width: 19%;"></div>
+</div>
+<div class="flex justify-between items-center text-[10px] text-on-surface-variant font-tabular">
+<span>Used: 18.4 GB</span>
+<span class="text-tertiary">Cached: 6.2 GB</span>
+<span>Free: 7.4 GB</span>
+</div>
+</div>
+</div>
+<!-- Storage / ZFS Pool Card -->
+<div class="bg-surface-container rounded-[28px] p-space-md border border-outline-variant flex flex-col justify-between">
+<div class="flex items-center justify-between mb-space-sm"><div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[20px]" data-icon="hard_drive">hard_drive</span>
+<span class="text-label-medium font-label-medium text-on-surface-variant">Btrfs Storage</span>
+</div>
+<span class="text-[11px] font-tabular px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Snapper Clean</span></div>
+<div class="flex items-baseline justify-between">
+<div class="flex items-baseline gap-1">
+<span class="text-headline-lg font-headline-lg font-bold font-tabular text-on-surface">3.8</span>
+<span class="text-label-medium font-label-medium text-on-surface-variant">/ 8.0 TB</span>
+</div>
+<span class="text-title-medium font-title-medium font-tabular text-primary">47%</span>
+</div>
+<div class="mt-space-sm bg-surface-container-low p-2 rounded-[12px] border border-outline-variant/60 flex flex-col gap-1.5">
+<div class="w-full bg-surface-container-high h-2 rounded-full overflow-hidden">
+<div class="bg-primary h-full rounded-full" style="width: 47%;"></div>
+</div>
+<div class="flex justify-between items-center text-[10px] text-on-surface-variant font-tabular"><span>Subvolume: root @</span>
+<span>Snapper: Hourly/Daily</span>
+<span>Status: Healthy</span></div>
+</div>
+</div>
+<!-- Network Bandwidth Card -->
+<div class="bg-surface-container rounded-[28px] p-space-md border border-outline-variant flex flex-col justify-between">
+<div class="flex items-center justify-between mb-space-sm">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[20px]" data-icon="swap_vert">swap_vert</span>
+<span class="text-label-medium font-label-medium text-on-surface-variant">Network Activity</span>
+</div>
+<span class="text-[11px] font-tabular px-2 py-0.5 rounded-full bg-surface-container-high text-primary border border-outline-variant">DERP 18ms</span>
+</div>
+<div class="grid grid-cols-2 gap-2 my-auto">
+<div class="flex flex-col">
+<span class="text-[11px] text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px] text-emerald-400" data-icon="arrow_downward">arrow_downward</span> Down
+              </span>
+<span class="text-headline-md font-headline-md font-bold font-tabular text-on-surface">48.2 <span class="text-body-medium font-body-medium text-on-surface-variant font-normal">MB/s</span></span>
+</div>
+<div class="flex flex-col">
+<span class="text-[11px] text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px] text-primary" data-icon="arrow_upward">arrow_upward</span> Up
+              </span>
+<span class="text-headline-md font-headline-md font-bold font-tabular text-on-surface">12.4 <span class="text-body-medium font-body-medium text-on-surface-variant font-normal">MB/s</span></span>
+</div>
+</div>
+<div class="mt-space-sm bg-surface-container-low p-2 rounded-[12px] border border-outline-variant/60 flex justify-between items-center text-[10px] text-on-surface-variant font-tabular">
+<span>Interface: enp3s0</span>
+<span>Tailscale: Active</span>
+<span>Drops: 0</span>
+</div>
+</div>
+</section>
+<!-- SECTION 2: SERVICES GRID & QUICKCONNECT PAIRING (ROW 2: 2 COLUMNS + 1 COLUMN) -->
+<section class="grid grid-cols-1 lg:grid-cols-3 gap-space-md">
+<!-- Active Services Bento Widget (Spans 2 columns) -->
+<div class="lg:col-span-2 bg-surface-container rounded-[28px] p-space-md border border-outline-variant flex flex-col justify-between">
+<div class="flex items-center justify-between mb-space-md">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[20px]" data-icon="grid_view">grid_view</span>
+<h2 class="text-title-medium font-title-medium text-on-surface">Active Services</h2>
+<span class="px-2 py-0.5 rounded-full bg-primary-container/20 text-primary text-label-medium font-label-medium font-tabular">6 / 6 Online</span>
+</div>
+<div class="flex items-center gap-2">
+<button class="text-label-medium font-label-medium text-on-surface-variant hover:text-on-surface px-2.5 py-1 rounded-DEFAULT bg-surface-container-high border border-outline-variant transition-colors">
+                Manage All
+              </button>
+</div>
+</div>
+<!-- Services Grid (6 services with exact M3 switches) -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-space-md"><!-- Jellyfin -->
+<div class="bg-surface-container-low rounded-[12px] p-space-sm border border-outline-variant/60 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-DEFAULT bg-surface-container-high flex items-center justify-center text-primary border border-outline-variant">
+<span class="material-symbols-outlined text-[20px]" data-icon="movie">movie</span>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-1.5">
+<span class="text-body-medium font-body-medium font-medium text-on-surface">Jellyfin</span>
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+</div>
+<span class="text-[11px] text-on-surface-variant font-tabular">Port 8096 • Media Streaming</span>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<button class="text-on-surface-variant hover:text-on-surface p-1" title="Logs">
+<span class="material-symbols-outlined text-[16px]" data-icon="description">description</span>
+</button>
+<div class="w-[52px] h-[32px] rounded-full bg-primary flex items-center px-1 cursor-pointer transition-colors duration-200">
+<div class="w-[24px] h-[24px] rounded-full bg-on-primary ml-auto shadow-sm"></div>
+</div>
+</div>
+</div>
+<!-- qBittorrent -->
+<div class="bg-surface-container-low rounded-[12px] p-space-sm border border-outline-variant/60 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-DEFAULT bg-surface-container-high flex items-center justify-center text-primary border border-outline-variant">
+<span class="material-symbols-outlined text-[20px]" data-icon="download">download</span>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-1.5">
+<span class="text-body-medium font-body-medium font-medium text-on-surface">qBittorrent</span>
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+</div>
+<span class="text-[11px] text-on-surface-variant font-tabular">Port 8080 • Transfers Active</span>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<button class="text-on-surface-variant hover:text-on-surface p-1" title="Logs">
+<span class="material-symbols-outlined text-[16px]" data-icon="description">description</span>
+</button>
+<div class="w-[52px] h-[32px] rounded-full bg-primary flex items-center px-1 cursor-pointer transition-colors duration-200">
+<div class="w-[24px] h-[24px] rounded-full bg-on-primary ml-auto shadow-sm"></div>
+</div>
+</div>
+</div>
+<!-- Suwayomi -->
+<div class="bg-surface-container-low rounded-[12px] p-space-sm border border-outline-variant/60 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-DEFAULT bg-surface-container-high flex items-center justify-center text-tertiary border border-outline-variant">
+<span class="material-symbols-outlined text-[20px]" data-icon="auto_stories">auto_stories</span>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-1.5">
+<span class="text-body-medium font-body-medium font-medium text-on-surface">Suwayomi</span>
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+</div>
+<span class="text-[11px] text-on-surface-variant font-tabular">Port 4567 • Manga Server</span>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<button class="text-on-surface-variant hover:text-on-surface p-1" title="Logs">
+<span class="material-symbols-outlined text-[16px]" data-icon="description">description</span>
+</button>
+<div class="w-[52px] h-[32px] rounded-full bg-primary flex items-center px-1 cursor-pointer transition-colors duration-200">
+<div class="w-[24px] h-[24px] rounded-full bg-on-primary ml-auto shadow-sm"></div>
+</div>
+</div>
+</div>
+<!-- Radarr -->
+<div class="bg-surface-container-low rounded-[12px] p-space-sm border border-outline-variant/60 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-DEFAULT bg-surface-container-high flex items-center justify-center text-tertiary border border-outline-variant">
+<span class="material-symbols-outlined text-[20px]" data-icon="theaters">theaters</span>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-1.5">
+<span class="text-body-medium font-body-medium font-medium text-on-surface">Radarr</span>
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+</div>
+<span class="text-[11px] text-on-surface-variant font-tabular">Port 7878 • Movie Automation</span>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<button class="text-on-surface-variant hover:text-on-surface p-1" title="Logs">
+<span class="material-symbols-outlined text-[16px]" data-icon="description">description</span>
+</button>
+<div class="w-[52px] h-[32px] rounded-full bg-primary flex items-center px-1 cursor-pointer transition-colors duration-200">
+<div class="w-[24px] h-[24px] rounded-full bg-on-primary ml-auto shadow-sm"></div>
+</div>
+</div>
+</div>
+<!-- Navidrome -->
+<div class="bg-surface-container-low rounded-[12px] p-space-sm border border-outline-variant/60 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-DEFAULT bg-surface-container-high flex items-center justify-center text-emerald-400 border border-outline-variant">
+<span class="material-symbols-outlined text-[20px]" data-icon="audiotrack">audiotrack</span>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-1.5">
+<span class="text-body-medium font-body-medium font-medium text-on-surface">Navidrome</span>
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+</div>
+<span class="text-[11px] text-on-surface-variant font-tabular">Port 4533 • Music Streamer</span>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<button class="text-on-surface-variant hover:text-on-surface p-1" title="Logs">
+<span class="material-symbols-outlined text-[16px]" data-icon="description">description</span>
+</button>
+<div class="w-[52px] h-[32px] rounded-full bg-primary flex items-center px-1 cursor-pointer transition-colors duration-200">
+<div class="w-[24px] h-[24px] rounded-full bg-on-primary ml-auto shadow-sm"></div>
+</div>
+</div>
+</div>
+<!-- FileBrowser -->
+<div class="bg-surface-container-low rounded-[12px] p-space-sm border border-outline-variant/60 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-DEFAULT bg-surface-container-high flex items-center justify-center text-primary border border-outline-variant">
+<span class="material-symbols-outlined text-[20px]" data-icon="folder_open">folder_open</span>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-1.5">
+<span class="text-body-medium font-body-medium font-medium text-on-surface">FileBrowser</span>
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+</div>
+<span class="text-[11px] text-on-surface-variant font-tabular">Port 8081 • Web File Manager</span>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<button class="text-on-surface-variant hover:text-on-surface p-1" title="Logs">
+<span class="material-symbols-outlined text-[16px]" data-icon="description">description</span>
+</button>
+<div class="w-[52px] h-[32px] rounded-full bg-primary flex items-center px-1 cursor-pointer transition-colors duration-200">
+<div class="w-[24px] h-[24px] rounded-full bg-on-primary ml-auto shadow-sm"></div>
+</div>
+</div>
+</div></div>
+</div>
+<!-- QuickConnect & LAN Pairing Card (Spans 1 column) -->
+<div class="bg-surface-container rounded-[28px] p-space-md border border-outline-variant flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between mb-space-sm">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[20px]" data-icon="qr_code_2">qr_code_2</span>
+<h2 class="text-title-medium font-title-medium text-on-surface">QuickConnect &amp; LAN</h2>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[11px] border border-emerald-500/20 font-tabular">Pairing Active</span>
+</div>
+<p class="text-body-medium font-body-medium text-on-surface-variant text-[13px] mb-space-md">
+              Scan to authenticate external client or pair mobile companion app directly.
+            </p>
+<!-- SVG QR Code Representation -->
+<div class="flex justify-center my-2">
+<div class="p-3 bg-surface-container-low border border-outline-variant rounded-[16px] flex items-center justify-center">
+<svg fill="none" height="112" viewbox="0 0 112 112" width="112" xmlns="http://www.w3.org/2000/svg">
+<!-- QR Code pattern simulated with pristine SVG rects -->
+<rect fill="#171c20" height="112" rx="8" width="112"></rect>
+<rect height="28" rx="4" stroke="#38bdf8" stroke-width="3" width="28" x="12" y="12"></rect>
+<rect fill="#38bdf8" height="16" rx="2" width="16" x="18" y="18"></rect>
+<rect height="28" rx="4" stroke="#38bdf8" stroke-width="3" width="28" x="72" y="12"></rect>
+<rect fill="#38bdf8" height="16" rx="2" width="16" x="78" y="18"></rect>
+<rect height="28" rx="4" stroke="#38bdf8" stroke-width="3" width="28" x="12" y="72"></rect>
+<rect fill="#38bdf8" height="16" rx="2" width="16" x="18" y="78"></rect>
+<!-- Data matrix dots -->
+<rect fill="#f8fafc" height="6" rx="1" width="6" x="48" y="14"></rect>
+<rect fill="#f8fafc" height="6" rx="1" width="6" x="58" y="14"></rect>
+<rect fill="#f8fafc" height="6" rx="1" width="6" x="48" y="24"></rect>
+<rect fill="#f8fafc" height="6" rx="1" width="6" x="58" y="34"></rect>
+<rect fill="#f8fafc" height="6" rx="1" width="6" x="48" y="44"></rect>
+<rect fill="#f8fafc" height="6" rx="1" width="6" x="20" y="48"></rect>
+<rect fill="#f8fafc" height="6" rx="1" width="6" x="30" y="58"></rect>
+<rect fill="#f8fafc" height="6" rx="1" width="6" x="44" y="58"></rect>
+<rect fill="#38bdf8" height="6" rx="1" width="6" x="58" y="58"></rect>
+<rect fill="#f8fafc" height="6" rx="1" width="6" x="72" y="48"></rect>
+<rect fill="#f8fafc" height="6" rx="1" width="6" x="84" y="58"></rect>
+<rect fill="#f8fafc" height="6" rx="1" width="6" x="94" y="48"></rect>
+<rect fill="#f8fafc" height="6" rx="1" width="6" x="48" y="72"></rect>
+<rect fill="#f8fafc" height="6" rx="1" width="6" x="58" y="82"></rect>
+<rect fill="#f8fafc" height="6" rx="1" width="6" x="72" y="72"></rect>
+<rect fill="#f8fafc" height="6" rx="1" width="6" x="84" y="82"></rect>
+<rect fill="#f8fafc" height="6" rx="1" width="6" x="94" y="72"></rect>
+<rect fill="#f8fafc" height="6" rx="1" width="6" x="72" y="92"></rect>
+<rect fill="#38bdf8" height="6" rx="1" width="6" x="84" y="92"></rect>
+</svg>
+</div>
+</div>
+</div>
+<!-- Direct Addresses -->
+<div class="flex flex-col gap-2 mt-space-sm font-tabular">
+<div class="flex items-center justify-between p-2 rounded-[12px] bg-surface-container-low border border-outline-variant/60">
+<div class="flex items-center gap-2 min-w-0">
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant flex-shrink-0" data-icon="lan">lan</span>
+<span class="text-label-medium font-label-medium text-on-surface truncate">http://tinapple-node.local:8088</span>
+</div>
+<button class="p-1 hover:text-primary text-on-surface-variant transition-colors" title="Copy URL">
+<span class="material-symbols-outlined text-[16px]" data-icon="content_copy">content_copy</span>
+</button>
+</div>
+<div class="flex items-center justify-between p-2 rounded-[12px] bg-surface-container-low border border-outline-variant/60">
+<div class="flex items-center gap-2 min-w-0">
+<span class="material-symbols-outlined text-[16px] text-primary flex-shrink-0" data-icon="verified_user">verified_user</span>
+<span class="text-label-medium font-label-medium text-on-surface truncate">http://tinapple-node.local:8088</span>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-high text-[10px] text-primary border border-outline-variant">MagicDNS</span>
+</div>
+</div>
+</div>
+</section>
+<!-- SECTION 3: TRANSFERS, MANGA READER & PRIVACY (ROW 3: 3 EQUAL COLUMNS) -->
+<section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-space-md">
+<!-- Active Transfers / Torrent Client Card -->
+<div class="bg-surface-container rounded-[28px] p-space-md border border-outline-variant flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between mb-space-sm">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[20px]" data-icon="downloading">downloading</span>
+<h3 class="text-title-medium font-title-medium text-on-surface">Transfers (qBittorrent)</h3>
+</div>
+<span class="text-label-medium font-label-medium text-primary font-tabular">4 active</span>
+</div>
+<!-- Transfer Items List -->
+<div class="flex flex-col gap-space-sm mt-space-sm">
+<!-- Item 1 -->
+<div class="p-2 rounded-[12px] bg-surface-container-low border border-outline-variant/60 flex flex-col gap-1.5">
+<div class="flex justify-between items-center text-label-medium font-label-medium">
+<span class="text-on-surface truncate pr-2">ubuntu-24.04-live-server-arm64.iso</span>
+<span class="text-primary font-tabular text-[11px] flex-shrink-0">86%</span>
+</div>
+<div class="w-full bg-surface-container-high h-1.5 rounded-full overflow-hidden">
+<div class="bg-primary h-full rounded-full" style="width: 86%;"></div>
+</div>
+<div class="flex justify-between items-center text-[10px] text-on-surface-variant font-tabular">
+<span>DL: 18.2 MB/s</span>
+<span>Seeds: 42 (184)</span>
+<span>ETA: 2m 14s</span>
+</div>
+</div>
+<!-- Item 2 -->
+<div class="p-2 rounded-[12px] bg-surface-container-low border border-outline-variant/60 flex flex-col gap-1.5">
+<div class="flex justify-between items-center text-label-medium font-label-medium">
+<span class="text-on-surface truncate pr-2">archlinux-x86_64-latest.iso</span>
+<span class="text-primary font-tabular text-[11px] flex-shrink-0">43%</span>
+</div>
+<div class="w-full bg-surface-container-high h-1.5 rounded-full overflow-hidden">
+<div class="bg-primary h-full rounded-full" style="width: 43%;"></div>
+</div>
+<div class="flex justify-between items-center text-[10px] text-on-surface-variant font-tabular">
+<span>DL: 9.4 MB/s</span>
+<span>Seeds: 28 (96)</span>
+<span>ETA: 6m 40s</span>
+</div>
+</div>
+<!-- Item 3 -->
+<div class="p-2 rounded-[12px] bg-surface-container-low border border-outline-variant/60 flex flex-col gap-1.5">
+<div class="flex justify-between items-center text-label-medium font-label-medium">
+<span class="text-on-surface truncate pr-2">debian-12.5.0-netinst.iso</span>
+<span class="text-emerald-400 font-tabular text-[11px] flex-shrink-0">Seeding</span>
+</div>
+<div class="w-full bg-surface-container-high h-1.5 rounded-full overflow-hidden">
+<div class="bg-emerald-400 h-full rounded-full" style="width: 100%;"></div>
+</div>
+<div class="flex justify-between items-center text-[10px] text-on-surface-variant font-tabular">
+<span>UP: 4.1 MB/s</span>
+<span>Ratio: 2.41</span>
+<span>Peers: 12</span>
+</div>
+</div>
+</div>
+</div>
+<div class="flex justify-between items-center pt-space-sm border-t border-outline-variant/60 mt-space-sm text-[11px] text-on-surface-variant font-tabular">
+<span>Global Limit: 60 MB/s</span>
+<span class="text-primary">DHT: 498 nodes</span>
+</div>
+</div>
+<!-- Manga Reader / Komga & Suwayomi Library Card -->
+<div class="bg-surface-container rounded-[28px] p-space-md border border-outline-variant flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between mb-space-sm">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-tertiary text-[20px]" data-icon="auto_stories">auto_stories</span>
+<h3 class="text-title-medium font-title-medium text-on-surface">Manga Reader &amp; Books</h3>
+</div>
+<span class="text-label-medium font-label-medium text-tertiary font-tabular">12 unread</span>
+</div>
+<!-- Manga/Book Items -->
+<div class="flex flex-col gap-space-sm mt-space-sm">
+<div class="p-2 rounded-[12px] bg-surface-container-low border border-outline-variant/60 flex items-center justify-between">
+<div class="flex items-center gap-2.5 min-w-0">
+<div class="w-9 h-12 bg-surface-container-high rounded-[6px] border border-outline-variant flex items-center justify-center flex-shrink-0 text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]" data-icon="book">book</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="text-label-medium font-label-medium text-on-surface truncate">Berserk - Deluxe Edition</span>
+<span class="text-[11px] text-on-surface-variant font-tabular">Chapter 374 • Suwayomi</span>
+</div>
+</div>
+<button class="px-2.5 py-1 rounded-DEFAULT bg-primary-container/20 text-primary text-[11px] font-label-medium hover:bg-primary-container/30 transition-colors">
+                  Read
+                </button>
+</div>
+<div class="p-2 rounded-[12px] bg-surface-container-low border border-outline-variant/60 flex items-center justify-between">
+<div class="flex items-center gap-2.5 min-w-0">
+<div class="w-9 h-12 bg-surface-container-high rounded-[6px] border border-outline-variant flex items-center justify-center flex-shrink-0 text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]" data-icon="menu_book">menu_book</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="text-label-medium font-label-medium text-on-surface truncate">Chainsaw Man (Pt. 2)</span>
+<span class="text-[11px] text-on-surface-variant font-tabular">Chapter 168 • Komga</span>
+</div>
+</div>
+<button class="px-2.5 py-1 rounded-DEFAULT bg-surface-container-high text-on-surface text-[11px] font-label-medium hover:bg-surface-variant transition-colors border border-outline-variant">
+                  Sync
+                </button>
+</div>
+<div class="p-2 rounded-[12px] bg-surface-container-low border border-outline-variant/60 flex items-center justify-between">
+<div class="flex items-center gap-2.5 min-w-0">
+<div class="w-9 h-12 bg-surface-container-high rounded-[6px] border border-outline-variant flex items-center justify-center flex-shrink-0 text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]" data-icon="library_books">library_books</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="text-label-medium font-label-medium text-on-surface truncate">Frieren: Beyond Journey's End</span>
+<span class="text-[11px] text-on-surface-variant font-tabular">Vol 11 • Updated 2h ago</span>
+</div>
+</div>
+<button class="px-2.5 py-1 rounded-DEFAULT bg-primary-container/20 text-primary text-[11px] font-label-medium hover:bg-primary-container/30 transition-colors">
+                  Read
+                </button>
+</div>
+</div>
+</div>
+<div class="flex justify-between items-center pt-space-sm border-t border-outline-variant/60 mt-space-sm text-[11px] text-on-surface-variant font-tabular">
+<span>OPDS server: active</span>
+<span class="text-emerald-400">Library synced</span>
+</div>
+</div>
+<!-- Tor & Proton VPN Privacy Widget -->
+<div class="bg-surface-container rounded-[28px] p-space-md border border-outline-variant flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between mb-space-sm">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-emerald-400 text-[20px]" data-icon="vpn_lock">vpn_lock</span>
+<h3 class="text-title-medium font-title-medium text-on-surface">Privacy &amp; Tunnel</h3>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[11px] border border-emerald-500/20 font-tabular">Protected</span>
+</div>
+<div class="flex flex-col gap-space-sm mt-space-sm">
+<!-- Proton VPN Status -->
+<div class="p-space-sm rounded-[12px] bg-surface-container-low border border-outline-variant/60 flex flex-col gap-2">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[18px]" data-icon="security">security</span>
+<span class="text-label-medium font-label-medium text-on-surface">Proton VPN Tunnel</span>
+</div>
+<span class="text-[11px] text-emerald-400 font-tabular">WireGuard</span>
+</div>
+<div class="flex justify-between text-[11px] text-on-surface-variant font-tabular">
+<span>Server: CH-Zurich #14</span>
+<span>Exit IP: 185.159.157.12</span>
+</div>
+<div class="flex justify-between items-center text-[10px] text-on-surface-variant">
+<span class="flex items-center gap-1 text-emerald-400">
+<span class="material-symbols-outlined text-[12px]" data-icon="check_circle">check_circle</span> Kill Switch Armed
+                  </span>
+<span class="font-tabular">Latency: 24ms</span>
+</div>
+</div>
+<!-- Tor Routing & Relay Status -->
+<div class="p-space-sm rounded-[12px] bg-surface-container-low border border-outline-variant/60 flex flex-col gap-2">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-tertiary text-[18px]" data-icon="public">public</span>
+<span class="text-label-medium font-label-medium text-on-surface">Tor Network Daemon</span>
+</div>
+<span class="text-[11px] text-emerald-400 font-tabular">100% Bootstrapped</span>
+</div>
+<div class="flex justify-between text-[11px] text-on-surface-variant font-tabular">
+<span>Onion Services: 3 active</span>
+<span>Middle Relay: Enabled</span>
+</div>
+<div class="flex justify-between items-center text-[10px] text-on-surface-variant">
+<span>Traffic: 2.4 MB/s relayed</span>
+<span class="text-primary font-tabular">v0.4.8.10</span>
+</div>
+</div>
+</div>
+</div>
+<div class="flex justify-between items-center pt-space-sm border-t border-outline-variant/60 mt-space-sm">
+<span class="text-[11px] text-on-surface-variant">DNS Leak Prevention</span>
+<button class="px-2 py-0.5 rounded-DEFAULT bg-surface-container-high border border-outline-variant text-[11px] text-on-surface hover:bg-surface-variant transition-colors">
+              Re-route Tunnel
+            </button>
+</div>
+</div>
+</section>
+</main>
+</div>
+<!-- FLOATING BOTTOM SERVICE DOCK (Centered, rounded-full, M3 High Surface) -->
+<div class="fixed bottom-5 left-1/2 transform -translate-x-1/2 z-50 pointer-events-auto">
+<div class="bg-surface-container-high/90 backdrop-blur-md px-4 py-2 rounded-full border border-outline-variant flex items-center gap-2 shadow-2xl"><!-- Jellyfin -->
+<a class="p-2 rounded-full hover:bg-surface-container-highest text-primary hover:text-on-surface transition-all duration-200 active:scale-90 relative group" href="#jellyfin" title="Jellyfin Media">
+<span class="material-symbols-outlined text-[22px]" data-icon="movie">movie</span>
+<span class="absolute -top-8 left-1/2 -translate-x-1/2 bg-surface-container-lowest text-on-surface text-[11px] px-2 py-0.5 rounded border border-outline-variant opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">Jellyfin</span>
+</a>
+<!-- qBittorrent -->
+<a class="p-2 rounded-full hover:bg-surface-container-highest text-primary hover:text-on-surface transition-all duration-200 active:scale-90 relative group" href="#qbittorrent" title="qBittorrent">
+<span class="material-symbols-outlined text-[22px]" data-icon="download">download</span>
+<span class="absolute -top-8 left-1/2 -translate-x-1/2 bg-surface-container-lowest text-on-surface text-[11px] px-2 py-0.5 rounded border border-outline-variant opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">qBittorrent</span>
+</a>
+<!-- Suwayomi -->
+<a class="p-2 rounded-full hover:bg-surface-container-highest text-tertiary hover:text-on-surface transition-all duration-200 active:scale-90 relative group" href="#suwayomi" title="Suwayomi Manga">
+<span class="material-symbols-outlined text-[22px]" data-icon="auto_stories">auto_stories</span>
+<span class="absolute -top-8 left-1/2 -translate-x-1/2 bg-surface-container-lowest text-on-surface text-[11px] px-2 py-0.5 rounded border border-outline-variant opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">Suwayomi</span>
+</a>
+<!-- Radarr -->
+<a class="p-2 rounded-full hover:bg-surface-container-highest text-tertiary hover:text-on-surface transition-all duration-200 active:scale-90 relative group" href="#radarr" title="Radarr">
+<span class="material-symbols-outlined text-[22px]" data-icon="theaters">theaters</span>
+<span class="absolute -top-8 left-1/2 -translate-x-1/2 bg-surface-container-lowest text-on-surface text-[11px] px-2 py-0.5 rounded border border-outline-variant opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">Radarr</span>
+</a>
+<!-- Navidrome -->
+<a class="p-2 rounded-full hover:bg-surface-container-highest text-emerald-400 hover:text-on-surface transition-all duration-200 active:scale-90 relative group" href="#navidrome" title="Navidrome Music">
+<span class="material-symbols-outlined text-[22px]" data-icon="audiotrack">audiotrack</span>
+<span class="absolute -top-8 left-1/2 -translate-x-1/2 bg-surface-container-lowest text-on-surface text-[11px] px-2 py-0.5 rounded border border-outline-variant opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">Navidrome</span>
+</a>
+<!-- FileBrowser -->
+<a class="p-2 rounded-full hover:bg-surface-container-highest text-primary hover:text-on-surface transition-all duration-200 active:scale-90 relative group" href="#filebrowser" title="FileBrowser">
+<span class="material-symbols-outlined text-[22px]" data-icon="folder_open">folder_open</span>
+<span class="absolute -top-8 left-1/2 -translate-x-1/2 bg-surface-container-lowest text-on-surface text-[11px] px-2 py-0.5 rounded border border-outline-variant opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">FileBrowser</span>
+</a>
+<div class="h-6 w-px bg-outline-variant mx-1"></div>
+<!-- Terminal -->
+<a class="p-2 rounded-full hover:bg-surface-container-highest text-on-surface-variant hover:text-on-surface transition-all duration-200 active:scale-90 relative group" href="#terminal-launch" title="Web Terminal">
+<span class="material-symbols-outlined text-[22px]" data-icon="terminal">terminal</span>
+<span class="absolute -top-8 left-1/2 -translate-x-1/2 bg-surface-container-lowest text-on-surface text-[11px] px-2 py-0.5 rounded border border-outline-variant opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">Terminal</span>
+</a>
+<!-- Settings -->
+<a class="p-2 rounded-full hover:bg-surface-container-highest text-on-surface-variant hover:text-on-surface transition-all duration-200 active:scale-90 relative group" href="#settings" title="OS Settings">
+<span class="material-symbols-outlined text-[22px]" data-icon="settings">settings</span>
+<span class="absolute -top-8 left-1/2 -translate-x-1/2 bg-surface-container-lowest text-on-surface text-[11px] px-2 py-0.5 rounded border border-outline-variant opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">Settings</span>
+</a></div>
+</div>
+</body></html>

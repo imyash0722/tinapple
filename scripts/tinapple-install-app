@@ -43,13 +43,48 @@ case "$APP_ID" in
             sudo -u "$PRIMARY_USER" paru -S --noconfirm --needed --skipreview suwayomi-server-bin
         fi
         mkdir -p /etc/systemd/system/suwayomi-server.service.d/
-        cat << 'EOF' > /etc/systemd/system/suwayomi-server.service.d/tinapple-override.conf
+
+        # Hardware-adaptive CPU & JVM tuning (protects old 2-core/4-thread laptops while unleashing multi-core servers)
+        CORES=$(nproc 2>/dev/null || echo 2)
+        TOTAL_RAM_KB=$(grep MemTotal /proc/meminfo 2>/dev/null | awk '{print $2}' || echo 4000000)
+
+        if [ "$CORES" -le 2 ]; then
+            QUOTA="75%"
+            NICE=10
+            WEIGHT=50
+        elif [ "$CORES" -le 4 ]; then
+            # 2 cores / 4 threads (e.g. 1st gen mobile i5) - preserve strict thermal limits
+            QUOTA="85%"
+            NICE=10
+            WEIGHT=50
+        elif [ "$CORES" -le 6 ]; then
+            QUOTA="175%"
+            NICE=5
+            WEIGHT=80
+        else
+            # 8+ logical threads (modern 4C/8T+ CPUs) - allow multi-threaded JIT and query bursts
+            QUOTA="250%"
+            NICE=5
+            WEIGHT=100
+        fi
+
+        if [ "$TOTAL_RAM_KB" -le 4500000 ]; then
+            JAVA_MEM="-Xms128m -Xmx768m -XX:+UseG1GC -Dh2.cacheSize=65536 -Dh2.objectCache=true"
+        else
+            JAVA_MEM="-Xms256m -Xmx1536m -XX:+UseG1GC -Dh2.cacheSize=131072 -Dh2.objectCache=true"
+        fi
+
+        cat << EOF > /etc/systemd/system/suwayomi-server.service.d/tinapple-override.conf
 [Service]
-# Thermal & Multi-Core Protection: prevent single-core starvation and runaway coroutine loops
-CPUQuota=75%
-CPUWeight=50
-Nice=10
+# Adaptive Governor: dynamically calculated for ${CORES} CPU threads & $((TOTAL_RAM_KB / 1024))MB RAM
+CPUQuota=${QUOTA}
+CPUWeight=${WEIGHT}
+Nice=${NICE}
+Environment="JAVA_ARGS=-Dsuwayomi.tachidesk.config.server.initialOpenInBrowserEnabled=false -Dsuwayomi.tachidesk.config.server.systemTrayEnabled=false ${JAVA_MEM}"
 EOF
+        if [ -f /etc/suwayomi/server.conf ]; then
+            sed -i "s|^JAVA_ARGS=.*|JAVA_ARGS=\"-Dsuwayomi.tachidesk.config.server.initialOpenInBrowserEnabled=false -Dsuwayomi.tachidesk.config.server.systemTrayEnabled=false ${JAVA_MEM}\"|" /etc/suwayomi/server.conf 2>/dev/null || true
+        fi
         systemctl daemon-reload
         systemctl enable --now suwayomi-server.service || true
         ;;

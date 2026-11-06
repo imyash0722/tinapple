@@ -111,7 +111,7 @@ export const MangaShelfWidget: React.FC = () => {
   const currentHost = getServiceHost();
 
   return (
-    <div className="tinapple-glass-card rounded-2xl bg-[#091124]/90 border border-[#1b2b52] p-5 backdrop-blur-xl shadow-xl space-y-4">
+    <div className="tinapple-glass-card rounded-2xl bg-[#091124]/90 border border-[#1b2b52] p-5 backdrop-blur-xl shadow-none space-y-4">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-[#1b2b52]/80">
         <div className="flex items-center gap-3">
@@ -120,45 +120,45 @@ export const MangaShelfWidget: React.FC = () => {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="text-sm font-bold text-white tracking-wide font-mono">Suwayomi Manga Shelf</h3>
+              <h3 className="text-sm font-bold text-on-surface tracking-wide font-sans tabular-nums">Suwayomi Manga Shelf</h3>
               <span
                 className={`w-2 h-2 rounded-full ${online ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'}`}
                 title={online ? 'Suwayomi Online' : 'Suwayomi Offline'}
               />
             </div>
-            <span className="text-[11px] text-slate-400 font-mono">Tachiyomi Extension Engine</span>
+            <span className="text-[11px] text-on-surface-variant font-sans tabular-nums">Tachiyomi Extension Engine</span>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
           {/* Tab Pills */}
-          <div className="flex items-center bg-[#050a16] p-1 rounded-xl border border-[#1b2b52]">
+          <div className="flex items-center bg-surface-container-low p-1 rounded-xl border border-[#1b2b52]">
             <button
               onClick={() => setActiveTab('reading')}
-              className={`px-3 py-1 rounded-lg text-xs font-mono font-medium transition-all ${
+              className={`px-3 py-1 rounded-lg text-xs font-sans tabular-nums font-medium transition-all ${
                 activeTab === 'reading'
                   ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30'
-                  : 'text-slate-400 hover:text-slate-200'
+                  : 'text-on-surface-variant hover:text-on-surface'
               }`}
             >
               Library {totalCount > 0 ? `(${totalCount})` : readingList.length > 0 ? `(${readingList.length})` : ''}
             </button>
             <button
               onClick={() => setActiveTab('history')}
-              className={`px-3 py-1 rounded-lg text-xs font-mono font-medium transition-all ${
+              className={`px-3 py-1 rounded-lg text-xs font-sans tabular-nums font-medium transition-all ${
                 activeTab === 'history'
                   ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30'
-                  : 'text-slate-400 hover:text-slate-200'
+                  : 'text-on-surface-variant hover:text-on-surface'
               }`}
             >
               History {historyList.length > 0 && `(${historyList.length})`}
             </button>
             <button
               onClick={() => setActiveTab('updates')}
-              className={`px-3 py-1 rounded-lg text-xs font-mono font-medium transition-all ${
+              className={`px-3 py-1 rounded-lg text-xs font-sans tabular-nums font-medium transition-all ${
                 activeTab === 'updates'
                   ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30'
-                  : 'text-slate-400 hover:text-slate-200'
+                  : 'text-on-surface-variant hover:text-on-surface'
               }`}
             >
               Updates {updatesList.length > 0 && `(${updatesList.length})`}
@@ -167,7 +167,7 @@ export const MangaShelfWidget: React.FC = () => {
 
           <button
             onClick={fetchLibrary}
-            className="p-1.5 rounded-lg bg-[#0e1b38] hover:bg-[#14264e] border border-[#1b2b52] text-zinc-400 hover:text-white transition-colors"
+            className="p-1.5 rounded-lg bg-[#0e1b38] hover:bg-[#14264e] border border-[#1b2b52] text-on-surface-variant hover:text-on-surface transition-colors"
             title="Refresh library"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-orange-400' : ''}`} />
@@ -201,9 +201,9 @@ export const MangaShelfWidget: React.FC = () => {
                 href={mangaUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="group relative flex-shrink-0 w-36 rounded-xl overflow-hidden bg-slate-950 border border-[#1b2b52] hover:border-orange-500/50 hover:shadow-xl transition-all cursor-pointer"
+                className="group relative flex-shrink-0 w-36 rounded-xl overflow-hidden bg-surface-container-low border border-[#1b2b52] hover:border-orange-500/50 hover:shadow-none transition-all cursor-pointer"
               >
-                <div className="aspect-[3/4] w-full overflow-hidden relative bg-slate-900">
+                <div className="aspect-[3/4] w-full overflow-hidden relative bg-surface-container-low">
                   <img
                     src={manga.thumbnailUrl}
                     alt={manga.title}
@@ -218,24 +218,24 @@ export const MangaShelfWidget: React.FC = () => {
 
                   {/* Unread badge on library tab */}
                   {activeTab === 'reading' && manga.unreadCount !== undefined && manga.unreadCount > 0 && (
-                    <span className="absolute top-2 right-2 px-1.5 py-0.5 rounded-md bg-orange-500 text-slate-950 text-[10px] font-bold font-mono shadow-md">
+                    <span className="absolute top-2 right-2 px-1.5 py-0.5 rounded-md bg-orange-500 text-slate-950 text-[10px] font-bold font-sans tabular-nums shadow-none">
                       +{manga.unreadCount}
                     </span>
                   )}
 
                   {/* Latest chapter update pill on updates tab */}
                   {activeTab === 'updates' && manga.latestChapter && (
-                    <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded-md bg-emerald-500 text-slate-950 text-[10px] font-bold font-mono shadow-md">
+                    <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded-md bg-emerald-500 text-slate-950 text-[10px] font-bold font-sans tabular-nums shadow-none">
                       Update
                     </span>
                   )}
                 </div>
 
                 <div className="p-2.5">
-                  <h4 className="text-xs font-bold text-white truncate group-hover:text-orange-400 transition-colors" title={manga.title}>
+                  <h4 className="text-xs font-bold text-on-surface truncate group-hover:text-orange-400 transition-colors" title={manga.title}>
                     {manga.title}
                   </h4>
-                  <p className="text-[10px] text-slate-400 font-mono mt-0.5 truncate" title={subtitle}>
+                  <p className="text-[10px] text-on-surface-variant font-sans tabular-nums mt-0.5 truncate" title={subtitle}>
                     {subtitle}
                   </p>
                 </div>
@@ -244,12 +244,12 @@ export const MangaShelfWidget: React.FC = () => {
           })}
         </div>
       ) : (
-        <div className="py-8 px-4 flex flex-col items-center justify-center text-center rounded-xl bg-black/30 border border-[#1b2b52]/60 font-mono">
+        <div className="py-8 px-4 flex flex-col items-center justify-center text-center rounded-xl bg-black/30 border border-[#1b2b52]/60 font-sans tabular-nums">
           <BookOpen className="w-8 h-8 text-orange-400/50 mb-2" />
-          <h4 className="text-sm font-bold text-white">
+          <h4 className="text-sm font-bold text-on-surface">
             {online ? 'No Manga in Library' : 'Suwayomi Manga Server Offline'}
           </h4>
-          <p className="text-xs text-slate-400 max-w-md mt-1 mb-4 leading-relaxed">
+          <p className="text-xs text-on-surface-variant max-w-md mt-1 mb-4 leading-relaxed">
             {online
               ? 'Your Suwayomi manga collection is currently empty. Open Suwayomi to add titles or sync from Tachiyomi / Mihon / Keiyoushi sources.'
               : 'Suwayomi is not running or has not been started. Launch Suwayomi to sync and read your personal manga library.'}
@@ -268,14 +268,14 @@ export const MangaShelfWidget: React.FC = () => {
 
       {/* Footer Info */}
       <div className="flex items-center justify-between pt-1 text-xs">
-        <span className="text-[11px] text-slate-400 font-mono">
+        <span className="text-[11px] text-on-surface-variant font-sans tabular-nums">
           Suwayomi Server • Port 4567
         </span>
         <a
           href={`${(serviceRegistry.get('suwayomi')?.getOpenUrl() || `http://${currentHost}:4567/`).replace(/\/$/, '')}/${activeTab === 'history' ? 'history' : activeTab === 'updates' ? 'updates' : 'library'}`}
           target="_blank"
           rel="noreferrer"
-          className="text-orange-400 hover:text-orange-300 font-mono font-medium flex items-center gap-1"
+          className="text-orange-400 hover:text-orange-300 font-sans tabular-nums font-medium flex items-center gap-1"
         >
           <span>Open Manga Reader</span>
           <span>→</span>

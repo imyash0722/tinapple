@@ -1,4 +1,5 @@
-// Material Design 3 (M3) Matugen Dynamic Color Engine for Tinapple OS
+import { argbFromHex, hexFromArgb, Hct, TonalPalette } from '@material/material-color-utilities';
+import { extractWallpaperColors, isHexColor } from './appearance';
 
 export interface M3Palette {
   source_color: string;
@@ -8,194 +9,226 @@ export interface M3Palette {
 }
 
 export function hexToRgbChannels(hex: string): string {
-  const clean = hex.replace('#', '');
-  if (clean.length !== 6) return '56 189 248';
-  const r = parseInt(clean.slice(0, 2), 16);
-  const g = parseInt(clean.slice(2, 4), 16);
-  const b = parseInt(clean.slice(4, 6), 16);
-  return `${r} ${g} ${b}`;
+  const value = isHexColor(hex) ? hex : '#38bdf8';
+  return [1, 3, 5].map(i => parseInt(value.slice(i, i + 2), 16)).join(' ');
 }
-
 export function hexToRgba(hex: string, alpha: number): string {
-  const clean = hex.replace('#', '');
-  if (clean.length !== 6) return `rgba(10, 18, 38, ${alpha})`;
-  const r = parseInt(clean.slice(0, 2), 16);
-  const g = parseInt(clean.slice(2, 4), 16);
-  const b = parseInt(clean.slice(4, 6), 16);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  return `rgb(${hexToRgbChannels(hex)} / ${alpha})`;
 }
 
-// Client-side fallback generator in case network or backend is unreachable
+// Material 3 Dynamic Tonal Palette generator derived from active accent seed color.
 export function generateLocalM3Palette(seedHex: string, mode: 'dark' | 'light' = 'dark'): M3Palette {
-  const clean = seedHex.startsWith('#') ? seedHex : `#${seedHex}`;
-  const c = clean.replace('#', '');
-  const r = parseInt(c.slice(0, 2) || '38', 16);
-  const g = parseInt(c.slice(2, 4) || 'bd', 16);
-  const b = parseInt(c.slice(4, 6) || 'f8', 16);
+  const seed = isHexColor(seedHex) ? seedHex : '#38bdf8';
+  const seedHct = Hct.fromInt(argbFromHex(seed));
+  const hue = seedHct.hue;
+  const rawChroma = seedHct.chroma;
 
-  const clamp = (v: number) => Math.max(0, Math.min(255, Math.round(v)));
-  const toHex = (r1: number, g1: number, b1: number) =>
-    `#${clamp(r1).toString(16).padStart(2, '0')}${clamp(g1).toString(16).padStart(2, '0')}${clamp(b1).toString(16).padStart(2, '0')}`;
+  // Check if seed is monochrome (low chroma CAM16, low RGB delta, or explicit greyscale)
+  const [r, g, b] = [1, 3, 5].map(i => parseInt(seed.slice(i, i + 2), 16));
+  const rgbDelta = Math.max(r, g, b) - Math.min(r, g, b);
+  const isMonochrome = rawChroma < 14 || rgbDelta < 18 || seed.toLowerCase() === '#e4e4e7' || seed.toLowerCase() === '#ffffff' || seed.toLowerCase() === '#a1a1aa' || seed.toLowerCase() === '#71717a';
+
+  let primaryPalette: TonalPalette;
+  let secondaryPalette: TonalPalette;
+  let tertiaryPalette: TonalPalette;
+  let surfacePalette: TonalPalette;
+  let outlinePalette: TonalPalette;
+  let textPalette: TonalPalette;
+
+  if (isMonochrome) {
+    // Pure neutral monochrome without any hue tint
+    primaryPalette = TonalPalette.fromHueAndChroma(0, 0);
+    secondaryPalette = TonalPalette.fromHueAndChroma(0, 0);
+    tertiaryPalette = TonalPalette.fromHueAndChroma(0, 0);
+    surfacePalette = TonalPalette.fromHueAndChroma(0, 0);
+    outlinePalette = TonalPalette.fromHueAndChroma(0, 0);
+    textPalette = TonalPalette.fromHueAndChroma(0, 0);
+  } else {
+    // Primary palette: full saturation from seed color
+    primaryPalette = TonalPalette.fromHueAndChroma(hue, Math.max(36, rawChroma));
+
+    // Secondary palette: adjacent harmonious tone
+    secondaryPalette = TonalPalette.fromHueAndChroma((hue + 14) % 360, Math.max(16, rawChroma * 0.45));
+
+    // Tertiary palette: triadic dynamic harmonic (rotated 60deg)
+    tertiaryPalette = TonalPalette.fromHueAndChroma((hue + 60) % 360, Math.max(20, rawChroma * 0.5));
+
+    // Neutral / Surface palette:
+    // Dynamically derived from seed hue so cards, tiles, and headers take on the chosen theme's color.
+    // In dark mode, a chroma of 10-16 produces a rich, velvety tinted dark surface.
+    const surfaceChroma = Math.max(8, Math.min(16, rawChroma * 0.28));
+    surfacePalette = TonalPalette.fromHueAndChroma(hue, surfaceChroma);
+
+    // Neutral Variant / Outline palette:
+    // Slightly higher chroma gives crisp, tinted card outlines matching the theme.
+    const outlineChroma = Math.max(12, Math.min(24, rawChroma * 0.38));
+    outlinePalette = TonalPalette.fromHueAndChroma(hue, outlineChroma);
+
+    // Text palette:
+    // Low chroma ensures high contrast and clarity.
+    const textChroma = Math.max(3, Math.min(8, rawChroma * 0.12));
+    textPalette = TonalPalette.fromHueAndChroma(hue, textChroma);
+  }
 
   const colors: Record<string, string> = {};
 
   if (mode === 'dark') {
-    colors['primary'] = clean;
-    colors['on_primary'] = '#003549';
-    colors['primary_container'] = toHex(r * 0.35, g * 0.35, b * 0.35);
-    colors['on_primary_container'] = '#c4e7ff';
-    colors['secondary'] = toHex(r * 0.75, g * 0.75 + 20, b * 0.75 + 30);
-    colors['on_secondary'] = '#1f333e';
-    colors['secondary_container'] = toHex(r * 0.25, g * 0.28, b * 0.32);
-    colors['on_secondary_container'] = '#d1e5f4';
-    colors['tertiary'] = toHex(r * 0.6 + 80, g * 0.5 + 70, b * 0.8 + 80);
-    colors['on_tertiary'] = '#322c4c';
-    colors['tertiary_container'] = toHex(r * 0.3 + 40, g * 0.25 + 35, b * 0.4 + 40);
-    colors['on_tertiary_container'] = '#e6deff';
-    colors['surface'] = '#090e18';
-    colors['surface_dim'] = '#070a13';
-    colors['surface_bright'] = '#2a3242';
-    colors['surface_container_lowest'] = '#05070f';
-    colors['surface_container_low'] = '#0c121f';
-    colors['surface_container'] = '#101828';
-    colors['surface_container_high'] = '#152034';
-    colors['surface_container_highest'] = '#1c2940';
-    colors['on_surface'] = '#e0e5ed';
-    colors['on_surface_variant'] = '#c1c8d4';
-    colors['outline'] = '#8b939f';
-    colors['outline_variant'] = '#3f4755';
-    colors['background'] = '#060a12';
-    colors['on_background'] = '#e0e5ed';
-    colors['error'] = '#ffb4ab';
-    colors['error_container'] = '#93000a';
+    colors.primary = isMonochrome ? '#f4f4f5' : hexFromArgb(primaryPalette.tone(80));
+    colors.on_primary = isMonochrome ? '#18181b' : hexFromArgb(primaryPalette.tone(20));
+    colors.primary_container = isMonochrome ? '#3f3f46' : hexFromArgb(primaryPalette.tone(30));
+    colors.on_primary_container = isMonochrome ? '#fafafa' : hexFromArgb(primaryPalette.tone(90));
+
+    colors.secondary = isMonochrome ? '#d4d4d8' : hexFromArgb(secondaryPalette.tone(78));
+    colors.on_secondary = isMonochrome ? '#18181b' : hexFromArgb(secondaryPalette.tone(20));
+    colors.secondary_container = isMonochrome ? '#3f3f46' : hexFromArgb(secondaryPalette.tone(30));
+    colors.on_secondary_container = isMonochrome ? '#f4f4f5' : hexFromArgb(secondaryPalette.tone(90));
+
+    colors.tertiary = isMonochrome ? '#a1a1aa' : hexFromArgb(tertiaryPalette.tone(80));
+    colors.on_tertiary = isMonochrome ? '#18181b' : hexFromArgb(tertiaryPalette.tone(20));
+    colors.tertiary_container = isMonochrome ? '#3f3f46' : hexFromArgb(tertiaryPalette.tone(30));
+    colors.on_tertiary_container = isMonochrome ? '#f4f4f5' : hexFromArgb(tertiaryPalette.tone(90));
+
+    // M3 Dark Mode Elevation Tones
+    colors.surface_container_lowest = isMonochrome ? '#09090b' : hexFromArgb(surfacePalette.tone(4));
+    colors.surface = isMonochrome ? '#0f0f11' : hexFromArgb(surfacePalette.tone(6));
+    colors.surface_dim = isMonochrome ? '#0f0f11' : hexFromArgb(surfacePalette.tone(6));
+    colors.background = isMonochrome ? '#09090b' : hexFromArgb(surfacePalette.tone(4));
+    colors.surface_container_low = isMonochrome ? '#141416' : hexFromArgb(surfacePalette.tone(9));
+    colors.surface_container = isMonochrome ? '#1c1c1f' : hexFromArgb(surfacePalette.tone(13));
+    colors.surface_container_high = isMonochrome ? '#242427' : hexFromArgb(surfacePalette.tone(17));
+    colors.surface_container_highest = isMonochrome ? '#2e2e32' : hexFromArgb(surfacePalette.tone(22));
+    colors.surface_bright = isMonochrome ? '#3a3a3e' : hexFromArgb(surfacePalette.tone(26));
+
+    colors.outline_variant = isMonochrome ? '#3f3f46' : hexFromArgb(outlinePalette.tone(28));
+    colors.outline = isMonochrome ? '#71717a' : hexFromArgb(outlinePalette.tone(55));
+
+    colors.on_surface = isMonochrome ? '#fafafa' : hexFromArgb(textPalette.tone(93));
+    colors.on_surface_variant = isMonochrome ? '#d4d4d8' : hexFromArgb(textPalette.tone(80));
+    colors.on_background = isMonochrome ? '#fafafa' : hexFromArgb(textPalette.tone(93));
+
+    colors.error = '#ffb4ab';
+    colors.on_error = '#690005';
+    colors.error_container = '#93000a';
+    colors.on_error_container = '#ffdad6';
+    colors.success = '#7ec789';
+    colors.warning = '#efc166';
   } else {
-    colors['primary'] = clean;
-    colors['on_primary'] = '#ffffff';
-    colors['primary_container'] = '#c4e7ff';
-    colors['on_primary_container'] = '#001e2c';
-    colors['secondary'] = '#4e616d';
-    colors['on_secondary'] = '#ffffff';
-    colors['secondary_container'] = '#d1e5f4';
-    colors['on_secondary_container'] = '#0a1e28';
-    colors['tertiary'] = '#615a7d';
-    colors['on_tertiary'] = '#ffffff';
-    colors['tertiary_container'] = '#e6deff';
-    colors['on_tertiary_container'] = '#1d1736';
-    colors['surface'] = '#f6fafe';
-    colors['surface_dim'] = '#d7dbdf';
-    colors['surface_bright'] = '#f6fafe';
-    colors['surface_container_lowest'] = '#ffffff';
-    colors['surface_container_low'] = '#f0f4f8';
-    colors['surface_container'] = '#eaeff2';
-    colors['surface_container_high'] = '#e5e9ed';
-    colors['surface_container_highest'] = '#dfe3e7';
-    colors['on_surface'] = '#181c1f';
-    colors['on_surface_variant'] = '#41484d';
-    colors['outline'] = '#71787d';
-    colors['outline_variant'] = '#c0c7cd';
-    colors['background'] = '#f6fafe';
-    colors['on_background'] = '#181c1f';
-    colors['error'] = '#ba1a1a';
-    colors['error_container'] = '#ffdad6';
+    // Light Mode
+    colors.primary = isMonochrome ? '#18181b' : hexFromArgb(primaryPalette.tone(40));
+    colors.on_primary = isMonochrome ? '#ffffff' : hexFromArgb(primaryPalette.tone(100));
+    colors.primary_container = isMonochrome ? '#e4e4e7' : hexFromArgb(primaryPalette.tone(90));
+    colors.on_primary_container = isMonochrome ? '#18181b' : hexFromArgb(primaryPalette.tone(10));
+
+    colors.secondary = isMonochrome ? '#52525b' : hexFromArgb(secondaryPalette.tone(45));
+    colors.on_secondary = isMonochrome ? '#ffffff' : hexFromArgb(secondaryPalette.tone(100));
+    colors.secondary_container = isMonochrome ? '#f4f4f5' : hexFromArgb(secondaryPalette.tone(90));
+    colors.on_secondary_container = isMonochrome ? '#18181b' : hexFromArgb(secondaryPalette.tone(10));
+
+    colors.tertiary = isMonochrome ? '#71717a' : hexFromArgb(tertiaryPalette.tone(45));
+    colors.on_tertiary = isMonochrome ? '#ffffff' : hexFromArgb(tertiaryPalette.tone(100));
+    colors.tertiary_container = isMonochrome ? '#f4f4f5' : hexFromArgb(tertiaryPalette.tone(90));
+    colors.on_tertiary_container = isMonochrome ? '#18181b' : hexFromArgb(tertiaryPalette.tone(10));
+
+    colors.surface_container_lowest = isMonochrome ? '#ffffff' : hexFromArgb(surfacePalette.tone(100));
+    colors.surface = isMonochrome ? '#fafafa' : hexFromArgb(surfacePalette.tone(98));
+    colors.surface_dim = isMonochrome ? '#e4e4e7' : hexFromArgb(surfacePalette.tone(87));
+    colors.background = isMonochrome ? '#fafafa' : hexFromArgb(surfacePalette.tone(98));
+    colors.surface_container_low = isMonochrome ? '#f4f4f5' : hexFromArgb(surfacePalette.tone(96));
+    colors.surface_container = isMonochrome ? '#f4f4f5' : hexFromArgb(surfacePalette.tone(94));
+    colors.surface_container_high = isMonochrome ? '#e4e4e7' : hexFromArgb(surfacePalette.tone(92));
+    colors.surface_container_highest = isMonochrome ? '#d4d4d8' : hexFromArgb(surfacePalette.tone(90));
+    colors.surface_bright = isMonochrome ? '#fafafa' : hexFromArgb(surfacePalette.tone(98));
+
+    colors.outline_variant = isMonochrome ? '#d4d4d8' : hexFromArgb(outlinePalette.tone(80));
+    colors.outline = isMonochrome ? '#71717a' : hexFromArgb(outlinePalette.tone(50));
+
+    colors.on_surface = isMonochrome ? '#09090b' : hexFromArgb(textPalette.tone(10));
+    colors.on_surface_variant = isMonochrome ? '#52525b' : hexFromArgb(textPalette.tone(30));
+    colors.on_background = isMonochrome ? '#09090b' : hexFromArgb(textPalette.tone(10));
+
+    colors.error = '#ba1a1a';
+    colors.on_error = '#ffffff';
+    colors.error_container = '#ffdad6';
+    colors.on_error_container = '#410002';
+    colors.success = '#006d3b';
+    colors.warning = '#755900';
   }
 
-  return {
-    source_color: clean,
-    mode,
-    engine: 'client-m3-fallback',
-    colors,
-  };
+  return { source_color: seed, mode, engine: 'material-color-utilities', colors };
 }
 
-// Fetch palette from backend matugen CLI service with client fallback
 export async function fetchMatugenPalette(params: {
-  hex?: string;
-  wallpaper?: string;
-  mode?: 'dark' | 'light';
+  hex?: string; wallpaper?: string; mode?: 'dark' | 'light';
 }): Promise<M3Palette> {
   const mode = params.mode || 'dark';
-  const query = new URLSearchParams();
+  let seed = params.hex || '#38bdf8';
+  const query = new URLSearchParams({ mode });
   if (params.hex) query.set('hex', params.hex);
   if (params.wallpaper) query.set('wallpaper', params.wallpaper);
-  query.set('mode', mode);
-
   try {
-    const res = await fetch(`/api/v1/system/matugen?${query.toString()}`, {
-      headers: { Accept: 'application/json' },
+    const response = await fetch(`/api/v1/system/matugen?${query}`, {
+      headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(5000),
     });
-    if (res.ok) {
-      const data = await res.json();
-      if (data && data.colors && Object.keys(data.colors).length > 0) {
-        return data as M3Palette;
+    if (response.ok) {
+      const data = await response.json();
+      if (isHexColor(data.source_color)) seed = data.source_color;
+      if (data.engine === 'matugen-cli' && data.colors && isHexColor(data.colors.primary)) {
+        const fallback = generateLocalM3Palette(seed, mode);
+        const validated = Object.fromEntries(Object.entries(data.colors).filter(([, value]) => isHexColor(value)));
+        const colors = { ...fallback.colors, ...validated } as Record<string, string>;
+        return { source_color: seed, mode, engine: 'matugen', colors };
       }
     }
-  } catch (err) {
-    console.debug('Matugen API fetch failed, falling back to local M3 engine:', err);
+  } catch { /* Offline clients receive local M3 HCT dynamic palette. */ }
+  if (params.wallpaper) {
+    try { seed = (await extractWallpaperColors(params.wallpaper, AbortSignal.timeout(8000)))[0]; } catch { /* Preserve manual seed on CORS/image failure. */ }
   }
-
-  return generateLocalM3Palette(params.hex || '#38bdf8', mode);
+  return generateLocalM3Palette(seed, mode);
 }
 
-// Inject complete Material Design 3 tokens into documentElement
-export function applyMatugenM3(
-  palette: M3Palette,
-  translucency: number = 45,
-  enableGlass: boolean = true
-): void {
+export function applyMatugenM3(palette: M3Palette, translucency = 45, enableGlass = true, blur = 20): void {
   if (typeof document === 'undefined') return;
   const root = document.documentElement;
-  const colors = palette.colors;
-
-  // 1. Core Material Design 3 tokens
-  for (const [key, val] of Object.entries(colors)) {
-    const cssVar = `--md-sys-color-${key.replace(/_/g, '-')}`;
-    root.style.setProperty(cssVar, val);
+  const { colors } = palette;
+  root.dataset.colorMode = palette.mode;
+  root.style.colorScheme = palette.mode;
+  for (const [key, value] of Object.entries(colors)) {
+    const name = key.replace(/_/g, '-');
+    root.style.setProperty(`--md-sys-color-${name}`, value);
+    root.style.setProperty(`--md-sys-color-${name}-rgb`, hexToRgbChannels(value));
   }
+  root.style.setProperty('--tinapple-accent', colors.primary);
+  root.style.setProperty('--tinapple-accent-rgb', hexToRgbChannels(colors.primary));
+  root.style.setProperty('--tinapple-accent-glow', 'transparent');
+  root.style.setProperty('--tinapple-accent-secondary', colors.tertiary);
+  root.style.setProperty('--tinapple-secondary-rgb', hexToRgbChannels(colors.tertiary));
 
-  // 2. High-contrast accent variables
-  const primaryHex = colors.primary || '#38bdf8';
-  const secondaryHex = colors.tertiary || colors.secondary || '#3b82f6';
-  const surfaceLow = colors.surface_container_low || '#0c121f';
-  const outlineVar = colors.outline_variant || '#3f4755';
+  // Component Transparency & Liquid Glass Dynamics
+  // translucency range: 0% (solid matte) to 90% (ultra sheer liquid)
+  const isLiquid = enableGlass && translucency > 0;
+  const surfaceAlpha = isLiquid ? Math.max(0.12, Math.min(1, 1 - (translucency / 100))) : 1;
+  const surfaceContainerAlpha = isLiquid ? Math.min(1, surfaceAlpha + 0.08) : 1;
+  const surfaceHoverAlpha = isLiquid ? Math.min(1, surfaceAlpha + 0.15) : 1;
+  const glassFilter = isLiquid && blur > 0 ? `blur(${blur}px) saturate(135%)` : 'none';
 
-  root.style.setProperty('--tinapple-accent', primaryHex);
-  root.style.setProperty('--tinapple-accent-rgb', hexToRgbChannels(primaryHex));
-  root.style.setProperty('--tinapple-accent-glow', `${primaryHex}55`);
-  root.style.setProperty('--tinapple-accent-secondary', secondaryHex);
-  root.style.setProperty('--tinapple-secondary-rgb', hexToRgbChannels(secondaryHex));
+  root.style.setProperty('--m3-surface-opacity', surfaceAlpha.toFixed(3));
+  root.style.setProperty('--m3-surface-container-opacity', surfaceContainerAlpha.toFixed(3));
+  root.style.setProperty('--m3-surface-hover-opacity', surfaceHoverAlpha.toFixed(3));
+  root.style.setProperty('--m3-glass-filter', glassFilter);
+  root.style.setProperty('--m3-glass-blur', `${blur}px`);
 
-  // 3. Dynamic Material 3 Matte Styling (velvety, low-specular, anti-glare surfaces)
-  const surfaceBase = colors.surface || '#090e18';
-  const surfaceContainer = colors.surface_container || '#101828';
-  const surfaceHigh = colors.surface_container_high || '#152034';
+  const lowRgb = hexToRgbChannels(colors.surface_container_low);
+  const outlineVarRgb = hexToRgbChannels(colors.outline_variant);
 
-  // Matte opacity is rich and solid (92-95%) so typography and telemetry have high contrast
-  const matteAlpha = 0.94;
-  root.style.setProperty(
-    '--glass-bg',
-    enableGlass ? hexToRgba(surfaceLow, matteAlpha) : surfaceContainer
-  );
-  root.style.setProperty(
-    '--glass-border',
-    hexToRgba(outlineVar, 0.22)
-  );
-  root.style.setProperty(
-    '--glass-border-accent',
-    hexToRgba(primaryHex, 0.45)
-  );
-  root.style.setProperty(
-    '--glass-filter',
-    'blur(12px) saturate(110%)'
-  );
+  const glassBg = isLiquid ? `rgb(${lowRgb} / ${surfaceAlpha.toFixed(3)})` : colors.surface_container_low;
+  const glassBorder = isLiquid ? `rgb(${outlineVarRgb} / ${Math.min(0.45, surfaceAlpha * 0.4 + 0.12).toFixed(3)})` : colors.outline_variant;
+  const glassShadow = isLiquid
+    ? `inset 0 1px 0 0 rgb(255 255 255 / 0.07), 0 8px 24px -4px rgb(0 0 0 / 0.35)`
+    : 'none';
 
-  // Surface and card backgrounds
-  root.style.setProperty('--tinapple-surface', surfaceContainer);
-  root.style.setProperty('--tinapple-card', surfaceHigh);
-  root.style.setProperty('--tinapple-dark', surfaceBase);
-  root.style.setProperty('--tinapple-border', hexToRgba(outlineVar, 0.20));
-
-  // Persist current palette in localStorage
-  try {
-    localStorage.setItem('tinapple_m3_palette', JSON.stringify(palette));
-  } catch {}
+  root.style.setProperty('--glass-bg', glassBg);
+  root.style.setProperty('--glass-filter', glassFilter);
+  root.style.setProperty('--glass-border', glassBorder);
+  root.style.setProperty('--glass-border-accent', colors.outline);
+  root.style.setProperty('--glass-shadow', glassShadow);
 }

@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { Plus, Edit2, Trash2, ExternalLink, Globe, BookOpen, Download, Laptop, Smartphone, Monitor } from 'lucide-react';
 import { AppBrandIcon } from '../common/AppBrandIcons';
-import { ServiceStatus } from '../../types/api';
+import { ServiceInfo } from '../../types/api';
 import { CustomBookmark } from '../../services/dashboardLayout';
 import { serviceRegistry } from '../../services/serviceRegistry';
 
 interface QuickConnectCardProps {
-  services?: ServiceStatus[];
+  services?: ServiceInfo[];
   customBookmarks?: CustomBookmark[];
   isEditMode?: boolean;
   isAdmin?: boolean;
@@ -117,42 +117,42 @@ export const QuickConnectCard: React.FC<QuickConnectCardProps> = ({
         {connectionEndpoints.map((conn) => (
           <div
             key={conn.id}
-            className="tinapple-glass-card rounded-xl bg-slate-900/60 border border-slate-800/80 p-4 sm:p-5 backdrop-blur-md flex flex-col justify-between hover:border-slate-700 transition-all group"
+            className="rounded-[28px] bg-surface-container-low border border-outline-variant p-4 sm:p-5 flex flex-col justify-between shadow-none hover:border-primary/40 transition-all group"
           >
             <div>
               <div className="flex items-start justify-between gap-2 mb-2.5 sm:mb-3">
                 <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 flex-1">
-                  <div className="p-1.5 sm:p-2 rounded-lg bg-slate-800/80 border border-slate-700/50 shrink-0">
+                  <div className="p-1.5 sm:p-2 rounded-xl bg-surface-container border border-outline-variant shrink-0">
                     {conn.icon}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <h4 className="font-bold text-white text-xs sm:text-sm truncate">{conn.name}</h4>
-                    <span className="text-[10px] sm:text-xs text-slate-400 font-mono block truncate">{conn.type}</span>
+                    <h4 className="font-bold text-on-surface text-xs sm:text-sm truncate">{conn.name}</h4>
+                    <span className="text-[10px] sm:text-xs text-on-surface-variant font-sans tabular-nums block truncate">{conn.type}</span>
                   </div>
                 </div>
-                <span className={`px-2 py-0.5 text-[10px] font-mono rounded-full border shrink-0 whitespace-nowrap ${conn.color}`}>
+                <span className={`px-2 py-0.5 text-[10px] font-sans tabular-nums rounded-full border shrink-0 whitespace-nowrap ${conn.color}`}>
                   {conn.badge}
                 </span>
               </div>
-              <p className="text-[11px] sm:text-xs text-slate-300 leading-relaxed mb-3 sm:mb-4">{conn.desc}</p>
+              <p className="text-[11px] sm:text-xs text-on-surface leading-relaxed mb-3 sm:mb-4">{conn.desc}</p>
             </div>
 
-            <div className="pt-2.5 sm:pt-3 border-t border-slate-800/60 flex items-center justify-between gap-2">
-              <code className="text-[11px] sm:text-xs text-emerald-400 font-mono truncate">{conn.url}</code>
+            <div className="pt-2.5 sm:pt-3 border-t border-outline-variant flex items-center justify-between gap-2">
+              <code className="text-[11px] sm:text-xs text-emerald-400 font-sans tabular-nums truncate">{conn.url}</code>
               <div className="flex items-center gap-1.5 shrink-0">
                 {conn.id === 'tailscale' && onOpenTailscale && (
                   <button
                     onClick={onOpenTailscale}
-                    className="px-2 py-1 text-[11px] sm:text-xs rounded-lg bg-sky-500/20 hover:bg-sky-500/30 border border-sky-500/30 text-sky-300 font-mono font-semibold transition-all"
+                    className="px-2 py-1 text-[11px] sm:text-xs rounded-full bg-sky-500/20 hover:bg-sky-500/30 border border-sky-500/30 text-sky-300 font-sans tabular-nums font-semibold transition-all"
                   >
                     Mesh
                   </button>
                 )}
                 <button
                   onClick={() => copyToClipboard(conn.url, conn.id)}
-                  className="px-2.5 py-1 text-[11px] sm:text-xs rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono transition-all flex-shrink-0"
+                  className="px-3 py-1 text-[11px] sm:text-xs rounded-full bg-surface-container-highest hover:bg-surface-container-high border border-outline-variant text-on-surface font-sans tabular-nums font-semibold transition-all flex-shrink-0"
                 >
-                  {copiedKey === conn.id ? '✓ Copied' : 'Copy'}
+                  {copiedKey === conn.id ? 'Copied' : 'Copy'}
                 </button>
               </div>
             </div>
@@ -161,14 +161,14 @@ export const QuickConnectCard: React.FC<QuickConnectCardProps> = ({
       </div>
 
       {/* Multi-Platform Client Apps & Offline Cache Stack */}
-      <div className="tinapple-glass-card rounded-xl bg-slate-900/40 border border-slate-800/60 p-4 sm:p-5 backdrop-blur-md">
+      <div className="rounded-[28px] bg-surface-container-low border border-outline-variant p-4 sm:p-5 shadow-none">
         <div className="flex flex-wrap items-center justify-between gap-2 mb-3.5">
           <div>
-            <h4 className="text-xs font-mono uppercase tracking-wider text-tinapple-gold flex items-center gap-2">
+            <h4 className="text-xs font-sans tabular-nums uppercase tracking-wider text-primary flex items-center gap-2">
               <Download className="w-3.5 h-3.5" />
               <span>Native Client Applications (Zero-Latency Offline Cache Stack)</span>
             </h4>
-            <p className="text-[11px] text-slate-400 mt-0.5">
+            <p className="text-[11px] text-on-surface-variant mt-0.5">
               Instant launch with embedded React UI bundle — zero delay over slow Wi-Fi or cellular networks.
             </p>
           </div>
@@ -176,7 +176,7 @@ export const QuickConnectCard: React.FC<QuickConnectCardProps> = ({
             href="https://github.com/imyash0722/tinapple/releases"
             target="_blank"
             rel="noreferrer"
-            className="text-[10px] font-mono text-slate-500 hover:text-slate-300 underline"
+            className="text-[10px] font-sans tabular-nums text-on-surface-variant hover:text-on-surface underline"
           >
             GitHub Releases & Checksums
           </a>
@@ -187,17 +187,17 @@ export const QuickConnectCard: React.FC<QuickConnectCardProps> = ({
             href="https://github.com/imyash0722/tinapple/releases"
             target="_blank"
             rel="noreferrer"
-            className="flex items-center gap-3 p-3 rounded-xl bg-slate-800/50 hover:bg-slate-800 border border-slate-700/60 hover:border-tinapple-gold/50 transition-all group"
+            className="flex items-center gap-3 p-3.5 rounded-[12px] bg-surface-container hover:bg-surface-container-high border border-outline-variant hover:border-primary/50 transition-all group shadow-none"
           >
-            <div className="w-9 h-9 rounded-lg bg-tinapple-gold/15 text-tinapple-gold flex items-center justify-center shrink-0">
+            <div className="w-9 h-9 rounded-xl bg-primary/15 text-primary flex items-center justify-center shrink-0">
               <Laptop className="w-4 h-4" />
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-1.5">
-                <span className="text-xs font-bold text-white group-hover:text-tinapple-gold transition-colors">Linux Desktop</span>
-                <span className="text-[9px] font-mono px-1.5 py-0.5 bg-tinapple-gold/10 text-tinapple-gold rounded">AppImage</span>
+                <span className="text-xs font-bold text-on-surface group-hover:text-primary transition-colors">Linux Desktop</span>
+                <span className="text-[9px] font-sans tabular-nums px-1.5 py-0.5 bg-primary/10 text-primary rounded-full">AppImage</span>
               </div>
-              <p className="text-[10px] text-slate-400 font-mono truncate">x86_64 Standalone</p>
+              <p className="text-[10px] text-on-surface-variant font-sans tabular-nums truncate">x86_64 Standalone</p>
             </div>
           </a>
 
@@ -205,17 +205,17 @@ export const QuickConnectCard: React.FC<QuickConnectCardProps> = ({
             href="https://github.com/imyash0722/tinapple/releases"
             target="_blank"
             rel="noreferrer"
-            className="flex items-center gap-3 p-3 rounded-xl bg-slate-800/50 hover:bg-slate-800 border border-slate-700/60 hover:border-sky-500/50 transition-all group"
+            className="flex items-center gap-3 p-3.5 rounded-[12px] bg-surface-container hover:bg-surface-container-high border border-outline-variant hover:border-sky-500/50 transition-all group shadow-none"
           >
-            <div className="w-9 h-9 rounded-lg bg-sky-500/15 text-sky-400 flex items-center justify-center shrink-0">
+            <div className="w-9 h-9 rounded-xl bg-sky-500/15 text-sky-400 flex items-center justify-center shrink-0">
               <Monitor className="w-4 h-4" />
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-1.5">
-                <span className="text-xs font-bold text-white group-hover:text-sky-300 transition-colors">Windows Client</span>
-                <span className="text-[9px] font-mono px-1.5 py-0.5 bg-sky-500/10 text-sky-400 rounded">EXE</span>
+                <span className="text-xs font-bold text-on-surface group-hover:text-sky-300 transition-colors">Windows Client</span>
+                <span className="text-[9px] font-sans tabular-nums px-1.5 py-0.5 bg-sky-500/10 text-sky-400 rounded-full">EXE</span>
               </div>
-              <p className="text-[10px] text-slate-400 font-mono truncate">Windows 10/11 x64</p>
+              <p className="text-[10px] text-on-surface-variant font-sans tabular-nums truncate">Windows 10/11 x64</p>
             </div>
           </a>
 
@@ -223,48 +223,48 @@ export const QuickConnectCard: React.FC<QuickConnectCardProps> = ({
             href="https://github.com/imyash0722/tinapple/releases"
             target="_blank"
             rel="noreferrer"
-            className="flex items-center gap-3 p-3 rounded-xl bg-slate-800/50 hover:bg-slate-800 border border-slate-700/60 hover:border-purple-500/50 transition-all group"
+            className="flex items-center gap-3 p-3.5 rounded-[12px] bg-surface-container hover:bg-surface-container-high border border-outline-variant hover:border-purple-500/50 transition-all group shadow-none"
           >
-            <div className="w-9 h-9 rounded-lg bg-purple-500/15 text-purple-400 flex items-center justify-center shrink-0">
+            <div className="w-9 h-9 rounded-xl bg-purple-500/15 text-purple-400 flex items-center justify-center shrink-0">
               <Laptop className="w-4 h-4" />
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-1.5">
-                <span className="text-xs font-bold text-white group-hover:text-purple-300 transition-colors">macOS Universal</span>
-                <span className="text-[9px] font-mono px-1.5 py-0.5 bg-purple-500/10 text-purple-400 rounded">DMG</span>
+                <span className="text-xs font-bold text-on-surface group-hover:text-purple-300 transition-colors">macOS Universal</span>
+                <span className="text-[9px] font-sans tabular-nums px-1.5 py-0.5 bg-purple-500/10 text-purple-400 rounded-full">DMG</span>
               </div>
-              <p className="text-[10px] text-slate-400 font-mono truncate">Apple Silicon & Intel</p>
+              <p className="text-[10px] text-on-surface-variant font-sans tabular-nums truncate">Apple Silicon & Intel</p>
             </div>
           </a>
 
           <a
             href="/download/apk"
-            className="flex items-center gap-3 p-3 rounded-xl bg-slate-800/50 hover:bg-slate-800 border border-slate-700/60 hover:border-emerald-500/50 transition-all group"
+            className="flex items-center gap-3 p-3.5 rounded-[12px] bg-surface-container hover:bg-surface-container-high border border-outline-variant hover:border-emerald-500/50 transition-all group shadow-none"
           >
-            <div className="w-9 h-9 rounded-lg bg-emerald-500/15 text-emerald-400 flex items-center justify-center shrink-0">
+            <div className="w-9 h-9 rounded-xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center shrink-0">
               <Smartphone className="w-4 h-4" />
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-1.5">
-                <span className="text-xs font-bold text-white group-hover:text-emerald-300 transition-colors">Android Companion</span>
-                <span className="text-[9px] font-mono px-1.5 py-0.5 bg-emerald-500/10 text-emerald-400 rounded">APK</span>
+                <span className="text-xs font-bold text-on-surface group-hover:text-emerald-300 transition-colors">Android Companion</span>
+                <span className="text-[9px] font-sans tabular-nums px-1.5 py-0.5 bg-emerald-500/10 text-emerald-400 rounded-full">APK</span>
               </div>
-              <p className="text-[10px] text-slate-400 font-mono truncate">Capacitor 7 Native Client</p>
+              <p className="text-[10px] text-on-surface-variant font-mono truncate">Capacitor 7 Native Client</p>
             </div>
           </a>
         </div>
       </div>
 
       {/* Direct Service Jump Grid */}
-      <div className="tinapple-glass-card rounded-xl bg-slate-900/40 border border-slate-800/60 p-4 sm:p-5 backdrop-blur-md relative">
+      <div className="rounded-[28px] bg-surface-container-low border border-outline-variant p-4 sm:p-5 shadow-none relative">
         <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-          <h4 className="text-xs font-mono uppercase tracking-wider text-slate-400 flex items-center gap-2">
-            <span>⚡ Live Server Portals</span>
-            <span className="text-[10px] text-slate-500 font-normal hidden sm:inline">(Verified Port Links)</span>
+          <h4 className="text-xs font-sans tabular-nums uppercase tracking-wider text-on-surface-variant flex items-center gap-2">
+            <span>Live Server Portals</span>
+            <span className="text-[10px] text-on-surface-variant font-normal hidden sm:inline">(Verified Port Links)</span>
           </h4>
           <div className="flex items-center gap-2">
             {notice && (
-              <span className="text-[11px] font-mono text-amber-400 bg-amber-500/10 px-2.5 py-0.5 rounded-lg border border-amber-500/30 animate-pulse">
+              <span className="text-[11px] font-sans tabular-nums text-amber-400 bg-amber-500/10 px-2.5 py-0.5 rounded-full border border-amber-500/30 animate-pulse">
                 {notice}
               </span>
             )}
@@ -272,7 +272,7 @@ export const QuickConnectCard: React.FC<QuickConnectCardProps> = ({
               <button
                 type="button"
                 onClick={() => onOpenGuide('jellyfin')}
-                className="px-2.5 py-1 rounded-lg bg-purple-500/15 hover:bg-purple-500/25 border border-purple-500/30 text-purple-300 text-[11px] font-mono font-bold flex items-center gap-1.5 transition-all"
+                className="px-2.5 py-1 rounded-full bg-purple-500/15 hover:bg-purple-500/25 border border-purple-500/30 text-purple-300 text-[11px] font-sans tabular-nums font-bold flex items-center gap-1.5 transition-all"
                 title="View Client App & Setup Guides (Plezy, SyncYomi, etc.)"
               >
                 <BookOpen className="w-3.5 h-3.5 text-purple-400" />
@@ -282,7 +282,7 @@ export const QuickConnectCard: React.FC<QuickConnectCardProps> = ({
             {isEditMode && onAddBookmark && (
               <button
                 onClick={onAddBookmark}
-                className="px-2.5 py-1 rounded-lg bg-tinapple-gold/15 hover:bg-tinapple-gold/25 border border-tinapple-gold/30 text-tinapple-gold text-[11px] font-mono font-bold flex items-center gap-1 transition-all"
+                className="px-2.5 py-1 rounded-full bg-primary/20 hover:bg-primary/30 border border-primary/40 text-primary text-[11px] font-sans tabular-nums font-bold flex items-center gap-1 transition-all"
               >
                 <Plus className="w-3 h-3" />
                 <span>Add Bookmark</span>
@@ -299,8 +299,8 @@ export const QuickConnectCard: React.FC<QuickConnectCardProps> = ({
               (s.displayName && typeof s.displayName === 'string' && s.displayName.toLowerCase().includes(svc.id)) ||
               s.id === svc.id
             );
-            const isRunning = svcStatus ? Boolean(svcStatus.running || svcStatus.activeState === 'active' || svcStatus.status === 'running') : false;
-            const isInstalled = svcStatus ? Boolean(svcStatus.installed || (svcStatus.activeState && svcStatus.activeState !== 'not_installed') || (svcStatus.status && svcStatus.status !== 'not_installed')) : false;
+            const isRunning = svcStatus ? Boolean(svcStatus.running || svcStatus.activeState === 'active') : false;
+            const isInstalled = svcStatus ? Boolean(svcStatus.installed || (svcStatus.activeState && svcStatus.activeState !== 'not_installed')) : false;
             const statusLabel = isRunning ? 'running' : isInstalled ? 'stopped' : 'not installed';
 
             if (isRunning && svc.port) {
@@ -310,12 +310,12 @@ export const QuickConnectCard: React.FC<QuickConnectCardProps> = ({
                   href={svc.path}
                   target="_blank"
                   rel="noreferrer"
-                  className="flex flex-col items-center justify-center p-3 sm:p-3.5 rounded-xl bg-slate-800/40 hover:bg-slate-800/80 border border-slate-700/40 hover:border-emerald-500/40 transition-all group text-center relative"
+                  className="flex flex-col items-center justify-center p-3 sm:p-3.5 rounded-xl bg-surface-container hover:bg-surface-container border border-slate-700/40 hover:border-emerald-500/40 transition-all group text-center relative"
                 >
                   <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-emerald-400 animate-pulse" title="Active • Online" />
                   <AppBrandIcon id={svc.id} size={30} showBadge className="mb-2 group-hover:scale-110 transition-transform" />
-                  <span className="text-[11px] sm:text-xs font-medium text-slate-200 group-hover:text-emerald-300 truncate w-full">{svc.name}</span>
-                  <span className="text-[10px] font-mono text-emerald-400">:{svc.port}</span>
+                  <span className="text-[11px] sm:text-xs font-medium text-on-surface group-hover:text-emerald-300 truncate w-full">{svc.name}</span>
+                  <span className="text-[10px] font-sans tabular-nums text-emerald-400">:{svc.port}</span>
                 </a>
               );
             }
@@ -325,7 +325,7 @@ export const QuickConnectCard: React.FC<QuickConnectCardProps> = ({
                 key={svc.name}
                 type="button"
                 onClick={() => showServiceNotice(svc.name, statusLabel)}
-                className="flex flex-col items-center justify-center p-3 sm:p-3.5 rounded-xl bg-slate-900/30 hover:bg-slate-800/50 border border-slate-800/50 hover:border-slate-700 transition-all group text-center relative opacity-75 hover:opacity-100"
+                className="flex flex-col items-center justify-center p-3 sm:p-3.5 rounded-xl bg-surface-container-low hover:bg-surface-container border border-slate-800/50 hover:border-slate-700 transition-all group text-center relative opacity-75 hover:opacity-100"
                 title={`${svc.name}: ${statusLabel}. Click to manage.`}
               >
                 <span
@@ -334,8 +334,8 @@ export const QuickConnectCard: React.FC<QuickConnectCardProps> = ({
                   }`}
                 />
                 <AppBrandIcon id={svc.id} size={30} showBadge className={`mb-2 ${isRunning ? '' : 'grayscale contrast-75'} group-hover:grayscale-0 transition-all`} />
-                <span className="text-[11px] sm:text-xs font-medium text-slate-400 group-hover:text-slate-200 truncate w-full">{svc.name}</span>
-                <span className="text-[10px] font-mono text-slate-500">
+                <span className="text-[11px] sm:text-xs font-medium text-on-surface-variant group-hover:text-on-surface truncate w-full">{svc.name}</span>
+                <span className="text-[10px] font-sans tabular-nums text-on-surface-variant">
                   {isRunning ? 'Active' : isInstalled ? 'Stopped' : 'Store'}
                 </span>
               </button>
@@ -346,30 +346,30 @@ export const QuickConnectCard: React.FC<QuickConnectCardProps> = ({
 
       {/* Custom Homelab Bookmarks Grid (Tinarchy Feature) */}
       {(customBookmarks.length > 0 || isEditMode) && (
-        <div className="tinapple-glass-card rounded-xl bg-slate-900/40 border border-slate-800/60 p-4 sm:p-5 backdrop-blur-md relative">
+        <div className="rounded-[28px] bg-surface-container-low border border-outline-variant p-4 sm:p-5 shadow-none relative">
           <div className="flex items-center justify-between mb-3">
-            <h4 className="text-xs font-mono uppercase tracking-wider text-slate-400 flex items-center gap-2">
-              <Globe className="w-3.5 h-3.5 text-tinapple-gold" />
+            <h4 className="text-xs font-sans tabular-nums uppercase tracking-wider text-on-surface-variant flex items-center gap-2">
+              <Globe className="w-3.5 h-3.5 text-primary" />
               <span>Custom Homelab Bookmarks</span>
-              <span className="text-[10px] text-slate-500 font-normal">({customBookmarks.length} saved)</span>
+              <span className="text-[10px] text-on-surface-variant font-normal">({customBookmarks.length} saved)</span>
             </h4>
             {onAddBookmark && (
               <button
                 onClick={onAddBookmark}
-                className="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-mono flex items-center gap-1 transition-colors"
+                className="px-2.5 py-1 rounded-full bg-surface-container hover:bg-surface-container-high border border-outline-variant text-on-surface text-[11px] font-sans tabular-nums flex items-center gap-1 transition-colors"
               >
-                <Plus className="w-3 h-3 text-tinapple-gold" />
+                <Plus className="w-3 h-3 text-primary" />
                 <span>Add Link</span>
               </button>
             )}
           </div>
 
           {customBookmarks.length === 0 ? (
-            <div className="p-6 text-center border border-dashed border-slate-800 rounded-xl font-mono text-slate-500 text-xs">
+            <div className="p-6 text-center border border-dashed border-outline-variant rounded-[12px] font-sans tabular-nums text-on-surface-variant text-xs">
               <p>No custom bookmarks yet.</p>
               <button
                 onClick={onAddBookmark}
-                className="mt-2 text-tinapple-gold hover:underline font-semibold text-[11px]"
+                className="mt-2 text-primary hover:underline font-semibold text-[11px]"
               >
                 + Add your first custom homelab or web bookmark
               </button>
@@ -379,7 +379,7 @@ export const QuickConnectCard: React.FC<QuickConnectCardProps> = ({
               {customBookmarks.map((bm) => (
                 <div
                   key={bm.id}
-                  className="group relative flex items-center justify-between p-3.5 rounded-xl bg-slate-900/70 border border-slate-800/80 hover:border-slate-700 transition-all backdrop-blur-sm"
+                  className="group relative flex items-center justify-between p-3.5 rounded-[12px] bg-surface-container border border-outline-variant hover:border-primary/50 transition-all shadow-none"
                 >
                   <a
                     href={bm.url}
@@ -388,7 +388,7 @@ export const QuickConnectCard: React.FC<QuickConnectCardProps> = ({
                     className="flex items-center gap-3 min-w-0 flex-1 mr-2"
                   >
                     <div
-                      className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-sm border border-white/10"
+                      className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-none border border-outline-variant"
                       style={{
                         backgroundColor: `${bm.accentColor || '#10B981'}20`,
                         color: bm.accentColor || '#10B981',
@@ -398,12 +398,12 @@ export const QuickConnectCard: React.FC<QuickConnectCardProps> = ({
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-1.5">
-                        <span className="text-xs font-bold text-white group-hover:text-tinapple-gold transition-colors truncate">
+                        <span className="text-xs font-bold text-on-surface group-hover:text-tinapple-gold transition-colors truncate">
                           {bm.name}
                         </span>
-                        <ExternalLink className="w-3 h-3 text-slate-500 group-hover:text-slate-300 shrink-0" />
+                        <ExternalLink className="w-3 h-3 text-on-surface-variant group-hover:text-on-surface shrink-0" />
                       </div>
-                      <p className="text-[10px] text-slate-400 font-mono truncate">
+                      <p className="text-[10px] text-on-surface-variant font-sans tabular-nums truncate">
                         {bm.tagline || bm.url.replace(/^https?:\/\//, '')}
                       </p>
                     </div>
@@ -414,7 +414,7 @@ export const QuickConnectCard: React.FC<QuickConnectCardProps> = ({
                       {onEditBookmark && (
                         <button
                           onClick={() => onEditBookmark(bm)}
-                          className="p-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
+                          className="p-1 rounded-lg bg-surface-container hover:bg-slate-700 text-on-surface hover:text-on-surface transition-colors"
                           title="Edit bookmark"
                         >
                           <Edit2 className="w-3.5 h-3.5" />
@@ -423,7 +423,7 @@ export const QuickConnectCard: React.FC<QuickConnectCardProps> = ({
                       {onDeleteBookmark && (
                         <button
                           onClick={() => onDeleteBookmark(bm.id)}
-                          className="p-1 rounded-lg bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-300 transition-colors"
+                          className="p-1 rounded-lg bg-surface-container hover:bg-rose-500/20 text-on-surface-variant hover:text-rose-300 transition-colors"
                           title="Delete bookmark"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
