@@ -54,8 +54,13 @@ export const colorChannels = (hex: string) => [1, 3, 5].map(start => parseInt(he
 
 export function isWallpaperUrl(value: unknown): value is string {
   if (typeof value !== 'string' || !value.trim()) return false;
+  // Accept relative paths for bundled wallpapers (e.g. /wallpapers/foo.jpg)
+  if (value.startsWith('/wallpapers/') || value.startsWith('./wallpapers/')) return true;
+  // Accept blob: object URLs created from IndexedDB-cached wallpapers
+  if (value.startsWith('blob:')) return true;
+  // Accept absolute http/https URLs for external wallpapers
   try {
-    return ['http:', 'https:'].includes(new URL(value, 'https://tinapple.local').protocol);
+    return ['http:', 'https:'].includes(new URL(value).protocol);
   } catch { return false; }
 }
 
