@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# Runner for tinapple-music-queuer using dedicated Python environment
+VENV_PYTHON="/home/pineapple/.local/share/tinapple-music-queuer/venv/bin/python3"
+SCRIPT_PATH="/home/pineapple/.local/share/tinapple-music-queuer/queuer.py"
+
+if [[ ! -x "$VENV_PYTHON" ]]; then
+  VENV_PYTHON="/tmp/test-venv/bin/python3"
+fi
+
+exec "$VENV_PYTHON" "$SCRIPT_PATH" "$@"
