@@ -139,9 +139,11 @@ export const App: React.FC = () => {
   const [desktopSidebarCollapsed, setDesktopSidebarCollapsed] = useState(false);
   const [isSidebarPinned, setIsSidebarPinned] = useState<boolean>(() => {
     try {
-      return localStorage.getItem('tinapple_sidebar_pinned') === 'true';
+      const savedPin = localStorage.getItem('tinapple_sidebar_pinned');
+      if (savedPin !== null) return savedPin === 'true';
+      return !loadSettings().sidebarAutohide;
     } catch {
-      return false;
+      return true;
     }
   });
 
@@ -151,6 +153,7 @@ export const App: React.FC = () => {
       try {
         localStorage.setItem('tinapple_sidebar_pinned', String(next));
       } catch {}
+      setSettings((s) => ({ ...s, sidebarAutohide: !next }));
       return next;
     });
   };
@@ -614,6 +617,9 @@ export const App: React.FC = () => {
             onUpdate={setSettings}
             colorStatus={colorStatus}
             storageStatus={storageStatus}
+            isSidebarPinned={isSidebarPinned}
+            onToggleSidebarPinned={handleTogglePinSidebar}
+            onToggleSidebarDrawer={() => setMobileSidebarOpen((prev) => !prev)}
           />
         </Suspense>
       )}
@@ -649,13 +655,12 @@ export const App: React.FC = () => {
         rebootDeadline={rebootDeadline}
       />
 
-      {/* TOP COMMAND HEADER (CLEAN BREADCRUMB & STATUS BAR - Only shown for subpages, Homarr Board has its own unified header) */}
-      {!isLandingPage && (
-        <header
-          className={`sticky top-0 z-20 w-full bg-[#050a16]/85 backdrop-blur-2xl border-b border-white/[0.08] shadow-lg shadow-black/20 transition-all duration-300 ${
-            isSidebarPinned ? (desktopSidebarCollapsed ? 'md:pl-20' : 'md:pl-64') : ''
-          }`}
-        >
+      {/* TOP COMMAND HEADER (CLEAN BREADCRUMB & STATUS BAR) */}
+      <header
+        className={`sticky top-0 z-20 w-full bg-[#050a16]/85 backdrop-blur-2xl border-b border-white/[0.08] shadow-lg shadow-black/20 transition-all duration-300 ${
+          isSidebarPinned ? (desktopSidebarCollapsed ? 'md:pl-20' : 'md:pl-64') : ''
+        }`}
+      >
           <div className="w-full px-3 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-3">
             {/* Left: Hamburger & Desktop Page Breadcrumb */}
             <div className="flex items-center gap-2 sm:gap-3.5 min-w-0">
@@ -799,12 +804,11 @@ export const App: React.FC = () => {
           </div>
           <span className="sr-only" role="status">{actionMessage}</span>
         </header>
-      )}
 
       {/* MAIN SCREEN-FILLING BENTO DECK */}
       <main
         className={`w-full max-w-full transition-all duration-300 ${
-          isLandingPage || !isSidebarPinned
+          !isSidebarPinned
             ? 'px-3 sm:px-6 lg:px-8 pt-4 sm:pt-6 pb-12'
             : `px-3 sm:px-6 pt-4 sm:pt-5 pb-[calc(7rem+env(safe-area-inset-bottom,0px))] md:pb-12 ${
                 desktopSidebarCollapsed ? 'md:pl-24' : 'md:pl-72'

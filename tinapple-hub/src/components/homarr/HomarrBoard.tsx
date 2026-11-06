@@ -51,6 +51,7 @@ import {
   HomarrNetworkGuardWidget,
   HomarrMediaWidget,
   HomarrMangaWidget,
+  HomarrRequestsWidget,
   HomarrSyncVaultWidget,
   HomarrHardwareWidget,
   HomarrPortMatrixWidget,
@@ -100,8 +101,8 @@ const DEFAULT_HOMARR_BOOKMARKS: CustomBookmarkItem[] = [
   },
 ];
 
-const BOARD_STORAGE_KEY = 'tinapple_homarr_board_widgets_v8';
-const SECTION_COLLAPSE_STORAGE_KEY = 'tinapple_homarr_sections_collapsed_v1';
+const BOARD_STORAGE_KEY = 'tinapple_homarr_board_widgets_v9';
+const SECTION_COLLAPSE_STORAGE_KEY = 'tinapple_homarr_sections_collapsed_v2';
 const VIEW_MODE_STORAGE_KEY = 'tinapple_homarr_view_mode';
 
 export interface HomarrBoardProps {
@@ -175,10 +176,64 @@ const CURATED_APPLIANCES: CuratedAppliance[] = [
   // Storage & Cloud
   { id: 'syncthing', name: 'Syncthing Decentralized Sync', tagline: 'Continuous Bidirectional P2P Replication', category: 'storage', icon: '🔄', port: 8384, subpath: '/syncthing', guideId: 'syncthing' },
   { id: 'vaultwarden', name: 'Vaultwarden Password Vault', tagline: 'Encrypted Bitwarden Zero-Knowledge Cloud', category: 'storage', icon: '🔐', port: 8000, subpath: '/vault', guideId: 'vaultwarden' },
+  { id: 'filebrowser', name: 'FileBrowser Quantum', tagline: 'Web File Manager & Fast Cloud Storage', category: 'storage', icon: '📁', port: 8081, subpath: '/files', guideId: 'filebrowser' },
 
   // Network & Privacy
   { id: 'adguard', name: 'AdGuard Home DNS', tagline: 'Network-wide DNS Tracker & Malware Blocker', category: 'network', icon: '🛡️', port: 3000, subpath: '/adguard', guideId: 'adguard' },
   { id: 'tor', name: 'Tor Privacy Onion Proxy', tagline: 'Onion Routing & SOCKS5 Privacy Daemon', category: 'network', icon: '🧅', port: 9050, subpath: '/guides/tor.html', guideId: 'tor' },
+];
+
+export interface BoardCategorySection {
+  id: string;
+  name: string;
+  tagline: string;
+  icon: string;
+  badgeColor: string;
+}
+
+export const BOARD_SECTIONS: BoardCategorySection[] = [
+  {
+    id: 'media',
+    name: 'Media & Streaming',
+    tagline: 'Hardware Video Transcoding, 4K DirectPlay & Manga Shelves',
+    icon: '🎬',
+    badgeColor: 'bg-purple-500/15 text-purple-300 border-purple-500/30',
+  },
+  {
+    id: 'downloads',
+    name: 'Downloads & Torrent Automation',
+    tagline: 'Headless P2P BitTorrent, Media Indexers & Automatic Grabbers',
+    icon: '📥',
+    badgeColor: 'bg-blue-500/15 text-blue-300 border-blue-500/30',
+  },
+  {
+    id: 'network',
+    name: 'Network & Privacy Mesh',
+    tagline: 'Tailscale MagicDNS, WireGuard VPN & Port Matrix Listeners',
+    icon: '🛡️',
+    badgeColor: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
+  },
+  {
+    id: 'storage',
+    name: 'Storage & Decentralized Sync',
+    tagline: 'Continuous Bidirectional P2P Sync, Passwords & File Storage',
+    icon: '🔄',
+    badgeColor: 'bg-sky-500/15 text-sky-300 border-sky-500/30',
+  },
+  {
+    id: 'telemetry',
+    name: 'Silicon & Hardware Telemetry',
+    tagline: 'CPU / RAM Usage, Fan Speeds, Thermals & Battery Protection',
+    icon: '⚡',
+    badgeColor: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
+  },
+  {
+    id: 'system',
+    name: 'System Utilities & Homelab Hub',
+    tagline: 'Clock, Web PTY Terminal, Runbook Notes & Homelab Bookmarks',
+    icon: '⏱️',
+    badgeColor: 'bg-indigo-500/15 text-indigo-300 border-indigo-500/30',
+  },
 ];
 
 // 2. Default Board Widgets Set
@@ -219,12 +274,12 @@ const DEFAULT_BOARD_WIDGETS: CanvasWidget[] = [
     title: 'Active Transfers & Speeds',
     description: 'qBittorrent & Pinchflat download/upload transfer speeds and active torrent tasks count.',
     icon: '📥',
-    category: 'storage',
+    category: 'downloads',
     x: 0,
     y: 0,
     w: 420,
     h: 340,
-    colSpan: 6,
+    colSpan: 12,
     zIndex: 3,
     visible: true,
   },
@@ -237,9 +292,9 @@ const DEFAULT_BOARD_WIDGETS: CanvasWidget[] = [
     category: 'media',
     x: 0,
     y: 0,
-    w: 460,
-    h: 320,
-    colSpan: 6,
+    w: 520,
+    h: 360,
+    colSpan: 12,
     zIndex: 4,
     visible: true,
   },
@@ -252,10 +307,25 @@ const DEFAULT_BOARD_WIDGETS: CanvasWidget[] = [
     category: 'media',
     x: 0,
     y: 0,
-    w: 420,
+    w: 520,
+    h: 360,
+    colSpan: 12,
+    zIndex: 5,
+    visible: true,
+  },
+  {
+    id: 'media_requests',
+    type: 'media_requests',
+    title: 'Media Requests & Discovery',
+    description: 'Seerr automated movie & show requests pipeline and status.',
+    icon: '🍿',
+    category: 'media',
+    x: 0,
+    y: 0,
+    w: 520,
     h: 320,
     colSpan: 6,
-    zIndex: 5,
+    zIndex: 6,
     visible: true,
   },
   {
@@ -723,6 +793,8 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
         return <HomarrMediaWidget onOpenGuide={onOpenGuide} />;
       case 'manga_shelf':
         return <HomarrMangaWidget />;
+      case 'media_requests':
+        return <HomarrRequestsWidget />;
       case 'storage_vault':
         return <HomarrSyncVaultWidget />;
       case 'hardware_thermals':
@@ -1227,191 +1299,213 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
       </div>
 
       {/* ═══════════════════════════════════════════════════════════════
-          2. HOMARR SECTION 1: APPLIANCE DAEMONS GRID (APPS CONTAINER)
+          2. HOMARR CATEGORIZED SECTIONS (WIDGETS & SERVICE LAUNCHERS)
           ═══════════════════════════════════════════════════════════════ */}
-      {filteredAppliances.length > 0 && (
-        <section className="space-y-3.5">
-          {/* Section Container Header */}
-          <div
-            onClick={() => toggleSectionCollapse('appliances')}
-            className="flex items-center justify-between px-3 py-2 rounded-2xl bg-slate-900/40 hover:bg-slate-900/60 border border-white/[0.06] backdrop-blur-md cursor-pointer transition-colors"
-          >
-            <div className="flex items-center gap-2.5">
-              <span className="text-base">🚀</span>
-              <h2 className="text-sm font-bold text-white font-mono uppercase tracking-wider">
-                Appliance Launchers & Daemons ({filteredAppliances.length})
-              </h2>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 font-bold">
-                Reverse Proxied
-              </span>
-            </div>
-            <div className="flex items-center gap-2 text-zinc-400">
-              <span className="text-xs font-mono hidden sm:inline">
-                {collapsedSections['appliances'] ? 'Click to expand' : 'Click to collapse'}
-              </span>
-              {collapsedSections['appliances'] ? (
-                <ChevronDown className="w-4 h-4" />
-              ) : (
-                <ChevronUp className="w-4 h-4" />
-              )}
-            </div>
-          </div>
+      {BOARD_SECTIONS.map((section) => {
+        // Filter by selected category pill
+        if (selectedCategory !== 'all' && selectedCategory !== section.id) {
+          return null;
+        }
 
-          {/* Grid of Appliance Tiles */}
-          {!collapsedSections['appliances'] && (
-            <div className="grid grid-cols-12 gap-3.5">
-              {filteredAppliances.map((app) => {
-                const serviceInfo = servicesMap.get(app.id);
-                const activeState = serviceInfo?.activeState || 'active';
-                const registeredApp = serviceRegistry.get(app.id);
-                const appUrl = registeredApp ? registeredApp.getOpenUrl() : (app.subpath || getServiceUrl(app.id));
-                const appPort = app.port || registeredApp?.port;
+        const sectionWidgets = visibleWidgets.filter((w) => {
+          if (section.id === 'system') {
+            return w.category === 'system' || w.category === 'custom';
+          }
+          return w.category === section.id;
+        });
 
-                return (
-                  <HomarrAppTile
-                    key={app.id}
-                    id={app.id}
-                    name={app.name}
-                    tagline={app.tagline}
-                    category={app.category}
-                    icon={app.icon}
-                    url={appUrl}
-                    port={appPort}
-                    activeState={activeState}
-                    isEditMode={isEditMode}
-                    colSpan={app.defaultColSpan || 3}
-                    onOpenSettings={
-                      onOpenAppSettings
-                        ? () => onOpenAppSettings(serviceInfo || { name: app.id, displayName: app.name })
-                        : undefined
-                    }
-                    onOpenGuide={app.guideId ? () => onOpenGuide(app.guideId!) : undefined}
-                  />
-                );
-              })}
-            </div>
-          )}
-        </section>
-      )}
+        const sectionAppliances = filteredAppliances.filter((a) => a.category === section.id);
 
-      {/* ═══════════════════════════════════════════════════════════════
-          3. HOMARR SECTION 2: MODULAR INTEGRATION WIDGETS
-          ═══════════════════════════════════════════════════════════════ */}
-      {visibleWidgets.length > 0 && (
-        <section className="space-y-3.5">
-          {/* Section Container Header */}
-          <div
-            onClick={() => toggleSectionCollapse('widgets')}
-            className="flex items-center justify-between px-3 py-2 rounded-2xl bg-slate-900/40 hover:bg-slate-900/60 border border-white/[0.06] backdrop-blur-md cursor-pointer transition-colors"
-          >
-            <div className="flex items-center gap-2.5">
-              <span className="text-base">⚡</span>
-              <h2 className="text-sm font-bold text-white font-mono uppercase tracking-wider">
-                Live Integration Widgets ({visibleWidgets.length})
-              </h2>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-sky-500/15 text-sky-300 border border-sky-500/25 font-bold">
-                Real-Time SSE
-              </span>
-            </div>
-            <div className="flex items-center gap-2 text-zinc-400">
-              <span className="text-xs font-mono hidden sm:inline">
-                {collapsedSections['widgets'] ? 'Click to expand' : 'Click to collapse'}
-              </span>
-              {collapsedSections['widgets'] ? (
-                <ChevronDown className="w-4 h-4" />
-              ) : (
-                <ChevronUp className="w-4 h-4" />
-              )}
-            </div>
-          </div>
+        // Hide section if empty and not in edit mode
+        if (sectionWidgets.length === 0 && sectionAppliances.length === 0 && !isEditMode) {
+          return null;
+        }
 
-          {/* Grid of Modular Widgets */}
-          {!collapsedSections['widgets'] && (
-            <div className="grid grid-cols-12 gap-4">
-              {visibleWidgets.map((widget) => {
-                const colSpanClass = getColSpanClass(widget.colSpan);
+        const isCollapsed = Boolean(collapsedSections[section.id]);
 
-                return (
-                  <div
-                    key={widget.id}
-                    className={`${colSpanClass} relative rounded-2xl bg-slate-900/50 hover:bg-slate-900/70 border border-white/[0.08] backdrop-blur-xl transition-all p-3 sm:p-4 shadow-xl shadow-black/20 flex flex-col justify-between`}
-                    style={{ minHeight: '300px' }}
+        return (
+          <section key={section.id} className="space-y-4">
+            {/* Section Accordion Header */}
+            <div
+              onClick={() => toggleSectionCollapse(section.id)}
+              className="flex items-center justify-between px-3.5 py-2.5 rounded-2xl bg-slate-900/40 hover:bg-slate-900/60 border border-white/[0.06] backdrop-blur-md cursor-pointer transition-colors shadow-sm select-none"
+            >
+              <div className="flex items-center gap-2.5 min-w-0">
+                <span className="text-lg shrink-0">{section.icon}</span>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h2 className="text-sm font-bold text-white font-mono uppercase tracking-wider truncate">
+                      {section.name}
+                    </h2>
+                    <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full border font-bold ${section.badgeColor}`}>
+                      {sectionWidgets.length > 0 && `${sectionWidgets.length} widget${sectionWidgets.length > 1 ? 's' : ''}`}
+                      {sectionWidgets.length > 0 && sectionAppliances.length > 0 && ' • '}
+                      {sectionAppliances.length > 0 && `${sectionAppliances.length} app${sectionAppliances.length > 1 ? 's' : ''}`}
+                      {sectionWidgets.length === 0 && sectionAppliances.length === 0 && '0 items'}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-zinc-400 font-mono truncate hidden sm:block">
+                    {section.tagline}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 text-zinc-400 shrink-0">
+                {isEditMode && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsCreatorOpen(true);
+                    }}
+                    className="px-2.5 py-1 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 text-tinapple-gold hover:text-amber-300 font-mono text-xs font-bold flex items-center gap-1 transition-all active:scale-95"
+                    title={`Add widget to ${section.name}`}
                   >
-                    {/* Edit Mode Controls Overlay */}
-                    {isEditMode && (
-                      <div className="mb-2 p-2 rounded-xl bg-slate-950/90 border border-white/10 flex items-center justify-between font-mono text-xs z-10">
-                        <div className="flex items-center gap-1.5 text-zinc-300 font-bold truncate">
-                          <span>{widget.icon}</span>
-                          <span className="truncate">{widget.title}</span>
+                    <Plus className="w-3.5 h-3.5" />
+                    <span className="hidden md:inline">Add Widget</span>
+                  </button>
+                )}
+                <span className="text-xs font-mono hidden md:inline">
+                  {isCollapsed ? 'Click to expand' : 'Click to collapse'}
+                </span>
+                {isCollapsed ? (
+                  <ChevronDown className="w-4 h-4" />
+                ) : (
+                  <ChevronUp className="w-4 h-4" />
+                )}
+              </div>
+            </div>
+
+            {/* Section Content (Widgets + Appliance Launchers) */}
+            {!isCollapsed && (
+              <div className="space-y-4">
+                {/* 1. Modular Widgets Grid */}
+                {sectionWidgets.length > 0 && (
+                  <div className="grid grid-cols-12 gap-4">
+                    {sectionWidgets.map((widget) => {
+                      const colSpanClass = getColSpanClass(widget.colSpan);
+
+                      return (
+                        <div
+                          key={widget.id}
+                          className={`${colSpanClass} relative rounded-2xl bg-slate-900/50 hover:bg-slate-900/70 border border-white/[0.08] backdrop-blur-xl transition-all p-3 sm:p-4 shadow-xl shadow-black/20 flex flex-col justify-between`}
+                          style={{ minHeight: '300px' }}
+                        >
+                          {/* Edit Mode Controls Overlay */}
+                          {isEditMode && (
+                            <div className="mb-2 p-2 rounded-xl bg-slate-950/90 border border-white/10 flex items-center justify-between font-mono text-xs z-10">
+                              <div className="flex items-center gap-1.5 text-zinc-300 font-bold truncate">
+                                <span>{widget.icon}</span>
+                                <span className="truncate">{widget.title}</span>
+                              </div>
+                              <div className="flex items-center gap-1 shrink-0">
+                                <button
+                                  onClick={() => handleMoveWidget(widget.id, 'up')}
+                                  className="p-1 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 transition-colors"
+                                  title="Move widget backward"
+                                >
+                                  <MoveUp className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => handleMoveWidget(widget.id, 'down')}
+                                  className="p-1 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 transition-colors"
+                                  title="Move widget forward"
+                                >
+                                  <MoveDown className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => handleToggleColSpan(widget.id)}
+                                  className="p-1 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 transition-colors"
+                                  title={`Resize width (Current: ${widget.colSpan || 6} cols)`}
+                                >
+                                  {widget.colSpan === 12 ? (
+                                    <Minimize2 className="w-3.5 h-3.5" />
+                                  ) : (
+                                    <Maximize2 className="w-3.5 h-3.5" />
+                                  )}
+                                </button>
+                                <button
+                                  onClick={() => setEditingWidget(widget)}
+                                  className="p-1 rounded-lg text-zinc-400 hover:text-tinapple-gold hover:bg-white/10 transition-colors"
+                                  title="Edit Widget Settings"
+                                >
+                                  <Sliders className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => handleToggleWidgetVisibility(widget.id)}
+                                  className="p-1 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 transition-colors"
+                                  title={widget.visible ? 'Hide widget' : 'Show widget'}
+                                >
+                                  {widget.visible ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5 text-amber-400" />}
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteWidget(widget.id)}
+                                  className="p-1 rounded-lg text-red-400 hover:text-red-300 hover:bg-red-500/20 transition-colors"
+                                  title="Delete widget from board"
+                                >
+                                  <X className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* The Live Functional Widget Content */}
+                          <div className="w-full h-full flex-1">
+                            {renderWidgetContent(widget)}
+                          </div>
                         </div>
-                        <div className="flex items-center gap-1 shrink-0">
-                          {/* Move Up */}
-                          <button
-                            onClick={() => handleMoveWidget(widget.id, 'up')}
-                            className="p-1 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 transition-colors"
-                            title="Move widget backward"
-                          >
-                            <MoveUp className="w-3.5 h-3.5" />
-                          </button>
-                          {/* Move Down */}
-                          <button
-                            onClick={() => handleMoveWidget(widget.id, 'down')}
-                            className="p-1 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 transition-colors"
-                            title="Move widget forward"
-                          >
-                            <MoveDown className="w-3.5 h-3.5" />
-                          </button>
-                          {/* Toggle ColSpan */}
-                          <button
-                            onClick={() => handleToggleColSpan(widget.id)}
-                            className="p-1 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 transition-colors"
-                            title={`Resize width (Current: ${widget.colSpan || 6} cols)`}
-                          >
-                            {widget.colSpan === 12 ? (
-                              <Minimize2 className="w-3.5 h-3.5" />
-                            ) : (
-                              <Maximize2 className="w-3.5 h-3.5" />
-                            )}
-                          </button>
-                          {/* Edit Properties */}
-                          <button
-                            onClick={() => setEditingWidget(widget)}
-                            className="p-1 rounded-lg text-zinc-400 hover:text-tinapple-gold hover:bg-white/10 transition-colors"
-                            title="Edit Widget Settings"
-                          >
-                            <Sliders className="w-3.5 h-3.5" />
-                          </button>
-                          {/* Toggle Visibility */}
-                          <button
-                            onClick={() => handleToggleWidgetVisibility(widget.id)}
-                            className="p-1 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 transition-colors"
-                            title={widget.visible ? 'Hide widget' : 'Show widget'}
-                          >
-                            {widget.visible ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5 text-amber-400" />}
-                          </button>
-                          {/* Delete */}
-                          <button
-                            onClick={() => handleDeleteWidget(widget.id)}
-                            className="p-1 rounded-lg text-red-400 hover:text-red-300 hover:bg-red-500/20 transition-colors"
-                            title="Delete widget from board"
-                          >
-                            <X className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* 2. Appliance Service Launchers Subgrid */}
+                {sectionAppliances.length > 0 && (
+                  <div className="space-y-2 pt-1">
+                    {sectionWidgets.length > 0 && (
+                      <div className="flex items-center gap-2 px-1 text-[11px] font-mono text-zinc-500 uppercase tracking-wider">
+                        <span>Service Launchers</span>
+                        <div className="flex-1 h-px bg-white/[0.05]" />
                       </div>
                     )}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
+                      {sectionAppliances.map((app) => {
+                        const serviceInfo = servicesMap.get(app.id);
+                        const activeState = serviceInfo?.activeState || 'active';
+                        const registeredApp = serviceRegistry.get(app.id);
+                        const appUrl = registeredApp ? registeredApp.getOpenUrl() : (app.subpath || getServiceUrl(app.id));
+                        const appPort = app.port || registeredApp?.port;
 
-                    {/* The Live Functional Widget Content */}
-                    <div className="w-full h-full flex-1">
-                      {renderWidgetContent(widget)}
+                        return (
+                          <HomarrAppTile
+                            key={app.id}
+                            id={app.id}
+                            name={app.name}
+                            tagline={app.tagline}
+                            category={app.category}
+                            icon={app.icon}
+                            url={appUrl}
+                            port={appPort}
+                            activeState={activeState}
+                            isEditMode={isEditMode}
+                            colSpan={app.defaultColSpan || 3}
+                            onOpenSettings={
+                              onOpenAppSettings
+                                ? () => onOpenAppSettings(serviceInfo || { name: app.id, displayName: app.name })
+                                : undefined
+                            }
+                            onOpenGuide={app.guideId ? () => onOpenGuide(app.guideId!) : undefined}
+                          />
+                        );
+                      })}
                     </div>
                   </div>
-                );
-              })}
-            </div>
-          )}
-        </section>
-      )}
+                )}
+              </div>
+            )}
+          </section>
+        );
+      })}
 
       {/* No Search Matches Placeholder */}
       {filteredAppliances.length === 0 && visibleWidgets.length === 0 && (

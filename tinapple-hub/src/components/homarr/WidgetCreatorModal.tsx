@@ -209,8 +209,17 @@ const TEMPLATES: WidgetTemplate[] = [
     description: 'Self-hosted manga library status and fast offline Tsumiru reader launcher.',
     icon: '📖',
     category: 'media',
-    defaultW: 420,
-    defaultH: 280,
+    defaultW: 520,
+    defaultH: 340,
+  },
+  {
+    type: 'media_requests',
+    title: 'Media Requests & Discovery (Seerr)',
+    description: 'Track movie & show requests, automated Sonarr/Radarr pipeline, and trending media.',
+    icon: '🍿',
+    category: 'media',
+    defaultW: 520,
+    defaultH: 340,
   },
 ];
 

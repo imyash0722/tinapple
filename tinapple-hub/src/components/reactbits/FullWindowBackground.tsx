@@ -19,6 +19,7 @@ export interface BackgroundSettings {
   glassBlur: number;
   glassTranslucency: number;
   uiScale: string;
+  sidebarAutohide?: boolean;
 }
 
 export const FullWindowBackground: React.FC<{ settings: BackgroundSettings }> = ({ settings }) => {

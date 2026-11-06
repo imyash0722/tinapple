@@ -29,9 +29,12 @@ import {
   Lock,
   Radio,
   Play,
+  Pause,
   RotateCw,
+  RefreshCw,
   Smartphone,
   Settings,
+  Tv,
 } from 'lucide-react';
 import { TelemetrySnapshot, SystemInfo, ServiceInfo } from '../../types/api';
 
@@ -194,39 +197,53 @@ export const HomarrClockWidget: React.FC<{ systemInfo: SystemInfo }> = ({ system
 };
 
 // 3. Homarr Downloads & Transfer Rates Widget
+interface TorrentItem {
+  name: string;
+  progress: number;
+  size: number | string;
+  dlspeed: number;
+  upspeed: number;
+  state: string;
+  eta: number;
+}
+
 export const HomarrDownloadsWidget: React.FC = () => {
   const [data, setData] = useState<{
-    qbittorrent: { dlSpeed: number; upSpeed: number; active: number; online: boolean };
-    jdownloader: { dlSpeed: number; online: boolean };
+    dlSpeed: number;
+    upSpeed: number;
+    dhtNodes: number;
+    activeCount: number;
+    totalCount: number;
+    online: boolean;
+    torrents: TorrentItem[];
   }>({
-    qbittorrent: { dlSpeed: 0, upSpeed: 0, active: 0, online: true },
-    jdownloader: { dlSpeed: 0, online: false },
+    dlSpeed: 0,
+    upSpeed: 0,
+    dhtNodes: 0,
+    activeCount: 0,
+    totalCount: 0,
+    online: true,
+    torrents: [],
   });
 
-  useEffect(() => {
-    const fetchTransfers = async () => {
-      try {
-        const [qbRes, jdRes] = await Promise.all([
-          fetch('/api/widgets/qbittorrent').then((r) => (r.ok ? r.json() : null)),
-          fetch('/api/widgets/jdownloader').then((r) => (r.ok ? r.json() : null)),
-        ]);
-        if (qbRes || jdRes) {
-          setData({
-            qbittorrent: {
-              dlSpeed: qbRes?.server_state?.dl_info_speed || 0,
-              upSpeed: qbRes?.server_state?.up_info_speed || 0,
-              active: (qbRes?.torrents || []).length,
-              online: !!qbRes,
-            },
-            jdownloader: {
-              dlSpeed: jdRes?.speed || 0,
-              online: !!jdRes,
-            },
-          });
-        }
-      } catch {}
-    };
+  const fetchTransfers = async () => {
+    try {
+      const qbRes = await fetch('/api/widgets/qbittorrent').then((r) => (r.ok ? r.json() : null));
+      if (qbRes) {
+        setData({
+          dlSpeed: qbRes.dl_speed || 0,
+          upSpeed: qbRes.up_speed || 0,
+          dhtNodes: qbRes.dht_nodes || 0,
+          activeCount: qbRes.active_torrents || (qbRes.torrents || []).length,
+          totalCount: qbRes.total_torrents || (qbRes.torrents || []).length,
+          online: qbRes.online !== false,
+          torrents: Array.isArray(qbRes.torrents) ? qbRes.torrents : [],
+        });
+      }
+    } catch {}
+  };
 
+  useEffect(() => {
     fetchTransfers();
     const interval = setInterval(fetchTransfers, 3000);
     return () => clearInterval(interval);
@@ -238,45 +255,116 @@ export const HomarrDownloadsWidget: React.FC = () => {
     return (bytesPerSec / 1024).toFixed(0) + ' KB/s';
   };
 
-  const totalDl = data.qbittorrent.dlSpeed + data.jdownloader.dlSpeed;
-  const currentHost = getServiceHost();
+  const formatSize = (bytes: number | string) => {
+    const num = typeof bytes === 'string' ? parseFloat(bytes) : bytes;
+    if (isNaN(num) || num <= 0) return '';
+    if (num > 1024 * 1024 * 1024) return (num / (1024 * 1024 * 1024)).toFixed(1) + ' GB';
+    return (num / (1024 * 1024)).toFixed(0) + ' MB';
+  };
+
+  const qbitUrl = serviceRegistry.resolveUrl('qbittorrent');
 
   return (
-    <div className="h-full rounded-2xl bg-slate-900/60 border border-white/[0.08] backdrop-blur-xl p-5 flex flex-col justify-between shadow-lg shadow-black/20 font-mono">
-      <div className="flex items-center justify-between text-xs">
-        <span className="flex items-center gap-1.5 font-bold uppercase tracking-wider text-sky-400">
-          <Download className="w-3.5 h-3.5" />
-          <span>Active Transfers</span>
-        </span>
-        <a
-          href={serviceRegistry.resolveUrl('qbittorrent')}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-zinc-400 hover:text-white transition-colors"
-          title="Open qBittorrent Web UI"
-        >
-          <ExternalLink className="w-3.5 h-3.5" />
-        </a>
-      </div>
-
-      <div className="my-3">
-        <div className="flex items-baseline gap-2">
-          <span className="text-xl sm:text-2xl font-extrabold text-white tabular-nums">{formatSpeed(totalDl)}</span>
-          <span className="text-xs text-emerald-400 font-bold">↓ Down</span>
-        </div>
-        <div className="flex items-center gap-3 text-xs text-zinc-400 mt-1">
-          <span className="flex items-center gap-1 tabular-nums">
-            <Upload className="w-3 h-3 text-purple-400" />
-            <span>{formatSpeed(data.qbittorrent.upSpeed)} ↑</span>
+    <div className="h-full rounded-2xl bg-slate-900/60 border border-white/[0.08] backdrop-blur-xl p-4 sm:p-5 flex flex-col justify-between shadow-lg shadow-black/20 font-mono">
+      {/* Header */}
+      <div className="flex items-center justify-between text-xs mb-2">
+        <div className="flex items-center gap-2">
+          <span className="p-1.5 rounded-lg bg-sky-500/15 text-sky-400 border border-sky-500/25">
+            <Download className="w-4 h-4" />
           </span>
-          <span className="text-zinc-600">•</span>
-          <span className="tabular-nums">{data.qbittorrent.active} active tasks</span>
+          <div>
+            <span className="font-bold uppercase tracking-wider text-white">Active Transfers</span>
+            <div className="flex items-center gap-1.5 text-[10px] text-zinc-400">
+              <span className={`w-1.5 h-1.5 rounded-full ${data.online ? 'bg-emerald-400 animate-pulse' : 'bg-red-400'}`} />
+              <span>{data.online ? 'qBittorrent Active' : 'Offline'}</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-1.5">
+          <a
+            href={qbitUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-2.5 py-1 rounded-lg bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/30 text-sky-300 text-xs font-bold flex items-center gap-1 transition-all"
+            title="Open qBittorrent WebUI (:8080)"
+          >
+            <span>WebUI</span>
+            <ExternalLink className="w-3 h-3" />
+          </a>
         </div>
       </div>
 
+      {/* Speedometer Strip */}
+      <div className="grid grid-cols-2 gap-2 my-2.5">
+        <div className="p-2.5 rounded-xl bg-slate-950/60 border border-white/[0.06] flex items-center justify-between">
+          <div>
+            <span className="text-[10px] text-zinc-400 uppercase tracking-wider block">Download</span>
+            <span className="text-base sm:text-lg font-black text-white tabular-nums">{formatSpeed(data.dlSpeed)}</span>
+          </div>
+          <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 font-bold">
+            ↓ DL
+          </span>
+        </div>
+        <div className="p-2.5 rounded-xl bg-slate-950/60 border border-white/[0.06] flex items-center justify-between">
+          <div>
+            <span className="text-[10px] text-zinc-400 uppercase tracking-wider block">Upload</span>
+            <span className="text-base sm:text-lg font-black text-white tabular-nums">{formatSpeed(data.upSpeed)}</span>
+          </div>
+          <span className="text-xs px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-300 border border-purple-500/25 font-bold">
+            ↑ UL
+          </span>
+        </div>
+      </div>
+
+      {/* Active Torrents Task List */}
+      <div className="flex-1 my-1 overflow-hidden flex flex-col justify-center">
+        {data.torrents.length > 0 ? (
+          <div className="space-y-2 max-h-40 overflow-y-auto scrollbar-none pr-1">
+            {data.torrents.slice(0, 4).map((t, idx) => {
+              const progressPct = Math.round((t.progress || 0) * 100);
+              const isDl = (t.dlspeed || 0) > 0;
+              return (
+                <div key={idx} className="p-2 rounded-xl bg-slate-950/40 border border-white/[0.05] space-y-1.5">
+                  <div className="flex items-center justify-between text-xs gap-2">
+                    <span className="text-zinc-200 font-bold truncate max-w-[220px]" title={t.name}>
+                      {t.name}
+                    </span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-sky-500/15 text-sky-300 font-bold shrink-0">
+                      {progressPct}%
+                    </span>
+                  </div>
+                  {/* Progress bar */}
+                  <div className="w-full h-1.5 rounded-full bg-slate-800 overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all duration-500 ${
+                        progressPct >= 100 ? 'bg-emerald-400' : isDl ? 'bg-sky-400' : 'bg-purple-400'
+                      }`}
+                      style={{ width: `${progressPct}%` }}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between text-[10px] text-zinc-400">
+                    <span className="capitalize">{t.state || 'Active'}</span>
+                    <div className="flex items-center gap-2">
+                      {t.size ? <span>{formatSize(t.size)}</span> : null}
+                      {isDl ? <span className="text-emerald-400 font-bold">↓ {formatSpeed(t.dlspeed)}</span> : null}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="text-center py-4 text-xs text-zinc-500">
+            <span>No active torrent downloads • Standby mode</span>
+          </div>
+        )}
+      </div>
+
+      {/* Footer Info */}
       <div className="pt-2.5 border-t border-white/[0.06] flex items-center justify-between text-[11px] text-zinc-400">
-        <span>Engines:</span>
-        <span className="text-zinc-300 font-medium">qBittorrent / Pinchflat</span>
+        <span>Active Tasks: <strong className="text-white">{data.activeCount}</strong></span>
+        <span className="text-zinc-500 text-[10px]">Port 8080 • DHT: {data.dhtNodes}</span>
       </div>
     </div>
   );
@@ -628,35 +716,242 @@ export const HomarrSingleApplianceWidget: React.FC<HomarrSingleApplianceWidgetPr
   );
 };
 
-// 5. Homarr Jellyfin Media Server Widget
+// 5. Homarr Jellyfin Media Server Widget (Live Streams, Media Posters & Continue Watching)
+interface JellyfinNowPlaying {
+  id: string;
+  name: string;
+  seriesName?: string;
+  type: string;
+  user: string;
+  client?: string;
+  device?: string;
+  imageUrl: string;
+  isPaused: boolean;
+  position: number;
+  duration: number;
+}
+
+interface JellyfinRecentItem {
+  id: string;
+  name: string;
+  seriesName?: string;
+  type: string;
+  imageUrl: string;
+  duration?: number;
+}
+
 export const HomarrMediaWidget: React.FC<{ onOpenGuide?: (g: string) => void }> = ({ onOpenGuide }) => {
-  const currentHost = getServiceHost();
+  const [online, setOnline] = useState<boolean>(true);
+  const [serverName, setServerName] = useState<string>('pineapple');
+  const [nowPlaying, setNowPlaying] = useState<JellyfinNowPlaying[]>([]);
+  const [recent, setRecent] = useState<JellyfinRecentItem[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+
+  const fetchJellyfin = async () => {
+    try {
+      const res = await fetch('/api/widgets/jellyfin');
+      if (res.ok) {
+        const data = await res.json();
+        if (data) {
+          setOnline(data.online !== false);
+          if (data.serverName) setServerName(data.serverName);
+          setNowPlaying(Array.isArray(data.nowPlaying) ? data.nowPlaying : []);
+          setRecent(Array.isArray(data.recent) ? data.recent : []);
+        }
+      }
+    } catch {}
+  };
+
+  useEffect(() => {
+    fetchJellyfin();
+    const interval = setInterval(fetchJellyfin, 4000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const formatTime = (seconds: number) => {
+    if (!seconds || isNaN(seconds) || seconds <= 0) return '0:00';
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    const hrs = Math.floor(mins / 60);
+    if (hrs > 0) {
+      return `${hrs}:${(mins % 60).toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const jellyfinBase = serviceRegistry.resolveUrl('jellyfin');
+  const activeStream = nowPlaying.length > 0 ? nowPlaying[0] : null;
 
   return (
-    <div className="h-full rounded-2xl bg-slate-900/60 border border-white/[0.08] backdrop-blur-xl p-5 flex flex-col justify-between shadow-lg shadow-black/20 font-mono">
+    <div className="h-full rounded-2xl bg-slate-900/60 border border-white/[0.08] backdrop-blur-xl p-4 sm:p-5 flex flex-col justify-between shadow-lg shadow-black/20 font-mono">
+      {/* Header */}
       <div className="flex items-center justify-between text-xs mb-3">
-        <span className="flex items-center gap-2 font-bold uppercase tracking-wider text-purple-400">
-          <Film className="w-4 h-4" />
-          <span>Jellyfin Media Server</span>
-        </span>
-        <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold">
-          Port 8096
-        </span>
-      </div>
-
-      <div className="p-3 rounded-xl bg-purple-500/[0.07] border border-purple-500/20 space-y-1.5">
-        <div className="flex items-center justify-between text-xs">
-          <span className="text-white font-bold">Hardware Transcoding</span>
-          <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 font-bold">
-            VA-API / QSV
+        <div className="flex items-center gap-2">
+          <span className="p-1.5 rounded-lg bg-purple-500/15 text-purple-400 border border-purple-500/25">
+            <Film className="w-4 h-4" />
           </span>
+          <div>
+            <span className="font-bold uppercase tracking-wider text-white">Jellyfin Media Server</span>
+            <div className="flex items-center gap-1.5 text-[10px] text-zinc-400">
+              <span className={`w-1.5 h-1.5 rounded-full ${online ? 'bg-emerald-400 animate-pulse' : 'bg-red-400'}`} />
+              <span>{online ? (activeStream ? 'Streaming Active' : 'Online • Ready') : 'Offline'}</span>
+            </div>
+          </div>
         </div>
-        <p className="text-[11px] text-zinc-400">
-          DirectPlay 4K HDR streaming enabled for Plezy, Apple TV, Android, and web.
-        </p>
+
+        <div className="flex items-center gap-1.5">
+          <span className="px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 text-[10px] font-bold">
+            Port 8096
+          </span>
+          <a
+            href={jellyfinBase}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-2.5 py-1 rounded-lg bg-purple-500/15 hover:bg-purple-500/25 border border-purple-500/30 text-purple-300 text-xs font-bold flex items-center gap-1 transition-all"
+            title="Open Jellyfin Web Player"
+          >
+            <span>Web Player</span>
+            <ExternalLink className="w-3 h-3" />
+          </a>
+        </div>
       </div>
 
-      <div className="pt-3 border-t border-white/[0.06] flex items-center justify-between gap-2 mt-2">
+      {/* 1. NOW PLAYING HERO BANNER (When any user is streaming) */}
+      {activeStream ? (
+        <div className="my-2 p-3 rounded-2xl bg-gradient-to-r from-purple-950/60 via-slate-900/70 to-slate-950/80 border border-purple-500/30 relative overflow-hidden group">
+          <div className="flex items-center gap-3">
+            {/* Poster Thumbnail */}
+            <div className="w-14 h-20 rounded-xl overflow-hidden bg-slate-950 border border-purple-500/30 shrink-0 relative shadow-md">
+              <img
+                src={activeStream.imageUrl}
+                alt={activeStream.name}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = '/icons/jellyfin.svg';
+                }}
+              />
+              <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+                {activeStream.isPaused ? (
+                  <Pause className="w-4 h-4 text-white drop-shadow" />
+                ) : (
+                  <Play className="w-4 h-4 text-emerald-400 drop-shadow fill-emerald-400" />
+                )}
+              </div>
+            </div>
+
+            {/* Stream Metadata */}
+            <div className="min-w-0 flex-1 space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1 animate-pulse">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                  <span>Now Playing</span>
+                </span>
+                <span className="text-[10px] text-zinc-400 truncate">
+                  {activeStream.user} • {activeStream.client || activeStream.device || 'Tsukimi'}
+                </span>
+              </div>
+
+              <h4 className="text-sm font-bold text-white truncate" title={activeStream.name}>
+                {activeStream.name}
+              </h4>
+              {activeStream.seriesName && (
+                <p className="text-[11px] text-purple-300 truncate font-semibold" title={activeStream.seriesName}>
+                  {activeStream.seriesName}
+                </p>
+              )}
+
+              {/* Live Playback Progress Bar */}
+              {activeStream.duration > 0 && (
+                <div className="space-y-1 pt-1">
+                  <div className="w-full h-1.5 rounded-full bg-slate-800 overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-purple-500 to-sky-400 transition-all duration-300"
+                      style={{
+                        width: `${Math.min(100, Math.round((activeStream.position / activeStream.duration) * 100))}%`,
+                      }}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between text-[10px] text-zinc-400 font-mono">
+                    <span>{formatTime(activeStream.position)}</span>
+                    <span>{formatTime(activeStream.duration)}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {/* 2. RECENT MEDIA POSTERS CAROUSEL */}
+      {recent.length > 0 ? (
+        <div className="space-y-2 my-2">
+          <div className="flex items-center justify-between text-[11px] text-zinc-400">
+            <span className="font-bold text-zinc-300">Recently Added Media</span>
+            <span className="text-[10px] text-zinc-500">Click title to stream</span>
+          </div>
+
+          <div className="flex gap-2.5 overflow-x-auto pb-1.5 scrollbar-none">
+            {recent.slice(0, 8).map((item) => {
+              const itemUrl = `${jellyfinBase.replace(/\/$/, '')}/web/#/details?id=${item.id}`;
+              return (
+                <a
+                  key={item.id}
+                  href={itemUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group relative flex-shrink-0 w-24 rounded-xl overflow-hidden bg-slate-950 border border-white/[0.08] hover:border-purple-500/50 hover:shadow-lg transition-all"
+                  title={`${item.name} (${item.type})`}
+                >
+                  <div className="aspect-[2/3] w-full overflow-hidden relative bg-slate-900">
+                    <img
+                      src={item.imageUrl}
+                      alt={item.name}
+                      loading="lazy"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = '/icons/jellyfin.svg';
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent" />
+                    <span className="absolute top-1 left-1 px-1.5 py-0.2 rounded bg-purple-500/30 text-purple-200 text-[8px] font-bold uppercase backdrop-blur-sm">
+                      {item.type || 'Media'}
+                    </span>
+                  </div>
+
+                  <div className="p-1.5">
+                    <h5 className="text-[10px] font-bold text-white truncate group-hover:text-purple-300 transition-colors">
+                      {item.name}
+                    </h5>
+                    {item.seriesName && (
+                      <p className="text-[9px] text-zinc-400 truncate">{item.seriesName}</p>
+                    )}
+                  </div>
+                </a>
+              );
+            })}
+          </div>
+        </div>
+      ) : !activeStream ? (
+        <div className="p-3 rounded-xl bg-purple-500/[0.07] border border-purple-500/20 space-y-1.5 my-2">
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-white font-bold">Hardware Transcoding</span>
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 font-bold">
+              VA-API / QSV
+            </span>
+          </div>
+          <p className="text-[11px] text-zinc-400">
+            DirectPlay 4K HDR streaming enabled for Tsukimi, Plezy, Apple TV, Android, and web.
+          </p>
+        </div>
+      ) : null}
+
+      {/* Footer Navigation */}
+      <div className="pt-2.5 border-t border-white/[0.06] flex items-center justify-between gap-2 mt-auto">
+        <div className="flex items-center gap-1.5 text-[11px] text-zinc-400">
+          <Tv className="w-3.5 h-3.5 text-purple-400" />
+          <span>Tsukimi & Plezy Ready</span>
+        </div>
+
         {onOpenGuide && (
           <button
             onClick={() => onOpenGuide('jellyfin')}
@@ -666,77 +961,202 @@ export const HomarrMediaWidget: React.FC<{ onOpenGuide?: (g: string) => void }> 
             <span>Setup Guide</span>
           </button>
         )}
-        <a
-          href={serviceRegistry.resolveUrl('jellyfin')}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="px-3 py-1 rounded-lg bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/40 text-purple-300 text-xs font-bold flex items-center gap-1 transition-all"
-        >
-          <span>Launch Web Player</span>
-          <ExternalLink className="w-3 h-3" />
-        </a>
       </div>
     </div>
   );
 };
 
-// 6. Homarr Suwayomi & Manga Shelf Widget
-export const HomarrMangaWidget: React.FC = () => {
-  const [mangaCount, setMangaCount] = useState<number>(0);
-  const [online, setOnline] = useState<boolean>(true);
-  const suwayomiWebUrl = serviceRegistry.resolveUrl('suwayomi');
+// 6. Homarr Suwayomi & Manga Shelf Widget (Live Covers, Unread Badges & Reading History)
+interface MangaShelfItem {
+  id: string | number;
+  title: string;
+  thumbnailUrl: string;
+  unreadCount?: number;
+  lastChapterRead?: string;
+  latestChapter?: string;
+  source?: { name?: string } | string;
+}
 
-  useEffect(() => {
+export const HomarrMangaWidget: React.FC = () => {
+  const [activeTab, setActiveTab] = useState<'reading' | 'history' | 'updates'>('reading');
+  const [online, setOnline] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [totalCount, setTotalCount] = useState<number>(0);
+
+  const [readingList, setReadingList] = useState<MangaShelfItem[]>([]);
+  const [historyList, setHistoryList] = useState<MangaShelfItem[]>([]);
+  const [updatesList, setUpdatesList] = useState<MangaShelfItem[]>([]);
+
+  const fetchManga = () => {
+    setLoading(true);
     fetch('/api/widgets/manga')
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (data) {
           setOnline(data.online !== false);
-          if (data.totalCount) setMangaCount(data.totalCount);
+          if (typeof data.totalCount === 'number') setTotalCount(data.totalCount);
+          setReadingList(Array.isArray(data.library) ? data.library : Array.isArray(data.mangas) ? data.mangas : []);
+          setHistoryList(Array.isArray(data.history) ? data.history : []);
+          setUpdatesList(Array.isArray(data.updates) ? data.updates : []);
         }
       })
-      .catch(() => {});
+      .catch(() => setOnline(false))
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchManga();
+    const interval = setInterval(fetchManga, 15000);
+    return () => clearInterval(interval);
   }, []);
 
+  const currentList = activeTab === 'reading' ? readingList : activeTab === 'history' ? historyList : updatesList;
+  const suwayomiWebUrl = serviceRegistry.resolveUrl('suwayomi');
+
   return (
-    <div className="h-full rounded-2xl bg-slate-900/60 border border-white/[0.08] backdrop-blur-xl p-5 flex flex-col justify-between shadow-lg shadow-black/20 font-mono">
-      <div className="flex items-center justify-between text-xs mb-3">
-        <span className="flex items-center gap-2 font-bold uppercase tracking-wider text-tinapple-gold">
-          <BookOpen className="w-4 h-4" />
-          <span>Suwayomi Manga</span>
-        </span>
-        <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold">
-          Port 4567
-        </span>
-      </div>
-
-      <div className="p-3 rounded-xl bg-amber-500/[0.07] border border-amber-500/20 space-y-1.5">
-        <div className="flex items-center justify-between text-xs">
-          <span className="text-white font-bold">Desktop Web & Phone App</span>
-          <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold">
-            {online ? 'Active' : 'Offline'}
+    <div className="h-full rounded-2xl bg-slate-900/60 border border-white/[0.08] backdrop-blur-xl p-4 sm:p-5 flex flex-col justify-between shadow-lg shadow-black/20 font-mono">
+      {/* Header with Tab Navigation */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 pb-2.5 border-b border-white/[0.06]">
+        <div className="flex items-center gap-2">
+          <span className="p-1.5 rounded-lg bg-orange-500/15 text-orange-400 border border-orange-500/25">
+            <BookOpen className="w-4 h-4" />
           </span>
+          <div>
+            <div className="flex items-center gap-1.5">
+              <span className="font-bold uppercase tracking-wider text-white text-xs">Suwayomi Manga Shelf</span>
+              <span className={`w-1.5 h-1.5 rounded-full ${online ? 'bg-emerald-400 animate-pulse' : 'bg-red-400'}`} />
+            </div>
+            <span className="text-[10px] text-zinc-400">Tachiyomi Extension Engine</span>
+          </div>
         </div>
-        <p className="text-[11px] text-zinc-400">
-          Desktop: Native Suwayomi Reader • Phone: Tsumiru Android App (connect to :4567).
-        </p>
+
+        {/* Tab Pills & Refresh */}
+        <div className="flex items-center gap-1.5 w-full sm:w-auto justify-between sm:justify-end">
+          <div className="flex items-center bg-slate-950/70 p-0.5 rounded-xl border border-white/[0.06] text-xs">
+            <button
+              onClick={() => setActiveTab('reading')}
+              className={`px-2.5 py-1 rounded-lg transition-all font-semibold ${
+                activeTab === 'reading'
+                  ? 'bg-orange-500/20 text-orange-300 border border-orange-500/30'
+                  : 'text-zinc-400 hover:text-white'
+              }`}
+            >
+              Library {totalCount > 0 ? `(${totalCount})` : ''}
+            </button>
+            <button
+              onClick={() => setActiveTab('history')}
+              className={`px-2.5 py-1 rounded-lg transition-all font-semibold ${
+                activeTab === 'history'
+                  ? 'bg-orange-500/20 text-orange-300 border border-orange-500/30'
+                  : 'text-zinc-400 hover:text-white'
+              }`}
+            >
+              History {historyList.length > 0 ? `(${historyList.length})` : ''}
+            </button>
+            <button
+              onClick={() => setActiveTab('updates')}
+              className={`px-2.5 py-1 rounded-lg transition-all font-semibold ${
+                activeTab === 'updates'
+                  ? 'bg-orange-500/20 text-orange-300 border border-orange-500/30'
+                  : 'text-zinc-400 hover:text-white'
+              }`}
+            >
+              Updates {updatesList.length > 0 ? `(${updatesList.length})` : ''}
+            </button>
+          </div>
+
+          <button
+            onClick={fetchManga}
+            className="p-1.5 rounded-lg bg-slate-950/60 hover:bg-white/10 border border-white/10 text-zinc-400 hover:text-white transition-colors shrink-0"
+            title="Refresh manga library"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-orange-400' : ''}`} />
+          </button>
+        </div>
       </div>
 
-      <div className="pt-3 border-t border-white/[0.06] flex items-center justify-between gap-2 mt-2">
+      {/* Manga Covers Horizontal Shelf */}
+      <div className="my-2.5 flex-1 min-h-[140px] flex flex-col justify-center">
+        {currentList.length > 0 ? (
+          <div className="flex gap-3 overflow-x-auto pb-1.5 scrollbar-none">
+            {currentList.slice(0, 10).map((manga, idx) => {
+              const suwayomiMangaUrl = `${suwayomiWebUrl.replace(/\/$/, '')}/manga/${manga.id}`;
+              const sourceLabel = typeof manga.source === 'object' ? manga.source?.name : manga.source || 'Suwayomi';
+              return (
+                <a
+                  key={`${activeTab}-${manga.id}-${idx}`}
+                  href={suwayomiMangaUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="group relative flex-shrink-0 w-28 rounded-xl overflow-hidden bg-slate-950 border border-white/[0.08] hover:border-orange-500/50 hover:shadow-xl transition-all cursor-pointer"
+                >
+                  <div className="aspect-[3/4] w-full overflow-hidden relative bg-slate-900">
+                    <img
+                      src={manga.thumbnailUrl}
+                      alt={manga.title}
+                      loading="lazy"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = '/icons/suwayomi.png';
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent" />
+
+                    {/* Unread badge on library tab */}
+                    {activeTab === 'reading' && manga.unreadCount !== undefined && manga.unreadCount > 0 && (
+                      <span className="absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded-md bg-orange-500 text-slate-950 text-[9px] font-bold shadow-md">
+                        +{manga.unreadCount}
+                      </span>
+                    )}
+
+                    {/* Latest chapter pill on updates tab */}
+                    {activeTab === 'updates' && manga.latestChapter && (
+                      <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded-md bg-emerald-500 text-slate-950 text-[9px] font-bold shadow-md">
+                        Update
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="p-2">
+                    <h5 className="text-[11px] font-bold text-white truncate group-hover:text-orange-400 transition-colors" title={manga.title}>
+                      {manga.title}
+                    </h5>
+                    <p className="text-[9px] text-zinc-400 mt-0.5 truncate" title={manga.lastChapterRead || manga.latestChapter || sourceLabel}>
+                      {activeTab === 'history' ? (manga.lastChapterRead || 'Read') : activeTab === 'updates' ? (manga.latestChapter || 'New') : sourceLabel}
+                    </p>
+                  </div>
+                </a>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="text-center py-6 px-4 rounded-xl bg-slate-950/40 border border-white/[0.05]">
+            <BookOpen className="w-6 h-6 text-orange-400/50 mx-auto mb-1.5" />
+            <h5 className="text-xs font-bold text-white">No Manga in {activeTab === 'history' ? 'History' : activeTab === 'updates' ? 'Updates' : 'Library'}</h5>
+            <p className="text-[10px] text-zinc-400 mt-1 max-w-sm mx-auto">
+              Sync extensions or read chapters in Suwayomi to populate your reading shelf.
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Footer Navigation */}
+      <div className="pt-2.5 border-t border-white/[0.06] flex items-center justify-between gap-2 mt-auto text-xs">
         <a
           href="/download/tsumiru"
           download="tsumiru-client.apk"
-          className="px-2.5 py-1.5 rounded-lg bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/30 text-sky-300 text-xs font-bold flex items-center gap-1.5 transition-all"
+          className="px-2.5 py-1.5 rounded-lg bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/30 text-sky-300 text-[11px] font-bold flex items-center gap-1.5 transition-all"
           title="Download Tsumiru Android APK for your phone"
         >
           <Smartphone className="w-3.5 h-3.5 text-sky-400" />
           <span>Phone APK</span>
         </a>
+
         <a
           href={suwayomiWebUrl}
           target="_blank"
           rel="noreferrer"
-          className="px-3 py-1.5 rounded-lg bg-tinapple-gold/20 hover:bg-tinapple-gold/30 border border-tinapple-gold/40 text-tinapple-gold text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm"
+          className="px-3 py-1.5 rounded-lg bg-tinapple-gold/20 hover:bg-tinapple-gold/30 border border-tinapple-gold/40 text-tinapple-gold text-[11px] font-bold flex items-center gap-1.5 transition-all"
           title="Open Suwayomi Manga Web Reader on Desktop (:4567)"
         >
           <span>Open WebUI</span>
@@ -1073,6 +1493,108 @@ export const HomarrBookmarksWidget: React.FC<HomarrBookmarksWidgetProps> = ({
             No custom bookmarks yet. Enable Edit Mode to add your homelab portals.
           </div>
         )}
+      </div>
+    </div>
+  );
+};
+
+// 13. Homarr Seerr Media Requests Widget
+export const HomarrRequestsWidget: React.FC = () => {
+  const [online, setOnline] = useState<boolean>(true);
+  const [requests, setRequests] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetch('/api/widgets/seerr')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data) {
+          setOnline(data.online !== false);
+          setRequests(Array.isArray(data.requests) ? data.requests : []);
+        }
+      })
+      .catch(() => setOnline(false));
+  }, []);
+
+  const seerrUrl = serviceRegistry.resolveUrl('seerr');
+
+  return (
+    <div className="h-full rounded-2xl bg-slate-900/60 border border-white/[0.08] backdrop-blur-xl p-4 sm:p-5 flex flex-col justify-between shadow-lg shadow-black/20 font-mono">
+      <div className="flex items-center justify-between text-xs mb-3">
+        <div className="flex items-center gap-2">
+          <span className="p-1.5 rounded-lg bg-indigo-500/15 text-indigo-400 border border-indigo-500/25">
+            <Film className="w-4 h-4" />
+          </span>
+          <div>
+            <div className="flex items-center gap-1.5">
+              <span className="font-bold uppercase tracking-wider text-white">Media Requests & Discovery</span>
+              <span className={`w-1.5 h-1.5 rounded-full ${online ? 'bg-emerald-400 animate-pulse' : 'bg-red-400'}`} />
+            </div>
+            <span className="text-[10px] text-zinc-400">Jellyseerr • Radarr & Sonarr</span>
+          </div>
+        </div>
+
+        <a
+          href={seerrUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="px-2.5 py-1 rounded-lg bg-indigo-500/15 hover:bg-indigo-500/25 border border-indigo-500/30 text-indigo-300 text-xs font-bold flex items-center gap-1 transition-all"
+        >
+          <span>Port 5055</span>
+          <ExternalLink className="w-3 h-3" />
+        </a>
+      </div>
+
+      <div className="my-2 flex-1 flex flex-col justify-center">
+        {requests.length > 0 ? (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+            {requests.slice(0, 4).map((req, idx) => {
+              const statusLabel =
+                req.status === 2 ? 'Approved' : req.status === 4 ? 'Available' : req.status === 3 ? 'Declined' : 'Pending';
+              const statusColor =
+                req.status === 2
+                  ? 'bg-sky-500/20 text-sky-300 border-sky-500/30'
+                  : req.status === 4
+                  ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+                  : 'bg-amber-500/20 text-amber-300 border-amber-500/30';
+              return (
+                <div key={idx} className="p-2.5 rounded-xl bg-slate-950/50 border border-white/[0.06] space-y-1.5">
+                  <div className="flex items-center justify-between text-[10px]">
+                    <span className={`px-1.5 py-0.2 rounded font-bold border ${statusColor}`}>
+                      {statusLabel}
+                    </span>
+                    <span className="text-zinc-500 uppercase">{req.media?.mediaType || 'Media'}</span>
+                  </div>
+                  <h5 className="text-xs font-bold text-white truncate" title={req.media?.tmdbId || 'Requested Item'}>
+                    ID #{req.media?.tmdbId || req.id}
+                  </h5>
+                  <p className="text-[10px] text-zinc-400 truncate">
+                    by {req.requestedBy?.displayName || 'User'}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="p-4 rounded-xl bg-slate-950/40 border border-white/[0.05] text-center space-y-1">
+            <span className="text-sm">🍿</span>
+            <h5 className="text-xs font-bold text-white">No Pending Requests</h5>
+            <p className="text-[10px] text-zinc-400">
+              Open Seerr to search movies, anime, or series and trigger zero-touch downloads.
+            </p>
+          </div>
+        )}
+      </div>
+
+      <div className="pt-2.5 border-t border-white/[0.06] flex items-center justify-between text-xs mt-auto">
+        <span className="text-[11px] text-zinc-400">Automated Pipeline: Radarr • Sonarr • Bazarr</span>
+        <a
+          href={seerrUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-indigo-400 hover:text-indigo-300 font-bold text-[11px] flex items-center gap-1"
+        >
+          <span>Request Media →</span>
+        </a>
       </div>
     </div>
   );

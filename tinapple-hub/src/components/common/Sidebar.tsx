@@ -275,8 +275,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <button
                     onClick={onTogglePin}
                     className="p-1.5 rounded-xl text-zinc-400 hover:text-white hover:bg-white/[0.08] transition-colors"
-                    title={isSidebarPinned ? 'Unpin Sidebar (Hidden Drawer Mode)' : 'Pin Sidebar to Desktop'}
-                    aria-label={isSidebarPinned ? 'Unpin Sidebar' : 'Pin Sidebar'}
+                    title={isSidebarPinned ? 'Switch to Auto-Hide Sidebar (Reveals on Hover)' : 'Pin Sidebar to Desktop'}
+                    aria-label={isSidebarPinned ? 'Auto-Hide Sidebar' : 'Pin Sidebar'}
                   >
                     {isSidebarPinned ? <PinOff className="w-4 h-4 text-tinapple-gold" /> : <Pin className="w-4 h-4" />}
                   </button>
@@ -291,23 +291,47 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 </button>
               </div>
             ) : isCollapsed ? (
-              <button
-                onClick={() => setCollapsed(false)}
-                className="w-8 h-8 flex items-center justify-center rounded-xl text-zinc-400 hover:text-white hover:bg-white/[0.08] transition-colors mx-auto"
-                title="Expand Sidebar"
-                aria-label="Expand Sidebar"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
+              <div className="flex flex-col items-center gap-1">
+                <button
+                  onClick={() => setCollapsed(false)}
+                  className="w-8 h-8 flex items-center justify-center rounded-xl text-zinc-400 hover:text-white hover:bg-white/[0.08] transition-colors mx-auto"
+                  title="Expand Sidebar"
+                  aria-label="Expand Sidebar"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+                {onTogglePin && (
+                  <button
+                    onClick={onTogglePin}
+                    className="w-8 h-8 flex items-center justify-center rounded-xl text-zinc-400 hover:text-white hover:bg-white/[0.08] transition-colors mx-auto"
+                    title="Switch to Auto-Hide Sidebar"
+                    aria-label="Switch to Auto-Hide Sidebar"
+                  >
+                    <PinOff className="w-3.5 h-3.5 text-zinc-400 hover:text-tinapple-gold" />
+                  </button>
+                )}
+              </div>
             ) : (
-              <button
-                onClick={() => setCollapsed(true)}
-                className="p-1.5 rounded-xl text-zinc-400 hover:text-white hover:bg-white/[0.08] transition-colors"
-                title="Collapse Sidebar"
-                aria-label="Collapse Sidebar"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
+              <div className="flex items-center gap-1">
+                {onTogglePin && (
+                  <button
+                    onClick={onTogglePin}
+                    className="p-1.5 rounded-xl text-zinc-400 hover:text-white hover:bg-white/[0.08] transition-colors"
+                    title={isSidebarPinned ? 'Switch to Auto-Hide Sidebar (Reveals on Hover)' : 'Pin Sidebar to Desktop'}
+                    aria-label={isSidebarPinned ? 'Auto-Hide Sidebar' : 'Pin Sidebar'}
+                  >
+                    {isSidebarPinned ? <PinOff className="w-4 h-4 text-zinc-400 hover:text-tinapple-gold" /> : <Pin className="w-4 h-4 text-tinapple-gold" />}
+                  </button>
+                )}
+                <button
+                  onClick={() => setCollapsed(true)}
+                  className="p-1.5 rounded-xl text-zinc-400 hover:text-white hover:bg-white/[0.08] transition-colors"
+                  title="Collapse to Dock"
+                  aria-label="Collapse to Dock"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+              </div>
             )}
           </div>
 
@@ -681,7 +705,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       )}
 
       {/* A. DESKTOP FIXED SIDEBAR (Hidden on all tabs by default, shown only if pinned by user) */}
-      {isSidebarPinned && !isLandingPage && (
+      {isSidebarPinned && (
         <aside
           className={`hidden md:flex flex-col fixed top-0 bottom-0 left-0 z-30 bg-[#060c1c]/95 backdrop-blur-2xl border-r border-white/[0.08] shadow-2xl transition-all duration-300 ${
             collapsed ? 'w-20' : 'w-64'
@@ -706,7 +730,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         onMouseLeave={handleDrawerMouseLeave}
         className={`fixed inset-y-0 left-0 z-[51] w-72 max-w-[85vw] bg-[#060c1c]/98 backdrop-blur-3xl border-r border-white/10 shadow-2xl transition-transform duration-300 ease-out transform ${
           mobileOpen ? 'translate-x-0' : '-translate-x-full'
-        } ${isSidebarPinned && !isLandingPage ? 'md:hidden' : ''}`}
+        } ${isSidebarPinned ? 'md:hidden' : ''}`}
       >
         {renderSidebarContent(true)}
       </div>

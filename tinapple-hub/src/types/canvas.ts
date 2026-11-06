@@ -1,4 +1,4 @@
-export type WidgetCategory = 'telemetry' | 'network' | 'media' | 'storage' | 'system' | 'custom';
+export type WidgetCategory = 'telemetry' | 'network' | 'media' | 'downloads' | 'storage' | 'system' | 'custom';
 
 export type WidgetType =
   | 'single_appliance'
@@ -12,6 +12,7 @@ export type WidgetType =
   | 'quick_terminal'
   | 'hardware_thermals'
   | 'manga_shelf'
+  | 'media_requests'
   | 'system_journal'
   | 'quick_connect'
   | 'homelab_bookmarks'

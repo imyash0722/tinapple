@@ -261,6 +261,9 @@ func SetupRoutes(r *gin.Engine, cfg *config.Manifest, svcMgr *services.SystemdMa
 	r.GET("/api/v1/manga/:id/thumbnail", h.ProxyMangaThumbnail)
 	r.HEAD("/api/v1/manga/:id/thumbnail", h.ProxyMangaThumbnail)
 	r.GET("/api/widgets/manga/thumbnail/:id", h.ProxyMangaThumbnail)
+	r.GET("/api/widgets/jellyfin", h.WidgetJellyfin)
+	r.GET("/api/widgets/jellyfin/image/:id", h.ProxyJellyfinImage)
+	r.GET("/api/widgets/seerr", h.WidgetSeerr)
 	r.GET("/api/beeper/status", h.BeeperStatus)
 	r.GET("/api/system/tor-exit", h.GetTorStatus)
 	r.POST("/api/system/tor-exit", h.ToggleTorStatus)
@@ -1959,19 +1962,51 @@ func (h *Handler) ResetPlayit(c *gin.Context) {
 }
 
 func (h *Handler) WidgetQBittorrent(c *gin.Context) {
-	client := http.Client{Timeout: 1 * time.Second}
+	client := http.Client{Timeout: 2 * time.Second}
 	for _, port := range []int{8080, 8084} {
 		resp, err := client.Get(fmt.Sprintf("http://127.0.0.1:%d/api/v2/transfer/info", port))
 		if err == nil && resp.StatusCode == 200 {
 			defer resp.Body.Close()
 			var data map[string]interface{}
 			if err := json.NewDecoder(resp.Body).Decode(&data); err == nil {
+				torrentsList := make([]map[string]interface{}, 0)
+				activeCount := 0
+				totalCount := 0
+
+				tResp, tErr := client.Get(fmt.Sprintf("http://127.0.0.1:%d/api/v2/torrents/info?limit=15&sort=progress", port))
+				if tErr == nil && tResp.StatusCode == 200 {
+					defer tResp.Body.Close()
+					var tData []map[string]interface{}
+					if err := json.NewDecoder(tResp.Body).Decode(&tData); err == nil {
+						totalCount = len(tData)
+						for _, t := range tData {
+							state, _ := t["state"].(string)
+							stateLower := strings.ToLower(state)
+							if strings.Contains(stateLower, "dl") || strings.Contains(stateLower, "up") || strings.Contains(stateLower, "download") {
+								activeCount++
+							}
+							torrentsList = append(torrentsList, map[string]interface{}{
+								"name":     t["name"],
+								"progress": t["progress"],
+								"size":     t["size"],
+								"dlspeed":  t["dlspeed"],
+								"upspeed":  t["upspeed"],
+								"state":    t["state"],
+								"eta":      t["eta"],
+							})
+						}
+					}
+				}
+
 				c.JSON(http.StatusOK, gin.H{
 					"online":            true,
 					"dl_speed":          data["dl_info_speed"],
 					"up_speed":          data["up_info_speed"],
 					"dht_nodes":         data["dht_nodes"],
 					"connection_status": data["connection_status"],
+					"total_torrents":    totalCount,
+					"active_torrents":   activeCount,
+					"torrents":          torrentsList,
 				})
 				return
 			}
@@ -1985,6 +2020,7 @@ func (h *Handler) WidgetQBittorrent(c *gin.Context) {
 		"connection_status": "disconnected",
 		"total_torrents":    0,
 		"active_torrents":   0,
+		"torrents":          []interface{}{},
 	})
 }
 
@@ -2229,6 +2265,244 @@ func (h *Handler) ProxyMangaThumbnail(c *gin.Context) {
 	c.Header("Content-Type", contentType)
 	c.Header("Cache-Control", "public, max-age=31536000, immutable")
 	c.Data(http.StatusOK, contentType, bodyBytes)
+}
+
+func getJellyfinToken() string {
+	// 1. Query Devices table in Jellyfin SQLite database (highest permission tokens)
+	cmdDev := exec.Command("sqlite3", "/var/lib/jellyfin/data/jellyfin.db", "SELECT AccessToken FROM Devices WHERE AccessToken IS NOT NULL AND AccessToken != '' ORDER BY Id DESC LIMIT 1;")
+	if out, err := cmdDev.Output(); err == nil {
+		tok := strings.TrimSpace(string(out))
+		if tok != "" {
+			return tok
+		}
+	}
+
+	// 2. Query ApiKeys table in Jellyfin SQLite database
+	cmdKey := exec.Command("sqlite3", "/var/lib/jellyfin/data/jellyfin.db", "SELECT AccessToken FROM ApiKeys ORDER BY Id DESC LIMIT 1;")
+	if out, err := cmdKey.Output(); err == nil {
+		tok := strings.TrimSpace(string(out))
+		if tok != "" {
+			return tok
+		}
+	}
+
+	// 3. Check Seerr settings.json
+	if data, err := os.ReadFile("/var/lib/seerr/settings.json"); err == nil {
+		var s struct {
+			Jellyfin struct {
+				ApiKey string `json:"apiKey"`
+			} `json:"jellyfin"`
+		}
+		if err := json.Unmarshal(data, &s); err == nil && s.Jellyfin.ApiKey != "" {
+			return s.Jellyfin.ApiKey
+		}
+	}
+
+	return ""
+}
+
+func (h *Handler) WidgetJellyfin(c *gin.Context) {
+	client := http.Client{Timeout: 3 * time.Second}
+
+	resp, err := client.Get("http://127.0.0.1:8096/System/Info/Public")
+	if err != nil || resp.StatusCode != http.StatusOK {
+		c.JSON(http.StatusOK, gin.H{
+			"online":     false,
+			"serverName": "Jellyfin",
+			"nowPlaying": []interface{}{},
+			"recent":     []interface{}{},
+		})
+		return
+	}
+	defer resp.Body.Close()
+
+	var publicInfo struct {
+		ServerName string `json:"ServerName"`
+		Version    string `json:"Version"`
+		Id         string `json:"Id"`
+	}
+	_ = json.NewDecoder(resp.Body).Decode(&publicInfo)
+
+	token := getJellyfinToken()
+	nowPlaying := make([]map[string]interface{}, 0)
+	recent := make([]map[string]interface{}, 0)
+
+	if token != "" {
+		// Sessions
+		sessReq, err := http.NewRequestWithContext(c.Request.Context(), "GET", "http://127.0.0.1:8096/Sessions", nil)
+		if err == nil {
+			sessReq.Header.Set("X-Emby-Token", token)
+			sessReq.Header.Set("Authorization", fmt.Sprintf("MediaBrowser Client=\"Tinapple\", Device=\"Hub\", DeviceId=\"tinapple-dash\", Version=\"1.0.0\", Token=\"%s\"", token))
+			if sessResp, err := client.Do(sessReq); err == nil && sessResp.StatusCode == http.StatusOK {
+				defer sessResp.Body.Close()
+				var sessions []struct {
+					Id             string `json:"Id"`
+					UserName       string `json:"UserName"`
+					Client         string `json:"Client"`
+					DeviceName     string `json:"DeviceName"`
+					NowPlayingItem *struct {
+						Id                 string `json:"Id"`
+						Name               string `json:"Name"`
+						SeriesName         string `json:"SeriesName"`
+						SeasonName         string `json:"SeasonName"`
+						Type               string `json:"Type"`
+						RunTimeTicks       int64  `json:"RunTimeTicks"`
+						PrimaryImageItemId string `json:"PrimaryImageItemId"`
+					} `json:"NowPlayingItem"`
+					PlayState *struct {
+						PositionTicks int64 `json:"PositionTicks"`
+						IsPaused      bool  `json:"IsPaused"`
+					} `json:"PlayState"`
+				}
+				if json.NewDecoder(sessResp.Body).Decode(&sessions) == nil {
+					for _, s := range sessions {
+						if s.NowPlayingItem != nil {
+							imgId := s.NowPlayingItem.Id
+							if s.NowPlayingItem.PrimaryImageItemId != "" {
+								imgId = s.NowPlayingItem.PrimaryImageItemId
+							}
+							posSec := int64(0)
+							if s.PlayState != nil {
+								posSec = s.PlayState.PositionTicks / 10000000
+							}
+							item := map[string]interface{}{
+								"id":         s.NowPlayingItem.Id,
+								"name":       s.NowPlayingItem.Name,
+								"seriesName": s.NowPlayingItem.SeriesName,
+								"type":       s.NowPlayingItem.Type,
+								"user":       s.UserName,
+								"client":     s.Client,
+								"device":     s.DeviceName,
+								"imageUrl":   fmt.Sprintf("/api/widgets/jellyfin/image/%s", imgId),
+								"isPaused":   s.PlayState != nil && s.PlayState.IsPaused,
+								"position":   posSec,
+								"duration":   s.NowPlayingItem.RunTimeTicks / 10000000,
+							}
+							nowPlaying = append(nowPlaying, item)
+						}
+					}
+				}
+			}
+		}
+
+		// Recent items
+		itemsReq, err := http.NewRequestWithContext(c.Request.Context(), "GET", "http://127.0.0.1:8096/Items?Recursive=true&SortBy=DateCreated&SortOrder=Descending&Limit=12&IncludeItemTypes=Movie,Series,Episode&Fields=PrimaryImageAspectRatio,Overview", nil)
+		if err == nil {
+			itemsReq.Header.Set("X-Emby-Token", token)
+			itemsReq.Header.Set("Authorization", fmt.Sprintf("MediaBrowser Client=\"Tinapple\", Device=\"Hub\", DeviceId=\"tinapple-dash\", Version=\"1.0.0\", Token=\"%s\"", token))
+			if itemsResp, err := client.Do(itemsReq); err == nil && itemsResp.StatusCode == http.StatusOK {
+				defer itemsResp.Body.Close()
+				var itemsResult struct {
+					Items []struct {
+						Id           string `json:"Id"`
+						Name         string `json:"Name"`
+						SeriesName   string `json:"SeriesName"`
+						Type         string `json:"Type"`
+						RunTimeTicks int64  `json:"RunTimeTicks"`
+					} `json:"Items"`
+				}
+				if json.NewDecoder(itemsResp.Body).Decode(&itemsResult) == nil {
+					for _, it := range itemsResult.Items {
+						recent = append(recent, map[string]interface{}{
+							"id":         it.Id,
+							"name":       it.Name,
+							"seriesName": it.SeriesName,
+							"type":       it.Type,
+							"imageUrl":   fmt.Sprintf("/api/widgets/jellyfin/image/%s", it.Id),
+							"duration":   it.RunTimeTicks / 10000000,
+						})
+					}
+				}
+			}
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"online":     true,
+		"serverName": publicInfo.ServerName,
+		"version":    publicInfo.Version,
+		"nowPlaying": nowPlaying,
+		"recent":     recent,
+	})
+}
+
+func (h *Handler) ProxyJellyfinImage(c *gin.Context) {
+	id := c.Param("id")
+	if id == "" {
+		c.Status(http.StatusNotFound)
+		return
+	}
+
+	imgType := c.DefaultQuery("type", "Primary")
+	tag := c.Query("tag")
+
+	targetURL := fmt.Sprintf("http://127.0.0.1:8096/Items/%s/Images/%s", id, imgType)
+	if tag != "" {
+		targetURL += "?tag=" + tag
+	}
+
+	client := http.Client{Timeout: 5 * time.Second}
+	req, err := http.NewRequestWithContext(c.Request.Context(), "GET", targetURL, nil)
+	if err != nil {
+		c.Status(http.StatusNotFound)
+		return
+	}
+
+	token := getJellyfinToken()
+	if token != "" {
+		req.Header.Set("X-Emby-Token", token)
+	}
+
+	resp, err := client.Do(req)
+	if err != nil || resp.StatusCode != http.StatusOK {
+		c.Redirect(http.StatusTemporaryRedirect, "/icons/jellyfin.svg")
+		return
+	}
+	defer resp.Body.Close()
+
+	c.Header("Cache-Control", "public, max-age=86400")
+	c.DataFromReader(http.StatusOK, resp.ContentLength, resp.Header.Get("Content-Type"), resp.Body, nil)
+}
+
+func (h *Handler) WidgetSeerr(c *gin.Context) {
+	client := http.Client{Timeout: 3 * time.Second}
+	apiKey := ""
+	if data, err := os.ReadFile("/var/lib/seerr/settings.json"); err == nil {
+		var s struct {
+			Main struct {
+				ApiKey string `json:"apiKey"`
+			} `json:"main"`
+		}
+		if err := json.Unmarshal(data, &s); err == nil {
+			apiKey = s.Main.ApiKey
+		}
+	}
+
+	req, err := http.NewRequestWithContext(c.Request.Context(), "GET", "http://127.0.0.1:5055/api/v1/request?take=10&sort=added", nil)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"online": false, "requests": []interface{}{}})
+		return
+	}
+	if apiKey != "" {
+		req.Header.Set("X-Api-Key", apiKey)
+	}
+
+	resp, err := client.Do(req)
+	if err != nil || resp.StatusCode != http.StatusOK {
+		c.JSON(http.StatusOK, gin.H{"online": false, "requests": []interface{}{}})
+		return
+	}
+	defer resp.Body.Close()
+
+	var result struct {
+		Results []map[string]interface{} `json:"results"`
+	}
+	_ = json.NewDecoder(resp.Body).Decode(&result)
+
+	c.JSON(http.StatusOK, gin.H{
+		"online":   true,
+		"requests": result.Results,
+	})
 }
 
 func (h *Handler) BeeperStatus(c *gin.Context) {

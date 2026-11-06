@@ -9,6 +9,8 @@
 *.tar.gz
 *.tar.zst
 *.pkg.tar.zst
+.cargo/
+**/.cargo/
 
 # Compiled binaries and build output
 bin/

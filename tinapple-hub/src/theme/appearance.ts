@@ -14,6 +14,7 @@ export const DEFAULT_SETTINGS: BackgroundSettings = {
   glassBlur: 20,
   glassTranslucency: 45,
   uiScale: '100%',
+  sidebarAutohide: false,
 };
 
 export const THEME_PALETTES = [
@@ -95,6 +96,14 @@ export function normalizeSettings(value: unknown): BackgroundSettings {
   } else if (typeof window !== 'undefined') {
     const legacyScale = localStorage.getItem('tinapple_scale');
     if (legacyScale && ['90%', '100%', '108%', '115%'].includes(legacyScale)) settings.uiScale = legacyScale;
+  }
+  if (typeof saved.sidebarAutohide === 'boolean') {
+    settings.sidebarAutohide = saved.sidebarAutohide;
+  } else if (typeof window !== 'undefined') {
+    const legacyPinned = localStorage.getItem('tinapple_sidebar_pinned');
+    if (legacyPinned !== null) {
+      settings.sidebarAutohide = legacyPinned === 'false';
+    }
   }
   return settings;
 }
