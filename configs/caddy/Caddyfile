@@ -2,12 +2,90 @@
 	admin "unix//run/caddy/admin.socket"
 }
 
+(matrix_routes) {
+	# Enable Lossless Compression (Zstandard and Gzip)
+	encode zstd gzip
+
+	# Matrix Client Discovery
+	handle /.well-known/matrix/client {
+		header Content-Type application/json
+		header Access-Control-Allow-Origin *
+		header Access-Control-Allow-Methods "GET, POST, OPTIONS"
+		header Access-Control-Allow-Headers "Origin, X-Requested-With, Content-Type, Accept, Authorization"
+		respond "{\"m.homeserver\":{\"base_url\":\"{scheme}://{host}\"},\"org.matrix.msc3575.proxy\":{\"url\":\"{scheme}://{host}\"}}" 200
+	}
+
+	# Matrix Server Discovery
+	handle /.well-known/matrix/server {
+		header Content-Type application/json
+		header Access-Control-Allow-Origin *
+		respond "{\"m.server\":\"tinapple.local:80\"}" 200
+	}
+
+	# Element X Sliding Sync (MSC3575)
+	handle /_matrix/client/unstable/org.matrix.msc3575/sync* {
+		reverse_proxy localhost:8009
+	}
+
+	handle /client/unstable/org.matrix.msc3575/sync* {
+		reverse_proxy localhost:8009
+	}
+
+	# Matrix Synapse Homeserver
+	handle /_matrix/* {
+		reverse_proxy localhost:8008
+	}
+
+	handle /_synapse/* {
+		reverse_proxy localhost:8008
+	}
+
+	# Element Web Client
+	redir /element /element/ permanent
+	handle_path /element/* {
+		root * /usr/share/webapps/element
+		file_server
+	}
+
+	# Suwayomi GraphQL API (Compressed Fast-Path)
+	handle /api/graphql* {
+		reverse_proxy localhost:4567
+	}
+
+	# Manga Thumbnails Immutable Fast-Path (direct kernel sendfile via Dash on 8088)
+	handle /api/v1/manga/*/thumbnail* {
+		header >Cache-Control "public, max-age=31536000, immutable"
+		reverse_proxy localhost:8088
+	}
+
+	# Suwayomi Manga REST API Fallback
+	handle /api/v1/manga* {
+		reverse_proxy localhost:4567
+	}
+
+	# Jellyfin Home Theater Reverse Proxy
+	handle /jellyfin* {
+		reverse_proxy localhost:8096
+	}
+
+	# Dashboard & Hub Hashed Static Assets (Immutable Cache)
+	handle /assets/* {
+		header >Cache-Control "public, max-age=31536000, immutable"
+		reverse_proxy localhost:8088
+	}
+
+	# Default Hub & Dash fallback
+	handle {
+		reverse_proxy localhost:8088
+	}
+}
+
 # Tailscale HTTPS domain (Automatic Let's Encrypt Certificate)
 tinapple-server.tail3dee69.ts.net {
 	tls {
 		get_certificate tailscale
 	}
-	reverse_proxy localhost:8088
+	import matrix_routes
 }
 
 # Vaultwarden Tailscale HTTPS endpoint
@@ -20,7 +98,7 @@ tinapple-server.tail3dee69.ts.net:8000 {
 
 # Plain HTTP for Tailscale IP and LAN IP (no SSL warning, direct fast access)
 http://100.67.207.60, http://192.168.1.17, http://localhost, http://tinapple-server {
-	reverse_proxy localhost:8088
+	import matrix_routes
 }
 
 http://100.67.207.60:8000, http://192.168.1.17:8000, http://localhost:8000 {
@@ -30,5 +108,5 @@ http://100.67.207.60:8000, http://192.168.1.17:8000, http://localhost:8000 {
 # Internal TLS fallback if HTTPS is explicitly requested on IP
 https://100.67.207.60, https://192.168.1.17, https://localhost, https://tinapple-server {
 	tls internal
-	reverse_proxy localhost:8088
+	import matrix_routes
 }
