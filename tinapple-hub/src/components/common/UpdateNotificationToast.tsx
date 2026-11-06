@@ -6,6 +6,8 @@ import { AppUpdateService } from '../../services/appUpdate';
 const DISMISSED_SHA_KEY = 'tinapple_dismissed_update_sha';
 const SESSION_DISMISSED_KEY = 'tinapple_update_toast_session_dismissed';
 
+declare const __BUILD_COMMIT__: string;
+
 interface GitHubCommitInfo {
   sha: string;
   fullSha: string;
@@ -46,7 +48,15 @@ export const UpdateNotificationToast: React.FC<UpdateNotificationToastProps> = (
       const author = data.commit?.author?.name || 'imyash0722';
       const url = data.html_url || 'https://github.com/imyash0722/tinapple/commits/main';
 
-      // Check if user already dismissed this commit (supports both full and short sha)
+      // 1. If currently running build is already this commit, don't notify
+      try {
+        const currentBuild = typeof __BUILD_COMMIT__ !== 'undefined' ? __BUILD_COMMIT__ : '';
+        if (currentBuild && (currentBuild === sha || currentBuild.startsWith(shortSha) || sha.startsWith(currentBuild.substring(0, 7)))) {
+          return;
+        }
+      } catch {}
+
+      // 2. Check if user already dismissed or started this update
       try {
         const dismissed = localStorage.getItem(DISMISSED_SHA_KEY);
         if (dismissed && (dismissed === sha || dismissed === shortSha || sha.startsWith(dismissed))) {
@@ -98,6 +108,14 @@ export const UpdateNotificationToast: React.FC<UpdateNotificationToastProps> = (
   };
 
   const handleStartUpdate = () => {
+    try {
+      if (latestCommit?.fullSha) {
+        localStorage.setItem(DISMISSED_SHA_KEY, latestCommit.fullSha);
+      } else if (latestCommit?.sha) {
+        localStorage.setItem(DISMISSED_SHA_KEY, latestCommit.sha);
+      }
+      sessionStorage.setItem(SESSION_DISMISSED_KEY, 'true');
+    } catch {}
     setIsVisible(false);
     if (onTriggerUpdate) {
       onTriggerUpdate();
