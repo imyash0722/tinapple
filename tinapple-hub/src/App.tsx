@@ -31,7 +31,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 import { FullWindowBackground } from './components/reactbits/FullWindowBackground';
 import { Sidebar } from './components/common/Sidebar';
-import { THEME_STORAGE_KEY, loadSettings } from './theme/appearance';
+import { THEME_STORAGE_KEY, loadSettings, normalizeSettings } from './theme/appearance';
 import { fetchMatugenPalette, applyMatugenM3, generateLocalM3Palette } from './theme/matugen';
 import { DockItem } from './components/reactbits/Dock';
 
@@ -149,6 +149,52 @@ export const App: React.FC = () => {
     }
   });
 
+  const hasLoadedServerSettingsRef = useRef(false);
+
+  // Synchronize appearance/theme settings from server on mount
+  useEffect(() => {
+    let active = true;
+    api.getUserSettings().then((remote) => {
+      if (!active) return;
+      if (remote && !remote.empty) {
+        const remoteSettings = remote.theme || remote;
+        if (
+          remoteSettings &&
+          typeof remoteSettings === 'object' &&
+          (remoteSettings.wallpaperUrl || remoteSettings.accentColor || remoteSettings.glassBlur !== undefined)
+        ) {
+          const normalized = normalizeSettings(remoteSettings);
+          setSettings((prev) => {
+            const prevStr = JSON.stringify(prev);
+            const nextStr = JSON.stringify(normalized);
+            if (prevStr !== nextStr) {
+              try {
+                localStorage.setItem(THEME_STORAGE_KEY, nextStr);
+                localStorage.setItem('tinapple_blur', (normalized.glassBlur ?? 20).toString());
+                localStorage.setItem('tinapple_translucency', (normalized.glassTranslucency ?? 45).toString());
+                localStorage.setItem('tinapple_scale', normalized.uiScale || '100%');
+              } catch {}
+              return normalized;
+            }
+            return prev;
+          });
+
+          if (typeof remote.sidebarPinned === 'boolean') {
+            setIsSidebarPinned(remote.sidebarPinned);
+            try {
+              localStorage.setItem('tinapple_sidebar_pinned', String(remote.sidebarPinned));
+            } catch {}
+          }
+        }
+      }
+      hasLoadedServerSettingsRef.current = true;
+    }).catch(() => {
+      hasLoadedServerSettingsRef.current = true;
+    });
+
+    return () => { active = false; };
+  }, []);
+
   const handleTogglePinSidebar = () => {
     setIsSidebarPinned((prev) => {
       const next = !prev;
@@ -227,8 +273,47 @@ export const App: React.FC = () => {
       setStorageStatus('');
     } catch { setStorageStatus('Browser storage is unavailable. Changes apply for this session only.'); }
 
-    return () => { active = false; };
-  }, [settings]);
+    // Persist settings to backend server (debounced) to survive cache resets and origin flips
+    let saveTimer: any = null;
+    if (hasLoadedServerSettingsRef.current) {
+      saveTimer = setTimeout(() => {
+        api.saveUserSettings({
+          ...settings,
+          sidebarPinned: isSidebarPinned,
+          updatedAt: Date.now(),
+        }).catch((err) => {
+          console.warn('Failed to persist user settings to server:', err);
+        });
+      }, 800);
+    }
+
+    return () => {
+      active = false;
+      if (saveTimer) clearTimeout(saveTimer);
+    };
+  }, [settings, isSidebarPinned]);
+
+  // Flush any pending user settings to server on page hide/unload
+  useEffect(() => {
+    const handleFlushSettings = () => {
+      if (hasLoadedServerSettingsRef.current) {
+        api.saveUserSettings({
+          ...settings,
+          sidebarPinned: isSidebarPinned,
+          updatedAt: Date.now(),
+        }).catch(() => {});
+      }
+    };
+    window.addEventListener('beforeunload', handleFlushSettings);
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') handleFlushSettings();
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      window.removeEventListener('beforeunload', handleFlushSettings);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [settings, isSidebarPinned]);
 
   const [telemetry, setTelemetry] = useState<TelemetrySnapshot>(MOCK_TELEMETRY);
   const [services, setServices] = useState<ServiceInfo[]>(MOCK_SERVICES);

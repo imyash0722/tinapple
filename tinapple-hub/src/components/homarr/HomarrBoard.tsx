@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import {
   Search,
   X,
@@ -606,6 +606,7 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
       } catch {
         // ignore
       }
+      triggerLayoutSync(safeWidgets, boardBookmarks, next);
       return next;
     });
   };
@@ -622,6 +623,130 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
     return DEFAULT_HOMARR_BOOKMARKS;
   });
 
+  const hasLoadedServerLayoutRef = useRef(false);
+  const saveTimeoutRef = useRef<any>(null);
+  const widgetsRef = useRef(safeWidgets);
+  widgetsRef.current = safeWidgets;
+  const bookmarksRef = useRef(boardBookmarks);
+  bookmarksRef.current = boardBookmarks;
+  const collapsedRef = useRef(collapsedSections);
+  collapsedRef.current = collapsedSections;
+
+  // Persist board layout, widgets, and bookmarks to backend server
+  const syncLayoutToServer = useCallback((
+    targetWidgets: CanvasWidget[],
+    targetBookmarks: CustomBookmarkItem[],
+    targetCollapsed: Record<string, boolean>
+  ) => {
+    const now = Date.now();
+    try {
+      localStorage.setItem('tinapple_homarr_board_updated_at', now.toString());
+    } catch {}
+
+    const payload = {
+      version: 2,
+      layoutMode: 'board',
+      widgets: targetWidgets,
+      bookmarks: targetBookmarks,
+      collapsedSections: targetCollapsed,
+      updatedAt: now,
+    };
+
+    api.saveDashboardLayout(payload).catch((err) => {
+      console.warn('Failed to save dashboard layout to server:', err);
+    });
+  }, []);
+
+  const triggerLayoutSync = useCallback((
+    targetWidgets?: CanvasWidget[],
+    targetBookmarks?: CustomBookmarkItem[],
+    targetCollapsed?: Record<string, boolean>
+  ) => {
+    const w = targetWidgets || widgetsRef.current;
+    const b = targetBookmarks || bookmarksRef.current;
+    const c = targetCollapsed || collapsedRef.current;
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    saveTimeoutRef.current = setTimeout(() => {
+      syncLayoutToServer(w, b, c);
+    }, 800);
+  }, [syncLayoutToServer]);
+
+  // Synchronize board layout with server on mount to survive cache resets and origin flips
+  useEffect(() => {
+    let active = true;
+    api.getDashboardLayout().then((remote) => {
+      if (!active) return;
+      if (remote && !remote.empty) {
+        const localSaved = localStorage.getItem(BOARD_STORAGE_KEY);
+        const localUpdatedAt = Number(localStorage.getItem('tinapple_homarr_board_updated_at') || '0');
+        const remoteUpdatedAt = Number(remote.updatedAt || '0');
+
+        // Apply remote widgets if local storage is missing/empty, or remote layout is explicitly for board and newer/valid
+        if (Array.isArray(remote.widgets) && remote.widgets.length > 0) {
+          const shouldApply = !localSaved || (remote.layoutMode === 'board' && remoteUpdatedAt >= localUpdatedAt);
+          if (shouldApply) {
+            setWidgets(remote.widgets);
+            try {
+              localStorage.setItem(BOARD_STORAGE_KEY, JSON.stringify(remote.widgets));
+            } catch {}
+          }
+        }
+
+        // Apply remote bookmarks
+        if (Array.isArray(remote.bookmarks) && remote.bookmarks.length > 0) {
+          const localBookmarks = localStorage.getItem('tinapple_homelab_bookmarks_v1');
+          if (!localBookmarks || remoteUpdatedAt >= localUpdatedAt) {
+            setBoardBookmarks(remote.bookmarks);
+            try {
+              localStorage.setItem('tinapple_homelab_bookmarks_v1', JSON.stringify(remote.bookmarks));
+            } catch {}
+          }
+        }
+
+        // Apply remote collapsed sections
+        if (remote.collapsedSections && typeof remote.collapsedSections === 'object') {
+          const localSections = localStorage.getItem(SECTION_COLLAPSE_STORAGE_KEY);
+          if (!localSections || remoteUpdatedAt >= localUpdatedAt) {
+            setCollapsedSections(remote.collapsedSections);
+            try {
+              localStorage.setItem(SECTION_COLLAPSE_STORAGE_KEY, JSON.stringify(remote.collapsedSections));
+            } catch {}
+          }
+        }
+
+        if (remoteUpdatedAt) {
+          try {
+            localStorage.setItem('tinapple_homarr_board_updated_at', remoteUpdatedAt.toString());
+          } catch {}
+        }
+      }
+      hasLoadedServerLayoutRef.current = true;
+    }).catch(() => {
+      hasLoadedServerLayoutRef.current = true;
+    });
+
+    return () => { active = false; };
+  }, []);
+
+  // Flush any pending layout changes to server on page hide/unload
+  useEffect(() => {
+    const handleFlushLayout = () => {
+      if (hasLoadedServerLayoutRef.current) {
+        syncLayoutToServer(widgetsRef.current, bookmarksRef.current, collapsedRef.current);
+      }
+    };
+    window.addEventListener('beforeunload', handleFlushLayout);
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') handleFlushLayout();
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      window.removeEventListener('beforeunload', handleFlushLayout);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    };
+  }, [syncLayoutToServer]);
+
   const saveBookmarks = (newBookmarks: CustomBookmarkItem[]) => {
     const list = Array.isArray(newBookmarks) ? newBookmarks : DEFAULT_HOMARR_BOOKMARKS;
     setBoardBookmarks(list);
@@ -630,6 +755,7 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
     } catch (e) {
       console.error('Failed to save bookmarks', e);
     }
+    triggerLayoutSync(safeWidgets, list, collapsedSections);
   };
 
   // Modals
@@ -657,7 +783,7 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
     }
   };
 
-  // Sync widgets with localStorage
+  // Sync widgets with localStorage and server
   const saveWidgets = (newWidgets: CanvasWidget[]) => {
     const list = Array.isArray(newWidgets) ? newWidgets : DEFAULT_BOARD_WIDGETS;
     setWidgets(list);
@@ -666,13 +792,23 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
     } catch (e) {
       console.error('Failed to save widgets', e);
     }
+    triggerLayoutSync(list, boardBookmarks, collapsedSections);
   };
 
   const handleResetBoard = () => {
     if (window.confirm('Reset Homarr board layout to factory defaults?')) {
-      saveWidgets(DEFAULT_BOARD_WIDGETS);
-      setCollapsedSections({});
-      localStorage.removeItem(SECTION_COLLAPSE_STORAGE_KEY);
+      const defaultWidgets = [...DEFAULT_BOARD_WIDGETS];
+      const emptySections = {};
+      const defaultBm = [...DEFAULT_HOMARR_BOOKMARKS];
+      setWidgets(defaultWidgets);
+      setCollapsedSections(emptySections);
+      setBoardBookmarks(defaultBm);
+      try {
+        localStorage.setItem(BOARD_STORAGE_KEY, JSON.stringify(defaultWidgets));
+        localStorage.setItem('tinapple_homelab_bookmarks_v1', JSON.stringify(defaultBm));
+        localStorage.removeItem(SECTION_COLLAPSE_STORAGE_KEY);
+      } catch {}
+      syncLayoutToServer(defaultWidgets, defaultBm, emptySections);
       AndroidBridge.performHaptic('heavy');
     }
   };

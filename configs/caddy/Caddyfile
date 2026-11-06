@@ -74,6 +74,15 @@
 		reverse_proxy localhost:8088
 	}
 
+	# Download Tinapple Root CA
+	handle /tinapple-ca.crt {
+		header Content-Type "application/x-x509-ca-cert"
+		header Content-Disposition "attachment; filename=tinapple-ca.crt"
+		file_server {
+			root /etc/tinapple/certs
+		}
+	}
+
 	# Default Hub & Dash fallback
 	handle {
 		reverse_proxy localhost:8088
@@ -97,17 +106,17 @@ tinapple-server.tail3dee69.ts.net:8000 {
 }
 
 # Plain HTTP for Tailscale IP and LAN IP (no SSL warning, direct fast access)
-http://100.67.207.60, http://192.168.1.17, http://localhost, http://tinapple-server {
+http://100.67.207.60, http://192.168.1.17, http://192.168.1.103, http://localhost, http://tinapple-server {
 	import matrix_routes
 }
 
-http://100.67.207.60:8000, http://192.168.1.17:8000, http://localhost:8000 {
+http://100.67.207.60:8000, http://192.168.1.17:8000, http://192.168.1.103:8000, http://localhost:8000 {
 	reverse_proxy localhost:8001
 }
 
-# Internal TLS fallback if HTTPS is explicitly requested on IP
-https://100.67.207.60, https://192.168.1.17, https://localhost, https://tinapple-server {
-	tls internal
+# Persistent 10-Year TLS for direct IP and LAN HTTPS access
+https://100.67.207.60, https://192.168.1.17, https://192.168.1.103, https://localhost, https://tinapple-server {
+	tls /etc/tinapple/certs/tinapple-fullchain.crt /etc/tinapple/certs/tinapple-server.key
 	import matrix_routes
 }
 
