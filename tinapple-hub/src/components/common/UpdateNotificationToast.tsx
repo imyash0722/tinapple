@@ -56,7 +56,12 @@ export const UpdateNotificationToast: React.FC<UpdateNotificationToastProps> = (
         }
       } catch {}
 
-      // 2. Check if user already dismissed or started this update
+      // 2. Ignore automated dist/internal maintenance commits from popping up system update prompts
+      if (message.startsWith('chore(dist)') || message.includes('[skip-notify]')) {
+        return;
+      }
+
+      // 3. Check if user already dismissed or started this update
       try {
         const dismissed = localStorage.getItem(DISMISSED_SHA_KEY);
         if (dismissed && (dismissed === sha || dismissed === shortSha || sha.startsWith(dismissed))) {
