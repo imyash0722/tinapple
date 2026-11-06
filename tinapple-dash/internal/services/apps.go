@@ -339,6 +339,20 @@ func NewAppManager() *AppManager {
 			ConfigPath:  "/etc/navidrome/navidrome.toml",
 		},
 		{
+			ID:          "tinapple-music-queuer",
+			Name:        "Tinapple Music Queuer",
+			Description: "Automated studio lossless FLAC audio resolver & queue daemon for Navidrome via Antra.",
+			Tagline:     "Lossless FLAC queuer for Navidrome",
+			Category:    "media",
+			Package:     "tinapple-music-queuer",
+			Unit:        "tinapple-music-queuer.service",
+			Binary:      "tinapple-music-queuer",
+			Port:        0,
+			Icon:        "navidrome",
+			AccentColor: "#00E5FF",
+			ConfigPath:  "/home/pineapple/.config/tinapple/music_queuer.json",
+		},
+		{
 			ID:          "tailscale",
 			Name:        "Tailscale Mesh VPN",
 			Description: "Zero-config WireGuard mesh network connecting your homelab devices securely from anywhere without port forwarding.",
@@ -712,14 +726,15 @@ func NewAppManager() *AppManager {
 			ID:          "audiophile-cloud",
 			Name:        "Audiophile Music Cloud & Downloader",
 			Tagline:     "Lossless Subsonic audio streaming & offline YouTube archiver",
-			Description: "Modern high-fidelity music streaming server compatible with Symfonium, Feishin, and Substreamer, integrated with Pinchflat for scheduled archiving of YouTube Music tracks, albums, and audio feeds.",
+			Description: "Modern high-fidelity music streaming server compatible with Symfonium, Feishin, and Substreamer, integrated with Antra lossless FLAC queuer and Pinchflat audio archiver.",
 			Badge:       "MUSIC & AUDIO",
 			AccentColor: "#FF7F00",
 			Icon:        "navidrome",
-			Apps:        []string{"navidrome", "pinchflat"},
+			Apps:        []string{"navidrome", "tinapple-music-queuer", "pinchflat"},
 			Features: []string{
 				"Subsonic & Airsonic REST API support for mobile & desktop players",
 				"Storage in /srv/media/music with automated library scanning",
+				"Automated Spotify & Apple Music lossless FLAC queuer (Antra)",
 				"Pinchflat YouTube & audio channel archiver (:8945)",
 				"On-the-fly FLAC/Opus/MP3 transcoding",
 			},
@@ -1893,6 +1908,18 @@ func (m *AppManager) installUnlocked(id string) error {
 	case "pinchflat", "metube":
 		m.AppendLog(id, "info", "Deploying Pinchflat YouTube media manager container...")
 		installErr = installPinchflat(m)
+	case "tinapple-music-queuer":
+		m.AppendLog(id, "info", "Fetching Tinapple Music Queuer from github.com/imyash0722/tinapple-music-queuer...")
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+		defer cancel()
+		tmpDir := "/tmp/tinapple-music-queuer-install"
+		_ = os.RemoveAll(tmpDir)
+		if err := m.runStreamCmd(ctx, id, "git", "clone", "--depth=1", "https://github.com/imyash0722/tinapple-music-queuer.git", tmpDir); err != nil {
+			installErr = err
+		} else {
+			installErr = m.runStreamCmd(ctx, id, "bash", filepath.Join(tmpDir, "install.sh"))
+			_ = os.RemoveAll(tmpDir)
+		}
 	case "minecraft":
 		m.AppendLog(id, "info", "Deploying PaperMC / PurpurMC appliance server runtime...")
 		installErr = installMinecraftServer()

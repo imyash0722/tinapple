@@ -1,0 +1,24 @@
+[Unit]
+Description=Tinapple Lossless Music Queuer (Antra to Navidrome)
+Documentation=https://github.com/imyash0722/tinapple-music-queuer
+After=network-online.target navidrome.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pineapple
+Group=media
+ExecStart=/usr/local/bin/tinapple-music-queuer run
+Restart=on-failure
+RestartSec=15
+TimeoutStopSec=30
+StandardOutput=journal
+StandardError=journal
+
+# Sandboxing & Hardening
+ProtectSystem=strict
+ReadWritePaths=/srv/media/music /home/pineapple/.config/tinapple /tmp
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

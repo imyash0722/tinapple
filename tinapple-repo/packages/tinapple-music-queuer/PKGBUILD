@@ -1,0 +1,23 @@
+# Maintainer: Yash Sharma <imyash0722@gmail.com>
+pkgname=tinapple-music-queuer
+pkgver=0.0.1
+pkgrel=1
+pkgdesc="Automated studio lossless FLAC audio resolver & queue daemon for Navidrome via Antra"
+arch=('any')
+url="https://github.com/imyash0722/tinapple-music-queuer"
+license=('MIT')
+depends=('python' 'python-requests' 'python-websockets')
+install=tinapple-music-queuer.install
+source=()
+sha256sums=()
+
+package() {
+  install -dm755 "$pkgdir/usr/share/tinapple-music-queuer"
+  install -Dm755 lib/queuer.py "$pkgdir/usr/share/tinapple-music-queuer/queuer.py"
+
+  # Executable wrapper
+  install -Dm755 bin/tinapple-music-queuer "$pkgdir/usr/bin/tinapple-music-queuer"
+
+  # Systemd service
+  install -Dm644 systemd/tinapple-music-queuer.service "$pkgdir/usr/lib/systemd/system/tinapple-music-queuer.service"
+}

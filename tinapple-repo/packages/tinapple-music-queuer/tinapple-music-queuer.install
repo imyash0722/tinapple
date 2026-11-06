@@ -1,0 +1,18 @@
+post_install() {
+  systemctl daemon-reload
+  echo "==> tinapple-music-queuer installed."
+  echo "==> To enable and start daemon: systemctl enable --now tinapple-music-queuer.service"
+  echo "==> Manage playlists: tinapple-music-queuer status"
+}
+
+post_upgrade() {
+  systemctl daemon-reload
+  if systemctl is-active --quiet tinapple-music-queuer.service; then
+    systemctl restart tinapple-music-queuer.service
+  fi
+}
+
+pre_remove() {
+  systemctl stop tinapple-music-queuer.service 2>/dev/null || true
+  systemctl disable tinapple-music-queuer.service 2>/dev/null || true
+}

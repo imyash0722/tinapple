@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tinapple-music-queuer"
+version = "0.0.1"
+description = "Automated studio lossless FLAC audio resolver & queue daemon for Navidrome via Antra"
+readme = "README.md"
+authors = [
+    { name = "Yash Sharma", email = "imyash0722@gmail.com" }
+]
+license = { text = "MIT" }
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX :: Linux",
+    "Topic :: Multimedia :: Sound/Audio",
+]
+dependencies = [
+    "requests>=2.28.0",
+    "websockets>=11.0.0",
+]
+requires-python = ">=3.9"
+
+[project.scripts]
+tinapple-music-queuer = "queuer:main"
+
+[project.urls]
+Homepage = "https://github.com/imyash0722/tinapple-music-queuer"
+Repository = "https://github.com/imyash0722/tinapple-music-queuer.git"
+Issues = "https://github.com/imyash0722/tinapple-music-queuer/issues"
