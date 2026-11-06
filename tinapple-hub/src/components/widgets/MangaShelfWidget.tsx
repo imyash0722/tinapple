@@ -17,6 +17,7 @@ interface MangaItem {
 
 export const MangaShelfWidget: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'reading' | 'history' | 'updates'>('reading');
+  const [categoryName, setCategoryName] = useState<string>('Reading');
   const [online, setOnline] = useState(false);
   const [loading, setLoading] = useState(false);
   const [totalCount, setTotalCount] = useState<number>(0);
@@ -36,6 +37,9 @@ export const MangaShelfWidget: React.FC = () => {
       .then((data) => {
         if (data) {
           setOnline(Boolean(data.online));
+          if (data.categoryName || data.category) {
+            setCategoryName(data.categoryName || data.category);
+          }
           if (typeof data.totalCount === 'number') {
             setTotalCount(data.totalCount);
           }
@@ -141,7 +145,7 @@ export const MangaShelfWidget: React.FC = () => {
                   : 'text-on-surface-variant hover:text-on-surface'
               }`}
             >
-              Library {totalCount > 0 ? `(${totalCount})` : readingList.length > 0 ? `(${readingList.length})` : ''}
+              {categoryName} {totalCount > 0 ? `(${totalCount})` : readingList.length > 0 ? `(${readingList.length})` : ''}
             </button>
             <button
               onClick={() => setActiveTab('history')}

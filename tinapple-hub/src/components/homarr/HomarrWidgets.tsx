@@ -982,6 +982,7 @@ interface MangaShelfItem {
 
 export const HomarrMangaWidget: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'reading' | 'history' | 'updates'>('reading');
+  const [categoryName, setCategoryName] = useState<string>('Reading');
   const [online, setOnline] = useState<boolean>(true);
   const [loading, setLoading] = useState<boolean>(false);
   const [totalCount, setTotalCount] = useState<number>(0);
@@ -997,6 +998,9 @@ export const HomarrMangaWidget: React.FC = () => {
       .then((data) => {
         if (data) {
           setOnline(data.online !== false);
+          if (data.categoryName || data.category) {
+            setCategoryName(data.categoryName || data.category);
+          }
           if (typeof data.totalCount === 'number') setTotalCount(data.totalCount);
           setReadingList(Array.isArray(data.library) ? data.library : Array.isArray(data.mangas) ? data.mangas : []);
           setHistoryList(Array.isArray(data.history) ? data.history : []);
@@ -1044,7 +1048,7 @@ export const HomarrMangaWidget: React.FC = () => {
                   : 'text-zinc-400 hover:text-white'
               }`}
             >
-              Library {totalCount > 0 ? `(${totalCount})` : ''}
+              {categoryName} {totalCount > 0 ? `(${totalCount})` : ''}
             </button>
             <button
               onClick={() => setActiveTab('history')}
@@ -1082,7 +1086,7 @@ export const HomarrMangaWidget: React.FC = () => {
       <div className="my-2.5 flex-1 min-h-[140px] flex flex-col justify-center">
         {currentList.length > 0 ? (
           <div className="flex gap-3 overflow-x-auto pb-1.5 scrollbar-none">
-            {currentList.slice(0, 10).map((manga, idx) => {
+            {currentList.map((manga, idx) => {
               const suwayomiMangaUrl = `${suwayomiWebUrl.replace(/\/$/, '')}/manga/${manga.id}`;
               const sourceLabel = typeof manga.source === 'object' ? manga.source?.name : manga.source || 'Suwayomi';
               return (
@@ -1135,7 +1139,7 @@ export const HomarrMangaWidget: React.FC = () => {
         ) : (
           <div className="text-center py-6 px-4 rounded-xl bg-slate-950/40 border border-white/[0.05]">
             <BookOpen className="w-6 h-6 text-orange-400/50 mx-auto mb-1.5" />
-            <h5 className="text-xs font-bold text-white">No Manga in {activeTab === 'history' ? 'History' : activeTab === 'updates' ? 'Updates' : 'Library'}</h5>
+            <h5 className="text-xs font-bold text-white">No Manga in {activeTab === 'history' ? 'History' : activeTab === 'updates' ? 'Updates' : categoryName}</h5>
             <p className="text-[10px] text-zinc-400 mt-1 max-w-sm mx-auto">
               Sync extensions or read chapters in Suwayomi to populate your reading shelf.
             </p>

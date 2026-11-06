@@ -12,6 +12,8 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -2038,12 +2040,15 @@ func (h *Handler) WidgetManga(c *gin.Context) {
 	isOwner, _ := h.getClientRole(c)
 	if !isOwner {
 		c.JSON(http.StatusOK, gin.H{
-			"online":     false,
-			"totalCount": 0,
-			"history":    []interface{}{},
-			"updates":    []interface{}{},
-			"library":    []interface{}{},
-			"mangas":     []interface{}{},
+			"online":       false,
+			"category":     "Library",
+			"categoryName": "Library",
+			"categories":   []interface{}{},
+			"totalCount":   0,
+			"history":      []interface{}{},
+			"updates":      []interface{}{},
+			"library":      []interface{}{},
+			"mangas":       []interface{}{},
 		})
 		return
 	}
@@ -2051,10 +2056,11 @@ func (h *Handler) WidgetManga(c *gin.Context) {
 	client := http.Client{Timeout: 5 * time.Second}
 
 	// Suwayomi GraphQL endpoint is at /api/graphql
-	// Mangas: ordered by newest added (IN_LIBRARY_AT DESC)
-	// History: chapters ordered by newest read (LAST_READ_AT DESC)
-	// Updates: unread chapters ordered by newest upload (UPLOAD_DATE DESC)
-	query := `{"query":"{ mangas(condition: { inLibrary: true }, order: [{by: IN_LIBRARY_AT, byType: DESC_NULLS_LAST}], first: 60) { totalCount nodes { id title thumbnailUrl unreadCount source { id displayName } } } history: chapters(condition: { isRead: true }, order: [{by: LAST_READ_AT, byType: DESC_NULLS_LAST}], first: 100) { nodes { id name lastReadAt manga { id title thumbnailUrl } } } updates: chapters(condition: { isRead: false }, order: [{by: UPLOAD_DATE, byType: DESC_NULLS_LAST}], first: 100) { nodes { id name uploadDate manga { id title thumbnailUrl } } } }"}`
+	// 1. Categories: user library shelves (e.g. Reading, Plan to read, Saved)
+	// 2. Mangas: all in-library mangas as universal fallback
+	// 3. History: chapters ordered by newest read (LAST_READ_AT DESC)
+	// 4. Updates: unread chapters ordered by newest upload (UPLOAD_DATE DESC)
+	query := `{"query":"{ categories { nodes { id name order isDefaultCategory mangas { totalCount nodes { id title thumbnailUrl unreadCount inLibraryAt source { id displayName } } } } } mangas(condition: { inLibrary: true }, order: [{by: IN_LIBRARY_AT, byType: DESC_NULLS_LAST}], first: 100) { totalCount nodes { id title thumbnailUrl unreadCount source { id displayName } } } history: chapters(condition: { isRead: true }, order: [{by: LAST_READ_AT, byType: DESC_NULLS_LAST}], first: 60) { nodes { id name lastReadAt manga { id title thumbnailUrl } } } updates: chapters(condition: { isRead: false }, order: [{by: UPLOAD_DATE, byType: DESC_NULLS_LAST}], first: 60) { nodes { id name uploadDate manga { id title thumbnailUrl } } } }"}`
 	req, err := http.NewRequestWithContext(c.Request.Context(), "POST", "http://127.0.0.1:4567/api/graphql", strings.NewReader(query))
 	if err == nil {
 		req.Header.Set("Content-Type", "application/json")
@@ -2062,6 +2068,28 @@ func (h *Handler) WidgetManga(c *gin.Context) {
 			defer gqlResp.Body.Close()
 			var gqlData struct {
 				Data struct {
+					Categories struct {
+						Nodes []struct {
+							ID                int    `json:"id"`
+							Name              string `json:"name"`
+							Order             int    `json:"order"`
+							IsDefaultCategory bool   `json:"isDefaultCategory"`
+							Mangas            struct {
+								TotalCount int `json:"totalCount"`
+								Nodes      []struct {
+									ID           int    `json:"id"`
+									Title        string `json:"title"`
+									ThumbnailUrl string `json:"thumbnailUrl"`
+									UnreadCount  int    `json:"unreadCount"`
+									InLibraryAt  string `json:"inLibraryAt"`
+									Source       struct {
+										ID          string `json:"id"`
+										DisplayName string `json:"displayName"`
+									} `json:"source"`
+								} `json:"nodes"`
+							} `json:"mangas"`
+						} `json:"nodes"`
+					} `json:"categories"`
 					Mangas struct {
 						TotalCount int `json:"totalCount"`
 						Nodes      []struct {
@@ -2102,21 +2130,139 @@ func (h *Handler) WidgetManga(c *gin.Context) {
 				} `json:"data"`
 			}
 			if json.NewDecoder(gqlResp.Body).Decode(&gqlData) == nil {
-				mangaList := make([]map[string]interface{}, 0, len(gqlData.Data.Mangas.Nodes))
-				for _, m := range gqlData.Data.Mangas.Nodes {
-					thumb := m.ThumbnailUrl
-					if thumb == "" {
-						thumb = fmt.Sprintf("/api/v1/manga/%d/thumbnail", m.ID)
+				// Category selection:
+				// Prefer 'reading' (exact match or contains), then default category, then first non-empty category.
+				// Fall back to all inLibrary mangas if no matching category exists.
+				reqCategory := strings.ToLower(strings.TrimSpace(c.Query("category")))
+				cats := gqlData.Data.Categories.Nodes
+
+				var selectedIdx = -1
+
+				// 0. Explicit category query parameter
+				if reqCategory != "" {
+					for i := range cats {
+						if strings.ToLower(strings.TrimSpace(cats[i].Name)) == reqCategory && cats[i].Mangas.TotalCount > 0 {
+							selectedIdx = i
+							break
+						}
 					}
-					mangaList = append(mangaList, map[string]interface{}{
-						"id":           m.ID,
-						"title":        m.Title,
-						"thumbnailUrl": thumb,
-						"unreadCount":  m.UnreadCount,
-						"source": map[string]string{
-							"name": m.Source.DisplayName,
-						},
+				}
+
+				// 1. Look for 'reading' category (exact match first)
+				if selectedIdx == -1 {
+					for i := range cats {
+						clean := strings.ToLower(strings.TrimSpace(cats[i].Name))
+						if clean == "reading" && cats[i].Mangas.TotalCount > 0 {
+							selectedIdx = i
+							break
+						}
+					}
+				}
+
+				// 1b. Look for category containing 'reading'
+				if selectedIdx == -1 {
+					for i := range cats {
+						clean := strings.ToLower(strings.TrimSpace(cats[i].Name))
+						if strings.Contains(clean, "reading") && cats[i].Mangas.TotalCount > 0 {
+							selectedIdx = i
+							break
+						}
+					}
+				}
+
+				// 2. Fallback: Default category if it has mangas
+				if selectedIdx == -1 {
+					for i := range cats {
+						if cats[i].IsDefaultCategory && cats[i].Mangas.TotalCount > 0 {
+							selectedIdx = i
+							break
+						}
+					}
+				}
+
+				// 3. Fallback: First category with mangas by order
+				if selectedIdx == -1 {
+					var nonEmpties []int
+					for i := range cats {
+						if cats[i].Mangas.TotalCount > 0 {
+							nonEmpties = append(nonEmpties, i)
+						}
+					}
+					if len(nonEmpties) > 0 {
+						sort.Slice(nonEmpties, func(a, b int) bool {
+							return cats[nonEmpties[a]].Order < cats[nonEmpties[b]].Order
+						})
+						selectedIdx = nonEmpties[0]
+					}
+				}
+
+				var mangaList []map[string]interface{}
+				categoryName := "Library"
+				totalCount := 0
+
+				if selectedIdx >= 0 {
+					selected := &cats[selectedIdx]
+					categoryName = strings.TrimSpace(selected.Name)
+					totalCount = selected.Mangas.TotalCount
+
+					nodes := selected.Mangas.Nodes
+					// Sort category mangas by inLibraryAt DESC (newest additions first)
+					sort.Slice(nodes, func(i, j int) bool {
+						t1, _ := strconv.ParseInt(nodes[i].InLibraryAt, 10, 64)
+						t2, _ := strconv.ParseInt(nodes[j].InLibraryAt, 10, 64)
+						if t1 != t2 {
+							return t1 > t2
+						}
+						return nodes[i].ID > nodes[j].ID
 					})
+
+					mangaList = make([]map[string]interface{}, 0, len(nodes))
+					for _, m := range nodes {
+						thumb := m.ThumbnailUrl
+						if thumb == "" {
+							thumb = fmt.Sprintf("/api/v1/manga/%d/thumbnail", m.ID)
+						}
+						mangaList = append(mangaList, map[string]interface{}{
+							"id":           m.ID,
+							"title":        m.Title,
+							"thumbnailUrl": thumb,
+							"unreadCount":  m.UnreadCount,
+							"source": map[string]string{
+								"name": m.Source.DisplayName,
+							},
+						})
+					}
+				} else {
+					// 4. Fallback to all inLibrary mangas
+					totalCount = gqlData.Data.Mangas.TotalCount
+					mangaList = make([]map[string]interface{}, 0, len(gqlData.Data.Mangas.Nodes))
+					for _, m := range gqlData.Data.Mangas.Nodes {
+						thumb := m.ThumbnailUrl
+						if thumb == "" {
+							thumb = fmt.Sprintf("/api/v1/manga/%d/thumbnail", m.ID)
+						}
+						mangaList = append(mangaList, map[string]interface{}{
+							"id":           m.ID,
+							"title":        m.Title,
+							"thumbnailUrl": thumb,
+							"unreadCount":  m.UnreadCount,
+							"source": map[string]string{
+								"name": m.Source.DisplayName,
+							},
+						})
+					}
+				}
+
+				// Build category summaries list
+				categorySummaries := make([]map[string]interface{}, 0, len(cats))
+				for _, c := range cats {
+					if c.Mangas.TotalCount > 0 {
+						categorySummaries = append(categorySummaries, map[string]interface{}{
+							"id":    c.ID,
+							"name":  strings.TrimSpace(c.Name),
+							"count": c.Mangas.TotalCount,
+						})
+					}
 				}
 
 				// Deduplicate history by manga ID so each series appears at most once showing its latest read chapter
@@ -2170,12 +2316,15 @@ func (h *Handler) WidgetManga(c *gin.Context) {
 				}
 
 				c.JSON(http.StatusOK, gin.H{
-					"online":     true,
-					"totalCount": gqlData.Data.Mangas.TotalCount,
-					"mangas":     mangaList,
-					"library":    mangaList,
-					"history":    historyList,
-					"updates":    updatesList,
+					"online":       true,
+					"category":     categoryName,
+					"categoryName": categoryName,
+					"categories":   categorySummaries,
+					"totalCount":   totalCount,
+					"mangas":       mangaList,
+					"library":      mangaList,
+					"history":      historyList,
+					"updates":      updatesList,
 				})
 				return
 			}
@@ -2190,12 +2339,15 @@ func (h *Handler) WidgetManga(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"online":     online,
-		"totalCount": 0,
-		"history":    []interface{}{},
-		"updates":    []interface{}{},
-		"library":    []interface{}{},
-		"mangas":     []interface{}{},
+		"online":       online,
+		"category":     "Library",
+		"categoryName": "Library",
+		"categories":   []interface{}{},
+		"totalCount":   0,
+		"history":      []interface{}{},
+		"updates":      []interface{}{},
+		"library":      []interface{}{},
+		"mangas":       []interface{}{},
 	})
 }
 
