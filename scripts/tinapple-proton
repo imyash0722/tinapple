@@ -145,6 +145,7 @@ def connect_vpn():
     if os.path.isfile(WG_CONF) and os.path.getsize(WG_CONF) > 20:
         if is_wg_active():
             return True, "WireGuard tunnel is already active"
+        run_cmd(["systemctl", "enable", "wg-quick@proton.service"])
         code, out, err = run_cmd(["wg-quick", "up", "proton"], timeout=15)
         # Add NAT forwarding for proton so any forwarded client also benefits
         run_cmd(["iptables", "-t", "nat", "-A", "POSTROUTING", "-o", "proton", "-j", "MASQUERADE"])
@@ -170,6 +171,7 @@ def disconnect_vpn():
     if is_wg_active():
         run_cmd(["iptables", "-t", "nat", "-D", "POSTROUTING", "-o", "proton", "-j", "MASQUERADE"])
         code, out, err = run_cmd(["wg-quick", "down", "proton"])
+        run_cmd(["systemctl", "disable", "wg-quick@proton.service"])
         msg.append("WireGuard disconnected")
     if is_proton_cli_active():
         code, out, err = run_cmd(["protonvpn", "disconnect"])
