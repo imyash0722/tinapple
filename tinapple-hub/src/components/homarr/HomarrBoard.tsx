@@ -1460,7 +1460,7 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      setIsCreatorOpen(true);
+                      setCreatorOpen(true);
                     }}
                     className="px-2.5 py-1 rounded-full bg-surface-container hover:bg-surface-container-high border border-outline-variant text-primary font-sans tabular-nums text-xs font-bold flex items-center gap-1 transition-all active:scale-95"
                     title={`Add widget to ${section.name}`}
