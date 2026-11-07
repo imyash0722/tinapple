@@ -209,7 +209,7 @@ export function applyMatugenM3(palette: M3Palette, translucency = 45, enableGlas
   const surfaceAlpha = isLiquid ? Math.max(0.12, Math.min(1, 1 - (translucency / 100))) : 1;
   const surfaceContainerAlpha = isLiquid ? Math.min(1, surfaceAlpha + 0.08) : 1;
   const surfaceHoverAlpha = isLiquid ? Math.min(1, surfaceAlpha + 0.15) : 1;
-  const glassFilter = isLiquid && blur > 0 ? `blur(${blur}px) saturate(135%)` : 'none';
+  const glassFilter = isLiquid && blur > 0 ? `blur(${blur}px)` : 'none';
 
   root.style.setProperty('--m3-surface-opacity', surfaceAlpha.toFixed(3));
   root.style.setProperty('--m3-surface-container-opacity', surfaceContainerAlpha.toFixed(3));

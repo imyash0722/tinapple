@@ -918,10 +918,10 @@ export const App: React.FC = () => {
           {viewingAppId ? (
             <motion.div
               key={`unified-app-${viewingAppId}`}
-              initial={{ opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -14 }}
-              transition={{ duration: 0.25, ease: 'easeOut' }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
             >
               <UnifiedAppPage
                 appId={viewingAppId}
@@ -935,10 +935,10 @@ export const App: React.FC = () => {
               {activeTab === 'welcome' && (
             <motion.div
               key="welcome"
-              initial={{ opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -14 }}
-              transition={{ duration: 0.25, ease: 'easeOut' }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
             >
               <WelcomeInstaller
                 onOpenDashboard={() => handleSelectTab('dashboard')}
@@ -949,10 +949,10 @@ export const App: React.FC = () => {
           {activeTab === 'dashboard' && (
             <motion.div
               key="dashboard"
-              initial={{ opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -14 }}
-              transition={{ duration: 0.25, ease: 'easeOut' }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
             >
               <HomarrBoard
                 telemetry={telemetry}
@@ -981,10 +981,10 @@ export const App: React.FC = () => {
           {activeTab === 'services' && (
             <motion.div
               key="services"
-              initial={{ opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -14 }}
-              transition={{ duration: 0.25, ease: 'easeOut' }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
               className="space-y-4"
             >
               <div className="flex justify-between items-center mb-2">
@@ -1013,10 +1013,10 @@ export const App: React.FC = () => {
           {activeTab === 'store' && (
             <motion.div
               key="store"
-              initial={{ opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -14 }}
-              transition={{ duration: 0.25, ease: 'easeOut' }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
             >
               <ChaddyStore
                 isAdmin={isOwner}
@@ -1029,10 +1029,10 @@ export const App: React.FC = () => {
           {activeTab === 'guides' && (
             <motion.div
               key="guides"
-              initial={{ opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -14 }}
-              transition={{ duration: 0.25, ease: 'easeOut' }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
             >
               <GuidesPage
                 initialGuideId={selectedGuideId}
@@ -1044,10 +1044,10 @@ export const App: React.FC = () => {
           {activeTab === 'hardware' && (
             <motion.div
               key="hardware"
-              initial={{ opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -14 }}
-              transition={{ duration: 0.25, ease: 'easeOut' }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
               className="space-y-6"
             >
               {/* Primary System Telemetry Matrix (Moved from Dashboard to Hardware tab) */}
@@ -1074,10 +1074,10 @@ export const App: React.FC = () => {
           {activeTab === 'settings' && (
             <motion.div
               key="settings"
-              initial={{ opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -14 }}
-              transition={{ duration: 0.25, ease: 'easeOut' }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
               className="space-y-6"
             >
               <SettingsManifest systemInfo={systemInfo} onUpdateSession={handleUpdateSession} />
@@ -1087,10 +1087,10 @@ export const App: React.FC = () => {
           {activeTab === 'terminal' && (
             <motion.div
               key="terminal"
-              initial={{ opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -14 }}
-              transition={{ duration: 0.25, ease: 'easeOut' }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
             >
               <Suspense
                 fallback={
@@ -1110,10 +1110,10 @@ export const App: React.FC = () => {
           {activeTab === 'errors' && (
             <motion.div
               key="errors"
-              initial={{ opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -14 }}
-              transition={{ duration: 0.25, ease: 'easeOut' }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
             >
               <ErrorLoggerPage />
             </motion.div>

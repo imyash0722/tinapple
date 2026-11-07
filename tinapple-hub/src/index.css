@@ -160,16 +160,32 @@ h1, h2, h3, h4 { font-family: 'Roboto Flex Variable', 'Google Sans', system-ui, 
   --tw-bg-opacity: var(--m3-surface-opacity, 1) !important;
   backdrop-filter: var(--m3-glass-filter, none);
   -webkit-backdrop-filter: var(--m3-glass-filter, none);
+  background-clip: padding-box;
+  isolation: isolate;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  transform: translateZ(0);
 }
 
 .bg-surface-container {
   --tw-bg-opacity: var(--m3-surface-container-opacity, 1) !important;
-  backdrop-filter: var(--m3-glass-filter, none);
-  -webkit-backdrop-filter: var(--m3-glass-filter, none);
 }
 
 .hover\:bg-surface-container:hover {
   --tw-bg-opacity: var(--m3-surface-hover-opacity, 1) !important;
+}
+
+/* Eliminate nested backdrop-filters that cause compositor tile seams, double blur, and rectangular halos */
+.bg-surface-container-low .bg-surface-container-low,
+.tinapple-glass-card .bg-surface-container-low,
+.m3-card .bg-surface-container-low,
+[data-glass-root] .bg-surface-container-low,
+.bg-surface-container-low [class*="backdrop-blur"],
+.tinapple-glass-card [class*="backdrop-blur"],
+.m3-card [class*="backdrop-blur"] {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  transform: none !important;
 }
 
 /* Preserve canvas coordinates; only the surface shell changes. */
@@ -180,6 +196,11 @@ h1, h2, h3, h4 { font-family: 'Roboto Flex Variable', 'Google Sans', system-ui, 
   box-shadow: var(--glass-shadow, none) !important;
   backdrop-filter: var(--glass-filter, none);
   -webkit-backdrop-filter: var(--glass-filter, none);
+  background-clip: padding-box;
+  isolation: isolate;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  transform: translateZ(0);
   transition: background-color 200ms, border-color 200ms, backdrop-filter 200ms;
 }
 .tinapple-glass-card:hover, .m3-card:hover {

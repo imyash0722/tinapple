@@ -1006,7 +1006,7 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
     return (
       <div className="w-full">
         {/* View Mode Return Banner */}
-        <div className="mb-4 px-4 py-2.5 rounded-[12px] bg-surface-container-low border border-outline-variant flex items-center justify-between font-sans tabular-nums text-xs shadow-none">
+        <div className="mb-4 px-4 py-2.5 rounded-[12px] overflow-hidden bg-surface-container-low border border-outline-variant flex items-center justify-between font-sans tabular-nums text-xs shadow-none">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
             <span className="text-on-surface font-bold">2D Freeform Pannable Canvas Mode</span>
@@ -1054,7 +1054,7 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
       {/* ═══════════════════════════════════════════════════════════════
           1. AUTHENTIC HOMARR UNIFIED COMMAND & SEARCH BAR
           ═══════════════════════════════════════════════════════════════ */}
-      <header className="rounded-2xl sm:rounded-[28px] bg-surface-container-low border border-outline-variant p-3.5 sm:p-5 shadow-none flex flex-col gap-3 sm:gap-4">
+      <header className="rounded-2xl sm:rounded-[28px] overflow-hidden bg-surface-container-low border border-outline-variant p-3.5 sm:p-5 shadow-none flex flex-col gap-3 sm:gap-4">
         {/* Top Header Row: Server Identity, Status, and Controls */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4">
           {/* Left: Branding & Status Badge */}
@@ -1492,7 +1492,7 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
                       return (
                         <div
                           key={widget.id}
-                          className={`${colSpanClass} relative rounded-[28px] bg-surface-container-low border border-outline-variant transition-all p-3.5 sm:p-5 shadow-none flex flex-col justify-between min-h-[240px] sm:min-h-[280px]`}
+                          className={`${colSpanClass} relative rounded-[28px] overflow-hidden bg-surface-container-low border border-outline-variant transition-all p-3.5 sm:p-5 shadow-none flex flex-col justify-between min-h-[240px] sm:min-h-[280px]`}
                         >
                           {/* Edit Mode Controls Overlay */}
                           {isEditMode && (
@@ -1612,7 +1612,7 @@ export const HomarrBoard: React.FC<HomarrBoardProps> = ({
 
       {/* No Search Matches Placeholder */}
       {filteredAppliances.length === 0 && visibleWidgets.length === 0 && (
-        <div className="text-center py-16 px-4 rounded-[28px] bg-surface-container-low border border-outline-variant shadow-none">
+        <div className="text-center py-16 px-4 rounded-[28px] overflow-hidden bg-surface-container-low border border-outline-variant shadow-none">
           <div className="w-12 h-12 rounded-full bg-surface-container border border-outline-variant flex items-center justify-center mx-auto mb-3 text-on-surface-variant">
             <Search className="w-6 h-6 text-on-surface-variant" />
           </div>
