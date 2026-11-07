@@ -953,19 +953,33 @@ func (h *Handler) GetTorStatus(c *gin.Context) {
 
 // GetProtonStatus returns whether Proton VPN exit node is active
 func (h *Handler) GetProtonStatus(c *gin.Context) {
-	// 1. Direct kernel WireGuard interface detection (checks proton0 and proton interfaces)
-	wgOut, _ := exec.Command("wg", "show", "proton0").CombinedOutput()
+	if _, err := os.Stat("/usr/local/bin/tinapple-proton"); err == nil {
+		out, err := exec.Command("/usr/local/bin/tinapple-proton", "status").CombinedOutput()
+		if err == nil {
+			var res map[string]interface{}
+			if json.Unmarshal(out, &res) == nil {
+				c.JSON(http.StatusOK, res)
+				return
+			}
+		}
+	}
+
+	// 1. Direct kernel WireGuard interface detection (checks proton and proton0 interfaces)
+	wgOut, _ := exec.Command("wg", "show", "proton").CombinedOutput()
 	wgActive := len(bytes.TrimSpace(wgOut)) > 0
 	if !wgActive {
-		wgOut, _ = exec.Command("wg", "show", "proton").CombinedOutput()
+		wgOut, _ = exec.Command("wg", "show", "proton0").CombinedOutput()
 		wgActive = len(bytes.TrimSpace(wgOut)) > 0
 	}
 
-	daemonActive := exec.Command("systemctl", "is-active", "--quiet", "proton.VPN.service").Run() == nil ||
-		exec.Command("systemctl", "is-active", "--quiet", "wg-quick@proton.service").Run() == nil
+	cliActive := false
+	if out, err := exec.Command("protonvpn", "status").CombinedOutput(); err == nil {
+		str := string(out)
+		cliActive = strings.Contains(str, "Status: Connected") || strings.Contains(str, "Connected to")
+	}
 
-	active := wgActive || daemonActive
-	configured := active
+	active := wgActive || cliActive
+	configured := false
 
 	// Check if WireGuard profile exists
 	if _, err := os.Stat("/etc/wireguard/proton.conf"); err == nil {
@@ -974,14 +988,14 @@ func (h *Handler) GetProtonStatus(c *gin.Context) {
 
 	details := "Disconnected"
 	if active {
-		details = "Active via Swiss WireGuard (proton0) • Protected"
+		details = "Active via WireGuard (proton) • Protected"
 		// Extract transfer stats or endpoint if available
 		wgStr := string(wgOut)
 		if idx := strings.Index(wgStr, "endpoint:"); idx != -1 {
 			endpointLine := strings.Split(wgStr[idx:], "\n")[0]
 			parts := strings.Fields(endpointLine)
 			if len(parts) >= 2 {
-				details = fmt.Sprintf("Active via Swiss WireGuard (%s) • Protected", parts[1])
+				details = fmt.Sprintf("Active via WireGuard (%s) • Protected", parts[1])
 			}
 		}
 	} else if configured {
