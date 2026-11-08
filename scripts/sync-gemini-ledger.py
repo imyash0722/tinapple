@@ -120,6 +120,15 @@ def main():
         if not sync_ok:
             print(f"[sync-gemini-ledger] {sync_msg}", file=sys.stderr)
             sys.exit(1)
+        print(f"[sync-gemini-ledger] {sync_msg}")
+        sys.exit(0)
+
+    if pre_commit:
+        success, msg = update_gemini_ledger(repo_root, commit_if_changed=False)
+        if success:
+            run_git(["add", "GEMINI.md", "gemini.md"], cwd=repo_root)
+        print(f"[sync-gemini-ledger] {msg}")
+        sys.exit(0)
 
     success, msg = update_gemini_ledger(repo_root, commit_if_changed=do_commit and not check_only)
     if not success:
