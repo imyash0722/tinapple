@@ -373,6 +373,13 @@ export const App: React.FC = () => {
     }
   };
 
+  const handleOpenAppPage = (appId: string) => {
+    setViewingAppId(appId);
+    if (typeof window !== 'undefined') {
+      window.history.pushState({}, '', `/app/${appId}`);
+    }
+  };
+
   const handleCloseAppPage = () => {
     setViewingAppId(null);
     if (typeof window !== 'undefined') {
