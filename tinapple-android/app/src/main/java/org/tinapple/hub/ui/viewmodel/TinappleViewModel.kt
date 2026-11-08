@@ -4,6 +4,9 @@ import android.app.Application
 import android.content.Context
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import coil.ImageLoader
+import coil.request.ImageRequest
+import coil.request.SuccessResult
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -12,6 +15,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import org.tinapple.hub.data.AppearanceSettings
 import org.tinapple.hub.data.BUNDLED_WALLPAPERS
 import org.tinapple.hub.data.DEFAULT_PALETTES
 import org.tinapple.hub.data.ProtonStatus
@@ -21,6 +25,7 @@ import org.tinapple.hub.data.ThemePalette
 import org.tinapple.hub.data.WallpaperItem
 import org.tinapple.hub.network.DiscoveryEngine
 import org.tinapple.hub.network.TinappleApiClient
+import org.tinapple.hub.ui.theme.MatugenEngine
 
 private val DEFAULT_FALLBACK_SERVICES = listOf(
     ServiceItem(
@@ -93,6 +98,7 @@ data class MainUiState(
     val wallpapers: List<WallpaperItem> = BUNDLED_WALLPAPERS,
     val selectedPalette: ThemePalette = DEFAULT_PALETTES.first(),
     val selectedWallpaper: WallpaperItem = BUNDLED_WALLPAPERS.first(),
+    val appearanceSettings: AppearanceSettings = AppearanceSettings(),
     val activeServerOrigin: String = "http://192.168.1.103:8088",
     val isDiscovering: Boolean = false,
     val isRefreshing: Boolean = false,
@@ -109,6 +115,7 @@ class TinappleViewModel(application: Application) : AndroidViewModel(application
         MainUiState(
             selectedPalette = loadSavedPalette(),
             selectedWallpaper = loadSavedWallpaper(),
+            appearanceSettings = loadSavedAppearanceSettings(),
             activeServerOrigin = DiscoveryEngine.getCachedServerOrigin(application)
         )
     )
@@ -134,6 +141,43 @@ class TinappleViewModel(application: Application) : AndroidViewModel(application
         return BUNDLED_WALLPAPERS.firstOrNull { it.file == file || it.id == id } ?: BUNDLED_WALLPAPERS.first()
     }
 
+    private fun loadSavedAppearanceSettings(): AppearanceSettings {
+        return AppearanceSettings(
+            blurDp = prefs.getInt("appearance_blur_dp", 0),
+            dimAlpha = prefs.getFloat("appearance_dim_alpha", 0.50f),
+            glassTranslucency = prefs.getFloat("appearance_glass_translucency", 0.82f),
+            useMatugen = prefs.getBoolean("appearance_use_matugen", true)
+        )
+    }
+
+    fun updateBlurDp(blurDp: Int) {
+        prefs.edit().putInt("appearance_blur_dp", blurDp).apply()
+        _uiState.update { it.copy(appearanceSettings = it.appearanceSettings.copy(blurDp = blurDp)) }
+    }
+
+    fun updateDimAlpha(dimAlpha: Float) {
+        prefs.edit().putFloat("appearance_dim_alpha", dimAlpha).apply()
+        _uiState.update { it.copy(appearanceSettings = it.appearanceSettings.copy(dimAlpha = dimAlpha)) }
+    }
+
+    fun updateGlassTranslucency(translucency: Float) {
+        prefs.edit().putFloat("appearance_glass_translucency", translucency).apply()
+        _uiState.update { it.copy(appearanceSettings = it.appearanceSettings.copy(glassTranslucency = translucency)) }
+    }
+
+    fun toggleUseMatugen(enabled: Boolean) {
+        prefs.edit().putBoolean("appearance_use_matugen", enabled).apply()
+        _uiState.update { current ->
+            val updatedSettings = current.appearanceSettings.copy(useMatugen = enabled)
+            val updatedPalette = if (enabled) {
+                MatugenEngine.generatePaletteFromWallpaper(current.selectedWallpaper)
+            } else {
+                current.selectedPalette
+            }
+            current.copy(appearanceSettings = updatedSettings, selectedPalette = updatedPalette)
+        }
+    }
+
     fun selectPalette(palette: ThemePalette) {
         prefs.edit().putString("selected_palette_name", palette.name).apply()
         _uiState.update { it.copy(selectedPalette = palette) }
@@ -143,9 +187,15 @@ class TinappleViewModel(application: Application) : AndroidViewModel(application
         prefs.edit().putString("selected_wallpaper_id", wallpaper.id).apply()
         prefs.edit().putString("selected_wallpaper_file", wallpaper.file).apply()
 
-        // Synchronize color scheme with selected wallpaper
-        val matchingPalette = getPaletteForWallpaper(wallpaper)
-        prefs.edit().putString("selected_palette_name", matchingPalette.name).apply()
+        val matchingPalette = if (_uiState.value.appearanceSettings.useMatugen) {
+            MatugenEngine.generatePaletteFromWallpaper(wallpaper)
+        } else {
+            _uiState.value.selectedPalette
+        }
+
+        if (_uiState.value.appearanceSettings.useMatugen) {
+            prefs.edit().putString("selected_palette_name", matchingPalette.name).apply()
+        }
 
         _uiState.update {
             it.copy(
@@ -153,34 +203,31 @@ class TinappleViewModel(application: Application) : AndroidViewModel(application
                 selectedPalette = matchingPalette
             )
         }
-    }
 
-    private fun getPaletteForWallpaper(wallpaper: WallpaperItem): ThemePalette {
-        if (wallpaper.defaultPrimaryHex != null && wallpaper.defaultSecondaryHex != null) {
-            return ThemePalette(wallpaper.name, wallpaper.defaultPrimaryHex, wallpaper.defaultSecondaryHex)
-        }
+        // Asynchronously sample bitmap from image URL for precise Matugen dynamic shades
+        if (_uiState.value.appearanceSettings.useMatugen && (wallpaper.defaultPrimaryHex == null || wallpaper.url.startsWith("http"))) {
+            viewModelScope.launch(Dispatchers.IO) {
+                try {
+                    val fullUrl = wallpaper.safeUrl(_uiState.value.activeServerOrigin)
+                    val loader = ImageLoader(getApplication())
+                    val request = ImageRequest.Builder(getApplication())
+                        .data(fullUrl)
+                        .allowHardware(false)
+                        .size(64, 64)
+                        .build()
 
-        val filename = wallpaper.file.lowercase()
-        return when {
-            filename.contains("orange") || filename.contains("amber") || filename.contains("sunset") ->
-                ThemePalette("Sunset Amber", 0xFFF97316, 0xFFEAB308)
-            filename.contains("pine") || filename.contains("gold") ->
-                ThemePalette("Pineapple Gold", 0xFFE5B567, 0xFF7EC789)
-            filename.contains("blue") || filename.contains("fishbowl") || filename.contains("night") ->
-                ThemePalette("Deep Midnight Blue", 0xFF38BDF8, 0xFF3B82F6)
-            filename.contains("ocean") || filename.contains("water") || filename.contains("cyan") ->
-                ThemePalette("Cyber Cyan", 0xFF06B6D4, 0xFF3B82F6)
-            filename.contains("forest") || filename.contains("tree") || filename.contains("green") || filename.contains("palm") ->
-                ThemePalette("Emerald Palm", 0xFF10B981, 0xFF34D399)
-            filename.contains("purple") || filename.contains("pagoda") || filename.contains("amethyst") ->
-                ThemePalette("Amethyst Purple", 0xFFA855F7, 0xFFEC4899)
-            filename.contains("sakura") || filename.contains("pink") || filename.contains("rose") ->
-                ThemePalette("Rose Quartz", 0xFFF43F5E, 0xFFFB7185)
-            filename.contains("monochrome") || filename.contains("black") || filename.contains("frost") || filename.contains("katana") ->
-                ThemePalette("Monochrome Frost", 0xFFE4E4E7, 0xFFA1A1AA)
-            else -> {
-                val hash = filename.hashCode().let { if (it < 0) -it else it }
-                DEFAULT_PALETTES[hash % DEFAULT_PALETTES.size]
+                    val result = loader.execute(request)
+                    if (result is SuccessResult) {
+                        val bitmap = (result.drawable as? android.graphics.drawable.BitmapDrawable)?.bitmap
+                        if (bitmap != null) {
+                            val refinedPalette = MatugenEngine.extractMatugenPaletteFromBitmap(bitmap, "${wallpaper.name} (Matugen)")
+                            _uiState.update { it.copy(selectedPalette = refinedPalette) }
+                            prefs.edit().putString("selected_palette_name", refinedPalette.name).apply()
+                        }
+                    }
+                } catch (_: Exception) {
+                    // Predefined matching palette already in place
+                }
             }
         }
     }
@@ -212,7 +259,6 @@ class TinappleViewModel(application: Application) : AndroidViewModel(application
     }
 
     private suspend fun fetchCurrentState() {
-        // Fetch services
         val servicesRes = apiClient.getServices()
         if (servicesRes.isSuccess) {
             val list = servicesRes.getOrNull()
@@ -221,7 +267,6 @@ class TinappleViewModel(application: Application) : AndroidViewModel(application
             }
         }
 
-        // Fetch Proton VPN status
         val protonRes = apiClient.getProtonStatus()
         if (protonRes.isSuccess) {
             protonRes.getOrNull()?.let { proton ->
@@ -229,7 +274,6 @@ class TinappleViewModel(application: Application) : AndroidViewModel(application
             }
         }
 
-        // Fetch System Info
         val sysRes = apiClient.getSystemInfo()
         if (sysRes.isSuccess) {
             sysRes.getOrNull()?.let { sys ->
@@ -237,7 +281,6 @@ class TinappleViewModel(application: Application) : AndroidViewModel(application
             }
         }
 
-        // Fetch Wallpapers (Filter out video files so all gallery items are images)
         val wallRes = apiClient.getWallpapers()
         if (wallRes.isSuccess) {
             val remoteWalls = wallRes.getOrNull()
@@ -248,7 +291,6 @@ class TinappleViewModel(application: Application) : AndroidViewModel(application
                             !wp.file.endsWith(".webm", ignoreCase = true)
                 }
 
-                // Merge bundled wallpapers with server wallpapers, preserving order and removing duplicates
                 val combined = mutableListOf<WallpaperItem>()
                 combined.addAll(BUNDLED_WALLPAPERS)
                 for (rw in imageWalls) {

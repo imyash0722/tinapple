@@ -41,6 +41,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -59,6 +60,8 @@ import org.tinapple.hub.ui.theme.TinappleBorderSubtle
 import org.tinapple.hub.ui.theme.TinappleSurfaceHigh
 import org.tinapple.hub.ui.theme.TinappleSurfaceHighest
 import org.tinapple.hub.ui.theme.TinappleSurfaceLow
+import org.tinapple.hub.ui.theme.getGlassSurfaceColor
+import org.tinapple.hub.ui.theme.getLiquidGlassBorder
 
 @Composable
 fun ServiceCard(
@@ -101,10 +104,11 @@ fun ServiceCard(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
-            .background(TinappleSurfaceLow)
+            .background(getGlassSurfaceColor())
             .border(
                 width = 1.dp,
-                color = if (isRunning) MaterialTheme.colorScheme.primary.copy(alpha = 0.35f) else TinappleBorder,
+                brush = if (isRunning) getLiquidGlassBorder(MaterialTheme.colorScheme.primary)
+                else SolidColor(TinappleBorder),
                 shape = RoundedCornerShape(16.dp)
             )
             .padding(16.dp)

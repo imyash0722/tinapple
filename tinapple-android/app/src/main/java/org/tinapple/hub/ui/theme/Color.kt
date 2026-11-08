@@ -1,5 +1,6 @@
 package org.tinapple.hub.ui.theme
 
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 
 val TinappleDarkBackground = Color(0xFF050814)
@@ -21,3 +22,24 @@ val StatusFailed = Color(0xFFF43F5E)
 val StatusFailedBg = Color(0x26F43F5E)
 val StatusDisabled = Color(0xFF475569)
 val StatusDisabledBg = Color(0x26475569)
+
+fun getGlassSurfaceColor(alpha: Float = 0.82f): Color {
+    val clamped = alpha.coerceIn(0.35f, 1.0f)
+    return Color(0x0E, 0x15, 0x26, (clamped * 255).toInt())
+}
+
+fun getGlassHighSurfaceColor(alpha: Float = 0.88f): Color {
+    val clamped = alpha.coerceIn(0.40f, 1.0f)
+    return Color(0x16, 0x1F, 0x36, (clamped * 255).toInt())
+}
+
+fun getLiquidGlassBorder(primary: Color): Brush {
+    return Brush.linearGradient(
+        colors = listOf(
+            Color.White.copy(alpha = 0.22f),
+            primary.copy(alpha = 0.35f),
+            Color.Transparent,
+            primary.copy(alpha = 0.15f)
+        )
+    )
+}

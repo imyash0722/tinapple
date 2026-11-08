@@ -1,5 +1,6 @@
 package org.tinapple.hub.data
 
+import android.net.Uri
 import com.google.gson.annotations.SerializedName
 
 data class ServiceItem(
@@ -64,12 +65,33 @@ data class WallpaperItem(
     @SerializedName("isVideo") val isVideo: Boolean = false,
     val defaultPrimaryHex: Long? = null,
     val defaultSecondaryHex: Long? = null
-)
+) {
+    fun safeUrl(serverOrigin: String): String {
+        val cleanOrigin = serverOrigin.trimEnd('/')
+        val rawPath = when {
+            url.startsWith("http://") || url.startsWith("https://") -> return url
+            url.isNotBlank() -> if (url.startsWith("/")) url else "/$url"
+            file.isNotBlank() -> "/wallpapers/$file"
+            else -> "/wallpapers/blue-night-fishbowl-room.jpg"
+        }
+        val encodedPath = rawPath.split("/").joinToString("/") { segment ->
+            Uri.encode(segment)
+        }
+        return "$cleanOrigin$encodedPath"
+    }
+}
 
 data class ThemePalette(
     val name: String,
     val primaryHex: Long,
     val secondaryHex: Long
+)
+
+data class AppearanceSettings(
+    val blurDp: Int = 0,
+    val dimAlpha: Float = 0.50f,
+    val glassTranslucency: Float = 0.82f,
+    val useMatugen: Boolean = true
 )
 
 val DEFAULT_PALETTES = listOf(
