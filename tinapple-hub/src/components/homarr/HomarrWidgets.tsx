@@ -1578,82 +1578,52 @@ export const HomarrBookmarksWidget: React.FC<HomarrBookmarksWidgetProps> = ({
   );
 };
 
-// 13. Homarr Automated Media Requests Widget (Native Radarr, Sonarr & Bazarr Workflow)
+// 13. Homarr Ombi Media Requests Widget
 export const HomarrRequestsWidget: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'requests' | 'search'>('requests');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [searchType, setSearchType] = useState<'all' | 'movie' | 'tv'>('all');
-  const [searchResults, setSearchResults] = useState<any[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
+  const [online, setOnline] = useState<boolean>(true);
+  const [counts, setCounts] = useState<{ approved?: number; available?: number; pending?: number; denied?: number }>({});
   const [requests, setRequests] = useState<any[]>([]);
-  const [isLoadingRequests, setIsLoadingRequests] = useState(false);
-  const [requestNotice, setRequestNotice] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  const fetchRequests = async () => {
-    try {
-      const data = await api.getMediaRequests();
-      setRequests(data);
-    } catch {}
+  const fetchOmbiData = () => {
+    fetch('/api/widgets/ombi')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data) {
+          setOnline(data.online !== false);
+          setCounts(data.counts || {});
+          setRequests(Array.isArray(data.requests) ? data.requests : []);
+        }
+      })
+      .catch(() => setOnline(false))
+      .finally(() => setIsLoading(false));
   };
 
   useEffect(() => {
-    setIsLoadingRequests(true);
-    fetchRequests().finally(() => setIsLoadingRequests(false));
-    const interval = setInterval(fetchRequests, 12000);
+    fetchOmbiData();
+    const interval = setInterval(fetchOmbiData, 10000);
     return () => clearInterval(interval);
   }, []);
 
-  const handleSearch = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (!searchTerm.trim()) return;
-    setIsSearching(true);
-    setRequestNotice(null);
-    try {
-      const results = await api.searchMedia(searchTerm.trim(), searchType);
-      setSearchResults(results);
-    } catch {
-      setRequestNotice('Search failed. Check *arr services connection.');
-    } finally {
-      setIsSearching(false);
+  const ombiUrl = serviceRegistry.resolveUrl('ombi');
+
+  const getStatusBadge = (req: any) => {
+    const label = req.statusLabel || (req.available ? 'Available' : req.approved ? 'Approved' : req.denied ? 'Declined' : 'Pending');
+    if (label === 'Available' || req.available) {
+      return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Available</span>;
     }
-  };
-
-  const handleRequest = async (item: any) => {
-    setRequestNotice(`Requesting "${item.title}"...`);
-    try {
-      const res = await api.requestMedia({
-        type: item.type,
-        title: item.title,
-        year: item.year,
-        tmdb_id: item.type === 'movie' ? item.remote_id : undefined,
-        tvdb_id: item.type === 'tv' ? item.remote_id : undefined,
-        poster_url: item.poster_url,
-        overview: item.overview,
-      });
-
-      if (res.success) {
-        setRequestNotice(`✓ Successfully requested "${item.title}". Added to ${item.type === 'movie' ? 'Radarr' : 'Sonarr'} queue.`);
-        await fetchRequests();
-        setTimeout(() => {
-          setActiveTab('requests');
-          setRequestNotice(null);
-        }, 1500);
-      } else {
-        setRequestNotice(`Request notice: ${res.error || 'Failed to submit'}`);
-      }
-    } catch (err: any) {
-      setRequestNotice(`Error: ${err.message || 'Request failed'}`);
+    if (label === 'Approved' || req.approved) {
+      return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold font-mono bg-sky-500/20 text-sky-300 border border-sky-500/30">Approved</span>;
     }
-  };
-
-  const handleDeleteRequest = async (id: string, title: string) => {
-    await api.deleteMediaRequest(id);
-    setRequests((prev) => prev.filter((r) => r.id !== id));
+    if (label === 'Declined' || req.denied) {
+      return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold font-mono bg-rose-500/20 text-rose-300 border border-rose-500/30">Declined</span>;
+    }
+    return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold font-mono bg-amber-500/20 text-amber-300 border border-amber-500/30">Pending</span>;
   };
 
   return (
     <div className="h-full rounded-2xl bg-surface-container-low border border-outline-variant p-4 sm:p-5 flex flex-col justify-between shadow-none font-sans">
-      {/* Header with Search / Queue Toggle */}
+      {/* Header */}
       <div className="flex items-center justify-between text-xs mb-3 pb-2 border-b border-outline-variant/50">
         <div className="flex items-center gap-2">
           <span className="p-1.5 rounded-xl bg-amber-500/15 text-amber-400 border border-amber-500/30">
@@ -1661,186 +1631,105 @@ export const HomarrRequestsWidget: React.FC = () => {
           </span>
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-bold text-on-surface text-sm">Media Requests</span>
-              <span className="px-2 py-0.5 rounded-full text-[9px] font-sans font-bold bg-primary/10 text-primary border border-primary/20">
-                Automated *arr
-              </span>
+              <span className="font-bold text-on-surface text-sm">Ombi Requests</span>
+              <span className={`w-2 h-2 rounded-full ${online ? 'bg-emerald-400' : 'bg-rose-400'} shrink-0`} title={online ? 'Ombi Online' : 'Ombi Offline'} />
             </div>
-            <span className="text-[10px] text-on-surface-variant font-mono">Radarr • Sonarr • Bazarr</span>
+            <span className="text-[10px] text-on-surface-variant font-mono">Port :5000 • Reverse Proxy /ombi</span>
           </div>
         </div>
 
-        {/* View Switcher Pills */}
-        <div className="flex items-center bg-surface-container p-0.5 rounded-xl border border-outline-variant">
-          <button
-            onClick={() => setActiveTab('requests')}
-            className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
-              activeTab === 'requests'
-                ? 'bg-primary text-on-primary shadow-sm'
-                : 'text-on-surface-variant hover:text-on-surface'
-            }`}
-          >
-            Queue ({requests.length})
-          </button>
-          <button
-            onClick={() => setActiveTab('search')}
-            className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
-              activeTab === 'search'
-                ? 'bg-primary text-on-primary shadow-sm'
-                : 'text-on-surface-variant hover:text-on-surface'
-            }`}
-          >
-            Search
-          </button>
+        <a
+          href={ombiUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="p-1.5 rounded-xl bg-surface-container hover:bg-surface-container-high border border-outline-variant text-on-surface hover:text-primary transition-colors"
+          title="Open Full Ombi Web Portal"
+        >
+          <ExternalLink className="w-4 h-4" />
+        </a>
+      </div>
+
+      {/* Counts Bar */}
+      <div className="grid grid-cols-4 gap-1.5 mb-3">
+        <div className="px-2 py-1.5 rounded-xl bg-surface-container border border-outline-variant/60 text-center">
+          <span className="text-[9px] text-on-surface-variant block uppercase font-mono">Available</span>
+          <span className="text-xs font-bold text-emerald-400 font-mono">{counts.available || 0}</span>
+        </div>
+        <div className="px-2 py-1.5 rounded-xl bg-surface-container border border-outline-variant/60 text-center">
+          <span className="text-[9px] text-on-surface-variant block uppercase font-mono">Approved</span>
+          <span className="text-xs font-bold text-sky-400 font-mono">{counts.approved || 0}</span>
+        </div>
+        <div className="px-2 py-1.5 rounded-xl bg-surface-container border border-outline-variant/60 text-center">
+          <span className="text-[9px] text-on-surface-variant block uppercase font-mono">Pending</span>
+          <span className="text-xs font-bold text-amber-400 font-mono">{counts.pending || 0}</span>
+        </div>
+        <div className="px-2 py-1.5 rounded-xl bg-surface-container border border-outline-variant/60 text-center">
+          <span className="text-[9px] text-on-surface-variant block uppercase font-mono">Denied</span>
+          <span className="text-xs font-bold text-rose-400 font-mono">{counts.denied || 0}</span>
         </div>
       </div>
 
-      {requestNotice && (
-        <div className="mb-2 px-3 py-1.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-sans flex items-center justify-between animate-in fade-in">
-          <span>{requestNotice}</span>
-          <button onClick={() => setRequestNotice(null)} className="text-amber-400 hover:text-amber-200">×</button>
-        </div>
-      )}
-
-      {/* Main Body */}
-      <div className="flex-1 flex flex-col justify-start overflow-hidden min-h-[160px]">
-        {activeTab === 'search' ? (
-          <div className="space-y-3 flex-1 flex flex-col">
-            <form onSubmit={handleSearch} className="flex gap-2">
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search movie, anime, or series..."
-                className="flex-1 px-3 py-1.5 rounded-xl bg-surface-container border border-outline-variant text-on-surface text-xs placeholder:text-on-surface-variant focus:outline-none focus:ring-1 focus:ring-primary"
-              />
-              <select
-                value={searchType}
-                onChange={(e: any) => setSearchType(e.target.value)}
-                className="px-2 py-1.5 rounded-xl bg-surface-container border border-outline-variant text-on-surface text-xs"
-              >
-                <option value="all">All</option>
-                <option value="movie">Movies</option>
-                <option value="tv">TV Shows</option>
-              </select>
-              <button
-                type="submit"
-                disabled={isSearching || !searchTerm.trim()}
-                className="px-3 py-1.5 rounded-xl bg-primary text-on-primary text-xs font-bold hover:bg-primary/90 disabled:opacity-50 transition-all shrink-0"
-              >
-                {isSearching ? 'Searching...' : 'Search'}
-              </button>
-            </form>
-
-            <div className="flex-1 overflow-y-auto space-y-2 max-h-48 pr-1 scrollbar-thin">
-              {searchResults.length > 0 ? (
-                searchResults.map((item) => (
-                  <div
-                    key={`${item.type}-${item.remote_id || item.title}`}
-                    className="flex items-center gap-3 p-2 rounded-xl bg-surface-container/70 border border-outline-variant/60 hover:border-outline-variant"
-                  >
-                    {item.poster_url ? (
-                      <img src={item.poster_url} alt={item.title} className="w-9 h-13 object-cover rounded-md shrink-0 bg-surface-container-high" />
-                    ) : (
-                      <div className="w-9 h-13 rounded-md bg-surface-container-highest flex items-center justify-center shrink-0 text-on-surface-variant text-[10px]">
-                        {item.type === 'movie' ? '🎬' : '📺'}
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-xs font-bold text-on-surface truncate">{item.title}</span>
-                        {item.year > 0 && <span className="text-[10px] text-on-surface-variant shrink-0">({item.year})</span>}
-                        <span className="text-[9px] uppercase px-1.5 py-0.2 rounded font-mono font-bold bg-surface-container-highest text-primary shrink-0">
-                          {item.type}
-                        </span>
-                      </div>
-                      <p className="text-[10px] text-on-surface-variant truncate mt-0.5">{item.overview || item.status}</p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleRequest(item)}
-                      className="px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-xs font-bold transition-all shrink-0 active:scale-95"
-                    >
-                      Request
-                    </button>
-                  </div>
-                ))
-              ) : isSearching ? (
-                <div className="text-center py-6 text-xs text-on-surface-variant">Looking up titles in Radarr and Sonarr...</div>
+      {/* Requests List */}
+      <div className="flex-1 overflow-y-auto space-y-2 max-h-52 pr-1 scrollbar-thin">
+        {requests.length > 0 ? (
+          requests.map((req) => (
+            <div
+              key={req.id || req.title}
+              className="flex items-center gap-2.5 p-2 rounded-xl bg-surface-container/70 border border-outline-variant/60 hover:border-outline-variant transition-colors"
+            >
+              {req.posterPath ? (
+                <img
+                  src={`https://image.tmdb.org/t/p/w200${req.posterPath}`}
+                  alt={req.title}
+                  className="w-8 h-12 object-cover rounded-md shrink-0 bg-surface-container-high"
+                  loading="lazy"
+                  onError={(e: any) => { e.target.style.display = 'none'; }}
+                />
               ) : (
-                <div className="text-center py-6 text-xs text-on-surface-variant">Type a title above to search and request with zero manual configuration.</div>
+                <div className="w-8 h-12 rounded-md bg-surface-container-highest flex items-center justify-center shrink-0 text-on-surface-variant text-[10px]">
+                  {req.type === 'Movie' ? '🎬' : '📺'}
+                </div>
               )}
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-2 flex-1 overflow-y-auto max-h-52 pr-1 scrollbar-thin">
-            {requests.length > 0 ? (
-              requests.map((req) => {
-                const isComplete = req.status === 'available' || req.progress >= 100;
-                return (
-                  <div
-                    key={req.id}
-                    className="p-2.5 rounded-xl bg-surface-container/70 border border-outline-variant/60 space-y-1.5"
-                  >
-                    <div className="flex items-center justify-between text-xs">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className={`w-2 h-2 rounded-full ${isComplete ? 'bg-emerald-400' : 'bg-amber-400 animate-pulse'}`} />
-                        <span className="font-bold text-on-surface text-xs truncate">{req.title}</span>
-                        {req.year > 0 && <span className="text-[10px] text-on-surface-variant shrink-0">({req.year})</span>}
-                      </div>
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold font-mono ${
-                          isComplete ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                        }`}>
-                          {isComplete ? 'Available' : req.status === 'downloading' ? `Downloading ${Math.round(req.progress)}%` : 'Requested'}
-                        </span>
-                        <button
-                          onClick={() => handleDeleteRequest(req.id, req.title)}
-                          className="p-1 rounded-lg text-on-surface-variant hover:text-red-400 transition-colors"
-                          title="Remove Request"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
-
-                    {!isComplete && (
-                      <div className="w-full bg-surface-container-highest rounded-full h-1.5 overflow-hidden">
-                        <div
-                          className="bg-primary h-1.5 rounded-full transition-all duration-500"
-                          style={{ width: `${Math.max(5, Math.min(100, req.progress))}%` }}
-                        />
-                      </div>
-                    )}
-                    <div className="flex items-center justify-between text-[10px] text-on-surface-variant font-mono">
-                      <span>by {req.requested_by || 'User'}</span>
-                      <span>{new Date(req.requested_at).toLocaleDateString()}</span>
-                    </div>
-                  </div>
-                );
-              })
-            ) : (
-              <div className="p-6 rounded-xl bg-surface-container/40 border border-dashed border-outline-variant text-center space-y-1 my-auto">
-                <span className="text-lg">🍿</span>
-                <h5 className="text-xs font-bold text-on-surface">No Pending Requests</h5>
-                <p className="text-[10px] text-on-surface-variant">
-                  Switch to Search above to request any movie, series, or anime directly to Jellyfin with automated subtitles.
-                </p>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs font-bold text-on-surface truncate">{req.title}</span>
+                  <span className="text-[9px] uppercase px-1.5 py-0.2 rounded font-mono font-bold bg-surface-container-highest text-on-surface-variant shrink-0">
+                    {req.type || 'Media'}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5 text-[10px] text-on-surface-variant font-mono mt-0.5">
+                  <span>by {req.requestedBy?.displayName || req.requestedBy?.username || 'User'}</span>
+                </div>
               </div>
-            )}
+              <div className="shrink-0">
+                {getStatusBadge(req)}
+              </div>
+            </div>
+          ))
+        ) : isLoading ? (
+          <div className="py-8 text-center text-xs text-on-surface-variant font-mono">Loading Ombi requests...</div>
+        ) : (
+          <div className="p-6 rounded-xl bg-surface-container/40 border border-dashed border-outline-variant text-center space-y-2 my-auto">
+            <span className="text-lg">🍿</span>
+            <h5 className="text-xs font-bold text-on-surface">No Recent Requests</h5>
+            <p className="text-[10px] text-on-surface-variant">
+              Launch Ombi to search movies, series, or anime and send requests to Jellyfin.
+            </p>
           </div>
         )}
       </div>
 
       {/* Footer Info */}
       <div className="pt-2.5 border-t border-outline-variant/50 flex items-center justify-between text-xs mt-2 text-on-surface-variant">
-        <span className="text-[10px] font-mono">Workflow: Sonarr • Radarr • Bazarr → Jellyfin</span>
-        <button
-          onClick={() => setActiveTab(activeTab === 'requests' ? 'search' : 'requests')}
-          className="text-primary hover:text-primary/80 font-bold text-[11px]"
+        <span className="text-[10px] font-mono">Pipeline: Ombi → Radarr / Sonarr → Jellyfin</span>
+        <a
+          href={ombiUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-amber-400 hover:text-amber-300 font-bold text-[11px] flex items-center gap-1"
         >
-          {activeTab === 'requests' ? '+ New Request' : 'View Queue →'}
-        </button>
+          <span>Open Ombi Portal →</span>
+        </a>
       </div>
     </div>
   );

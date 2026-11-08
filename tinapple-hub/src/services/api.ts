@@ -1,4 +1,4 @@
-import { SystemInfo, TelemetrySnapshot, ServiceInfo, HardwareInfo, SessionMode, AppInfo, AppActionResult, InstallProgressState, InstallLogMessage, TailscaleStatus, AppliancePackStatus, WallpaperItem, OpenPortInfo, AppConfigDetails, MaintenanceResult, FailedUnitsResult, UserManagementData, ProtonStatus, ProtonWireGuardInfo, MediaSearchResult, MediaRequestItem, SystemUpdateManifest } from '../types/api';
+import { SystemInfo, TelemetrySnapshot, ServiceInfo, HardwareInfo, SessionMode, AppInfo, AppActionResult, InstallProgressState, InstallLogMessage, TailscaleStatus, AppliancePackStatus, WallpaperItem, OpenPortInfo, AppConfigDetails, MaintenanceResult, FailedUnitsResult, UserManagementData, ProtonStatus, ProtonWireGuardInfo, SystemUpdateManifest } from '../types/api';
 import { serviceRegistry, ApplianceService } from './serviceRegistry';
 import { Capacitor } from '@capacitor/core';
 
@@ -1746,57 +1746,6 @@ class ApiService {
       if (evtSource) evtSource.close();
       if (fallbackInterval) clearInterval(fallbackInterval);
     };
-  }
-
-  async searchMedia(term: string, type?: string): Promise<MediaSearchResult[]> {
-    try {
-      const q = new URLSearchParams({ term, type: type || 'all' });
-      const res = await this.fetch(`${getApiBaseUrl()}/media/search?${q}`);
-      if (!res.ok) return [];
-      const data = await res.json();
-      return data.results || [];
-    } catch {
-      return [];
-    }
-  }
-
-  async requestMedia(item: Partial<MediaRequestItem>): Promise<{ success: boolean; request?: MediaRequestItem; error?: string }> {
-    try {
-      const res = await this.fetch(`${getApiBaseUrl()}/media/request`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(item),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        return { success: false, error: data.error || 'Failed to submit request' };
-      }
-      return { success: true, request: data.request };
-    } catch (err: any) {
-      return { success: false, error: err.message || 'Network request failed' };
-    }
-  }
-
-  async getMediaRequests(): Promise<MediaRequestItem[]> {
-    try {
-      const res = await this.fetch(`${getApiBaseUrl()}/media/requests`);
-      if (!res.ok) return [];
-      const data = await res.json();
-      return data.requests || [];
-    } catch {
-      return [];
-    }
-  }
-
-  async deleteMediaRequest(id: string): Promise<boolean> {
-    try {
-      const res = await this.fetch(`${getApiBaseUrl()}/media/requests/${encodeURIComponent(id)}`, {
-        method: 'DELETE',
-      });
-      return res.ok;
-    } catch {
-      return false;
-    }
   }
 
   async getSystemUpdates(): Promise<SystemUpdateManifest | null> {

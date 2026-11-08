@@ -16,11 +16,10 @@ import {
   Clock,
   RefreshCw,
   Search,
-  Trash2,
   ArrowRight,
 } from 'lucide-react';
-import { TelemetrySnapshot, SystemInfo, ServiceInfo, MediaRequestItem } from '../../types/api';
-import { api, getActiveServerOrigin, getServiceUrl } from '../../services/api';
+import { TelemetrySnapshot, SystemInfo, ServiceInfo } from '../../types/api';
+import { getActiveServerOrigin, getServiceUrl } from '../../services/api';
 import { AppBrandIcon } from '../common/AppBrandIcons';
 import { AndroidBridge } from '../../services/androidBridge';
 
@@ -39,80 +38,35 @@ export const MobileDashboardView: React.FC<MobileDashboardViewProps> = ({
   onOpenAppPage,
   onSwitchToFullBoard,
 }) => {
-  const [activeMediaTab, setActiveMediaTab] = useState<'requests' | 'search'>('requests');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [searchType, setSearchType] = useState<'all' | 'movie' | 'tv'>('all');
-  const [searchResults, setSearchResults] = useState<any[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
-  const [requests, setRequests] = useState<MediaRequestItem[]>([]);
-  const [actionNotice, setActionNotice] = useState<string | null>(null);
+  const [ombiOnline, setOmbiOnline] = useState<boolean>(true);
+  const [ombiCounts, setOmbiCounts] = useState<{ approved?: number; available?: number; pending?: number; denied?: number }>({});
+  const [ombiRequests, setOmbiRequests] = useState<any[]>([]);
+  const [isLoadingOmbi, setIsLoadingOmbi] = useState<boolean>(true);
 
-  const fetchRequests = async () => {
-    try {
-      const data = await api.getMediaRequests();
-      setRequests(data);
-    } catch {}
+  const fetchOmbiData = () => {
+    fetch('/api/widgets/ombi')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data) {
+          setOmbiOnline(data.online !== false);
+          setOmbiCounts(data.counts || {});
+          setOmbiRequests(Array.isArray(data.requests) ? data.requests : []);
+        }
+      })
+      .catch(() => setOmbiOnline(false))
+      .finally(() => setIsLoadingOmbi(false));
   };
 
   useEffect(() => {
-    fetchRequests();
-    const interval = setInterval(fetchRequests, 10000);
+    fetchOmbiData();
+    const interval = setInterval(fetchOmbiData, 10000);
     return () => clearInterval(interval);
   }, []);
-
-  const handleSearch = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (!searchTerm.trim()) return;
-    setIsSearching(true);
-    setActionNotice(null);
-    try {
-      const results = await api.searchMedia(searchTerm.trim(), searchType);
-      setSearchResults(results);
-    } catch {
-      setActionNotice('Search failed. Check *arr services connection.');
-    } finally {
-      setIsSearching(false);
-    }
-  };
-
-  const handleRequest = async (item: any) => {
-    AndroidBridge.performHaptic('medium');
-    setActionNotice(`Requesting "${item.title}"...`);
-    try {
-      const res = await api.requestMedia({
-        type: item.type,
-        title: item.title,
-        year: item.year,
-        tmdb_id: item.type === 'movie' ? item.remote_id : undefined,
-        tvdb_id: item.type === 'tv' ? item.remote_id : undefined,
-        poster_url: item.poster_url,
-        overview: item.overview,
-      });
-
-      if (res.success) {
-        setActionNotice(`✓ Requested "${item.title}". Added to queue.`);
-        await fetchRequests();
-        setTimeout(() => {
-          setActiveMediaTab('requests');
-          setActionNotice(null);
-        }, 1500);
-      } else {
-        setActionNotice(`Notice: ${res.error || 'Failed to submit'}`);
-      }
-    } catch (err: any) {
-      setActionNotice(`Error: ${err.message || 'Request failed'}`);
-    }
-  };
-
-  const handleDeleteRequest = async (id: string) => {
-    AndroidBridge.performHaptic('light');
-    await api.deleteMediaRequest(id);
-    setRequests((prev) => prev.filter((r) => r.id !== id));
-  };
 
   // Quick primary launchers
   const primaryLaunchers = [
     { id: 'jellyfin', name: 'Jellyfin', port: 8096, category: 'Cinema & TV', icon: <Film className="w-5 h-5 text-purple-400" /> },
+    { id: 'ombi', name: 'Ombi Requests', port: 5000, category: 'Media Portal', icon: <Film className="w-5 h-5 text-amber-500" /> },
     { id: 'navidrome', name: 'Navidrome', port: 4533, category: 'Lossless Music', icon: <Music className="w-5 h-5 text-emerald-400" /> },
     { id: 'suwayomi', name: 'Suwayomi', port: 4567, category: 'Manga & Comics', icon: <BookOpen className="w-5 h-5 text-sky-400" /> },
     { id: 'qbittorrent', name: 'qBittorrent', port: 8080, category: 'Downloads', icon: <Download className="w-5 h-5 text-amber-400" /> },
@@ -271,141 +225,126 @@ export const MobileDashboardView: React.FC<MobileDashboardViewProps> = ({
         </div>
       </div>
 
-      {/* 3. Media Requests & Automated Workflow Deck */}
+      {/* 3. Media Requests Deck (Ombi Automated Portal) */}
       <div className="p-4 sm:p-5 rounded-[24px] bg-surface-container-low border border-outline-variant shadow-none">
         <div className="flex items-center justify-between mb-3 pb-2 border-b border-outline-variant/50">
           <div className="flex items-center gap-2">
-            <Film className="w-4 h-4 text-amber-400" />
-            <h4 className="text-xs font-bold text-on-surface">Automated Media Requests</h4>
+            <span className="p-1.5 rounded-xl bg-amber-500/15 text-amber-400 border border-amber-500/30">
+              <Film className="w-4 h-4" />
+            </span>
+            <div>
+              <div className="flex items-center gap-2">
+                <h4 className="text-xs font-bold text-on-surface">Ombi Media Requests</h4>
+                <span className={`w-2 h-2 rounded-full ${ombiOnline ? 'bg-emerald-400' : 'bg-rose-400'} shrink-0`} />
+              </div>
+              <span className="text-[10px] text-on-surface-variant font-mono">Port :5000 • Reverse Proxy /ombi</span>
+            </div>
           </div>
 
-          <div className="flex items-center bg-surface-container p-0.5 rounded-xl border border-outline-variant">
-            <button
-              onClick={() => setActiveMediaTab('requests')}
-              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
-                activeMediaTab === 'requests' ? 'bg-primary text-on-primary' : 'text-on-surface-variant'
-              }`}
-            >
-              Queue ({requests.length})
-            </button>
-            <button
-              onClick={() => setActiveMediaTab('search')}
-              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
-                activeMediaTab === 'search' ? 'bg-primary text-on-primary' : 'text-on-surface-variant'
-              }`}
-            >
-              Search
-            </button>
+          <a
+            href={getServiceUrl('ombi')}
+            target="_blank"
+            rel="noreferrer"
+            onClick={() => AndroidBridge.performHaptic('light')}
+            className="p-1.5 rounded-xl bg-surface-container hover:bg-surface-container-high border border-outline-variant text-on-surface hover:text-primary transition-colors"
+            title="Launch Ombi Web App"
+          >
+            <ExternalLink className="w-4 h-4" />
+          </a>
+        </div>
+
+        {/* Live Counts Grid */}
+        <div className="grid grid-cols-4 gap-1.5 mb-3">
+          <div className="px-2 py-1.5 rounded-xl bg-surface-container border border-outline-variant/60 text-center">
+            <span className="text-[9px] text-on-surface-variant block uppercase font-mono">Available</span>
+            <span className="text-xs font-bold text-emerald-400 font-mono">{ombiCounts.available || 0}</span>
+          </div>
+          <div className="px-2 py-1.5 rounded-xl bg-surface-container border border-outline-variant/60 text-center">
+            <span className="text-[9px] text-on-surface-variant block uppercase font-mono">Approved</span>
+            <span className="text-xs font-bold text-sky-400 font-mono">{ombiCounts.approved || 0}</span>
+          </div>
+          <div className="px-2 py-1.5 rounded-xl bg-surface-container border border-outline-variant/60 text-center">
+            <span className="text-[9px] text-on-surface-variant block uppercase font-mono">Pending</span>
+            <span className="text-xs font-bold text-amber-400 font-mono">{ombiCounts.pending || 0}</span>
+          </div>
+          <div className="px-2 py-1.5 rounded-xl bg-surface-container border border-outline-variant/60 text-center">
+            <span className="text-[9px] text-on-surface-variant block uppercase font-mono">Denied</span>
+            <span className="text-xs font-bold text-rose-400 font-mono">{ombiCounts.denied || 0}</span>
           </div>
         </div>
 
-        {actionNotice && (
-          <div className="mb-3 px-3 py-1.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs flex items-center justify-between">
-            <span>{actionNotice}</span>
-            <button onClick={() => setActionNotice(null)}>×</button>
-          </div>
-        )}
+        {/* Recent Requests Feed */}
+        <div className="space-y-2 max-h-56 overflow-y-auto mb-3 scrollbar-thin">
+          {ombiRequests.length > 0 ? (
+            ombiRequests.map((req) => {
+              const label = req.statusLabel || (req.available ? 'Available' : req.approved ? 'Approved' : req.denied ? 'Declined' : 'Pending');
+              const isAvail = label === 'Available' || req.available;
+              const isAppr = label === 'Approved' || req.approved;
+              const isDen = label === 'Declined' || req.denied;
 
-        {activeMediaTab === 'search' ? (
-          <div className="space-y-3">
-            <form onSubmit={handleSearch} className="flex gap-2">
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search movie or TV show..."
-                className="flex-1 px-3 py-2 rounded-xl bg-surface-container border border-outline-variant text-on-surface text-xs focus:outline-none focus:ring-1 focus:ring-primary"
-              />
-              <button
-                type="submit"
-                disabled={isSearching || !searchTerm.trim()}
-                className="px-3.5 py-2 rounded-xl bg-primary text-on-primary text-xs font-bold hover:bg-primary/90 disabled:opacity-50 transition-all shrink-0"
-              >
-                {isSearching ? '...' : 'Search'}
-              </button>
-            </form>
-
-            <div className="space-y-2 max-h-56 overflow-y-auto">
-              {searchResults.length > 0 ? (
-                searchResults.map((item) => (
-                  <div
-                    key={`${item.type}-${item.remote_id || item.title}`}
-                    className="flex items-center gap-2.5 p-2 rounded-xl bg-surface-container/70 border border-outline-variant/60"
-                  >
-                    {item.poster_url ? (
-                      <img src={item.poster_url} alt={item.title} className="w-8 h-12 object-cover rounded shrink-0 bg-surface-container-high" />
-                    ) : (
-                      <div className="w-8 h-12 rounded bg-surface-container-highest flex items-center justify-center shrink-0 text-xs">
-                        {item.type === 'movie' ? '🎬' : '📺'}
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-xs font-bold text-on-surface truncate">{item.title}</span>
-                        {item.year > 0 && <span className="text-[10px] text-on-surface-variant">({item.year})</span>}
-                      </div>
-                      <span className="text-[9px] uppercase px-1.5 py-0.2 rounded font-mono font-bold bg-surface-container-highest text-primary">
-                        {item.type}
+              return (
+                <div
+                  key={req.id || req.title}
+                  className="flex items-center gap-2.5 p-2 rounded-xl bg-surface-container/70 border border-outline-variant/60"
+                >
+                  {req.posterPath ? (
+                    <img
+                      src={`https://image.tmdb.org/t/p/w200${req.posterPath}`}
+                      alt={req.title}
+                      className="w-8 h-12 object-cover rounded shrink-0 bg-surface-container-high"
+                      loading="lazy"
+                      onError={(e: any) => { e.target.style.display = 'none'; }}
+                    />
+                  ) : (
+                    <div className="w-8 h-12 rounded bg-surface-container-highest flex items-center justify-center shrink-0 text-xs">
+                      {req.type === 'Movie' ? '🎬' : '📺'}
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-bold text-on-surface truncate">{req.title}</span>
+                      <span className="text-[9px] uppercase px-1.5 py-0.2 rounded font-mono font-bold bg-surface-container-highest text-on-surface-variant shrink-0">
+                        {req.type || 'Media'}
                       </span>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => handleRequest(item)}
-                      className="px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs font-bold shrink-0"
-                    >
-                      Request
-                    </button>
+                    <span className="text-[10px] text-on-surface-variant font-mono block mt-0.5">
+                      by {req.requestedBy?.displayName || req.requestedBy?.username || 'User'}
+                    </span>
                   </div>
-                ))
-              ) : isSearching ? (
-                <div className="text-center py-6 text-xs text-on-surface-variant">Searching Radarr & Sonarr...</div>
-              ) : (
-                <div className="text-center py-6 text-xs text-on-surface-variant">Search any movie or show to download with automatic subtitles.</div>
-              )}
+                  <div className="shrink-0">
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold font-mono ${
+                      isAvail ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' :
+                      isAppr ? 'bg-sky-500/20 text-sky-300 border border-sky-500/30' :
+                      isDen ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' :
+                      'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                    }`}>
+                      {label}
+                    </span>
+                  </div>
+                </div>
+              );
+            })
+          ) : isLoadingOmbi ? (
+            <div className="py-6 text-center text-xs text-on-surface-variant font-mono">Loading Ombi requests...</div>
+          ) : (
+            <div className="py-6 text-center text-xs text-on-surface-variant space-y-1">
+              <span>🍿</span>
+              <p>No active media requests in Ombi.</p>
             </div>
-          </div>
-        ) : (
-          <div className="space-y-2 max-h-60 overflow-y-auto">
-            {requests.length > 0 ? (
-              requests.map((req) => {
-                const isDone = req.status === 'available' || req.progress >= 100;
-                return (
-                  <div key={req.id} className="p-2.5 rounded-xl bg-surface-container/70 border border-outline-variant/60 space-y-1.5">
-                    <div className="flex items-center justify-between text-xs">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className={`w-2 h-2 rounded-full ${isDone ? 'bg-emerald-400' : 'bg-amber-400 animate-pulse'}`} />
-                        <span className="font-bold text-on-surface text-xs truncate">{req.title}</span>
-                      </div>
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold font-mono ${
-                          isDone ? 'bg-emerald-500/20 text-emerald-300' : 'bg-amber-500/20 text-amber-300'
-                        }`}>
-                          {isDone ? 'Ready' : `${Math.round(req.progress)}%`}
-                        </span>
-                        <button
-                          onClick={() => handleDeleteRequest(req.id)}
-                          className="p-1 rounded text-on-surface-variant hover:text-red-400"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
-                    {!isDone && (
-                      <div className="w-full bg-surface-container-highest rounded-full h-1 overflow-hidden">
-                        <div className="bg-primary h-1 rounded-full" style={{ width: `${Math.max(5, Math.min(100, req.progress))}%` }} />
-                      </div>
-                    )}
-                  </div>
-                );
-              })
-            ) : (
-              <div className="py-6 text-center text-xs text-on-surface-variant space-y-1">
-                <span>🍿</span>
-                <p>No active requests in queue.</p>
-              </div>
-            )}
-          </div>
-        )}
+          )}
+        </div>
+
+        {/* 1-Tap Launch Button */}
+        <a
+          href={getServiceUrl('ombi')}
+          target="_blank"
+          rel="noreferrer"
+          onClick={() => AndroidBridge.performHaptic('medium')}
+          className="w-full py-2.5 px-4 rounded-xl bg-primary text-on-primary font-bold text-xs flex items-center justify-center gap-2 hover:bg-primary/90 active:scale-98 transition-all shadow-sm"
+        >
+          <span>Open Ombi Request Portal</span>
+          <ArrowRight className="w-4 h-4" />
+        </a>
       </div>
     </div>
   );

@@ -333,38 +333,6 @@ export interface ProtonWireGuardInfo {
   error?: string;
 }
 
-export interface MediaSearchResult {
-  id: number;
-  type: 'movie' | 'tv';
-  title: string;
-  year: number;
-  overview: string;
-  poster_url: string;
-  remote_id: number;
-  monitored: boolean;
-  existing: boolean;
-  status: string;
-  genres?: string[];
-}
-
-export interface MediaRequestItem {
-  id: string;
-  type: 'movie' | 'tv';
-  title: string;
-  year: number;
-  overview?: string;
-  poster_url?: string;
-  tmdb_id?: number;
-  tvdb_id?: number;
-  requested_by: string;
-  requested_at: string;
-  status: 'requested' | 'downloading' | 'subtitles' | 'available' | 'failed';
-  progress: number;
-  eta?: string;
-  service_file?: string;
-  error?: string;
-}
-
 export interface SystemUpdateManifest {
   available: boolean;
   latest_sha?: string;

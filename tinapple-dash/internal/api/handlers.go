@@ -20,7 +20,6 @@ import (
 	"time"
 
 	"tinapple-dash/internal/config"
-	"tinapple-dash/internal/media"
 	"tinapple-dash/internal/services"
 	"tinapple-dash/internal/telemetry"
 	"tinapple-dash/internal/terminal"
@@ -55,7 +54,6 @@ type Handler struct {
 	playitMgr    *services.PlayitManager
 	tailscaleMgr *services.TailscaleManager
 	rolesMgr     *services.RolesManager
-	mediaOrch    *media.Orchestrator
 	updatesCache *UpdatesCache
 	telemetry    *telemetry.Collector
 	wsUpgrader   websocket.Upgrader
@@ -70,7 +68,6 @@ func NewHandler(cfg *config.Manifest, svcMgr *services.SystemdManager, tel *tele
 		playitMgr:    services.NewPlayitManager(),
 		tailscaleMgr: services.NewTailscaleManager(),
 		rolesMgr:     services.NewRolesManager(),
-		mediaOrch:    media.NewOrchestrator(),
 		updatesCache: &UpdatesCache{},
 		telemetry:    tel,
 		wsClients:    make(map[*websocket.Conn]bool),
@@ -140,12 +137,6 @@ func SetupRoutes(r *gin.Engine, cfg *config.Manifest, svcMgr *services.SystemdMa
 		v1.POST("/system/update", h.RunSystemUpdate)
 		v1.GET("/system/matugen", h.GetMatugenPalette)
 		v1.POST("/system/matugen", h.GetMatugenPalette)
-
-		// Media Automation Orchestrator (Sonarr, Radarr, Bazarr workflow)
-		v1.GET("/media/search", h.SearchMedia)
-		v1.POST("/media/request", h.RequestMedia)
-		v1.GET("/media/requests", h.ListMediaRequests)
-		v1.DELETE("/media/requests/:id", h.DeleteMediaRequest)
 
 		// Apps (Comprehensive Application & Config Management)
 		v1.GET("/apps", h.ListApps)
@@ -3307,49 +3298,6 @@ func (h *Handler) refreshSystemUpdates() {
 	h.updatesCache.mu.Unlock()
 }
 
-// SearchMedia queries Sonarr and Radarr lookup engines
-func (h *Handler) SearchMedia(c *gin.Context) {
-	term := c.Query("term")
-	mType := c.Query("type")
-	results, err := h.mediaOrch.Search(c.Request.Context(), term, mType)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{"results": results})
-}
-
-// RequestMedia submits a media request to Radarr or Sonarr
-func (h *Handler) RequestMedia(c *gin.Context) {
-	var body media.MediaRequest
-	if err := c.ShouldBindJSON(&body); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body: " + err.Error()})
-		return
-	}
-	_, user := h.getClientRole(c)
-	req, err := h.mediaOrch.RequestMedia(c.Request.Context(), user, body)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{"request": req})
-}
-
-// ListMediaRequests returns all queued and active media requests
-func (h *Handler) ListMediaRequests(c *gin.Context) {
-	requests := h.mediaOrch.ListRequests()
-	c.JSON(http.StatusOK, gin.H{"requests": requests})
-}
-
-// DeleteMediaRequest cancels or removes a media request
-func (h *Handler) DeleteMediaRequest(c *gin.Context) {
-	id := c.Param("id")
-	if h.mediaOrch.DeleteRequest(id) {
-		c.JSON(http.StatusOK, gin.H{"status": "deleted"})
-	} else {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Request not found"})
-	}
-}
 
 
 
