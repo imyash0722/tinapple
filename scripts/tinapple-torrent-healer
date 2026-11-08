@@ -1,0 +1,290 @@
+#!/usr/bin/env python3
+# ==============================================================================
+# tinapple Stalled Torrent Auto-Healing & Index Failover Daemon
+#
+# Monitors qBittorrent downloads managed by Sonarr and Radarr.
+# When a torrent is stalled with 0 connected seeders (either stuck in metadata
+# download or 0% progress for >= 5 minutes), this daemon automatically:
+#   1. Removes the stalled torrent from qBittorrent.
+#   2. Blocklists the dead torrent release in Sonarr/Radarr so it is never grabbed again.
+#   3. Immediately triggers an automated search in Sonarr/Radarr to find and grab
+#      a healthy alternative release from other indexers via Prowlarr.
+# ==============================================================================
+
+import os
+import sys
+import time
+import json
+import logging
+import argparse
+import urllib.request
+import urllib.error
+import xml.etree.ElementTree as ET
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='[%(asctime)s] [tinapple-torrent-healer] [%(levelname)s] %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+log = logging.getLogger("tinapple-torrent-healer")
+
+QBIT_URL = os.environ.get("QBIT_URL", "http://127.0.0.1:8080")
+SONARR_URL = os.environ.get("SONARR_URL", "http://127.0.0.1:8989")
+RADARR_URL = os.environ.get("RADARR_URL", "http://127.0.0.1:7878")
+
+# Time thresholds in seconds
+METADATA_STALL_SECONDS = int(os.environ.get("METADATA_STALL_SECONDS", 180))   # 3 mins in metaDL
+ZERO_SEED_STALL_SECONDS = int(os.environ.get("ZERO_SEED_STALL_SECONDS", 300))  # 5 mins with 0 seeds and 0 speed
+CHECK_INTERVAL_SECONDS = int(os.environ.get("CHECK_INTERVAL_SECONDS", 45))
+
+
+def get_xml_api_key(config_path):
+    if not os.path.isfile(config_path):
+        return None
+    try:
+        tree = ET.parse(config_path)
+        root = tree.getroot()
+        key_elem = root.find("ApiKey")
+        if key_elem is not None and key_elem.text:
+            return key_elem.text.strip()
+    except Exception as e:
+        log.warning(f"Failed parsing {config_path}: {e}")
+    return None
+
+
+def get_sonarr_key():
+    key = os.environ.get("SONARR_API_KEY")
+    if key:
+        return key
+    return get_xml_api_key("/var/lib/sonarr/config.xml") or "c2941c0fa72641ecabdfda568719f356"
+
+
+def get_radarr_key():
+    key = os.environ.get("RADARR_API_KEY")
+    if key:
+        return key
+    return get_xml_api_key("/var/lib/radarr/config.xml") or "d9879bf022b242ba9368b08752704b8c"
+
+
+def http_json(url, method="GET", headers=None, data=None, timeout=10):
+    req_headers = {"User-Agent": "tinapple-torrent-healer/1.0"}
+    if headers:
+        req_headers.update(headers)
+    body = None
+    if data is not None:
+        req_headers["Content-Type"] = "application/json"
+        body = json.dumps(data).encode("utf-8")
+    req = urllib.request.Request(url, data=body, headers=req_headers, method=method)
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            content = resp.read()
+            if not content:
+                return {}
+            return json.loads(content.decode("utf-8"))
+    except urllib.error.HTTPError as e:
+        err_msg = e.read().decode("utf-8", errors="ignore")
+        log.error(f"HTTP {e.code} for {method} {url}: {err_msg}")
+        raise
+    except Exception as e:
+        log.error(f"Request failed for {method} {url}: {e}")
+        raise
+
+
+def get_qbit_torrents():
+    url = f"{QBIT_URL}/api/v2/torrents/info"
+    try:
+        return http_json(url, timeout=5) or []
+    except Exception as e:
+        log.warning(f"Could not connect to qBittorrent: {e}")
+        return []
+
+
+def heal_sonarr_torrent(torrent, sonarr_key):
+    torrent_hash = torrent.get("hash", "").lower()
+    torrent_name = torrent.get("name", "Unknown")
+
+    # Query Sonarr queue
+    try:
+        queue_data = http_json(
+            f"{SONARR_URL}/api/v3/queue?includeUnknownSeriesItems=true",
+            headers={"X-Api-Key": sonarr_key},
+            timeout=8
+        )
+    except Exception as e:
+        log.warning(f"Failed fetching Sonarr queue: {e}")
+        return False
+
+    records = queue_data.get("records", [])
+    matched_record = None
+    for r in records:
+        d_id = (r.get("downloadId") or "").lower()
+        if d_id == torrent_hash or (r.get("title") or "").strip() == torrent_name.strip():
+            matched_record = r
+            break
+
+    if not matched_record:
+        log.info(f"Torrent {torrent_name} not found in Sonarr queue (might be manual download). Skipping.")
+        return False
+
+    queue_id = matched_record.get("id")
+    episode_id = matched_record.get("episodeId") or (matched_record.get("episode") or {}).get("id")
+    series_id = matched_record.get("seriesId") or (matched_record.get("series") or {}).get("id")
+
+    log.warning(
+        f"HEALING SONARR: Dead torrent '{torrent_name}' (seeds: {torrent.get('num_seeds')}, state: {torrent.get('state')}). "
+        f"Removing queue item {queue_id} & blocklisting release hash {torrent_hash}..."
+    )
+
+    # 1. Delete and blocklist
+    try:
+        del_url = f"{SONARR_URL}/api/v3/queue/{queue_id}?removeFromClient=true&blocklist=true"
+        http_json(del_url, method="DELETE", headers={"X-Api-Key": sonarr_key}, timeout=8)
+        log.info(f"✓ Blocklisted and removed {torrent_name} from Sonarr queue.")
+    except Exception as e:
+        log.error(f"Failed removing queue item {queue_id} from Sonarr: {e}")
+        return False
+
+    # 2. Trigger automatic failover search for alternative release
+    try:
+        if episode_id:
+            cmd_body = {"name": "EpisodeSearch", "episodeIds": [episode_id]}
+            http_json(f"{SONARR_URL}/api/v3/command", method="POST", headers={"X-Api-Key": sonarr_key}, data=cmd_body, timeout=8)
+            log.info(f"✓ Triggered automated EpisodeSearch for episode ID {episode_id} to acquire alternative release.")
+        elif series_id:
+            cmd_body = {"name": "SeriesSearch", "seriesId": series_id}
+            http_json(f"{SONARR_URL}/api/v3/command", method="POST", headers={"X-Api-Key": sonarr_key}, data=cmd_body, timeout=8)
+            log.info(f"✓ Triggered automated SeriesSearch for series ID {series_id} to acquire alternative release.")
+    except Exception as e:
+        log.error(f"Failed triggering Sonarr search command: {e}")
+
+    return True
+
+
+def heal_radarr_torrent(torrent, radarr_key):
+    torrent_hash = torrent.get("hash", "").lower()
+    torrent_name = torrent.get("name", "Unknown")
+
+    # Query Radarr queue
+    try:
+        queue_data = http_json(
+            f"{RADARR_URL}/api/v3/queue?includeUnknownMovieItems=true",
+            headers={"X-Api-Key": radarr_key},
+            timeout=8
+        )
+    except Exception as e:
+        log.warning(f"Failed fetching Radarr queue: {e}")
+        return False
+
+    records = queue_data.get("records", [])
+    matched_record = None
+    for r in records:
+        d_id = (r.get("downloadId") or "").lower()
+        if d_id == torrent_hash or (r.get("title") or "").strip() == torrent_name.strip():
+            matched_record = r
+            break
+
+    if not matched_record:
+        log.info(f"Torrent {torrent_name} not found in Radarr queue. Skipping.")
+        return False
+
+    queue_id = matched_record.get("id")
+    movie_id = matched_record.get("movieId") or (matched_record.get("movie") or {}).get("id")
+
+    log.warning(
+        f"HEALING RADARR: Dead movie torrent '{torrent_name}' (seeds: {torrent.get('num_seeds')}, state: {torrent.get('state')}). "
+        f"Removing queue item {queue_id} & blocklisting release hash {torrent_hash}..."
+    )
+
+    # 1. Delete and blocklist
+    try:
+        del_url = f"{RADARR_URL}/api/v3/queue/{queue_id}?removeFromClient=true&blocklist=true"
+        http_json(del_url, method="DELETE", headers={"X-Api-Key": radarr_key}, timeout=8)
+        log.info(f"✓ Blocklisted and removed {torrent_name} from Radarr queue.")
+    except Exception as e:
+        log.error(f"Failed removing queue item {queue_id} from Radarr: {e}")
+        return False
+
+    # 2. Trigger automatic failover search for alternative release
+    try:
+        if movie_id:
+            cmd_body = {"name": "MoviesSearch", "movieIds": [movie_id]}
+            http_json(f"{RADARR_URL}/api/v3/command", method="POST", headers={"X-Api-Key": radarr_key}, data=cmd_body, timeout=8)
+            log.info(f"✓ Triggered automated MoviesSearch for movie ID {movie_id} to acquire alternative release.")
+    except Exception as e:
+        log.error(f"Failed triggering Radarr search command: {e}")
+
+    return True
+
+
+def inspect_and_heal():
+    sonarr_key = get_sonarr_key()
+    radarr_key = get_radarr_key()
+
+    torrents = get_qbit_torrents()
+    if not torrents:
+        return
+
+    for t in torrents:
+        category = (t.get("category") or "").lower()
+        state = t.get("state", "")
+        num_seeds = int(t.get("num_seeds") or 0)
+        progress = float(t.get("progress") or 0.0)
+        dlspeed = int(t.get("dlspeed") or 0)
+        time_active = int(t.get("time_active") or 0)
+        name = t.get("name", "Unknown")
+
+        # Skip torrents that are already completed or seeding
+        if progress >= 1.0 or state in ("pausedUP", "uploading", "queuedUP", "checkingUP"):
+            continue
+
+        # Condition 1: Stuck in metaDL with zero seeds for > METADATA_STALL_SECONDS
+        is_stuck_meta = (state == "metaDL" and num_seeds == 0 and time_active >= METADATA_STALL_SECONDS)
+
+        # Condition 2: 0 seeds, 0 download speed, minimal progress, active for > ZERO_SEED_STALL_SECONDS
+        is_zero_seeds_stalled = (
+            num_seeds == 0 and
+            progress < 0.05 and
+            dlspeed == 0 and
+            time_active >= ZERO_SEED_STALL_SECONDS and
+            state in ("stalledDL", "downloading", "queuedDL")
+        )
+
+        if is_stuck_meta or is_zero_seeds_stalled:
+            reason = "stuck downloading metadata" if is_stuck_meta else "0 connected seeders and 0 speed"
+            log.warning(
+                f"Detected stalled torrent: '{name}' | Reason: {reason} | Active: {time_active}s | Category: {category or 'none'}"
+            )
+
+            if category == "sonarr" or "tv" in category:
+                heal_sonarr_torrent(t, sonarr_key)
+            elif category == "radarr" or "movie" in category:
+                heal_radarr_torrent(t, radarr_key)
+            else:
+                # Attempt Sonarr first, then Radarr if not categorized
+                if not heal_sonarr_torrent(t, sonarr_key):
+                    heal_radarr_torrent(t, radarr_key)
+
+
+def main():
+    parser = argparse.ArgumentParser(description="tinapple Stalled Torrent Auto-Healing Daemon")
+    parser.add_argument("--once", action="store_true", help="Run once and exit")
+    args = parser.parse_args()
+
+    log.info("Starting tinapple Torrent Auto-Healing Watchdog...")
+    log.info(f"Thresholds: Metadata stall: {METADATA_STALL_SECONDS}s, 0-Seed stall: {ZERO_SEED_STALL_SECONDS}s, Interval: {CHECK_INTERVAL_SECONDS}s")
+
+    if args.once:
+        inspect_and_heal()
+        log.info("Inspection complete.")
+        return
+
+    while True:
+        try:
+            inspect_and_heal()
+        except Exception as e:
+            log.error(f"Unexpected error in inspection cycle: {e}")
+        time.sleep(CHECK_INTERVAL_SECONDS)
+
+
+if __name__ == "__main__":
+    main()

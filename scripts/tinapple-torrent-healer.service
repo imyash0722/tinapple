@@ -1,0 +1,16 @@
+[Unit]
+Description=Tinapple Stalled Torrent Auto-Healing & Indexer Failover Daemon
+Documentation=https://github.com/tinapple/tinapple-arch
+After=network.target qbittorrent-nox.service sonarr.service radarr.service
+
+[Service]
+Type=simple
+User=tinapple
+Group=users
+ExecStart=/usr/local/bin/tinapple-torrent-healer
+Restart=always
+RestartSec=10
+Nice=10
+
+[Install]
+WantedBy=multi-user.target
