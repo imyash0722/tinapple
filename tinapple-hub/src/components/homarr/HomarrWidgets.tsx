@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef, lazy, Suspense } from 'rea
 import { AppBrandIcon } from '../common/AppBrandIcons';
 import { SquishSwitch } from '../reactbits/SquishSwitch';
 const ProtonModal = lazy(() => import('../common/ProtonModal').then(m => ({ default: m.ProtonModal })));
-import { api, getServiceHost, getServiceUrl } from '../../services/api';
+import { api, getServiceHost, getServiceUrl, getActiveServerOrigin } from '../../services/api';
 import { serviceRegistry } from '../../services/serviceRegistry';
 import {
   Cpu,
@@ -1586,7 +1586,7 @@ export const HomarrRequestsWidget: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const fetchOmbiData = () => {
-    fetch('/api/widgets/ombi')
+    fetch(`${getActiveServerOrigin()}/api/widgets/ombi`)
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (data) {

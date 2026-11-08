@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { getActiveServerOrigin } from '../../services/api';
 
 export const TorPrivacyWidget: React.FC = () => {
   const [torActive, setTorActive] = useState(false);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    fetch('/api/system/tor-exit')
+    fetch(`${getActiveServerOrigin()}/api/system/tor-exit`)
       .then((res) => res.json())
       .then((data) => {
         if (data && data.active !== undefined) {
@@ -18,7 +19,7 @@ export const TorPrivacyWidget: React.FC = () => {
   const toggleTor = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/system/tor-exit', {
+      const res = await fetch(`${getActiveServerOrigin()}/api/system/tor-exit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ active: !torActive }),

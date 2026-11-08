@@ -3,9 +3,10 @@ import { serviceRegistry, ApplianceService } from './serviceRegistry';
 import { Capacitor } from '@capacitor/core';
 
 export const DEFAULT_SERVERS = [
+  { id: 'lan-ip', label: 'Local LAN Wi-Fi', url: 'http://192.168.1.103:8088', host: '192.168.1.103' },
   { id: 'tailscale', label: 'Tailscale Mesh', url: 'http://100.67.207.60:8088', host: '100.67.207.60' },
   { id: 'tsnet', label: 'Tailscale HTTPS', url: 'https://tinapple-server.tail3dee69.ts.net', host: 'tinapple-server.tail3dee69.ts.net' },
-  { id: 'lan', label: 'Local LAN / Hostname', url: 'http://tinapple-server:8088', host: 'tinapple-server' },
+  { id: 'lan', label: 'Local Hostname', url: 'http://tinapple-server:8088', host: 'tinapple-server' },
   { id: 'hotspot', label: 'Direct AP Hotspot', url: 'http://192.168.4.1:8088', host: '192.168.4.1' },
 ];
 
@@ -389,6 +390,7 @@ export const MOCK_TELEMETRY: TelemetrySnapshot = {
 export const MOCK_SERVICES: ServiceInfo[] = [
   {
     name: 'tinapple-session',
+    displayName: 'Tinapple Session',
     description: 'Tinapple Wayland Desktop Session (Niri + Waybar)',
     activeState: 'active',
     subState: 'running',
@@ -398,6 +400,7 @@ export const MOCK_SERVICES: ServiceInfo[] = [
   },
   {
     name: 'nginx',
+    displayName: 'Nginx Web Gateway',
     description: 'High Performance Reverse Proxy & Web Gateway',
     activeState: 'active',
     subState: 'running',
@@ -408,6 +411,7 @@ export const MOCK_SERVICES: ServiceInfo[] = [
   },
   {
     name: 'tailscaled',
+    displayName: 'Tailscale Mesh VPN',
     description: 'Tailscale Mesh VPN & WireGuard daemon',
     activeState: 'active',
     subState: 'running',
@@ -417,6 +421,7 @@ export const MOCK_SERVICES: ServiceInfo[] = [
   },
   {
     name: 'postgresql',
+    displayName: 'PostgreSQL Database',
     description: 'PostgreSQL 16 Relational Database Server',
     activeState: 'active',
     subState: 'running',
@@ -427,6 +432,7 @@ export const MOCK_SERVICES: ServiceInfo[] = [
   },
   {
     name: 'redis',
+    displayName: 'Redis Cache',
     description: 'In-Memory Data Store & Cache',
     activeState: 'active',
     subState: 'running',
@@ -437,6 +443,7 @@ export const MOCK_SERVICES: ServiceInfo[] = [
   },
   {
     name: 'jellyfin',
+    displayName: 'Jellyfin Media Server',
     description: 'Jellyfin Free Software Media System',
     activeState: 'active',
     subState: 'running',
@@ -446,16 +453,58 @@ export const MOCK_SERVICES: ServiceInfo[] = [
     memoryBytes: 240 * 1024 * 1024,
   },
   {
-    name: 'qbittorrent-nox',
+    name: 'qbittorrent',
+    displayName: 'qBittorrent Headless',
     description: 'qBittorrent Headless Download Service',
     activeState: 'inactive',
     subState: 'dead',
     unitFileState: 'disabled',
-    category: 'media',
+    category: 'downloads',
     port: 8080,
   },
   {
+    name: 'ombi',
+    displayName: 'Ombi Media Requests',
+    description: 'Automated Media Request Portal for Sonarr and Radarr',
+    activeState: 'active',
+    subState: 'running',
+    unitFileState: 'enabled',
+    category: 'media',
+    port: 5000,
+  },
+  {
+    name: 'radarr',
+    displayName: 'Radarr Movie Automator',
+    description: 'Movie Collection Manager and Automator',
+    activeState: 'active',
+    subState: 'running',
+    unitFileState: 'enabled',
+    category: 'media',
+    port: 7878,
+  },
+  {
+    name: 'sonarr',
+    displayName: 'Sonarr TV Automator',
+    description: 'TV Series Collection Manager and Automator',
+    activeState: 'active',
+    subState: 'running',
+    unitFileState: 'enabled',
+    category: 'media',
+    port: 8989,
+  },
+  {
+    name: 'navidrome',
+    displayName: 'Navidrome Music Server',
+    description: 'Modern Self-Hosted Music Server and Streamer',
+    activeState: 'active',
+    subState: 'running',
+    unitFileState: 'enabled',
+    category: 'media',
+    port: 4533,
+  },
+  {
     name: 'syncthing',
+    displayName: 'Syncthing Decentralized Sync',
     description: 'Continuous Decentralized File Synchronization',
     activeState: 'active',
     subState: 'running',
@@ -466,6 +515,7 @@ export const MOCK_SERVICES: ServiceInfo[] = [
   },
   {
     name: 'minecraft-server',
+    displayName: 'PaperMC Minecraft',
     description: 'PaperMC Headless Minecraft Server',
     activeState: 'active',
     subState: 'running',
@@ -476,6 +526,7 @@ export const MOCK_SERVICES: ServiceInfo[] = [
   },
   {
     name: 'playit',
+    displayName: 'Playit.gg Tunnel',
     description: 'Playit.gg Zero-Port Domain Tunnel Agent',
     activeState: 'active',
     subState: 'running',
@@ -484,7 +535,8 @@ export const MOCK_SERVICES: ServiceInfo[] = [
     memoryBytes: 18 * 1024 * 1024,
   },
   {
-    name: 'suwayomi-server',
+    name: 'suwayomi',
+    displayName: 'Suwayomi Manga Server',
     description: 'Suwayomi Manga & Comic Server (Tachiyomi)',
     activeState: 'active',
     subState: 'running',
@@ -686,8 +738,8 @@ class ApiService {
         }
 
         return {
-          name: s.name || s.id,
-          displayName: s.displayName || s.name,
+          name: s.name || s.id || 'unknown',
+          displayName: s.displayName || s.name || s.id || 'Service',
           tagline: s.tagline || '',
           description: s.description || `Appliance service ${s.name}`,
           activeState,
@@ -804,16 +856,35 @@ class ApiService {
       }
     };
 
-    // First attempt with 8s timeout
-    let res = await probe(target, 8000);
+    // First attempt with 3.5s timeout
+    let res = await probe(target, 3500);
     if (!res.ok) {
-      // Second attempt with 8s timeout to handle Tailscale/cellular connection warmup
-      res = await probe(target, 8000);
+      // Second attempt with 3.5s timeout to handle Tailscale/cellular connection warmup
+      res = await probe(target, 3500);
+    }
+
+    // Auto-discovery fallback: If initial target is unreachable, auto-probe LAN & Tailscale candidates
+    if (!res.ok && typeof window !== 'undefined') {
+      try {
+        const bestOrigin = await discoverBestServerOrigin(1200);
+        if (bestOrigin) {
+          const autoRes = await probe(`${bestOrigin}/api/v1`, 2000);
+          if (autoRes.ok) {
+            localStorage.setItem('tinapple_server_url', bestOrigin);
+            localStorage.setItem('tinapple_last_good_origin', bestOrigin);
+            return {
+              reachable: true,
+              latencyMs: autoRes.latencyMs,
+              url: bestOrigin,
+            };
+          }
+        }
+      } catch {}
     }
 
     // Self-healing fallback: If customUrl is set but failing, test relative /api/v1
     if (!res.ok && custom && typeof window !== 'undefined') {
-      const fallbackRes = await probe('/api/v1', 4000);
+      const fallbackRes = await probe('/api/v1', 2500);
       if (fallbackRes.ok) {
         // The host origin is responding! Clear the stale custom URL
         try {

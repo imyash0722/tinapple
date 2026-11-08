@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Zap, ArrowDown, ArrowUp, ArrowRight } from 'lucide-react';
-import { getServiceHost } from '../../services/api';
+import { getServiceHost, getActiveServerOrigin } from '../../services/api';
 import { serviceRegistry } from '../../services/serviceRegistry';
 
 interface QBitInfo {
@@ -61,8 +61,9 @@ export const TransfersWidget: React.FC = () => {
   // Poll real widget APIs if reachable
   useEffect(() => {
     const fetchStats = async () => {
+      const origin = getActiveServerOrigin();
       try {
-        const qRes = await fetch('/api/widgets/qbittorrent');
+        const qRes = await fetch(`${origin}/api/widgets/qbittorrent`);
         if (qRes.ok) {
           const data = await qRes.json();
           if (data && data.online !== undefined) {
@@ -72,7 +73,7 @@ export const TransfersWidget: React.FC = () => {
       } catch (_) {}
 
       try {
-        const jRes = await fetch('/api/widgets/jdownloader');
+        const jRes = await fetch(`${origin}/api/widgets/jdownloader`);
         if (jRes.ok) {
           const data = await jRes.json();
           if (data && data.online !== undefined) {
@@ -94,7 +95,7 @@ export const TransfersWidget: React.FC = () => {
     setSubmitting(true);
     setSubmitMsg(null);
     try {
-      const res = await fetch('/api/widgets/jdownloader/add', {
+      const res = await fetch(`${getActiveServerOrigin()}/api/widgets/jdownloader/add`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ links: [linkInput.trim()] }),

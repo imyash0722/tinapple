@@ -522,8 +522,7 @@ export const App: React.FC = () => {
 
       const isReachable =
         (reachabilityRes.status === 'fulfilled' && reachabilityRes.value.reachable) ||
-        (infoRes.status === 'fulfilled' && Boolean(infoRes.value?.hostname)) ||
-        (svcsRes.status === 'fulfilled' && Array.isArray(svcsRes.value) && svcsRes.value.length > 0);
+        (infoRes.status === 'fulfilled' && Boolean(infoRes.value?.hostname));
 
       setIsServerReachable(isReachable);
 
@@ -576,8 +575,7 @@ export const App: React.FC = () => {
 
       const isReachable =
         (reachabilityRes.status === 'fulfilled' && reachabilityRes.value.reachable) ||
-        (infoRes.status === 'fulfilled' && Boolean(infoRes.value?.hostname)) ||
-        (svcsRes.status === 'fulfilled' && Array.isArray(svcsRes.value) && svcsRes.value.length > 0);
+        (infoRes.status === 'fulfilled' && Boolean(infoRes.value?.hostname));
 
       setIsServerReachable(isReachable);
 

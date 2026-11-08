@@ -44,7 +44,7 @@ export const MobileDashboardView: React.FC<MobileDashboardViewProps> = ({
   const [isLoadingOmbi, setIsLoadingOmbi] = useState<boolean>(true);
 
   const fetchOmbiData = () => {
-    fetch('/api/widgets/ombi')
+    fetch(`${getActiveServerOrigin()}/api/widgets/ombi`)
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (data) {
@@ -191,7 +191,13 @@ export const MobileDashboardView: React.FC<MobileDashboardViewProps> = ({
 
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
           {primaryLaunchers.map((app) => {
-            const liveService = services.find((s) => s.name === app.id || s.displayName.toLowerCase().includes(app.name.toLowerCase()));
+            const liveService = services.find((s) => {
+              if (!s) return false;
+              if (s.name === app.id || s.id === app.id) return true;
+              const sDisplay = (s.displayName || s.name || '').toLowerCase();
+              const aName = (app.name || '').toLowerCase();
+              return sDisplay.length > 0 && aName.length > 0 && sDisplay.includes(aName);
+            });
             const isRunning = liveService ? liveService.activeState === 'active' : true;
             const targetUrl = getServiceUrl(app.id);
 

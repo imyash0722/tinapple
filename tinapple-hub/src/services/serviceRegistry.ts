@@ -73,11 +73,21 @@ export class ApplianceService {
     let isDirectPortAccess = true;
 
     if (typeof window !== 'undefined' && window.location) {
-      const h = window.location.hostname;
-      if (!h || h.endsWith('.ts.net') || h === 'tauri.localhost' || (h === 'localhost' && window.location.port === '1420')) {
-        hostname = getTailscaleIp();
+      const customUrl = localStorage.getItem('tinapple_server_url');
+      if (customUrl) {
+        try {
+          const parsed = new URL(customUrl);
+          hostname = parsed.hostname;
+        } catch {
+          hostname = getTailscaleIp();
+        }
       } else {
-        hostname = h;
+        const h = window.location.hostname;
+        if (!h || h === 'localhost' || h === '127.0.0.1' || h.endsWith('.ts.net') || h === 'tauri.localhost') {
+          hostname = getTailscaleIp();
+        } else {
+          hostname = h;
+        }
       }
       const port = window.location.port;
       // If accessed via port 8088 (tinapple-dash Go port), direct port is mandatory

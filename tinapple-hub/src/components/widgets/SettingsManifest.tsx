@@ -22,6 +22,7 @@ import { SquishSwitch } from '../reactbits/SquishSwitch';
 import { LightToggle } from '../reactbits/LightToggle';
 import HoldButton from '../reactbits/HoldButton';
 import { SystemInfo, SessionMode } from '../../types/api';
+import { getApiBaseUrl } from '../../services/api';
 import { TailscaleUserManager } from './TailscaleUserManager';
 
 interface SettingsManifestProps {
@@ -80,7 +81,7 @@ export const SettingsManifest: React.FC<SettingsManifestProps> = ({
   React.useEffect(() => {
     const loadLiveConfig = async () => {
       try {
-        const res = await fetch('/api/v1/config');
+        const res = await fetch(`${getApiBaseUrl().replace(/\/api\/v1\/?$/, '')}/api/v1/config`);
         if (res.ok) {
           const cfg = await res.json();
           if (cfg.hostname) setHostname(cfg.hostname);
@@ -255,7 +256,7 @@ export const SettingsManifest: React.FC<SettingsManifestProps> = ({
         },
       };
 
-      const res = await fetch('/api/v1/system/manifest', {
+      const res = await fetch(`${getApiBaseUrl()}/system/manifest`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),

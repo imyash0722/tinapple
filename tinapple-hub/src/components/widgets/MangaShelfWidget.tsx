@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { BookOpen, ExternalLink, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
-import { getServiceHost } from '../../services/api';
+import { getServiceHost, getActiveServerOrigin } from '../../services/api';
 import { serviceRegistry } from '../../services/serviceRegistry';
 
 interface MangaItem {
@@ -45,7 +45,7 @@ export const MangaShelfWidget: React.FC = () => {
 
   const fetchLibrary = () => {
     setLoading(true);
-    fetch('/api/widgets/manga')
+    fetch(`${getActiveServerOrigin()}/api/widgets/manga`)
       .then((res) => {
         if (res.ok) return res.json();
         throw new Error('offline');
