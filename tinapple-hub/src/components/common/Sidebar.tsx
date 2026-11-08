@@ -93,14 +93,30 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
   // Left-edge hover autohide timer ref
   const closeTimerRef = React.useRef<NodeJS.Timeout | null>(null);
 
+  // Touch gesture refs for mobile swipe-to-close
+  const touchStartXRef = React.useRef<number | null>(null);
+  const touchStartYRef = React.useRef<number | null>(null);
+
   React.useEffect(() => {
     return () => {
       if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
     };
   }, []);
 
+  // Prevent background scroll bleed-through on mobile viewports when drawer is open
+  React.useEffect(() => {
+    if (!mobileOpen) return;
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, [mobileOpen]);
+
   const handleOpenDrawerFromHover = React.useCallback(() => {
     if (isSidebarPinned) return;
+    const isFinePointer = typeof window !== 'undefined' && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+    if (!isFinePointer) return;
     if (closeTimerRef.current) {
       clearTimeout(closeTimerRef.current);
       closeTimerRef.current = null;
@@ -109,6 +125,8 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
   }, [isSidebarPinned, setMobileOpen]);
 
   const handleDrawerMouseEnter = React.useCallback(() => {
+    const isFinePointer = typeof window !== 'undefined' && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+    if (!isFinePointer) return;
     if (closeTimerRef.current) {
       clearTimeout(closeTimerRef.current);
       closeTimerRef.current = null;
@@ -117,6 +135,8 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
 
   const handleDrawerMouseLeave = React.useCallback(() => {
     if (isSidebarPinned) return;
+    const isFinePointer = typeof window !== 'undefined' && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+    if (!isFinePointer) return;
     if (closeTimerRef.current) {
       clearTimeout(closeTimerRef.current);
     }
@@ -125,9 +145,11 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
     }, 320); // 320ms grace period for smooth departure
   }, [isSidebarPinned, setMobileOpen]);
 
-  // Window-level proximity detection for desktop screen edge (clientX <= 20px)
+  // Window-level proximity detection for desktop screen edge (clientX <= 20px) - ONLY on fine pointer devices
   React.useEffect(() => {
     if (isSidebarPinned) return;
+    const isFinePointer = typeof window !== 'undefined' && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+    if (!isFinePointer) return;
 
     const handleWindowMouseMove = (e: MouseEvent) => {
       if (e.clientX <= 20 && !mobileOpen) {
@@ -140,6 +162,28 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
       window.removeEventListener('mousemove', handleWindowMouseMove);
     };
   }, [isSidebarPinned, mobileOpen, handleOpenDrawerFromHover]);
+
+  // Touch gesture handlers for intuitive mobile swipe-to-close drawer
+  const handleDrawerTouchStart = (e: React.TouchEvent) => {
+    touchStartXRef.current = e.touches[0].clientX;
+    touchStartYRef.current = e.touches[0].clientY;
+  };
+
+  const handleDrawerTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartXRef.current === null || touchStartYRef.current === null) return;
+    const endX = e.changedTouches[0].clientX;
+    const endY = e.changedTouches[0].clientY;
+    const deltaX = endX - touchStartXRef.current;
+    const deltaY = endY - touchStartYRef.current;
+    touchStartXRef.current = null;
+    touchStartYRef.current = null;
+
+    // Swiped left by more than 40px with horizontal dominance
+    if (deltaX < -40 && Math.abs(deltaX) > Math.abs(deltaY) * 1.2) {
+      AndroidBridge.performHaptic('light');
+      setMobileOpen(false);
+    }
+  };
 
   const navItems = [
     {
@@ -272,11 +316,11 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
 
             {/* Toggle / Close Buttons */}
             {isDrawer ? (
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1.5">
                 {onTogglePin && (
                   <button
                     onClick={onTogglePin}
-                    className="p-1.5 rounded-xl text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors"
+                    className="hidden md:flex p-2 rounded-xl text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors"
                     title={isSidebarPinned ? 'Switch to Auto-Hide Sidebar (Reveals on Hover)' : 'Pin Sidebar to Desktop'}
                     aria-label={isSidebarPinned ? 'Auto-Hide Sidebar' : 'Pin Sidebar'}
                   >
@@ -284,8 +328,18 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
                   </button>
                 )}
                 <button
-                  onClick={() => setMobileOpen(false)}
-                  className="p-1.5 rounded-xl text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors"
+                  type="button"
+                  onClick={() => {
+                    AndroidBridge.performHaptic('light');
+                    setMobileOpen(false);
+                  }}
+                  onTouchEnd={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    AndroidBridge.performHaptic('light');
+                    setMobileOpen(false);
+                  }}
+                  className="w-11 h-11 flex items-center justify-center rounded-xl bg-surface-container-highest hover:bg-surface-container-high active:bg-primary/25 border border-outline-variant text-on-surface transition-all touch-manipulation active:scale-95 shadow-sm"
                   title="Close Menu (Esc)"
                   aria-label="Close Menu"
                 >
@@ -722,8 +776,19 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
       {/* B. DRAWER OVERLAY (Active on all tabs when drawer is open) */}
       {mobileOpen && (
         <div
-          className="fixed inset-0 z-50 bg-black/60 animate-in fade-in duration-200"
-          onClick={() => setMobileOpen(false)}
+          role="button"
+          tabIndex={0}
+          aria-label="Close navigation drawer"
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200 touch-none overscroll-contain select-none cursor-pointer"
+          onClick={() => {
+            AndroidBridge.performHaptic('light');
+            setMobileOpen(false);
+          }}
+          onTouchEnd={(e) => {
+            e.preventDefault();
+            AndroidBridge.performHaptic('light');
+            setMobileOpen(false);
+          }}
           onMouseEnter={handleDrawerMouseLeave}
         />
       )}
@@ -732,7 +797,9 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
       <div
         onMouseEnter={handleDrawerMouseEnter}
         onMouseLeave={handleDrawerMouseLeave}
-        className={`fixed inset-y-0 left-0 z-[51] w-72 max-w-[85vw] bg-surface-container-low border-r border-outline-variant shadow-none transition-transform duration-300 ease-out transform pt-[env(safe-area-inset-top,0px)] pb-[env(safe-area-inset-bottom,0px)] ${
+        onTouchStart={handleDrawerTouchStart}
+        onTouchEnd={handleDrawerTouchEnd}
+        className={`fixed inset-y-0 left-0 z-[51] w-72 max-w-[85vw] bg-surface-container-low border-r border-outline-variant shadow-2xl transition-transform duration-300 ease-out transform pt-[env(safe-area-inset-top,0px)] pb-[env(safe-area-inset-bottom,0px)] touch-pan-y overscroll-contain ${
           mobileOpen ? 'translate-x-0' : '-translate-x-full'
         } ${isSidebarPinned ? 'md:hidden' : ''}`}
       >
@@ -820,14 +887,16 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
         <button
           onClick={() => {
             AndroidBridge.performHaptic('medium');
-            setMobileOpen(true);
+            setMobileOpen(!mobileOpen);
           }}
-          className="flex-1 flex flex-col items-center justify-center py-1 px-1 rounded-xl transition-all active:scale-95 text-on-surface-variant hover:text-on-surface"
+          className={`flex-1 flex flex-col items-center justify-center py-1 px-1 rounded-xl transition-all active:scale-95 ${
+            mobileOpen ? 'text-primary font-bold' : 'text-on-surface-variant hover:text-on-surface'
+          }`}
         >
-          <div className="p-1.5 rounded-xl">
-            <Menu className="w-4 h-4" />
+          <div className={`p-1.5 rounded-xl transition-all ${mobileOpen ? 'bg-primary/20 text-primary border border-primary/30' : ''}`}>
+            {mobileOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
           </div>
-          <span className="text-[10px] font-sans mt-0.5 font-medium">Menu</span>
+          <span className="text-[10px] font-sans mt-0.5 font-medium">{mobileOpen ? 'Close' : 'Menu'}</span>
         </button>
       </nav>
     </>

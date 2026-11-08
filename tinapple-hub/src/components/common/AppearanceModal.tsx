@@ -23,6 +23,7 @@ import {
 import { api } from '../../services/api';
 import { WallpaperItem } from '../../types/api';
 import { SquishSwitch } from '../reactbits/SquishSwitch';
+import { AndroidBridge } from '../../services/androidBridge';
 
 export { BUNDLED_WALLPAPERS, THEME_PALETTES } from '../../theme/appearance';
 
@@ -84,6 +85,7 @@ export const AppearanceModal: React.FC<AppearanceModalProps> = ({
 }) => {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const colorAbortRef = useRef<AbortController | null>(null);
 
   const [url, setUrl] = useState(settings.wallpaperUrl);
   const [urlError, setUrlError] = useState('');
@@ -98,6 +100,14 @@ export const AppearanceModal: React.FC<AppearanceModalProps> = ({
   const [displayLimit, setDisplayLimit] = useState<number>(24);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadMessage, setUploadMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (colorAbortRef.current) {
+        colorAbortRef.current.abort();
+      }
+    };
+  }, []);
 
   useEffect(() => {
     setDisplayLimit(24);
@@ -144,10 +154,18 @@ export const AppearanceModal: React.FC<AppearanceModalProps> = ({
     if (!isOpen || !dialog) return;
     const previousFocus = document.activeElement as HTMLElement | null;
     const overflow = document.body.style.overflow;
-    dialog.showModal();
+    try {
+      if (!dialog.open) {
+        dialog.showModal();
+      }
+    } catch {}
     document.body.style.overflow = 'hidden';
     return () => {
-      dialog.close();
+      try {
+        if (dialog.open) {
+          dialog.close();
+        }
+      } catch {}
       document.body.style.overflow = overflow;
       previousFocus?.focus();
     };
@@ -158,34 +176,44 @@ export const AppearanceModal: React.FC<AppearanceModalProps> = ({
 
   const setAccent = (value: string) => update({ accentColor: value, syncWallpaperColors: false });
 
-  // Handle Wallpaper Select (with color sampling and API notify)
-  const handleSelectWallpaper = async (wp: WallpaperItem) => {
+  // Handle Wallpaper Select (instant UI response + async non-blocking color sampling)
+  const handleSelectWallpaper = (wp: WallpaperItem) => {
     setUrlError('');
+    AndroidBridge.performHaptic('light');
 
-    // Inform server session
-    api.selectWallpaper(wp.file);
-
-    const partial: Partial<BackgroundSettings> = {
+    // 1. Immediately apply wallpaper to settings for instantaneous visual feedback
+    update({
       mode: 'wallpaper',
       wallpaperUrl: wp.url,
       syncWallpaperColors: true,
-    };
+    });
 
-    // Auto extract colors if enabled and not video
+    // 2. Notify server session in background
+    api.selectWallpaper(wp.file).catch(() => {});
+
+    // 3. Auto extract colors asynchronously without blocking UI or freezing main thread
     if (!wp.isVideo) {
-      try {
-        const abortCtrl = new AbortController();
-        const [prim, sec] = await extractWallpaperColors(wp.url, abortCtrl.signal);
-        if (prim && sec) {
-          partial.accentColor = prim;
-          partial.secondaryColor = sec;
-        }
-      } catch (e) {
-        console.debug('Color extraction:', e);
+      if (colorAbortRef.current) {
+        colorAbortRef.current.abort();
       }
-    }
+      const abortCtrl = new AbortController();
+      colorAbortRef.current = abortCtrl;
 
-    update(partial);
+      extractWallpaperColors(wp.url, abortCtrl.signal)
+        .then(([prim, sec]) => {
+          if (!abortCtrl.signal.aborted && prim && sec) {
+            update({
+              accentColor: prim,
+              secondaryColor: sec,
+            });
+          }
+        })
+        .catch((e) => {
+          if (!abortCtrl.signal.aborted) {
+            console.debug('Background color extraction:', e);
+          }
+        });
+    }
   };
 
   // Handle Random / Shuffle Wallpaper
@@ -286,7 +314,7 @@ export const AppearanceModal: React.FC<AppearanceModalProps> = ({
       onClick={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}
-      className="appearance-drawer fixed inset-y-0 left-auto right-0 m-0 h-dvh max-h-none w-full max-w-xl overflow-y-auto border-l border-outline-variant/50 bg-surface-container-high p-0 text-on-surface backdrop-blur-2xl shadow-none z-50"
+      className="appearance-drawer fixed inset-y-0 left-auto right-0 m-0 h-dvh max-h-none w-full max-w-xl overflow-y-auto border-l border-outline-variant/50 bg-surface-container-high p-0 text-on-surface backdrop-blur-2xl shadow-none z-50 overscroll-contain"
     >
       <div className="flex min-h-full flex-col" onClick={(event) => event.stopPropagation()}>
         {/* Sticky Header */}
@@ -302,9 +330,12 @@ export const AppearanceModal: React.FC<AppearanceModalProps> = ({
           </div>
           <button
             type="button"
-            onClick={onClose}
+            onClick={() => {
+              AndroidBridge.performHaptic('light');
+              onClose();
+            }}
             aria-label="Close appearance"
-            className="rounded-xl p-2 hover:bg-white/10 focus-visible:outline-tinapple-gold text-on-surface-variant hover:text-on-surface transition-colors"
+            className="w-11 h-11 flex items-center justify-center rounded-xl bg-surface-container-highest/60 hover:bg-surface-container-highest active:bg-primary/20 text-on-surface transition-all touch-manipulation active:scale-90"
           >
             <X className="h-5 w-5" />
           </button>
@@ -417,7 +448,7 @@ export const AppearanceModal: React.FC<AppearanceModalProps> = ({
               </div>
 
               {/* Gallery Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-[380px] overflow-y-auto pr-1 scrollbar-thin">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-[380px] overflow-y-auto pr-1 scrollbar-thin overscroll-contain touch-pan-y">
                 {filteredWallpapers.slice(0, displayLimit).map((wallpaper) => {
                   const isSelected =
                     settings.wallpaperUrl === wallpaper.url ||
@@ -429,14 +460,14 @@ export const AppearanceModal: React.FC<AppearanceModalProps> = ({
                       type="button"
                       onClick={() => handleSelectWallpaper(wallpaper)}
                       aria-pressed={isSelected}
-                      className={`group relative overflow-hidden rounded-xl border text-left transition-all ${
+                      className={`group relative overflow-hidden rounded-xl border text-left transition-all touch-manipulation active:scale-[0.98] ${
                         isSelected
                           ? 'border-tinapple-gold ring-2 ring-tinapple-gold/70 shadow-none shadow-tinapple-gold/20'
                           : 'border-outline-variant/50 hover:border-white/30 hover:shadow-none'
                       }`}
                     >
                       {wallpaper.isVideo ? (
-                        <div className="relative aspect-video w-full bg-black/40 overflow-hidden">
+                        <div className="relative aspect-video w-full bg-black/40 overflow-hidden pointer-events-none select-none">
                           <video
                             src={wallpaper.url}
                             muted
@@ -444,7 +475,7 @@ export const AppearanceModal: React.FC<AppearanceModalProps> = ({
                             autoPlay={isSelected}
                             preload="none"
                             playsInline
-                            className="aspect-video w-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            className="aspect-video w-full object-cover group-hover:scale-105 transition-transform duration-300 pointer-events-none select-none"
                             onMouseEnter={(e) => {
                               try {
                                 e.currentTarget.play().catch(() => {});
@@ -456,30 +487,31 @@ export const AppearanceModal: React.FC<AppearanceModalProps> = ({
                               } catch {}
                             }}
                           />
-                          <span className="absolute top-1.5 left-1.5 flex items-center gap-1 px-1.5 py-0.5 rounded bg-purple-950/80 border border-purple-500/40 text-[9px] font-sans font-bold text-purple-300 backdrop-blur-sm">
+                          <span className="absolute top-1.5 left-1.5 flex items-center gap-1 px-1.5 py-0.5 rounded bg-purple-950/80 border border-purple-500/40 text-[9px] font-sans font-bold text-purple-300 backdrop-blur-sm pointer-events-none">
                             <Film className="w-2.5 h-2.5" />
                             <span>VIDEO</span>
                           </span>
                         </div>
                       ) : (
-                        <div className="relative aspect-video w-full bg-black/40 overflow-hidden">
+                        <div className="relative aspect-video w-full bg-black/40 overflow-hidden pointer-events-none select-none">
                           <img
                             src={wallpaper.url}
                             alt={wallpaper.name}
                             loading="lazy"
-                            className="aspect-video w-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            decoding="async"
+                            className="aspect-video w-full object-cover group-hover:scale-105 transition-transform duration-300 pointer-events-none select-none"
                           />
                         </div>
                       )}
 
                       {/* Selected checkmark */}
                       {isSelected && (
-                        <div className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-tinapple-gold text-slate-950 flex items-center justify-center shadow-none">
+                        <div className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-tinapple-gold text-slate-950 flex items-center justify-center shadow-none pointer-events-none">
                           <Check className="w-3.5 h-3.5 stroke-[3]" />
                         </div>
                       )}
 
-                      <div className="p-2 bg-surface-container-low border-t border-outline-variant/50 backdrop-blur-sm">
+                      <div className="p-2 bg-surface-container-low border-t border-outline-variant/50 backdrop-blur-sm pointer-events-none">
                         <span className="block text-[11px] font-sans font-semibold text-on-surface truncate group-hover:text-tinapple-gold transition-colors">
                           {wallpaper.name}
                         </span>

@@ -34,6 +34,7 @@ import { Sidebar } from './components/common/Sidebar';
 import { THEME_STORAGE_KEY, loadSettings, normalizeSettings } from './theme/appearance';
 import { fetchMatugenPalette, applyMatugenM3, generateLocalM3Palette } from './theme/matugen';
 import { DockItem } from './components/reactbits/Dock';
+import { AndroidBridge } from './services/androidBridge';
 
 import { TelemetryCards } from './components/widgets/TelemetryCards';
 import { QuickConnectCard } from './components/widgets/QuickConnectCard';
@@ -758,12 +759,16 @@ export const App: React.FC = () => {
             <div className="flex items-center gap-2 sm:gap-3.5 min-w-0">
               {/* Universal Hamburger Toggle (Full width on all tabs) */}
               <button
-                onClick={() => setMobileSidebarOpen(true)}
-                className={`p-2 sm:p-2.5 rounded-full bg-surface-container-highest hover:bg-surface-container-high border border-outline-variant text-on-surface hover:text-on-surface transition-all shadow-none active:scale-95 shrink-0 ${
+                type="button"
+                onClick={() => {
+                  AndroidBridge.performHaptic('medium');
+                  setMobileSidebarOpen((prev) => !prev);
+                }}
+                className={`p-2 sm:p-2.5 rounded-full bg-surface-container-highest hover:bg-surface-container-high border border-outline-variant text-on-surface hover:text-on-surface transition-all shadow-none touch-manipulation active:scale-95 shrink-0 ${
                   isSidebarPinned ? 'md:hidden' : 'flex'
                 }`}
-                title="Open Appliance Navigation Drawer (Ctrl+B)"
-                aria-label="Open Appliance Navigation Drawer"
+                title="Toggle Appliance Navigation Drawer (Ctrl+B)"
+                aria-label="Toggle Appliance Navigation Drawer"
               >
                 <Menu className="w-5 h-5 text-primary" />
               </button>

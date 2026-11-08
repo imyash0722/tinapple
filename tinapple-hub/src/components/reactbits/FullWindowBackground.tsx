@@ -27,41 +27,19 @@ export interface BackgroundSettings {
 export const FullWindowBackground: React.FC<{ settings: BackgroundSettings }> = React.memo(({ settings }) => {
   const { mode, wallpaperUrl, wallpaperDim, wallpaperBlur = 0, accentColor, secondaryColor, enableParticles, enableNebula } = settings;
   const particleColors = useMemo(() => [accentColor, secondaryColor, '#ffffff'], [accentColor, secondaryColor]);
-  const [cachedUrl, setCachedUrl] = useState<string>(wallpaperUrl);
 
   const isVideo = useMemo(() => {
-    const target = (cachedUrl || wallpaperUrl || '').toLowerCase();
+    const target = (wallpaperUrl || '').toLowerCase();
     return target.endsWith('.mp4') || target.endsWith('.webm') || target.includes('.mp4?') || target.includes('.webm?');
-  }, [cachedUrl, wallpaperUrl]);
+  }, [wallpaperUrl]);
 
+  // Synchronize offline cache in background without mutating live DOM video/image elements
   useEffect(() => {
-    let active = true;
-    let objectUrl: string | null = null;
-
-    async function loadCached() {
-      if (mode !== 'wallpaper' || !wallpaperUrl) return;
-      try {
-        const blob = await getCachedWallpaperBlob(wallpaperUrl) || await getCachedWallpaperBlob('active_wallpaper');
-        if (blob && active) {
-          objectUrl = URL.createObjectURL(blob);
-          setCachedUrl(objectUrl);
-        }
-        const liveUrl = await cacheWallpaperUrl(wallpaperUrl);
-        if (liveUrl && active && liveUrl !== objectUrl) {
-          setCachedUrl(liveUrl);
-        }
-      } catch {
-        if (active) setCachedUrl(wallpaperUrl);
-      }
+    if (mode === 'wallpaper' && wallpaperUrl) {
+      cacheWallpaperUrl(wallpaperUrl).catch(() => {});
     }
-
-    loadCached();
-
-    return () => {
-      active = false;
-      if (objectUrl) URL.revokeObjectURL(objectUrl);
-    };
   }, [mode, wallpaperUrl]);
+
   return (
     <div aria-hidden="true" className="fixed inset-0 pointer-events-none -z-10 overflow-hidden bg-surface-container-lowest">
       {(mode === 'plain' || mode === 'none') && <div className="absolute inset-0 bg-surface-container-lowest" />}
@@ -93,12 +71,14 @@ export const FullWindowBackground: React.FC<{ settings: BackgroundSettings }> = 
         <div className="absolute inset-0 overflow-hidden">
           {isVideo ? (
             <video
-              src={cachedUrl}
+              key={wallpaperUrl}
+              src={wallpaperUrl}
               autoPlay
               loop
               muted
               playsInline
-              className="absolute inset-0 w-full h-full object-cover transition-all duration-300"
+              preload="auto"
+              className="absolute inset-0 w-full h-full object-cover transition-opacity duration-300"
               style={{
                 filter: wallpaperBlur > 0 ? `blur(${wallpaperBlur}px)` : 'none',
                 transform: wallpaperBlur > 0 ? 'scale(1.06)' : 'none',
@@ -108,7 +88,7 @@ export const FullWindowBackground: React.FC<{ settings: BackgroundSettings }> = 
             <div
               className="absolute inset-0 bg-cover bg-center transition-all duration-300"
               style={{
-                backgroundImage: `url(${JSON.stringify(cachedUrl)})`,
+                backgroundImage: `url(${JSON.stringify(wallpaperUrl)})`,
                 filter: wallpaperBlur > 0 ? `blur(${wallpaperBlur}px)` : 'none',
                 transform: wallpaperBlur > 0 ? 'scale(1.06)' : 'none',
               }}

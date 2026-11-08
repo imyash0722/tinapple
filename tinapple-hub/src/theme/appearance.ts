@@ -177,6 +177,7 @@ export function extractWallpaperColors(url: string, signal: AbortSignal): Promis
   return new Promise((resolve, reject) => {
     const image = new Image();
     image.crossOrigin = 'anonymous';
+    image.decoding = 'async';
     let timeout: ReturnType<typeof setTimeout>;
     const cleanup = () => {
       clearTimeout(timeout);
@@ -189,10 +190,20 @@ export function extractWallpaperColors(url: string, signal: AbortSignal): Promis
     signal.addEventListener('abort', abort, { once: true });
     image.onload = async () => {
       try {
-        // First try Google Material 3 official sourceColorFromImage
+        // Fast, memory-safe downsampling:
+        // Downscale to 128x128 offscreen canvas first to prevent CPU lockups and mobile browser crashes
+        const canvas = document.createElement('canvas');
+        canvas.width = 128;
+        canvas.height = 128;
+        const context = canvas.getContext('2d', { willReadFrequently: true });
+        if (!context) throw new Error('Canvas unavailable');
+        context.drawImage(image, 0, 0, 128, 128);
+        const imgData = context.getImageData(0, 0, 128, 128).data;
+
+        // Try Google Material 3 official sourceColorFromImageBytes on downsampled byte array
         try {
-          const { sourceColorFromImage, hexFromArgb, Hct } = await import('@material/material-color-utilities');
-          const sourceArgb = await sourceColorFromImage(image);
+          const { sourceColorFromImageBytes, hexFromArgb, Hct } = await import('@material/material-color-utilities');
+          const sourceArgb = sourceColorFromImageBytes(imgData);
           if (sourceArgb) {
             const prim = hexFromArgb(sourceArgb);
             const hct = Hct.fromInt(sourceArgb);
@@ -204,12 +215,7 @@ export function extractWallpaperColors(url: string, signal: AbortSignal): Promis
           }
         } catch { /* Fallback to canvas pixel sampling */ }
 
-        const canvas = document.createElement('canvas');
-        canvas.width = canvas.height = 64;
-        const context = canvas.getContext('2d', { willReadFrequently: true });
-        if (!context) throw new Error('Canvas unavailable');
-        context.drawImage(image, 0, 0, 64, 64);
-        const colors = dominantColors(context.getImageData(0, 0, 64, 64).data);
+        const colors = dominantColors(imgData);
         cleanup();
         resolve(colors);
       } catch { fail(new Error('This wallpaper does not allow color sampling. Choose a manual palette.')); }
