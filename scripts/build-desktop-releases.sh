@@ -33,31 +33,23 @@ cd "${REPO_DIR}/tinapple-hub"
 npm run build --silent
 echo -e "${GREEN}✓ Production bundle ready in dist/ (${DIST_DIR})${NC}"
 
-# 2. Package Android Companion APK with Capacitor
-echo -e "${CYAN}[2/6] Packaging Android Companion APK with Capacitor...${NC}"
+# 2. Package Pure Native Kotlin Android Companion APK
+echo -e "${CYAN}[2/6] Packaging Pure Native Kotlin Android Companion APK...${NC}"
 export ANDROID_HOME="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/opt/android-sdk}}"
 export ANDROID_SDK_ROOT="${ANDROID_SDK_ROOT:-$ANDROID_HOME}"
 export PATH="${ANDROID_HOME}/cmdline-tools/latest/bin:${ANDROID_HOME}/platform-tools:${PATH}"
 
-cd "${REPO_DIR}/tinapple-hub"
-node node_modules/@capacitor/cli/bin/capacitor sync android
-
 if [[ -d "${ANDROID_HOME}" ]] && command -v java &>/dev/null; then
   echo "Building signed native Android Release APK via Gradle (SDK: ${ANDROID_HOME})..."
-  if [[ -x "${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager" ]]; then
-    yes | "${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null 2>&1 || true
-    "${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager" "platforms;android-35" "build-tools;35.0.0" >/dev/null 2>&1 || true
-  fi
-  mkdir -p "${REPO_DIR}/tinapple-hub/android"
-  echo "sdk.dir=${ANDROID_HOME}" > "${REPO_DIR}/tinapple-hub/android/local.properties"
-  cd "${REPO_DIR}/tinapple-hub/android"
+  echo "sdk.dir=${ANDROID_HOME}" > "${REPO_DIR}/tinapple-android/local.properties"
+  cd "${REPO_DIR}/tinapple-android"
   chmod +x ./gradlew
   ./gradlew assembleRelease --stacktrace --no-daemon
-  RELEASE_APK="${REPO_DIR}/tinapple-hub/android/app/build/outputs/apk/release/app-release.apk"
+  RELEASE_APK="${REPO_DIR}/tinapple-android/app/build/outputs/apk/release/app-release.apk"
   if [[ -f "${RELEASE_APK}" ]]; then
     cp "${RELEASE_APK}" "${OUT_DIR}/tinapple-android-client.apk"
     sha256sum "${OUT_DIR}/tinapple-android-client.apk" | awk '{print $1}' > "${OUT_DIR}/tinapple-android-client.apk.sha256"
-    echo -e "${GREEN}✓ Native Capacitor Android Release APK (v1/v2/v3 signed) built successfully.${NC}"
+    echo -e "${GREEN}✓ Pure Native Kotlin Android Release APK (v1/v2/v3 signed) built successfully.${NC}"
   else
     echo -e "${YELLOW}Error: app-release.apk build failed and was not generated.${NC}"
     exit 1
@@ -187,7 +179,13 @@ if (Get-Command msedge -ErrorAction SilentlyContinue) {
 EOF
 
 cd /tmp
-zip -q -r "${OUT_DIR}/tinapple-desktop-windows-x64.zip" "tinapple-windows-client"
+if command -v zip &>/dev/null; then
+  zip -q -r "${OUT_DIR}/tinapple-desktop-windows-x64.zip" "tinapple-windows-client"
+elif command -v python3 &>/dev/null; then
+  python3 -m zipfile -c "${OUT_DIR}/tinapple-desktop-windows-x64.zip" "tinapple-windows-client"
+elif command -v bsdtar &>/dev/null; then
+  bsdtar -a -cf "${OUT_DIR}/tinapple-desktop-windows-x64.zip" "tinapple-windows-client"
+fi
 cp "${OUT_DIR}/tinapple-desktop-windows-x64.zip" "${OUT_DIR}/tinapple-desktop-windows-x64.exe"
 rm -rf "${WIN_DIR}"
 echo -e "${GREEN}✓ Windows releases packaged: EXE & ZIP${NC}"
@@ -275,7 +273,13 @@ cat << 'EOF' > "${IOS_DIR}/Payload/Tinapple.app/Info.plist"
 EOF
 
 cd "${IOS_DIR}"
-zip -q -r "${OUT_DIR}/tinapple-ios-client.ipa" "Payload"
+if command -v zip &>/dev/null; then
+  zip -q -r "${OUT_DIR}/tinapple-ios-client.ipa" "Payload"
+elif command -v python3 &>/dev/null; then
+  python3 -m zipfile -c "${OUT_DIR}/tinapple-ios-client.ipa" "Payload"
+elif command -v bsdtar &>/dev/null; then
+  bsdtar -a -cf "${OUT_DIR}/tinapple-ios-client.ipa" "Payload"
+fi
 rm -rf "${IOS_DIR}"
 echo -e "${GREEN}✓ iOS release packaged: IPA${NC}"
 

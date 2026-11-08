@@ -592,14 +592,16 @@ GitHub Actions workflow [`.github/workflows/client-releases.yml`](.github/workfl
 
 ---
 
-### 2. Capacitor Android Companion Client (`tinapple-hub/android`)
+### 2. Pure Native Kotlin Android Companion Client (`tinapple-android`)
 
-The dedicated Android companion app (`org.tinapple.hub`) is engineered for low latency, smooth touch navigation, and hardware integration:
+The dedicated Android companion app (`org.tinapple.hub`) is a pure native application engineered with Kotlin 2.0 and Jetpack Compose Material 3:
 
-- **Capacitor 7 Hybrid Engine**: Renders the complete React 18 / Vite 6 dashboard with hardware acceleration, responsive touch handling, and dynamic viewport adaptations.
-- **Compose Draggable Canvas Support**: Optimized 2D infinite draggable canvas with multi-touch pinch-to-zoom (0.5× – 1.8×) and 60fps pan gestures.
-- **Native Android Bridge (`androidBridge.ts`)**: Bridges web events with native Android vibration engines for tactile haptic feedback during widget dragging and toggle switches.
-- **Resilient Fallback**: Automatically connects to Tailscale MagicDNS (`https://pineapple-server.taildb42a2.ts.net`), Wi-Fi Hotspot (`http://192.168.4.1:8088`), or LAN mDNS (`http://pineapple-server:8088`).
+- **100% Native Jetpack Compose Architecture**: Ultra-lean 12.4 MB release binary replacing previous hybrid webviews for zero-latency, buttery-smooth 120Hz scrolling.
+- **Matugen Dynamic Theming**: Extracts 4 Material 3 color combinations (Vibrant, Harmonious, Contrast, Muted) directly from current server wallpapers.
+- **Tile Liquid Glass & Frosted Aesthetics**: Live translucency controls (Solid 100%, Frosted 82%, Liquid 65%, Crystal 48%) with specular glass borders and background blur.
+- **Official Brand Vector Icons**: Bundled SVG iconography for all homelab services (Jellyfin, qBittorrent, Sonarr, Radarr, Ombi, Bazarr, Suwayomi, Tailscale, Syncthing, etc.).
+- **Resilient Discovery & Auto-Failover**: Concurrent auto-probing across LAN (`192.168.1.103:8088`), Tailscale (`100.67.207.60:8088`), and HTTPS domain.
+- **Proton VPN Control**: Instant toggle switch for the homelab Proton VPN exit node gateway.
 
 #### Building & Packaging Android APK:
 ```bash
