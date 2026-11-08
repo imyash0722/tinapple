@@ -80,13 +80,26 @@ func main() {
 	if _, err := os.Stat("tinapple-client.apk"); err == nil {
 		apkPath = "tinapple-client.apk"
 	}
+	apkShaPath := filepath.Join(distDir, "tinapple-client.apk.sha256")
+	if _, err := os.Stat("tinapple-client.apk.sha256"); err == nil {
+		apkShaPath = "tinapple-client.apk.sha256"
+	}
 
 	r.StaticFile("/tinapple-client.apk", apkPath)
+	if _, err := os.Stat(apkShaPath); err == nil {
+		r.StaticFile("/tinapple-client.apk.sha256", apkShaPath)
+	}
 	r.GET("/download/apk", func(c *gin.Context) {
 		c.Redirect(http.StatusFound, "/tinapple-client.apk")
 	})
 	r.GET("/download/android", func(c *gin.Context) {
 		c.Redirect(http.StatusFound, "/tinapple-client.apk")
+	})
+	r.GET("/download/apk/sha256", func(c *gin.Context) {
+		c.Redirect(http.StatusFound, "/tinapple-client.apk.sha256")
+	})
+	r.GET("/download/apk.sha256", func(c *gin.Context) {
+		c.Redirect(http.StatusFound, "/tinapple-client.apk.sha256")
 	})
 
 	// Multi-platform releases endpoints
@@ -122,7 +135,13 @@ func main() {
 	// Handled seamlessly in NoRoute middleware without route collisions
 
 	if _, err := os.Stat(filepath.Join(distDir, "index.html")); err == nil {
-		r.Static("/assets", filepath.Join(distDir, "assets"))
+		assetsGroup := r.Group("/assets")
+		assetsGroup.Use(func(c *gin.Context) {
+			c.Header("Cache-Control", "public, max-age=31536000, immutable")
+			c.Next()
+		})
+		assetsGroup.Static("", filepath.Join(distDir, "assets"))
+
 		r.Static("/icons", filepath.Join(distDir, "icons"))
 		if _, err := os.Stat(filepath.Join(distDir, "images")); err == nil {
 			r.Static("/images", filepath.Join(distDir, "images"))

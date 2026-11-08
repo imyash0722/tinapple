@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ExternalLink, RefreshCw, Sparkles, GitCommit, ArrowUpRight } from 'lucide-react';
 import { AppUpdateService } from '../../services/appUpdate';
+import { api } from '../../services/api';
 
 const DISMISSED_SHA_KEY = 'tinapple_dismissed_update_sha';
 const SESSION_DISMISSED_KEY = 'tinapple_update_toast_session_dismissed';
@@ -34,6 +35,49 @@ export const UpdateNotificationToast: React.FC<UpdateNotificationToastProps> = (
       }
     } catch {}
 
+    // 1. First query server-cached update manifest (ETag cached in <1ms)
+    try {
+      const serverManifest = await api.getSystemUpdates();
+      if (serverManifest && serverManifest.latest_sha) {
+        const sha = serverManifest.latest_sha;
+        const shortSha = serverManifest.short_sha || sha.substring(0, 7);
+        const message = serverManifest.message || 'New updates available for appliance';
+        const date = serverManifest.date || '';
+        const author = serverManifest.author || 'tinapple';
+        const url = serverManifest.url || 'https://github.com/imyash0722/tinapple/commits/main';
+
+        try {
+          const currentBuild = typeof __BUILD_COMMIT__ !== 'undefined' ? __BUILD_COMMIT__ : '';
+          if (currentBuild && (currentBuild === sha || currentBuild.startsWith(shortSha) || sha.startsWith(currentBuild.substring(0, 7)))) {
+            return;
+          }
+        } catch {}
+
+        if (message.startsWith('chore(dist)') || message.includes('[skip-notify]')) {
+          return;
+        }
+
+        try {
+          const dismissed = localStorage.getItem(DISMISSED_SHA_KEY);
+          if (dismissed && (dismissed === sha || dismissed === shortSha || sha.startsWith(dismissed))) {
+            return;
+          }
+        } catch {}
+
+        setLatestCommit({
+          sha: shortSha,
+          fullSha: sha,
+          message,
+          date,
+          author,
+          url,
+        });
+        setIsVisible(true);
+        return;
+      }
+    } catch {}
+
+    // 2. Direct fallback to GitHub API
     try {
       const res = await fetch('https://api.github.com/repos/imyash0722/tinapple/commits/main', {
         headers: { Accept: 'application/vnd.github.v3+json' },

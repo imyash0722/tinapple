@@ -3,6 +3,7 @@ package api
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -19,6 +20,7 @@ import (
 	"time"
 
 	"tinapple-dash/internal/config"
+	"tinapple-dash/internal/media"
 	"tinapple-dash/internal/services"
 	"tinapple-dash/internal/telemetry"
 	"tinapple-dash/internal/terminal"
@@ -27,6 +29,25 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+type SystemUpdateInfo struct {
+	Available  bool      `json:"available"`
+	LatestSHA  string    `json:"latest_sha"`
+	ShortSHA   string    `json:"short_sha"`
+	Message    string    `json:"message"`
+	Author     string    `json:"author"`
+	Date       string    `json:"date"`
+	URL        string    `json:"url"`
+	CheckedAt  time.Time `json:"checked_at"`
+	CachedETag string    `json:"etag,omitempty"`
+}
+
+type UpdatesCache struct {
+	mu        sync.RWMutex
+	info      *SystemUpdateInfo
+	lastCheck time.Time
+	etag      string
+}
+
 type Handler struct {
 	cfg          *config.Manifest
 	svcMgr       *services.SystemdManager
@@ -34,6 +55,8 @@ type Handler struct {
 	playitMgr    *services.PlayitManager
 	tailscaleMgr *services.TailscaleManager
 	rolesMgr     *services.RolesManager
+	mediaOrch    *media.Orchestrator
+	updatesCache *UpdatesCache
 	telemetry    *telemetry.Collector
 	wsUpgrader   websocket.Upgrader
 	wsClients    map[*websocket.Conn]bool
@@ -47,6 +70,8 @@ func NewHandler(cfg *config.Manifest, svcMgr *services.SystemdManager, tel *tele
 		playitMgr:    services.NewPlayitManager(),
 		tailscaleMgr: services.NewTailscaleManager(),
 		rolesMgr:     services.NewRolesManager(),
+		mediaOrch:    media.NewOrchestrator(),
+		updatesCache: &UpdatesCache{},
 		telemetry:    tel,
 		wsClients:    make(map[*websocket.Conn]bool),
 		wsUpgrader: websocket.Upgrader{
@@ -97,11 +122,15 @@ func SetupRoutes(r *gin.Engine, cfg *config.Manifest, svcMgr *services.SystemdMa
 		v1.GET("/user/role", h.UserRole)
 		v1.GET("/auth/role", h.UserRole)
 
-		// System info
+		// Health & Discovery
+		v1.GET("/health", h.Health)
+
+		// System info & updates
 		v1.GET("/system/info", h.SystemInfo)
 		v1.GET("/system/disks", h.SystemDisks)
 		v1.GET("/system/telemetry", h.TelemetrySnapshot)
 		v1.GET("/system/telemetry/stream", h.TelemetryStream)
+		v1.GET("/system/updates", h.SystemUpdates)
 		v1.POST("/system/reboot", h.SystemReboot)
 		v1.POST("/system/timesync", h.SystemTimesync)
 		v1.POST("/system/autostart", h.SystemAutostart)
@@ -111,6 +140,12 @@ func SetupRoutes(r *gin.Engine, cfg *config.Manifest, svcMgr *services.SystemdMa
 		v1.POST("/system/update", h.RunSystemUpdate)
 		v1.GET("/system/matugen", h.GetMatugenPalette)
 		v1.POST("/system/matugen", h.GetMatugenPalette)
+
+		// Media Automation Orchestrator (Sonarr, Radarr, Bazarr workflow)
+		v1.GET("/media/search", h.SearchMedia)
+		v1.POST("/media/request", h.RequestMedia)
+		v1.GET("/media/requests", h.ListMediaRequests)
+		v1.DELETE("/media/requests/:id", h.DeleteMediaRequest)
 
 		// Apps (Comprehensive Application & Config Management)
 		v1.GET("/apps", h.ListApps)
@@ -3133,6 +3168,189 @@ func (h *Handler) SaveUserSettings(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"status": "ok", "message": "user settings saved successfully", "path": targetPath})
 }
+
+// Health returns immediate lightweight appliance health status for auto-discovery
+func (h *Handler) Health(c *gin.Context) {
+	hostname, _ := os.Hostname()
+	c.JSON(http.StatusOK, gin.H{
+		"status":   "ok",
+		"service":  "tinapple-dash",
+		"hostname": hostname,
+		"version":  "1.1.0",
+		"time":     time.Now().Unix(),
+	})
+}
+
+// SystemUpdates serves server-cached update manifests using ETag to prevent GitHub rate-limits
+func (h *Handler) SystemUpdates(c *gin.Context) {
+	h.updatesCache.mu.RLock()
+	cached := h.updatesCache.info
+	lastCheck := h.updatesCache.lastCheck
+	etag := h.updatesCache.etag
+	h.updatesCache.mu.RUnlock()
+
+	// If client provided matching ETag, reply 304 Not Modified
+	if clientEtag := c.GetHeader("If-None-Match"); clientEtag != "" && clientEtag == etag && cached != nil {
+		c.Status(http.StatusNotModified)
+		return
+	}
+
+	// If cache is fresh (< 3 mins), return cached immediately
+	if cached != nil && time.Since(lastCheck) < 3*time.Minute {
+		if etag != "" {
+			c.Header("ETag", etag)
+		}
+		c.JSON(http.StatusOK, cached)
+		return
+	}
+
+	// Trigger non-blocking background fetch if stale or missing
+	go h.refreshSystemUpdates()
+
+	if cached != nil {
+		if etag != "" {
+			c.Header("ETag", etag)
+		}
+		c.JSON(http.StatusOK, cached)
+		return
+	}
+
+	// Fast fallback while initial cache populates
+	c.JSON(http.StatusOK, gin.H{
+		"available": false,
+		"status":    "checking",
+	})
+}
+
+func (h *Handler) refreshSystemUpdates() {
+	h.updatesCache.mu.Lock()
+	if time.Since(h.updatesCache.lastCheck) < 45*time.Second {
+		h.updatesCache.mu.Unlock()
+		return
+	}
+	h.updatesCache.lastCheck = time.Now()
+	priorEtag := h.updatesCache.etag
+	h.updatesCache.mu.Unlock()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, "GET", "https://api.github.com/repos/imyash0722/tinapple/commits/main", nil)
+	if err != nil {
+		return
+	}
+	req.Header.Set("Accept", "application/vnd.github.v3+json")
+	req.Header.Set("User-Agent", "tinapple-dash-updater")
+	if priorEtag != "" {
+		req.Header.Set("If-None-Match", priorEtag)
+	}
+
+	client := &http.Client{Timeout: 8 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusNotModified {
+		h.updatesCache.mu.Lock()
+		h.updatesCache.lastCheck = time.Now()
+		h.updatesCache.mu.Unlock()
+		return
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return
+	}
+
+	newEtag := resp.Header.Get("ETag")
+	var data struct {
+		SHA    string `json:"sha"`
+		Commit struct {
+			Message string `json:"message"`
+			Author  struct {
+				Name string `json:"name"`
+			} `json:"author"`
+			Committer struct {
+				Date string `json:"date"`
+			} `json:"committer"`
+		} `json:"commit"`
+		HTMLURL string `json:"html_url"`
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
+		return
+	}
+
+	shortSha := data.SHA
+	if len(shortSha) > 7 {
+		shortSha = shortSha[:7]
+	}
+	firstLine := strings.Split(data.Commit.Message, "\n")[0]
+
+	info := &SystemUpdateInfo{
+		Available:  true,
+		LatestSHA:  data.SHA,
+		ShortSHA:   shortSha,
+		Message:    firstLine,
+		Author:     data.Commit.Author.Name,
+		Date:       data.Commit.Committer.Date,
+		URL:        data.HTMLURL,
+		CheckedAt:  time.Now(),
+		CachedETag: newEtag,
+	}
+
+	h.updatesCache.mu.Lock()
+	h.updatesCache.info = info
+	h.updatesCache.etag = newEtag
+	h.updatesCache.lastCheck = time.Now()
+	h.updatesCache.mu.Unlock()
+}
+
+// SearchMedia queries Sonarr and Radarr lookup engines
+func (h *Handler) SearchMedia(c *gin.Context) {
+	term := c.Query("term")
+	mType := c.Query("type")
+	results, err := h.mediaOrch.Search(c.Request.Context(), term, mType)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"results": results})
+}
+
+// RequestMedia submits a media request to Radarr or Sonarr
+func (h *Handler) RequestMedia(c *gin.Context) {
+	var body media.MediaRequest
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body: " + err.Error()})
+		return
+	}
+	_, user := h.getClientRole(c)
+	req, err := h.mediaOrch.RequestMedia(c.Request.Context(), user, body)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"request": req})
+}
+
+// ListMediaRequests returns all queued and active media requests
+func (h *Handler) ListMediaRequests(c *gin.Context) {
+	requests := h.mediaOrch.ListRequests()
+	c.JSON(http.StatusOK, gin.H{"requests": requests})
+}
+
+// DeleteMediaRequest cancels or removes a media request
+func (h *Handler) DeleteMediaRequest(c *gin.Context) {
+	id := c.Param("id")
+	if h.mediaOrch.DeleteRequest(id) {
+		c.JSON(http.StatusOK, gin.H{"status": "deleted"})
+	} else {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Request not found"})
+	}
+}
+
 
 
 
