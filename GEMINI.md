@@ -80,6 +80,11 @@
 
 ## 5. Changelog & Active State Ledger
 
+### Commit `0e89ee8` | feat(ai): configure automated sync-gemini skill and hooks for AGY CLI and Codex CLI (2026-11-08)
+- **Commit**: `0e89ee8`
+- **Subject**: feat(ai): configure automated sync-gemini skill and hooks for AGY CLI and Codex CLI
+- **Key Files**: `.agents/hooks.json`, `.agents/skills/sync-gemini/SKILL.md`, `CODEX.md`, `scripts/agy-pre-command-hook.py`, `scripts/sync-gemini-ledger.py`
+
 ### Commit `46f7011` | docs: add AI context synchronization ledger (GEMINI.md) and server reference (CODEX.md) (2026-11-08)
 - **Commit**: `46f7011`
 - **Subject**: docs: add AI context synchronization ledger (GEMINI.md) and server reference (CODEX.md)
