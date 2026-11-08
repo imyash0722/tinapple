@@ -80,6 +80,11 @@
 
 ## 5. Changelog & Active State Ledger
 
+### Commit `46f7011` | docs: add AI context synchronization ledger (GEMINI.md) and server reference (CODEX.md) (2026-11-08)
+- **Commit**: `46f7011`
+- **Subject**: docs: add AI context synchronization ledger (GEMINI.md) and server reference (CODEX.md)
+- **Key Files**: `CODEX.md`
+
 ### Commit `0a897d2` | Release `v0.0.8` (2026-11-08)
 - **Releases Page Updated**: Published GitHub Release `v0.0.8` containing pure native Kotlin APK ([`tinapple-android-client.apk`](file:///home/tinapple/tinapple/out/releases/tinapple-android-client.apk)) and multiplatform desktop packages.
 - **Build Scripts**: Updated [`build-desktop-releases.sh`](file:///home/tinapple/tinapple/scripts/build-desktop-releases.sh) to build from `tinapple-android` and utilize python3/bsdtar zip fallbacks.

@@ -115,7 +115,9 @@ This document provides complete, authoritative context for the **OpenAI Codex CL
 2. **Git & Push Safety**:
    - Always run `git fetch origin && git rebase origin/main` before pushing to avoid overwriting remote work.
    - Never use `--force` or `--force-with-lease` on `main`.
-3. **AI Synchronization**:
-   - Whenever changes are made to `tinapple`, document them in [`tinapple/GEMINI.md`](file:///home/tinapple/tinapple/GEMINI.md) prior to pushing.
+3. **AI Synchronization & Automated Skill**:
+   - Whenever changes are made to `tinapple`, the `sync-gemini` skill (`~/.codex/skills/sync-gemini/SKILL.md`) automatically synchronizes [`tinapple/GEMINI.md`](file:///home/tinapple/tinapple/GEMINI.md) and [`tinapple/gemini.md`](file:///home/tinapple/tinapple/gemini.md).
+   - Alternatively, execute `python3 /home/tinapple/tinapple/scripts/sync-gemini-ledger.py`.
+   - The repository also enforces this via an automated Git `pre-push` hook (`.git/hooks/pre-push`).
 4. **Formatting**:
    - Do not use emojis in automated commit messages or logs.
