@@ -22,13 +22,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.OpenInNew
 import androidx.compose.material.icons.rounded.CloudDownload
 import androidx.compose.material.icons.rounded.Dns
 import androidx.compose.material.icons.rounded.Memory
 import androidx.compose.material.icons.rounded.Movie
-import androidx.compose.material.icons.rounded.OpenInNew
 import androidx.compose.material.icons.rounded.Router
-import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -56,6 +55,7 @@ import org.tinapple.hub.ui.theme.TextMuted
 import org.tinapple.hub.ui.theme.TextPrimary
 import org.tinapple.hub.ui.theme.TextSecondary
 import org.tinapple.hub.ui.theme.TinappleBorder
+import org.tinapple.hub.ui.theme.TinappleBorderSubtle
 import org.tinapple.hub.ui.theme.TinappleSurfaceHigh
 import org.tinapple.hub.ui.theme.TinappleSurfaceHighest
 import org.tinapple.hub.ui.theme.TinappleSurfaceLow
@@ -104,18 +104,18 @@ fun ServiceCard(
             .background(TinappleSurfaceLow)
             .border(
                 width = 1.dp,
-                color = if (isRunning) MaterialTheme.colorScheme.primary.copy(alpha = 0.25f) else TinappleBorder,
+                color = if (isRunning) MaterialTheme.colorScheme.primary.copy(alpha = 0.35f) else TinappleBorder,
                 shape = RoundedCornerShape(16.dp)
             )
             .padding(16.dp)
     ) {
         Column {
-            // Header Row: Icon + Title & Status + Switch
+            // Header Row: Icon + Title (Clickable Link) & Status + Switch
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Category Icon squircle
+                // Category Icon squircle (clickable if portalUrl exists)
                 Box(
                     modifier = Modifier
                         .size(46.dp)
@@ -125,6 +125,11 @@ fun ServiceCard(
                             1.dp,
                             getCategoryAccentColor(service.category).copy(alpha = 0.35f),
                             RoundedCornerShape(12.dp)
+                        )
+                        .then(
+                            if (portalUrl != null) {
+                                Modifier.clickable { onOpenPortal(portalUrl) }
+                            } else Modifier
                         ),
                     contentAlignment = Alignment.Center
                 ) {
@@ -148,17 +153,44 @@ fun ServiceCard(
 
                 Spacer(modifier = Modifier.width(14.dp))
 
-                // Title + Subtitle
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = service.effectiveDisplayName,
-                        color = TextPrimary,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
+                // Title Area: CLICKABLE SERVICE NAME
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .then(
+                            if (portalUrl != null) {
+                                Modifier
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .clickable { onOpenPortal(portalUrl) }
+                                    .padding(vertical = 2.dp)
+                            } else Modifier
+                        )
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = service.effectiveDisplayName,
+                            color = if (portalUrl != null) MaterialTheme.colorScheme.primary else TextPrimary,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        if (portalUrl != null) {
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Rounded.OpenInNew,
+                                contentDescription = "Open Web UI",
+                                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.85f),
+                                modifier = Modifier.size(15.dp)
+                            )
+                        }
+                    }
+
                     Spacer(modifier = Modifier.height(3.dp))
+
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         // Pulsing status dot
                         Box(contentAlignment = Alignment.Center) {
@@ -231,62 +263,50 @@ fun ServiceCard(
                 )
             }
 
-            // Footer Row: Portal Link Button & Memory / Category tag
-            if (portalUrl != null || service.port != null || service.memoryBytes != null) {
+            // Footer Row: Port & Memory / Category tag
+            if (service.port != null || service.memoryBytes != null) {
                 Spacer(modifier = Modifier.height(12.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    if (portalUrl != null) {
-                        Row(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f))
-                                .border(
-                                    width = 1.dp,
-                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.35f),
-                                    shape = RoundedCornerShape(8.dp)
-                                )
-                                .clickable { onOpenPortal(portalUrl) }
-                                .padding(horizontal = 10.dp, vertical = 6.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.OpenInNew,
-                                contentDescription = "Open Web UI",
-                                modifier = Modifier.size(13.dp),
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = "Port :${service.port}",
-                                color = MaterialTheme.colorScheme.primary,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                fontFamily = FontFamily.Monospace
-                            )
-                        }
-                    } else if (service.port != null && service.port > 0) {
+                    if (service.port != null && service.port > 0) {
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(8.dp))
-                                .background(TinappleSurfaceHigh)
-                                .padding(horizontal = 8.dp, vertical = 5.dp)
+                                .background(
+                                    if (portalUrl != null) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                                    else TinappleSurfaceHigh
+                                )
+                                .border(
+                                    width = 1.dp,
+                                    color = if (portalUrl != null) MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)
+                                    else TinappleBorderSubtle,
+                                    shape = RoundedCornerShape(8.dp)
+                                )
+                                .then(
+                                    if (portalUrl != null) {
+                                        Modifier.clickable { onOpenPortal(portalUrl) }
+                                    } else Modifier
+                                )
+                                .padding(horizontal = 10.dp, vertical = 5.dp)
                         ) {
-                            Text(
-                                text = "Port :${service.port}",
-                                color = TextMuted,
-                                fontSize = 11.sp,
-                                fontFamily = FontFamily.Monospace
-                            )
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = "Port :${service.port}",
+                                    color = if (portalUrl != null) MaterialTheme.colorScheme.primary else TextMuted,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontFamily = FontFamily.Monospace
+                                )
+                            }
                         }
                     } else {
                         Spacer(modifier = Modifier.width(1.dp))
                     }
 
-                    // Memory or category chip
+                    // Memory and category chip
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         if (service.memoryBytes != null && service.memoryBytes > 0) {
                             val mb = service.memoryBytes / (1024 * 1024)
@@ -302,6 +322,7 @@ fun ServiceCard(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(6.dp))
                                 .background(TinappleSurfaceHigh)
+                                .border(1.dp, TinappleBorderSubtle, RoundedCornerShape(6.dp))
                                 .padding(horizontal = 7.dp, vertical = 4.dp)
                         ) {
                             Text(

@@ -60,7 +60,10 @@ data class WallpaperItem(
     @SerializedName("name") val name: String = "",
     @SerializedName("file") val file: String = "",
     @SerializedName("url") val url: String = "",
-    @SerializedName("category") val category: String = "General"
+    @SerializedName("category") val category: String = "General",
+    @SerializedName("isVideo") val isVideo: Boolean = false,
+    val defaultPrimaryHex: Long? = null,
+    val defaultSecondaryHex: Long? = null
 )
 
 data class ThemePalette(
@@ -83,14 +86,18 @@ val DEFAULT_PALETTES = listOf(
 )
 
 val BUNDLED_WALLPAPERS = listOf(
-    WallpaperItem("1", "Pineapple Sunset", "tinapple-orange-wallpaper.png", "/wallpapers/tinapple-orange-wallpaper.png", "Pineapple"),
-    WallpaperItem("2", "Golden Pineapple", "Aesthetic-Pineapple-Wallpaper-HD.jpg", "/wallpapers/Aesthetic-Pineapple-Wallpaper-HD.jpg", "Pineapple"),
-    WallpaperItem("3", "Blue Night Fishbowl", "blue-night-fishbowl-room.jpg", "/wallpapers/blue-night-fishbowl-room.jpg", "Atmospheric"),
-    WallpaperItem("4", "Ocean Torii Gate", "ocean-torii-gate.png", "/wallpapers/ocean-torii-gate.png", "Atmospheric"),
-    WallpaperItem("5", "Pixel Retro Forest", "pixel-art-retro-forest.png", "/wallpapers/pixel-art-retro-forest.png", "Pixel Art"),
-    WallpaperItem("6", "Floating Pagoda", "floating-pagoda-city.jpg", "/wallpapers/floating-pagoda-city.jpg", "Atmospheric"),
-    WallpaperItem("7", "Rainy Mountain Town", "rainy-mountain-town-crossing.jpg", "/wallpapers/rainy-mountain-town-crossing.jpg", "Atmospheric"),
-    WallpaperItem("8", "Obsidian Minimal", "tinapple-cinematic-monochrome.png", "/wallpapers/tinapple-cinematic-monochrome.png", "Aesthetic")
+    WallpaperItem("wp-1", "Pineapple Sunset", "tinapple-orange-wallpaper.png", "/wallpapers/tinapple-orange-wallpaper.png", "Pineapple", false, 0xFFF59E0B, 0xFF7EC789),
+    WallpaperItem("wp-2", "Golden Pineapple", "Aesthetic-Pineapple-Wallpaper-HD.jpg", "/wallpapers/Aesthetic-Pineapple-Wallpaper-HD.jpg", "Pineapple", false, 0xFFE5B567, 0xFF10B981),
+    WallpaperItem("wp-3", "Blue Night Fishbowl", "blue-night-fishbowl-room.jpg", "/wallpapers/blue-night-fishbowl-room.jpg", "Atmospheric", false, 0xFF38BDF8, 0xFF6366F1),
+    WallpaperItem("wp-4", "Ocean Torii Gate", "ocean-torii-gate.png", "/wallpapers/ocean-torii-gate.png", "Atmospheric", false, 0xFF0EA5E9, 0xFF3B82F6),
+    WallpaperItem("wp-5", "Pixel Retro Forest", "pixel-art-retro-forest.png", "/wallpapers/pixel-art-retro-forest.png", "Pixel Art", false, 0xFFF43F5E, 0xFFA855F7),
+    WallpaperItem("wp-6", "Floating Pagoda", "floating-pagoda-city.jpg", "/wallpapers/floating-pagoda-city.jpg", "Atmospheric", false, 0xFF6366F1, 0xFF06B6D4),
+    WallpaperItem("wp-7", "Rainy Mountain Town", "rainy-mountain-town-crossing.jpg", "/wallpapers/rainy-mountain-town-crossing.jpg", "Atmospheric", false, 0xFF38BDF8, 0xFF14B8A6),
+    WallpaperItem("wp-8", "Obsidian Minimal", "tinapple-cinematic-monochrome.png", "/wallpapers/tinapple-cinematic-monochrome.png", "Aesthetic", false, 0xFFE4E4E7, 0xFF71717A),
+    WallpaperItem("wp-9", "Sakura Torii Shrine", "wallhaven-9mjoy1.png", "/wallpapers/wallhaven-9mjoy1.png", "Atmospheric", false, 0xFFF472B6, 0xFF10B981),
+    WallpaperItem("wp-10", "Nachi Falls Pagoda", "wallhaven-w5x99p.jpg", "/wallpapers/wallhaven-w5x99p.jpg", "Atmospheric", false, 0xFFF97316, 0xFF84CC16),
+    WallpaperItem("wp-11", "Sakura Railway Train", "wallhaven-yqg6r7.jpg", "/wallpapers/wallhaven-yqg6r7.jpg", "Atmospheric", false, 0xFFEC4899, 0xFF84CC16),
+    WallpaperItem("wp-12", "Tropical Palm", "1205654.jpg", "/wallpapers/1205654.jpg", "Atmospheric", false, 0xFF7EC789, 0xFF06B6D4)
 )
 
 private fun String.capitalizeFirst(): String =

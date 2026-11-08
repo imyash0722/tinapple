@@ -36,10 +36,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import org.tinapple.hub.data.DEFAULT_PALETTES
 import org.tinapple.hub.data.ThemePalette
 import org.tinapple.hub.data.WallpaperItem
@@ -47,6 +49,7 @@ import org.tinapple.hub.ui.theme.TextMuted
 import org.tinapple.hub.ui.theme.TextPrimary
 import org.tinapple.hub.ui.theme.TextSecondary
 import org.tinapple.hub.ui.theme.TinappleBorder
+import org.tinapple.hub.ui.theme.TinappleBorderSubtle
 import org.tinapple.hub.ui.theme.TinappleSurfaceHigh
 import org.tinapple.hub.ui.theme.TinappleSurfaceLow
 
@@ -61,6 +64,7 @@ fun AppearanceCard(
     modifier: Modifier = Modifier
 ) {
     var isExpanded by remember { mutableStateOf(false) }
+    val context = LocalContext.current
 
     Box(
         modifier = modifier
@@ -81,17 +85,21 @@ fun AppearanceCard(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
                         modifier = Modifier
-                            .size(36.dp)
+                            .size(38.dp)
                             .clip(RoundedCornerShape(10.dp))
-                            .background(Color(currentPalette.primaryHex).copy(alpha = 0.2f))
-                            .border(1.dp, Color(currentPalette.primaryHex).copy(alpha = 0.4f), RoundedCornerShape(10.dp)),
+                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f))
+                            .border(
+                                1.dp,
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.35f),
+                                RoundedCornerShape(10.dp)
+                            ),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Rounded.Palette,
                             contentDescription = "Appearance",
-                            tint = Color(currentPalette.primaryHex),
-                            modifier = Modifier.size(18.dp)
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
                         )
                     }
 
@@ -99,31 +107,44 @@ fun AppearanceCard(
 
                     Column {
                         Text(
-                            text = "Appearance & Theme",
-                            color = TextPrimary,
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Bold
+                            text = "APPEARANCE & THEME",
+                            color = MaterialTheme.colorScheme.primary,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 1.sp
                         )
-                        Text(
-                            text = "${currentPalette.name} • ${selectedWallpaper?.name ?: "Wallpaper Gallery"}",
-                            color = TextSecondary,
-                            fontSize = 11.sp
-                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(10.dp)
+                                    .clip(CircleShape)
+                                    .background(Color(currentPalette.primaryHex))
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = currentPalette.name,
+                                color = TextPrimary,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
                     }
                 }
 
                 Icon(
                     imageVector = if (isExpanded) Icons.Rounded.KeyboardArrowUp else Icons.Rounded.KeyboardArrowDown,
-                    contentDescription = "Expand",
-                    tint = TextMuted,
-                    modifier = Modifier.size(20.dp)
+                    contentDescription = if (isExpanded) "Collapse" else "Expand",
+                    tint = TextSecondary,
+                    modifier = Modifier.size(22.dp)
                 )
             }
 
             AnimatedVisibility(visible = isExpanded) {
                 Column(modifier = Modifier.padding(top = 16.dp)) {
+                    // Accent Color Palettes
                     Text(
-                        text = "ACCENT COLOR",
+                        text = "COLOR PALETTES",
                         color = TextMuted,
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
@@ -132,7 +153,6 @@ fun AppearanceCard(
 
                     Spacer(modifier = Modifier.height(10.dp))
 
-                    // Horizontal palettes
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -141,48 +161,84 @@ fun AppearanceCard(
                     ) {
                         DEFAULT_PALETTES.forEach { palette ->
                             val isSelected = palette.name == currentPalette.name
-                            val pColor = Color(palette.primaryHex)
+                            val primary = Color(palette.primaryHex)
+                            val secondary = Color(palette.secondaryHex)
 
-                            Box(
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
                                 modifier = Modifier
-                                    .size(38.dp)
-                                    .clip(CircleShape)
-                                    .background(pColor)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(
+                                        if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                                        else TinappleSurfaceHigh
+                                    )
+                                    .border(
+                                        width = if (isSelected) 2.dp else 1.dp,
+                                        color = if (isSelected) primary else TinappleBorderSubtle,
+                                        shape = RoundedCornerShape(12.dp)
+                                    )
                                     .clickable { onSelectPalette(palette) }
-                                    .then(
-                                        if (isSelected) {
-                                            Modifier.border(2.5.dp, Color.White, CircleShape)
-                                        } else {
-                                            Modifier.border(1.dp, TinappleBorder, CircleShape)
-                                        }
-                                    ),
-                                contentAlignment = Alignment.Center
+                                    .padding(horizontal = 10.dp, vertical = 8.dp)
                             ) {
-                                if (isSelected) {
-                                    Icon(
-                                        imageVector = Icons.Rounded.Check,
-                                        contentDescription = "Selected",
-                                        tint = if (palette.primaryHex == 0xFFE4E4E7L) Color.Black else Color.White,
-                                        modifier = Modifier.size(18.dp)
+                                Row(
+                                    modifier = Modifier.size(34.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.Center
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(20.dp)
+                                            .clip(CircleShape)
+                                            .background(primary)
+                                            .border(1.dp, Color.White.copy(alpha = 0.3f), CircleShape)
+                                    )
+                                    Spacer(modifier = Modifier.width(-6.dp))
+                                    Box(
+                                        modifier = Modifier
+                                            .size(16.dp)
+                                            .clip(CircleShape)
+                                            .background(secondary)
+                                            .border(1.dp, Color.White.copy(alpha = 0.3f), CircleShape)
                                     )
                                 }
+
+                                Spacer(modifier = Modifier.height(6.dp))
+
+                                Text(
+                                    text = palette.name.split(" ").firstOrNull() ?: palette.name,
+                                    color = if (isSelected) primary else TextSecondary,
+                                    fontSize = 11.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                                )
                             }
                         }
                     }
 
                     Spacer(modifier = Modifier.height(18.dp))
 
-                    Text(
-                        text = "WALLPAPERS",
-                        color = TextMuted,
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.sp
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "WALLPAPERS",
+                            color = TextMuted,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 1.sp
+                        )
+                        Text(
+                            text = "Auto-syncs color scheme",
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
 
                     Spacer(modifier = Modifier.height(10.dp))
 
-                    // Horizontal wallpapers
+                    // Horizontal wallpapers carousel
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -190,12 +246,21 @@ fun AppearanceCard(
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         wallpapers.forEach { wp ->
-                            val isSelected = selectedWallpaper?.file == wp.file || selectedWallpaper?.name == wp.name
-                            val fullUrl = if (wp.url.startsWith("http")) wp.url else "${serverOrigin.trimEnd('/')}${wp.url}"
+                            val isSelected = selectedWallpaper?.file.equals(wp.file, ignoreCase = true) ||
+                                    selectedWallpaper?.id == wp.id ||
+                                    selectedWallpaper?.name.equals(wp.name, ignoreCase = true)
+
+                            val cleanOrigin = serverOrigin.trimEnd('/')
+                            val fullUrl = when {
+                                wp.url.startsWith("http") -> wp.url
+                                wp.url.isNotBlank() -> "$cleanOrigin${if (wp.url.startsWith("/")) "" else "/"}${wp.url}"
+                                wp.file.isNotBlank() -> "$cleanOrigin/wallpapers/${wp.file}"
+                                else -> "$cleanOrigin/wallpapers/blue-night-fishbowl-room.jpg"
+                            }
 
                             Column(
                                 modifier = Modifier
-                                    .width(110.dp)
+                                    .width(116.dp)
                                     .clip(RoundedCornerShape(12.dp))
                                     .background(TinappleSurfaceHigh)
                                     .clickable { onSelectWallpaper(wp) }
@@ -203,17 +268,40 @@ fun AppearanceCard(
                                         if (isSelected) {
                                             Modifier.border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(12.dp))
                                         } else {
-                                            Modifier.border(1.dp, TinappleBorder, RoundedCornerShape(12.dp))
+                                            Modifier.border(1.dp, TinappleBorderSubtle, RoundedCornerShape(12.dp))
                                         }
                                     )
                             ) {
-                                Box(modifier = Modifier.height(64.dp).fillMaxWidth()) {
+                                Box(
+                                    modifier = Modifier
+                                        .height(68.dp)
+                                        .fillMaxWidth()
+                                ) {
                                     AsyncImage(
-                                        model = fullUrl,
+                                        model = ImageRequest.Builder(context)
+                                            .data(fullUrl)
+                                            .crossfade(true)
+                                            .build(),
                                         contentDescription = wp.name,
                                         contentScale = ContentScale.Crop,
-                                        modifier = Modifier.fillMaxWidth().height(64.dp)
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(68.dp)
                                     )
+
+                                    // Palette indicator badge on wallpaper
+                                    if (wp.defaultPrimaryHex != null) {
+                                        Box(
+                                            modifier = Modifier
+                                                .padding(4.dp)
+                                                .size(10.dp)
+                                                .clip(CircleShape)
+                                                .background(Color(wp.defaultPrimaryHex))
+                                                .border(1.dp, Color.White.copy(alpha = 0.5f), CircleShape)
+                                                .align(Alignment.BottomStart)
+                                        )
+                                    }
+
                                     if (isSelected) {
                                         Box(
                                             modifier = Modifier
@@ -236,8 +324,8 @@ fun AppearanceCard(
                                 Text(
                                     text = wp.name,
                                     color = if (isSelected) MaterialTheme.colorScheme.primary else TextPrimary,
-                                    fontSize = 10.sp,
-                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 11.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                                     maxLines = 1,
                                     modifier = Modifier.padding(horizontal = 6.dp, vertical = 6.dp)
                                 )

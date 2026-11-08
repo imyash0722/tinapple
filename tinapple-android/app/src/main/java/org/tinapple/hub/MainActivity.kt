@@ -46,10 +46,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import org.tinapple.hub.ui.components.AppHeader
 import org.tinapple.hub.ui.components.AppearanceCard
 import org.tinapple.hub.ui.components.ProtonVpnCard
@@ -108,6 +110,7 @@ private fun MainScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val scrollState = rememberScrollState()
+    val context = LocalContext.current
 
     val wallpaperUrl = uiState.selectedWallpaper.let { item ->
         val origin = uiState.activeServerOrigin.trimEnd('/')
@@ -123,23 +126,26 @@ private fun MainScreen(
         // Dynamic Backdrop Wallpaper
         if (!wallpaperUrl.isNullOrBlank()) {
             AsyncImage(
-                model = wallpaperUrl,
+                model = ImageRequest.Builder(context)
+                    .data(wallpaperUrl)
+                    .crossfade(300)
+                    .build(),
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize(),
-                alpha = 0.22f
+                alpha = 0.52f
             )
 
-            // Scrim overlay for high contrast readability
+            // Balanced gradient overlay for high contrast readability while keeping wallpaper visible
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .background(
                         Brush.verticalGradient(
                             colors = listOf(
-                                TinappleDarkBackground.copy(alpha = 0.65f),
-                                TinappleDarkBackground.copy(alpha = 0.88f),
-                                TinappleDarkBackground
+                                TinappleDarkBackground.copy(alpha = 0.35f),
+                                TinappleDarkBackground.copy(alpha = 0.55f),
+                                TinappleDarkBackground.copy(alpha = 0.80f)
                             )
                         )
                     )

@@ -118,10 +118,7 @@ class TinappleViewModel(application: Application) : AndroidViewModel(application
 
     init {
         viewModelScope.launch {
-            // Initial server discovery
             discoverServerAndRefresh()
-
-            // Background polling loop
             startBackgroundPolling()
         }
     }
@@ -132,8 +129,9 @@ class TinappleViewModel(application: Application) : AndroidViewModel(application
     }
 
     private fun loadSavedWallpaper(): WallpaperItem {
+        val file = prefs.getString("selected_wallpaper_file", null)
         val id = prefs.getString("selected_wallpaper_id", null)
-        return BUNDLED_WALLPAPERS.firstOrNull { it.id == id } ?: BUNDLED_WALLPAPERS.first()
+        return BUNDLED_WALLPAPERS.firstOrNull { it.file == file || it.id == id } ?: BUNDLED_WALLPAPERS.first()
     }
 
     fun selectPalette(palette: ThemePalette) {
@@ -143,7 +141,48 @@ class TinappleViewModel(application: Application) : AndroidViewModel(application
 
     fun selectWallpaper(wallpaper: WallpaperItem) {
         prefs.edit().putString("selected_wallpaper_id", wallpaper.id).apply()
-        _uiState.update { it.copy(selectedWallpaper = wallpaper) }
+        prefs.edit().putString("selected_wallpaper_file", wallpaper.file).apply()
+
+        // Synchronize color scheme with selected wallpaper
+        val matchingPalette = getPaletteForWallpaper(wallpaper)
+        prefs.edit().putString("selected_palette_name", matchingPalette.name).apply()
+
+        _uiState.update {
+            it.copy(
+                selectedWallpaper = wallpaper,
+                selectedPalette = matchingPalette
+            )
+        }
+    }
+
+    private fun getPaletteForWallpaper(wallpaper: WallpaperItem): ThemePalette {
+        if (wallpaper.defaultPrimaryHex != null && wallpaper.defaultSecondaryHex != null) {
+            return ThemePalette(wallpaper.name, wallpaper.defaultPrimaryHex, wallpaper.defaultSecondaryHex)
+        }
+
+        val filename = wallpaper.file.lowercase()
+        return when {
+            filename.contains("orange") || filename.contains("amber") || filename.contains("sunset") ->
+                ThemePalette("Sunset Amber", 0xFFF97316, 0xFFEAB308)
+            filename.contains("pine") || filename.contains("gold") ->
+                ThemePalette("Pineapple Gold", 0xFFE5B567, 0xFF7EC789)
+            filename.contains("blue") || filename.contains("fishbowl") || filename.contains("night") ->
+                ThemePalette("Deep Midnight Blue", 0xFF38BDF8, 0xFF3B82F6)
+            filename.contains("ocean") || filename.contains("water") || filename.contains("cyan") ->
+                ThemePalette("Cyber Cyan", 0xFF06B6D4, 0xFF3B82F6)
+            filename.contains("forest") || filename.contains("tree") || filename.contains("green") || filename.contains("palm") ->
+                ThemePalette("Emerald Palm", 0xFF10B981, 0xFF34D399)
+            filename.contains("purple") || filename.contains("pagoda") || filename.contains("amethyst") ->
+                ThemePalette("Amethyst Purple", 0xFFA855F7, 0xFFEC4899)
+            filename.contains("sakura") || filename.contains("pink") || filename.contains("rose") ->
+                ThemePalette("Rose Quartz", 0xFFF43F5E, 0xFFFB7185)
+            filename.contains("monochrome") || filename.contains("black") || filename.contains("frost") || filename.contains("katana") ->
+                ThemePalette("Monochrome Frost", 0xFFE4E4E7, 0xFFA1A1AA)
+            else -> {
+                val hash = filename.hashCode().let { if (it < 0) -it else it }
+                DEFAULT_PALETTES[hash % DEFAULT_PALETTES.size]
+            }
+        }
     }
 
     fun clearErrorMessage() {
@@ -198,12 +237,27 @@ class TinappleViewModel(application: Application) : AndroidViewModel(application
             }
         }
 
-        // Fetch Wallpapers
+        // Fetch Wallpapers (Filter out video files so all gallery items are images)
         val wallRes = apiClient.getWallpapers()
         if (wallRes.isSuccess) {
             val remoteWalls = wallRes.getOrNull()
             if (!remoteWalls.isNullOrEmpty()) {
-                _uiState.update { it.copy(wallpapers = remoteWalls) }
+                val imageWalls = remoteWalls.filter { wp ->
+                    !wp.isVideo &&
+                            !wp.file.endsWith(".mp4", ignoreCase = true) &&
+                            !wp.file.endsWith(".webm", ignoreCase = true)
+                }
+
+                // Merge bundled wallpapers with server wallpapers, preserving order and removing duplicates
+                val combined = mutableListOf<WallpaperItem>()
+                combined.addAll(BUNDLED_WALLPAPERS)
+                for (rw in imageWalls) {
+                    if (combined.none { it.file.equals(rw.file, ignoreCase = true) }) {
+                        combined.add(rw)
+                    }
+                }
+
+                _uiState.update { it.copy(wallpapers = combined) }
             }
         }
     }
@@ -235,7 +289,6 @@ class TinappleViewModel(application: Application) : AndroidViewModel(application
         val targetName = service.name
         val action = if (start) "start" else "stop"
 
-        // Optimistic UI update
         _uiState.update { current ->
             val updated = current.services.map { item ->
                 if (item.name == targetName) {
@@ -254,7 +307,6 @@ class TinappleViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch(Dispatchers.IO) {
             val res = apiClient.controlService(targetName, action)
             if (res.isFailure) {
-                // Revert optimistic change
                 _uiState.update { current ->
                     val reverted = current.services.map { item ->
                         if (item.name == targetName) {
@@ -270,7 +322,6 @@ class TinappleViewModel(application: Application) : AndroidViewModel(application
                     )
                 }
             } else {
-                // Delay briefly and refresh actual state
                 delay(1200)
                 val servicesRes = apiClient.getServices()
                 if (servicesRes.isSuccess) {
@@ -289,7 +340,6 @@ class TinappleViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun toggleProton(active: Boolean) {
-        // Optimistic update
         val previousState = _uiState.value.protonStatus
 
         _uiState.update { current ->
@@ -309,7 +359,6 @@ class TinappleViewModel(application: Application) : AndroidViewModel(application
                     _uiState.update { it.copy(protonStatus = updated) }
                 }
             } else {
-                // Revert
                 _uiState.update { current ->
                     current.copy(
                         protonStatus = previousState,
