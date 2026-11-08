@@ -26,6 +26,7 @@ import org.tinapple.hub.data.WallpaperItem
 import org.tinapple.hub.network.DiscoveryEngine
 import org.tinapple.hub.network.TinappleApiClient
 import org.tinapple.hub.ui.theme.MatugenEngine
+import org.tinapple.hub.ui.theme.MatugenPaletteCombo
 
 private val DEFAULT_FALLBACK_SERVICES = listOf(
     ServiceItem(
@@ -98,6 +99,7 @@ data class MainUiState(
     val wallpapers: List<WallpaperItem> = BUNDLED_WALLPAPERS,
     val selectedPalette: ThemePalette = DEFAULT_PALETTES.first(),
     val selectedWallpaper: WallpaperItem = BUNDLED_WALLPAPERS.first(),
+    val matugenCombos: List<MatugenPaletteCombo> = emptyList(),
     val appearanceSettings: AppearanceSettings = AppearanceSettings(),
     val activeServerOrigin: String = "http://192.168.1.103:8088",
     val isDiscovering: Boolean = false,
@@ -111,19 +113,28 @@ class TinappleViewModel(application: Application) : AndroidViewModel(application
 
     private val prefs = application.getSharedPreferences("tinapple_app_prefs", Context.MODE_PRIVATE)
 
-    private val _uiState = MutableStateFlow(
-        MainUiState(
-            selectedPalette = loadSavedPalette(),
-            selectedWallpaper = loadSavedWallpaper(),
-            appearanceSettings = loadSavedAppearanceSettings(),
-            activeServerOrigin = DiscoveryEngine.getCachedServerOrigin(application)
-        )
-    )
-    val uiState: StateFlow<MainUiState> = _uiState.asStateFlow()
+    private val _uiState: MutableStateFlow<MainUiState>
+
+    val uiState: StateFlow<MainUiState>
 
     val apiClient = TinappleApiClient { _uiState.value.activeServerOrigin }
 
     init {
+        val initialWallpaper = loadSavedWallpaper()
+        val initialPalette = loadSavedPalette()
+        val initialCombos = MatugenEngine.generatePaletteCombos(initialWallpaper)
+
+        _uiState = MutableStateFlow(
+            MainUiState(
+                selectedPalette = initialPalette,
+                selectedWallpaper = initialWallpaper,
+                matugenCombos = initialCombos,
+                appearanceSettings = loadSavedAppearanceSettings(),
+                activeServerOrigin = DiscoveryEngine.getCachedServerOrigin(application)
+            )
+        )
+        uiState = _uiState.asStateFlow()
+
         viewModelScope.launch {
             discoverServerAndRefresh()
             startBackgroundPolling()
@@ -169,8 +180,8 @@ class TinappleViewModel(application: Application) : AndroidViewModel(application
         prefs.edit().putBoolean("appearance_use_matugen", enabled).apply()
         _uiState.update { current ->
             val updatedSettings = current.appearanceSettings.copy(useMatugen = enabled)
-            val updatedPalette = if (enabled) {
-                MatugenEngine.generatePaletteFromWallpaper(current.selectedWallpaper)
+            val updatedPalette = if (enabled && current.matugenCombos.isNotEmpty()) {
+                current.matugenCombos.first().palette
             } else {
                 current.selectedPalette
             }
@@ -187,8 +198,9 @@ class TinappleViewModel(application: Application) : AndroidViewModel(application
         prefs.edit().putString("selected_wallpaper_id", wallpaper.id).apply()
         prefs.edit().putString("selected_wallpaper_file", wallpaper.file).apply()
 
+        val combos = MatugenEngine.generatePaletteCombos(wallpaper)
         val matchingPalette = if (_uiState.value.appearanceSettings.useMatugen) {
-            MatugenEngine.generatePaletteFromWallpaper(wallpaper)
+            combos.first().palette
         } else {
             _uiState.value.selectedPalette
         }
@@ -200,35 +212,41 @@ class TinappleViewModel(application: Application) : AndroidViewModel(application
         _uiState.update {
             it.copy(
                 selectedWallpaper = wallpaper,
-                selectedPalette = matchingPalette
+                selectedPalette = matchingPalette,
+                matugenCombos = combos
             )
         }
 
-        // Asynchronously sample bitmap from image URL for precise Matugen dynamic shades
-        if (_uiState.value.appearanceSettings.useMatugen && (wallpaper.defaultPrimaryHex == null || wallpaper.url.startsWith("http"))) {
-            viewModelScope.launch(Dispatchers.IO) {
-                try {
-                    val fullUrl = wallpaper.safeUrl(_uiState.value.activeServerOrigin)
-                    val loader = ImageLoader(getApplication())
-                    val request = ImageRequest.Builder(getApplication())
-                        .data(fullUrl)
-                        .allowHardware(false)
-                        .size(64, 64)
-                        .build()
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val fullUrl = wallpaper.safeUrl(_uiState.value.activeServerOrigin)
+                val loader = ImageLoader(getApplication())
+                val request = ImageRequest.Builder(getApplication())
+                    .data(fullUrl)
+                    .allowHardware(false)
+                    .size(64, 64)
+                    .build()
 
-                    val result = loader.execute(request)
-                    if (result is SuccessResult) {
-                        val bitmap = (result.drawable as? android.graphics.drawable.BitmapDrawable)?.bitmap
-                        if (bitmap != null) {
-                            val refinedPalette = MatugenEngine.extractMatugenPaletteFromBitmap(bitmap, "${wallpaper.name} (Matugen)")
-                            _uiState.update { it.copy(selectedPalette = refinedPalette) }
-                            prefs.edit().putString("selected_palette_name", refinedPalette.name).apply()
+                val result = loader.execute(request)
+                if (result is SuccessResult) {
+                    val bitmap = (result.drawable as? android.graphics.drawable.BitmapDrawable)?.bitmap
+                    if (bitmap != null) {
+                        val refinedCombos = MatugenEngine.generatePaletteCombos(wallpaper, bitmap)
+                        _uiState.update { current ->
+                            val updatedPalette = if (current.appearanceSettings.useMatugen) {
+                                refinedCombos.first().palette
+                            } else current.selectedPalette
+                            current.copy(
+                                matugenCombos = refinedCombos,
+                                selectedPalette = updatedPalette
+                            )
+                        }
+                        if (_uiState.value.appearanceSettings.useMatugen) {
+                            prefs.edit().putString("selected_palette_name", refinedCombos.first().palette.name).apply()
                         }
                     }
-                } catch (_: Exception) {
-                    // Predefined matching palette already in place
                 }
-            }
+            } catch (_: Exception) {}
         }
     }
 

@@ -40,12 +40,15 @@ import org.tinapple.hub.ui.theme.TextPrimary
 import org.tinapple.hub.ui.theme.TextSecondary
 import org.tinapple.hub.ui.theme.TinappleBorder
 import org.tinapple.hub.ui.theme.TinappleSurfaceLow
+import org.tinapple.hub.ui.theme.getGlassSurfaceColor
+import org.tinapple.hub.ui.theme.getLiquidGlassBorder
 
 @Composable
 fun ProtonVpnCard(
     status: ProtonStatus,
     isToggling: Boolean,
     onToggle: (Boolean) -> Unit,
+    glassTranslucency: Float = 0.82f,
     modifier: Modifier = Modifier
 ) {
     val isActive = status.active || status.status == "active"
@@ -55,8 +58,8 @@ fun ProtonVpnCard(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(20.dp))
-            .background(TinappleSurfaceLow)
-            .border(1.dp, TinappleBorder, RoundedCornerShape(20.dp))
+            .background(getGlassSurfaceColor(glassTranslucency))
+            .border(1.dp, getLiquidGlassBorder(accent), RoundedCornerShape(20.dp))
             .padding(16.dp)
     ) {
         Row(

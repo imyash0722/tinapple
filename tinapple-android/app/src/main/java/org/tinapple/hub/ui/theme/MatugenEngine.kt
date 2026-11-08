@@ -8,72 +8,115 @@ import org.tinapple.hub.data.WallpaperItem
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
-import kotlin.math.roundToInt
+
+data class MatugenPaletteCombo(
+    val id: String,
+    val name: String,
+    val description: String,
+    val palette: ThemePalette
+)
 
 object MatugenEngine {
 
-    fun generatePaletteFromWallpaper(wallpaper: WallpaperItem): ThemePalette {
-        if (wallpaper.defaultPrimaryHex != null && wallpaper.defaultSecondaryHex != null) {
-            return ThemePalette(
-                name = "${wallpaper.name} Palette",
-                primaryHex = wallpaper.defaultPrimaryHex,
-                secondaryHex = wallpaper.defaultSecondaryHex
-            )
+    fun generatePaletteCombos(wallpaper: WallpaperItem, bitmap: Bitmap? = null): List<MatugenPaletteCombo> {
+        val baseHue: Float
+        val baseSat: Float
+
+        if (bitmap != null) {
+            val extracted = extractDominantHueAndSaturation(bitmap)
+            baseHue = extracted.first
+            baseSat = extracted.second
+        } else if (wallpaper.defaultPrimaryHex != null) {
+            val colorInt = wallpaper.defaultPrimaryHex.toInt()
+            val hsv = FloatArray(3)
+            AndroidColor.colorToHSV(colorInt, hsv)
+            baseHue = hsv[0]
+            baseSat = hsv[1]
+        } else {
+            val fallback = getFallbackHueAndSat(wallpaper.file)
+            baseHue = fallback.first
+            baseSat = fallback.second
         }
 
-        val filename = wallpaper.file.lowercase()
-        return when {
-            filename.contains("orange") || filename.contains("amber") || filename.contains("sunset") ->
-                ThemePalette("Sunset Amber", 0xFFF97316, 0xFFEAB308)
-            filename.contains("pine") || filename.contains("gold") ->
-                ThemePalette("Pineapple Gold", 0xFFE5B567, 0xFF7EC789)
-            filename.contains("blue") || filename.contains("fishbowl") || filename.contains("night") ->
-                ThemePalette("Deep Midnight Blue", 0xFF38BDF8, 0xFF3B82F6)
-            filename.contains("ocean") || filename.contains("water") || filename.contains("cyan") ->
-                ThemePalette("Cyber Cyan", 0xFF06B6D4, 0xFF3B82F6)
-            filename.contains("forest") || filename.contains("tree") || filename.contains("green") || filename.contains("palm") ->
-                ThemePalette("Emerald Palm", 0xFF10B981, 0xFF34D399)
-            filename.contains("purple") || filename.contains("pagoda") || filename.contains("amethyst") ->
-                ThemePalette("Amethyst Purple", 0xFFA855F7, 0xFFEC4899)
-            filename.contains("sakura") || filename.contains("pink") || filename.contains("rose") ->
-                ThemePalette("Rose Quartz", 0xFFF43F5E, 0xFFFB7185)
-            filename.contains("monochrome") || filename.contains("black") || filename.contains("frost") || filename.contains("katana") ->
-                ThemePalette("Monochrome Frost", 0xFFE4E4E7, 0xFFA1A1AA)
-            else -> {
-                val hash = abs(filename.hashCode())
-                DEFAULT_PALETTES[hash % DEFAULT_PALETTES.size]
-            }
-        }
+        // Combo 1: Vibrant (Bold dominant accent)
+        val p1 = createPaletteFromHsv(
+            name = "Vibrant",
+            primaryHue = baseHue,
+            primarySat = min(0.92f, max(0.65f, baseSat * 1.15f)),
+            primaryVal = 0.90f,
+            secondaryHue = (baseHue + 28f) % 360f,
+            secondarySat = min(0.80f, max(0.50f, baseSat * 0.90f)),
+            secondaryVal = 0.82f
+        )
+
+        // Combo 2: Harmonious (Analogous flow)
+        val p2 = createPaletteFromHsv(
+            name = "Harmonious",
+            primaryHue = (baseHue + 38f) % 360f,
+            primarySat = min(0.85f, max(0.55f, baseSat)),
+            primaryVal = 0.86f,
+            secondaryHue = (baseHue + 68f) % 360f,
+            secondarySat = min(0.75f, max(0.45f, baseSat * 0.85f)),
+            secondaryVal = 0.80f
+        )
+
+        // Combo 3: Contrast (Striking complementary accent)
+        val p3 = createPaletteFromHsv(
+            name = "Contrast",
+            primaryHue = (baseHue + 155f) % 360f,
+            primarySat = min(0.88f, max(0.58f, baseSat * 1.05f)),
+            primaryVal = 0.92f,
+            secondaryHue = (baseHue + 185f) % 360f,
+            secondarySat = min(0.78f, max(0.48f, baseSat * 0.85f)),
+            secondaryVal = 0.84f
+        )
+
+        // Combo 4: Muted Ambient (Deep soft atmospheric)
+        val p4 = createPaletteFromHsv(
+            name = "Muted",
+            primaryHue = (baseHue + 10f) % 360f,
+            primarySat = min(0.48f, max(0.28f, baseSat * 0.65f)),
+            primaryVal = 0.82f,
+            secondaryHue = (baseHue + 40f) % 360f,
+            secondarySat = min(0.40f, max(0.22f, baseSat * 0.55f)),
+            secondaryVal = 0.76f
+        )
+
+        return listOf(
+            MatugenPaletteCombo("vibrant", "Vibrant", "High-chroma dominant", p1),
+            MatugenPaletteCombo("harmonious", "Harmonious", "Analogous flow", p2),
+            MatugenPaletteCombo("contrast", "Contrast", "Complementary pop", p3),
+            MatugenPaletteCombo("muted", "Muted", "Atmospheric ambient", p4)
+        )
     }
 
-    /**
-     * Matugen Material 3 algorithmic color extraction from a sampled Bitmap.
-     * Weights pixels by chroma/saturation in HSL color space.
-     */
-    fun extractMatugenPaletteFromBitmap(bitmap: Bitmap, label: String = "Matugen Adaptive"): ThemePalette {
+    fun generatePaletteFromWallpaper(wallpaper: WallpaperItem): ThemePalette {
+        return generatePaletteCombos(wallpaper).first().palette
+    }
+
+    private fun extractDominantHueAndSaturation(bitmap: Bitmap): Pair<Float, Float> {
         val width = bitmap.width
         val height = bitmap.height
         val sampleStep = max(1, min(width, height) / 32)
 
         var bestWeight = -1f
-        var bestHue = 200f
-        var bestSat = 0.6f
+        var bestHue = 205f
+        var bestSat = 0.65f
 
         val hsl = FloatArray(3)
-        val hueBins = FloatArray(12) // 30-degree bins
+        val hueBins = FloatArray(12)
 
         for (x in 0 until width step sampleStep) {
             for (y in 0 until height step sampleStep) {
                 val pixel = bitmap.getPixel(x, y)
                 AndroidColor.colorToHSV(pixel, hsl)
 
-                val h = hsl[0] // 0..360
-                val s = hsl[1] // 0..1
-                val v = hsl[2] // 0..1
+                val h = hsl[0]
+                val s = hsl[1]
+                val v = hsl[2]
 
-                // Filter out muddy, too dark, or blown out pixels
-                if (v in 0.18f..0.92f && s >= 0.20f) {
-                    val weight = s * (1f - abs(v - 0.60f))
+                if (v in 0.16f..0.94f && s >= 0.18f) {
+                    val weight = s * (1f - abs(v - 0.58f))
                     val binIndex = (h / 30f).toInt() % 12
                     hueBins[binIndex] += weight
 
@@ -86,7 +129,6 @@ object MatugenEngine {
             }
         }
 
-        // Find highest scoring hue bin
         var maxBinScore = -1f
         var dominantBin = 6
         for (i in hueBins.indices) {
@@ -97,14 +139,43 @@ object MatugenEngine {
         }
 
         val primaryHue = if (maxBinScore > 0f) (dominantBin * 30f + 15f) else bestHue
-        val secondaryHue = (primaryHue + 28f) % 360f
+        return Pair(primaryHue, bestSat)
+    }
 
-        val primaryColorInt = AndroidColor.HSVToColor(floatArrayOf(primaryHue, min(0.85f, max(0.55f, bestSat)), 0.88f))
-        val secondaryColorInt = AndroidColor.HSVToColor(floatArrayOf(secondaryHue, min(0.75f, max(0.45f, bestSat * 0.85f)), 0.80f))
+    private fun getFallbackHueAndSat(filename: String): Pair<Float, Float> {
+        val clean = filename.lowercase()
+        return when {
+            clean.contains("orange") || clean.contains("amber") || clean.contains("sunset") -> Pair(28f, 0.85f)
+            clean.contains("pine") || clean.contains("gold") -> Pair(42f, 0.75f)
+            clean.contains("blue") || clean.contains("fishbowl") || clean.contains("night") -> Pair(200f, 0.75f)
+            clean.contains("ocean") || clean.contains("water") || clean.contains("cyan") -> Pair(190f, 0.80f)
+            clean.contains("forest") || clean.contains("tree") || clean.contains("green") || clean.contains("palm") -> Pair(150f, 0.70f)
+            clean.contains("purple") || clean.contains("pagoda") || clean.contains("amethyst") -> Pair(275f, 0.75f)
+            clean.contains("sakura") || clean.contains("pink") || clean.contains("rose") -> Pair(330f, 0.75f)
+            clean.contains("monochrome") || clean.contains("black") || clean.contains("frost") || clean.contains("katana") -> Pair(210f, 0.20f)
+            else -> {
+                val hash = abs(clean.hashCode())
+                val hue = (hash % 360).toFloat()
+                Pair(hue, 0.70f)
+            }
+        }
+    }
+
+    private fun createPaletteFromHsv(
+        name: String,
+        primaryHue: Float,
+        primarySat: Float,
+        primaryVal: Float,
+        secondaryHue: Float,
+        secondarySat: Float,
+        secondaryVal: Float
+    ): ThemePalette {
+        val primaryColorInt = AndroidColor.HSVToColor(floatArrayOf(primaryHue, primarySat, primaryVal))
+        val secondaryColorInt = AndroidColor.HSVToColor(floatArrayOf(secondaryHue, secondarySat, secondaryVal))
 
         val primaryHex = (primaryColorInt.toLong() and 0xFFFFFFFFL) or 0xFF000000L
         val secondaryHex = (secondaryColorInt.toLong() and 0xFFFFFFFFL) or 0xFF000000L
 
-        return ThemePalette(label, primaryHex, secondaryHex)
+        return ThemePalette(name, primaryHex, secondaryHex)
     }
 }

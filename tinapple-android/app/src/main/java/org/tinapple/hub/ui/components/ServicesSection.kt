@@ -48,6 +48,7 @@ import org.tinapple.hub.ui.theme.TextSecondary
 import org.tinapple.hub.ui.theme.TinappleBorder
 import org.tinapple.hub.ui.theme.TinappleSurfaceHigh
 import org.tinapple.hub.ui.theme.TinappleSurfaceLow
+import org.tinapple.hub.ui.theme.getGlassSurfaceColor
 
 private val CATEGORIES = listOf("ALL", "MEDIA", "DOWNLOADS", "NETWORK", "SYSTEM", "CORE")
 
@@ -58,6 +59,7 @@ fun ServicesSection(
     getPortalUrl: (ServiceItem) -> String?,
     onToggleService: (ServiceItem, Boolean) -> Unit,
     onOpenPortal: (String) -> Unit,
+    glassTranslucency: Float = 0.82f,
     modifier: Modifier = Modifier
 ) {
     var selectedCategory by remember { mutableStateOf("ALL") }
@@ -150,7 +152,7 @@ fun ServicesSection(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(12.dp))
-                .background(TinappleSurfaceLow)
+                .background(getGlassSurfaceColor(glassTranslucency))
                 .border(1.dp, TinappleBorder, RoundedCornerShape(12.dp))
                 .padding(horizontal = 12.dp, vertical = 10.dp)
         ) {
@@ -294,7 +296,8 @@ fun ServicesSection(
                         portalUrl = portalUrl,
                         isToggling = isToggling,
                         onToggle = onToggleService,
-                        onOpenPortal = onOpenPortal
+                        onOpenPortal = onOpenPortal,
+                        glassTranslucency = glassTranslucency
                     )
                 }
             }

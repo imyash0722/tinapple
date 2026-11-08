@@ -28,7 +28,6 @@ import androidx.compose.material.icons.rounded.BlurOn
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.DarkMode
 import androidx.compose.material.icons.rounded.Opacity
-import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.Wallpaper
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -56,6 +55,7 @@ import org.tinapple.hub.data.AppearanceSettings
 import org.tinapple.hub.data.DEFAULT_PALETTES
 import org.tinapple.hub.data.ThemePalette
 import org.tinapple.hub.data.WallpaperItem
+import org.tinapple.hub.ui.theme.MatugenPaletteCombo
 import org.tinapple.hub.ui.theme.TextMuted
 import org.tinapple.hub.ui.theme.TextPrimary
 import org.tinapple.hub.ui.theme.TextSecondary
@@ -73,6 +73,7 @@ fun AppearancePage(
     currentPalette: ThemePalette,
     wallpapers: List<WallpaperItem>,
     selectedWallpaper: WallpaperItem?,
+    matugenCombos: List<MatugenPaletteCombo>,
     settings: AppearanceSettings,
     serverOrigin: String,
     onSelectPalette: (ThemePalette) -> Unit,
@@ -146,7 +147,7 @@ fun AppearancePage(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // SECTION 1: Matugen Dynamic Colors
+        // SECTION 1: Matugen Dynamic Colors & Color Combinations
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -191,7 +192,7 @@ fun AppearancePage(
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
-                                text = "Extract harmonious M3 colors from wallpaper",
+                                text = "Extract Material 3 color combos from wallpaper",
                                 color = TextMuted,
                                 fontSize = 11.sp
                             )
@@ -210,45 +211,91 @@ fun AppearancePage(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(14.dp))
-
-                // Active palette preview
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(TinappleSurfaceHigh)
-                        .padding(horizontal = 12.dp, vertical = 8.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(16.dp)
-                            .clip(CircleShape)
-                            .background(Color(currentPalette.primaryHex))
-                            .border(1.dp, Color.White.copy(alpha = 0.4f), CircleShape)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Box(
-                        modifier = Modifier
-                            .size(14.dp)
-                            .clip(CircleShape)
-                            .background(Color(currentPalette.secondaryHex))
-                            .border(1.dp, Color.White.copy(alpha = 0.4f), CircleShape)
-                    )
-                    Spacer(modifier = Modifier.width(10.dp))
+                // Matugen Extracted Combos for Selected Wallpaper
+                if (matugenCombos.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        text = currentPalette.name,
+                        text = "MATUGEN COLOR COMBINATIONS",
                         color = MaterialTheme.colorScheme.primary,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.SemiBold
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.sp
                     )
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        matugenCombos.forEach { combo ->
+                            val isSelected = currentPalette.primaryHex == combo.palette.primaryHex
+                            val prim = Color(combo.palette.primaryHex)
+                            val sec = Color(combo.palette.secondaryHex)
+
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier
+                                    .width(96.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(
+                                        if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.20f)
+                                        else TinappleSurfaceHigh
+                                    )
+                                    .border(
+                                        width = if (isSelected) 2.dp else 1.dp,
+                                        color = if (isSelected) prim else TinappleBorderSubtle,
+                                        shape = RoundedCornerShape(12.dp)
+                                    )
+                                    .clickable {
+                                        onSelectPalette(combo.palette)
+                                    }
+                                    .padding(horizontal = 8.dp, vertical = 8.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.size(30.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.Center
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(18.dp)
+                                            .clip(CircleShape)
+                                            .background(prim)
+                                            .border(1.dp, Color.White.copy(alpha = 0.4f), CircleShape)
+                                    )
+                                    Spacer(modifier = Modifier.width(-5.dp))
+                                    Box(
+                                        modifier = Modifier
+                                            .size(15.dp)
+                                            .clip(CircleShape)
+                                            .background(sec)
+                                            .border(1.dp, Color.White.copy(alpha = 0.4f), CircleShape)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Text(
+                                    text = combo.name,
+                                    color = if (isSelected) prim else TextPrimary,
+                                    fontSize = 11.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                                )
+                                Text(
+                                    text = combo.description,
+                                    color = TextMuted,
+                                    fontSize = 9.sp,
+                                    maxLines = 1
+                                )
+                            }
+                        }
+                    }
                 }
 
-                // Manual Palettes (visible when Matugen is toggled off or user wants fixed preset)
-                Spacer(modifier = Modifier.height(14.dp))
+                // Manual Standard Palettes Fallback
+                Spacer(modifier = Modifier.height(16.dp))
                 Text(
-                    text = "PRESET PALETTES",
+                    text = "MANUAL PRESET PALETTES",
                     color = TextMuted,
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,

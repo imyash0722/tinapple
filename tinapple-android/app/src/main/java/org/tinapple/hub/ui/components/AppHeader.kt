@@ -47,6 +47,8 @@ import org.tinapple.hub.ui.theme.TextSecondary
 import org.tinapple.hub.ui.theme.TinappleBorder
 import org.tinapple.hub.ui.theme.TinappleSurfaceHigh
 import org.tinapple.hub.ui.theme.TinappleSurfaceLow
+import org.tinapple.hub.ui.theme.getGlassSurfaceColor
+import org.tinapple.hub.ui.theme.getLiquidGlassBorder
 
 @Composable
 fun AppHeader(
@@ -54,6 +56,7 @@ fun AppHeader(
     activeServerOrigin: String,
     isRefreshing: Boolean,
     onRefresh: () -> Unit,
+    glassTranslucency: Float = 0.82f,
     modifier: Modifier = Modifier
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "pulse")
@@ -76,8 +79,8 @@ fun AppHeader(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(24.dp))
-            .background(TinappleSurfaceLow)
-            .border(1.dp, TinappleBorder, RoundedCornerShape(24.dp))
+            .background(getGlassSurfaceColor(glassTranslucency))
+            .border(1.dp, getLiquidGlassBorder(MaterialTheme.colorScheme.primary), RoundedCornerShape(24.dp))
             .padding(16.dp)
     ) {
         Row(

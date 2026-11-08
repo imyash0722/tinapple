@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="protonGrad" x1="8" y1="8" x2="56" y2="56" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#9E7AFF"/>
+      <stop offset="50%" stop-color="#6D4AFF"/>
+      <stop offset="100%" stop-color="#4622B3"/>
+    </linearGradient>
+  </defs>
+  <path d="M32 6L54 18V38C54 50.5 44.5 58.5 32 62C19.5 58.5 10 50.5 10 38V18L32 6Z" fill="url(#protonGrad)" fill-opacity="0.25" stroke="url(#protonGrad)" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M32 14L46 22V37C46 45.5 39.5 51.5 32 54C24.5 51.5 18 45.5 18 37V22L32 14Z" fill="url(#protonGrad)"/>
+  <path d="M32 24C27.58 24 24 27.58 24 32C24 35.31 26.01 38.16 28.89 39.37V44H35.11V39.37C37.99 38.16 40 35.31 40 32C40 27.58 36.42 24 32 24ZM32 30C33.1 30 34 30.9 34 32C34 33.1 33.1 34 32 34C30.9 34 30 33.1 30 32C30 30.9 30.9 30 32 30Z" fill="#FFFFFF"/>
+</svg>

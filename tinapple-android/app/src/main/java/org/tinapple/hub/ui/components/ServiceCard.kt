@@ -43,11 +43,16 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
+import coil.decode.SvgDecoder
+import coil.request.ImageRequest
 import org.tinapple.hub.data.ServiceItem
 import org.tinapple.hub.ui.theme.StatusFailed
 import org.tinapple.hub.ui.theme.StatusRunning
@@ -59,7 +64,6 @@ import org.tinapple.hub.ui.theme.TinappleBorder
 import org.tinapple.hub.ui.theme.TinappleBorderSubtle
 import org.tinapple.hub.ui.theme.TinappleSurfaceHigh
 import org.tinapple.hub.ui.theme.TinappleSurfaceHighest
-import org.tinapple.hub.ui.theme.TinappleSurfaceLow
 import org.tinapple.hub.ui.theme.getGlassSurfaceColor
 import org.tinapple.hub.ui.theme.getLiquidGlassBorder
 
@@ -70,10 +74,12 @@ fun ServiceCard(
     isToggling: Boolean,
     onToggle: (ServiceItem, Boolean) -> Unit,
     onOpenPortal: (String) -> Unit,
+    glassTranslucency: Float = 0.82f,
     modifier: Modifier = Modifier
 ) {
     val isRunning = service.isRunning
     val isFailed = service.isFailed
+    val context = LocalContext.current
 
     val statusColor = when {
         isRunning -> StatusRunning
@@ -104,7 +110,7 @@ fun ServiceCard(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
-            .background(getGlassSurfaceColor())
+            .background(getGlassSurfaceColor(glassTranslucency))
             .border(
                 width = 1.dp,
                 brush = if (isRunning) getLiquidGlassBorder(MaterialTheme.colorScheme.primary)
@@ -119,7 +125,9 @@ fun ServiceCard(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Category Icon squircle (clickable if portalUrl exists)
+                // Category / Brand Icon squircle (clickable if portalUrl exists)
+                val brandIconPath = ServiceBrandIconResolver.getIconAssetPath(service.name, service.displayName)
+
                 Box(
                     modifier = Modifier
                         .size(46.dp)
@@ -137,21 +145,34 @@ fun ServiceCard(
                         ),
                     contentAlignment = Alignment.Center
                 ) {
-                    val icon = getCategoryIcon(service.category)
-                    if (icon != null) {
-                        Icon(
-                            imageVector = icon,
-                            contentDescription = service.category,
-                            modifier = Modifier.size(24.dp),
-                            tint = getCategoryAccentColor(service.category)
+                    if (brandIconPath != null) {
+                        AsyncImage(
+                            model = ImageRequest.Builder(context)
+                                .data("file:///android_asset/$brandIconPath")
+                                .decoderFactory(SvgDecoder.Factory())
+                                .crossfade(true)
+                                .build(),
+                            contentDescription = service.effectiveDisplayName,
+                            modifier = Modifier.size(28.dp),
+                            contentScale = ContentScale.Fit
                         )
                     } else {
-                        Text(
-                            text = (service.effectiveDisplayName.firstOrNull() ?: 'S').uppercase(),
-                            color = getCategoryAccentColor(service.category),
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold
-                        )
+                        val icon = getCategoryIcon(service.category)
+                        if (icon != null) {
+                            Icon(
+                                imageVector = icon,
+                                contentDescription = service.category,
+                                modifier = Modifier.size(24.dp),
+                                tint = getCategoryAccentColor(service.category)
+                            )
+                        } else {
+                            Text(
+                                text = (service.effectiveDisplayName.firstOrNull() ?: 'S').uppercase(),
+                                color = getCategoryAccentColor(service.category),
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
                 }
 

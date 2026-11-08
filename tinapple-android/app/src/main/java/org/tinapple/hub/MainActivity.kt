@@ -54,7 +54,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.Coil
+import coil.ImageLoader
 import coil.compose.AsyncImage
+import coil.decode.SvgDecoder
 import coil.request.ImageRequest
 import org.tinapple.hub.ui.components.AppHeader
 import org.tinapple.hub.ui.components.AppearanceButtonCard
@@ -75,6 +78,14 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Register global SVG decoder factory for Coil
+        val imageLoader = ImageLoader.Builder(this)
+            .components {
+                add(SvgDecoder.Factory())
+            }
+            .build()
+        Coil.setImageLoader(imageLoader)
 
         setContent {
             val uiState by viewModel.uiState.collectAsState()
@@ -137,6 +148,7 @@ class MainActivity : ComponentActivity() {
                                 currentPalette = uiState.selectedPalette,
                                 wallpapers = uiState.wallpapers,
                                 selectedWallpaper = uiState.selectedWallpaper,
+                                matugenCombos = uiState.matugenCombos,
                                 settings = uiState.appearanceSettings,
                                 serverOrigin = uiState.activeServerOrigin,
                                 onSelectPalette = { viewModel.selectPalette(it) },
@@ -248,7 +260,8 @@ private fun MainDashboardScreen(
             systemInfo = uiState.systemInfo,
             activeServerOrigin = uiState.activeServerOrigin,
             isRefreshing = uiState.isRefreshing || uiState.isDiscovering,
-            onRefresh = { viewModel.refreshAll(forceDiscovery = true) }
+            onRefresh = { viewModel.refreshAll(forceDiscovery = true) },
+            glassTranslucency = uiState.appearanceSettings.glassTranslucency
         )
 
         Spacer(modifier = Modifier.height(14.dp))
@@ -268,7 +281,8 @@ private fun MainDashboardScreen(
         ProtonVpnCard(
             status = uiState.protonStatus,
             isToggling = uiState.isTogglingProton,
-            onToggle = { active -> viewModel.toggleProton(active) }
+            onToggle = { active -> viewModel.toggleProton(active) },
+            glassTranslucency = uiState.appearanceSettings.glassTranslucency
         )
 
         Spacer(modifier = Modifier.height(14.dp))
@@ -279,7 +293,8 @@ private fun MainDashboardScreen(
             togglingServiceMap = uiState.togglingServiceMap,
             getPortalUrl = { svc -> viewModel.apiClient.getServicePortalUrl(svc) },
             onToggleService = { svc, start -> viewModel.toggleService(svc, start) },
-            onOpenPortal = onOpenPortal
+            onOpenPortal = onOpenPortal,
+            glassTranslucency = uiState.appearanceSettings.glassTranslucency
         )
 
         Spacer(modifier = Modifier.height(36.dp))
