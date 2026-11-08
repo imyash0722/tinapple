@@ -113,7 +113,7 @@ def main():
     pre_push = "--pre-push" in sys.argv
     pre_commit = "--pre-commit" in sys.argv
     check_only = "--check" in sys.argv
-    do_commit = "--commit" in sys.argv or pre_push
+    do_commit = "--commit" in sys.argv
 
     if pre_push:
         sync_ok, sync_msg = verify_remote_sync(repo_root)
