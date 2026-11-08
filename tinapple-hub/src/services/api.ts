@@ -1,4 +1,4 @@
-import { SystemInfo, TelemetrySnapshot, ServiceInfo, HardwareInfo, SessionMode, AppInfo, AppActionResult, InstallProgressState, InstallLogMessage, TailscaleStatus, AppliancePackStatus, WallpaperItem, OpenPortInfo, AppConfigDetails, MaintenanceResult, FailedUnitsResult, UserManagementData, ProtonStatus, ProtonWireGuardInfo } from '../types/api';
+import { SystemInfo, TelemetrySnapshot, ServiceInfo, HardwareInfo, SessionMode, AppInfo, AppActionResult, InstallProgressState, InstallLogMessage, TailscaleStatus, AppliancePackStatus, WallpaperItem, OpenPortInfo, AppConfigDetails, MaintenanceResult, FailedUnitsResult, UserManagementData, ProtonStatus, ProtonWireGuardInfo, MediaSearchResult, MediaRequestItem, SystemUpdateManifest } from '../types/api';
 import { serviceRegistry, ApplianceService } from './serviceRegistry';
 import { Capacitor } from '@capacitor/core';
 
@@ -8,6 +8,84 @@ export const DEFAULT_SERVERS = [
   { id: 'lan', label: 'Local LAN / Hostname', url: 'http://tinapple-server:8088', host: 'tinapple-server' },
   { id: 'hotspot', label: 'Direct AP Hotspot', url: 'http://192.168.4.1:8088', host: '192.168.4.1' },
 ];
+
+export async function testEndpointHealth(origin: string, timeoutMs: number = 1500): Promise<boolean> {
+  const clean = origin.replace(/\/+$/, '');
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(`${clean}/health`, {
+      method: 'GET',
+      signal: controller.signal,
+      cache: 'no-store',
+      mode: 'cors',
+    });
+    clearTimeout(timer);
+    return res.ok;
+  } catch {
+    clearTimeout(timer);
+    return false;
+  }
+}
+
+let discoveryListenersAttached = false;
+
+export async function discoverBestServerOrigin(timeoutPerCandidateMs: number = 1500): Promise<string> {
+  if (typeof window === 'undefined') return `http://${DEFAULT_TAILSCALE_IP}:8088`;
+
+  if (!discoveryListenersAttached && typeof window !== 'undefined') {
+    discoveryListenersAttached = true;
+    const triggerRecheck = () => {
+      discoverBestServerOrigin(1200).then((origin) => {
+        window.dispatchEvent(new CustomEvent('tinapple-server-reconnected', { detail: { origin } }));
+      }).catch(() => {});
+    };
+    window.addEventListener('online', triggerRecheck);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        triggerRecheck();
+      }
+    });
+  }
+
+  const lastGood = localStorage.getItem('tinapple_last_good_origin');
+  const candidates: string[] = [
+    'https://tinapple-server.tail3dee69.ts.net',
+    'http://tinapple-server.tail3dee69.ts.net:8088',
+  ];
+
+  if (lastGood && !candidates.includes(lastGood) && !lastGood.includes('100.108.215.120')) {
+    candidates.push(lastGood);
+  }
+
+  candidates.push(
+    'http://tinapple-server:8088',
+    'http://tinapple.local:8088',
+    'http://192.168.1.103:8088',
+    `http://${getTailscaleIp()}:8088`,
+    'http://192.168.4.1:8088'
+  );
+
+  if (!isStandaloneClient() && window.location.origin) {
+    const cur = window.location.origin;
+    if (await testEndpointHealth(cur, 800)) {
+      localStorage.setItem('tinapple_server_url', cur);
+      localStorage.setItem('tinapple_last_good_origin', cur);
+      return cur;
+    }
+  }
+
+  for (const c of candidates) {
+    if (await testEndpointHealth(c, timeoutPerCandidateMs)) {
+      const clean = c.replace(/\/+$/, '');
+      localStorage.setItem('tinapple_server_url', clean);
+      localStorage.setItem('tinapple_last_good_origin', clean);
+      return clean;
+    }
+  }
+
+  return getActiveServerOrigin();
+}
 
 export function isStandaloneClient(): boolean {
   if (typeof window === 'undefined') return false;
@@ -1668,6 +1746,67 @@ class ApiService {
       if (evtSource) evtSource.close();
       if (fallbackInterval) clearInterval(fallbackInterval);
     };
+  }
+
+  async searchMedia(term: string, type?: string): Promise<MediaSearchResult[]> {
+    try {
+      const q = new URLSearchParams({ term, type: type || 'all' });
+      const res = await this.fetch(`${getApiBaseUrl()}/media/search?${q}`);
+      if (!res.ok) return [];
+      const data = await res.json();
+      return data.results || [];
+    } catch {
+      return [];
+    }
+  }
+
+  async requestMedia(item: Partial<MediaRequestItem>): Promise<{ success: boolean; request?: MediaRequestItem; error?: string }> {
+    try {
+      const res = await this.fetch(`${getApiBaseUrl()}/media/request`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(item),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        return { success: false, error: data.error || 'Failed to submit request' };
+      }
+      return { success: true, request: data.request };
+    } catch (err: any) {
+      return { success: false, error: err.message || 'Network request failed' };
+    }
+  }
+
+  async getMediaRequests(): Promise<MediaRequestItem[]> {
+    try {
+      const res = await this.fetch(`${getApiBaseUrl()}/media/requests`);
+      if (!res.ok) return [];
+      const data = await res.json();
+      return data.requests || [];
+    } catch {
+      return [];
+    }
+  }
+
+  async deleteMediaRequest(id: string): Promise<boolean> {
+    try {
+      const res = await this.fetch(`${getApiBaseUrl()}/media/requests/${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+      });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  async getSystemUpdates(): Promise<SystemUpdateManifest | null> {
+    try {
+      const res = await this.fetch(`${getApiBaseUrl()}/system/updates`);
+      if (!res.ok) return null;
+      return await res.json();
+    } catch {
+      return null;
+    }
   }
 }
 

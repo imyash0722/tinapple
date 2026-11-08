@@ -237,21 +237,35 @@ export const QuickConnectCard: React.FC<QuickConnectCardProps> = ({
             </div>
           </a>
 
-          <a
-            href="/download/apk"
-            className="flex items-center gap-3 p-3.5 rounded-[12px] bg-surface-container hover:bg-surface-container-high border border-outline-variant hover:border-emerald-500/50 transition-all group shadow-none"
-          >
-            <div className="w-9 h-9 rounded-xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center shrink-0">
-              <Smartphone className="w-4 h-4" />
-            </div>
-            <div className="min-w-0">
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs font-bold text-on-surface group-hover:text-emerald-300 transition-colors">Android Companion</span>
-                <span className="text-[9px] font-sans tabular-nums px-1.5 py-0.5 bg-emerald-500/10 text-emerald-400 rounded-full">APK</span>
+          <div className="flex flex-col gap-2 p-3.5 rounded-[12px] bg-surface-container border border-outline-variant hover:border-emerald-500/50 transition-all group shadow-none">
+            <a
+              href="/download/apk"
+              className="flex items-center gap-3"
+            >
+              <div className="w-9 h-9 rounded-xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center shrink-0">
+                <Smartphone className="w-4 h-4" />
               </div>
-              <p className="text-[10px] text-on-surface-variant font-mono truncate">Capacitor 7 Native Client</p>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs font-bold text-on-surface group-hover:text-emerald-300 transition-colors">Android Companion</span>
+                  <span className="text-[9px] font-sans tabular-nums px-1.5 py-0.5 bg-emerald-500/10 text-emerald-400 rounded-full font-bold">v1.1.0 APK</span>
+                </div>
+                <p className="text-[10px] text-on-surface-variant font-mono truncate">Capacitor 7 Release (v1/v2/v3)</p>
+              </div>
+            </a>
+            <div className="pt-1.5 border-t border-outline-variant/40 flex items-center justify-between text-[9px] text-on-surface-variant">
+              <span className="truncate" title="Uninstall previous test builds before installing">Uninstall older build first</span>
+              <a
+                href="/download/apk/sha256"
+                target="_blank"
+                rel="noreferrer"
+                className="text-emerald-400 hover:text-emerald-300 font-mono underline ml-1 shrink-0"
+                title="View SHA-256 Checksum"
+              >
+                SHA-256
+              </a>
             </div>
-          </a>
+          </div>
         </div>
       </div>
 

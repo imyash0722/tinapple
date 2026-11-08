@@ -43,6 +43,7 @@ import { MangaShelfWidget } from './components/widgets/MangaShelfWidget';
 import { TorPrivacyWidget } from './components/widgets/TorPrivacyWidget';
 import { HomarrCanvas } from './components/homarr/HomarrCanvas';
 import { HomarrBoard } from './components/homarr/HomarrBoard';
+import { MobileDashboardView } from './components/widgets/MobileDashboardView';
 import { UpdateNotificationToast } from './components/common/UpdateNotificationToast';
 import { ServerOfflineStandby } from './components/common/ServerOfflineStandby';
 import { SystemUpdatePage } from './components/widgets/SystemUpdatePage';
@@ -149,6 +150,24 @@ export const App: React.FC = () => {
       return true;
     }
   });
+
+  const [isMobileScreen, setIsMobileScreen] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.innerWidth < 768;
+  });
+  const [preferFullBoard, setPreferFullBoard] = useState(() => {
+    try {
+      return localStorage.getItem('tinapple_prefer_full_board') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    const handleResize = () => setIsMobileScreen(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const hasLoadedServerSettingsRef = useRef(false);
 
@@ -959,27 +978,59 @@ export const App: React.FC = () => {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2, ease: 'easeOut' }}
             >
-              <HomarrBoard
-                telemetry={telemetry}
-                systemInfo={systemInfo}
-                services={displayServices}
-                isEditMode={isEditMode}
-                setIsEditMode={setIsEditMode}
-                isOwner={isOwner}
-                onOpenAppSettings={(app) => {
-                  setSettingsModalApp({ id: app.id || app.name, name: app.displayName || app.name });
-                }}
-                onOpenTailscale={() => setTailscaleOpen(true)}
-                onOpenProton={() => setProtonModalOpen(true)}
-                onOpenTerminal={() => setSelectedTab('terminal')}
-                onOpenTools={() => setServerToolsOpen(true)}
-                onOpenGuide={handleOpenGuide}
-                onOpenAppearance={() => setAppearanceOpen(true)}
-                onOpenDrawer={() => setMobileSidebarOpen(true)}
-                onNavigateTab={handleSelectTab}
-                onRefresh={handleRefresh}
-                isRefreshing={isRefreshing}
-              />
+              {isMobileScreen && !preferFullBoard ? (
+                <MobileDashboardView
+                  telemetry={telemetry}
+                  systemInfo={systemInfo}
+                  services={displayServices}
+                  onOpenAppPage={handleOpenAppPage}
+                  onSwitchToFullBoard={() => {
+                    setPreferFullBoard(true);
+                    try {
+                      localStorage.setItem('tinapple_prefer_full_board', 'true');
+                    } catch {}
+                  }}
+                />
+              ) : (
+                <>
+                  {isMobileScreen && preferFullBoard && (
+                    <div className="mb-3 flex justify-end">
+                      <button
+                        onClick={() => {
+                          setPreferFullBoard(false);
+                          try {
+                            localStorage.removeItem('tinapple_prefer_full_board');
+                          } catch {}
+                        }}
+                        className="px-3 py-1.5 rounded-full bg-surface-container border border-outline-variant text-xs font-bold text-on-surface hover:text-primary transition-all flex items-center gap-1.5"
+                      >
+                        <span>← Switch to Minimal Mobile View</span>
+                      </button>
+                    </div>
+                  )}
+                  <HomarrBoard
+                    telemetry={telemetry}
+                    systemInfo={systemInfo}
+                    services={displayServices}
+                    isEditMode={isEditMode}
+                    setIsEditMode={setIsEditMode}
+                    isOwner={isOwner}
+                    onOpenAppSettings={(app) => {
+                      setSettingsModalApp({ id: app.id || app.name, name: app.displayName || app.name });
+                    }}
+                    onOpenTailscale={() => setTailscaleOpen(true)}
+                    onOpenProton={() => setProtonModalOpen(true)}
+                    onOpenTerminal={() => setSelectedTab('terminal')}
+                    onOpenTools={() => setServerToolsOpen(true)}
+                    onOpenGuide={handleOpenGuide}
+                    onOpenAppearance={() => setAppearanceOpen(true)}
+                    onOpenDrawer={() => setMobileSidebarOpen(true)}
+                    onNavigateTab={handleSelectTab}
+                    onRefresh={handleRefresh}
+                    isRefreshing={isRefreshing}
+                  />
+                </>
+              )}
             </motion.div>
           )}
 

@@ -148,28 +148,22 @@ export const AppearanceModal: React.FC<AppearanceModalProps> = ({
     };
   }, [isOpen]);
 
-  // Modal focus and scroll lock
+  // Modal escape key and scroll lock
   useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!isOpen || !dialog) return;
-    const previousFocus = document.activeElement as HTMLElement | null;
+    if (!isOpen) return;
     const overflow = document.body.style.overflow;
-    try {
-      if (!dialog.open) {
-        dialog.showModal();
-      }
-    } catch {}
     document.body.style.overflow = 'hidden';
-    return () => {
-      try {
-        if (dialog.open) {
-          dialog.close();
-        }
-      } catch {}
-      document.body.style.overflow = overflow;
-      previousFocus?.focus();
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
     };
-  }, [isOpen]);
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = overflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen, onClose]);
 
   const update = (patch: Partial<BackgroundSettings>) =>
     onUpdate((previous) => ({ ...previous, ...patch }));
@@ -307,16 +301,19 @@ export const AppearanceModal: React.FC<AppearanceModalProps> = ({
   );
 
   return (
-    <dialog
-      ref={dialogRef}
+    <div
+      role="dialog"
+      aria-modal="true"
       aria-labelledby="appearance-title"
-      onCancel={onClose}
+      className="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-sm animate-in fade-in duration-200 overscroll-contain"
       onClick={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}
-      className="appearance-drawer fixed inset-y-0 left-auto right-0 m-0 h-dvh max-h-none w-full max-w-xl overflow-y-auto border-l border-outline-variant/50 bg-surface-container-high p-0 text-on-surface backdrop-blur-2xl shadow-none z-50 overscroll-contain"
     >
-      <div className="flex min-h-full flex-col" onClick={(event) => event.stopPropagation()}>
+      <div
+        className="appearance-drawer relative h-full w-full max-w-xl overflow-y-auto border-l border-outline-variant/50 bg-surface-container-high p-0 text-on-surface backdrop-blur-2xl shadow-2xl overscroll-contain flex flex-col"
+        onClick={(event) => event.stopPropagation()}
+      >
         {/* Sticky Header */}
         <div className="sticky top-0 z-20 flex items-center justify-between gap-4 border-b border-outline-variant/50 bg-surface-container-high p-5 sm:p-6 backdrop-blur-xl">
           <div>
@@ -978,7 +975,7 @@ export const AppearanceModal: React.FC<AppearanceModalProps> = ({
           </p>
         </div>
       </div>
-    </dialog>
+    </div>
   );
 };
 

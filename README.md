@@ -608,8 +608,17 @@ The dedicated Android companion app (`org.tinapple.hub`) is engineered for low l
 
 #### Installing via ADB:
 ```bash
+# Verify checksum:
+sha256sum -c out/releases/tinapple-android-client.apk.sha256
+
+# Fresh install (or if upgrading from an earlier debug build):
+adb uninstall org.tinapple.hub || true
 adb install -r out/releases/tinapple-android-client.apk
 ```
+
+> [!IMPORTANT]
+> **Android 14 / 15 / 16 / 17 Compatibility & Keystore Signatures:**
+> Modern Android enforces strict signature verification and blocks package updates if the signing certificate differs from the installed version (`INSTALL_FAILED_UPDATE_INCOMPATIBLE`). Production builds are signed with APK Signature Schemes v1, v2, and v3 using the permanent Tinapple Release Keystore. If upgrading from an earlier test build, please uninstall the old application before installing the release APK. Ensure "Install unknown apps" permission is granted to your browser or file manager if installing directly from the device.
 
 ---
 

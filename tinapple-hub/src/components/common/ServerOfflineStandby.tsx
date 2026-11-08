@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { WifiOff, RefreshCw, Server, ArrowRight, ShieldAlert, Cpu, ExternalLink } from 'lucide-react';
-import { DEFAULT_SERVERS, getActiveServerOrigin } from '../../services/api';
+import { WifiOff, RefreshCw, Server, ArrowRight, ShieldAlert, Cpu, ExternalLink, Sparkles } from 'lucide-react';
+import { DEFAULT_SERVERS, getActiveServerOrigin, discoverBestServerOrigin } from '../../services/api';
 
 interface ServerOfflineStandbyProps {
   onRetry: () => void;
@@ -17,24 +17,41 @@ export const ServerOfflineStandby: React.FC<ServerOfflineStandbyProps> = ({
   const currentUrl = targetUrl || getActiveServerOrigin();
   const [customInput, setCustomInput] = useState(currentUrl);
   const [isPinging, setIsPinging] = useState(false);
-  const [countdown, setCountdown] = useState(6);
+  const [isAutoDiscovering, setIsAutoDiscovering] = useState(false);
+  const [countdown, setCountdown] = useState(5);
   const [customError, setCustomError] = useState('');
 
-  // Auto-retry countdown
+  const handleAutoDiscover = useCallback(async () => {
+    setIsAutoDiscovering(true);
+    setIsPinging(true);
+    try {
+      const best = await discoverBestServerOrigin(1200);
+      if (best) {
+        setCustomInput(best);
+        onRetry();
+      }
+    } finally {
+      setIsAutoDiscovering(false);
+      setIsPinging(false);
+      setCountdown(5);
+    }
+  }, [onRetry]);
+
+  // Auto-retry countdown with background discovery attempt
   useEffect(() => {
-    if (isPinging) return;
+    if (isPinging || isAutoDiscovering) return;
     const timer = setInterval(() => {
       setCountdown((prev) => {
         if (prev <= 1) {
-          onRetry();
-          return 6;
+          handleAutoDiscover();
+          return 5;
         }
         return prev - 1;
       });
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [isPinging, onRetry]);
+  }, [isPinging, isAutoDiscovering, handleAutoDiscover]);
 
   const handleSelectEndpoint = (url: string) => {
     try {

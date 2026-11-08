@@ -178,8 +178,8 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
     touchStartXRef.current = null;
     touchStartYRef.current = null;
 
-    // Swiped left by more than 40px with horizontal dominance
-    if (deltaX < -40 && Math.abs(deltaX) > Math.abs(deltaY) * 1.2) {
+    // Swiped left by more than 30px
+    if (deltaX < -30) {
       AndroidBridge.performHaptic('light');
       setMobileOpen(false);
     }
@@ -779,15 +779,16 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
           role="button"
           tabIndex={0}
           aria-label="Close navigation drawer"
-          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200 touch-none overscroll-contain select-none cursor-pointer"
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200 overscroll-contain select-none cursor-pointer"
           onClick={() => {
             AndroidBridge.performHaptic('light');
             setMobileOpen(false);
           }}
-          onTouchEnd={(e) => {
-            e.preventDefault();
-            AndroidBridge.performHaptic('light');
-            setMobileOpen(false);
+          onPointerDown={(e) => {
+            if (e.target === e.currentTarget) {
+              AndroidBridge.performHaptic('light');
+              setMobileOpen(false);
+            }
           }}
           onMouseEnter={handleDrawerMouseLeave}
         />

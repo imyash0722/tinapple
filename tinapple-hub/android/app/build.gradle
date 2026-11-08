@@ -7,8 +7,8 @@ android {
         applicationId "org.tinapple.hub"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 2
-        versionName "1.0.1"
+        versionCode 3
+        versionName "1.1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -21,11 +21,13 @@ android {
             def ksFile = file('../keystore/tinapple-release.keystore')
             if (ksFile.exists()) {
                 storeFile ksFile
-                storePassword 'tinapple123'
-                keyAlias 'tinapple'
-                keyPassword 'tinapple123'
-                v1SigningEnabled true
-                v2SigningEnabled true
+                storePassword System.getenv("TINAPPLE_KEYSTORE_PASSWORD") ?: 'tinapple123'
+                keyAlias System.getenv("TINAPPLE_KEY_ALIAS") ?: 'tinapple'
+                keyPassword System.getenv("TINAPPLE_KEY_PASSWORD") ?: 'tinapple123'
+                enableV1Signing = true
+                enableV2Signing = true
+                enableV3Signing = true
+                enableV4Signing = true
             }
         }
     }
