@@ -565,14 +565,14 @@ export const GUIDES_CATALOG: GuideArticle[] = [
     accentColor: '#f59e0b',
     htmlGuidePath: '/guides/seerr.html',
     endpoints: [
-      { label: 'Ombi Web Portal', value: 'http://100.67.207.60:5000' },
+      { label: 'Ombi Web Portal', value: 'http://100.67.207.60:5055' },
       { label: 'Connected Jellyfin', value: 'http://127.0.0.1:8096' },
     ],
     steps: [
       {
         title: 'Sign In with Your Jellyfin Credentials',
-        description: 'Navigate to Ombi on port 5000 and log in with your Jellyfin username and password.',
-        code: 'http://100.67.207.60:5000',
+        description: 'Navigate to Ombi on port 5055 and log in with your Jellyfin username and password.',
+        code: 'http://100.67.207.60:5055',
         tip: 'Ombi connects directly to Jellyfin for authentication and library availability.',
       },
       {

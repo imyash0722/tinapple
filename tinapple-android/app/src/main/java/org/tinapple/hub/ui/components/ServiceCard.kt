@@ -289,14 +289,15 @@ fun ServiceCard(
             }
 
             // Footer Row: Port & Memory / Category tag
-            if (service.port != null || service.memoryBytes != null) {
+            val displayPort = service.displayPort ?: service.port
+            if (displayPort != null || service.memoryBytes != null) {
                 Spacer(modifier = Modifier.height(12.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    if (service.port != null && service.port > 0) {
+                    if (displayPort != null && displayPort > 0) {
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(8.dp))
@@ -319,7 +320,7 @@ fun ServiceCard(
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text(
-                                    text = "Port :${service.port}",
+                                    text = "Port :$displayPort",
                                     color = if (portalUrl != null) MaterialTheme.colorScheme.primary else TextMuted,
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.SemiBold,

@@ -30,24 +30,26 @@
 
 | Module Path | Technology / Stack | Purpose & Architecture |
 | :--- | :--- | :--- |
-| [`tinapple-android/`](file:///home/tinapple/tinapple/tinapple-android/) | **Kotlin 2.0.21, Jetpack Compose, Material 3, OkHttp, Coil, AGP 8.7.2** | **Pure Native Android Companion App** (`org.tinapple.hub`, v2.0.0). Built from the ground up to replace the legacy Capacitor hybrid app. Contains direct service cards (links + toggles), Proton VPN exit node gateway switch, and a dedicated Appearance Page. |
-| [`tinapple-hub/`](file:///home/tinapple/tinapple/tinapple-hub/) | **React 18, Vite 6, TypeScript, Tailwind CSS, Lucide, Framer Motion** | Main web frontend and desktop UI bundle. Features infinite draggable Homarr 2D canvas, settings manifest, full PTY web terminal, and guide docs. Deployed to `/usr/share/tinapple-dash/web/dist/`. |
+| [`tinapple-android/`](file:///home/tinapple/tinapple/tinapple-android/) | **Kotlin 2.0.21, Jetpack Compose, Material 3, OkHttp, Coil, AGP 8.7.2** | **Pure Native Android Companion App** (`org.tinapple.hub`, v2.0.1, versionCode 5). Built from the ground up to replace the legacy Capacitor hybrid app. Contains direct service cards (links + toggles), Proton VPN exit node gateway switch, and a dedicated Appearance Page. |
+| [`tinapple-hub/`](file:///home/tinapple/tinapple/tinapple-hub/) | **React 18 (`^18.3.1`), Vite 5 (`^5.4.11`), TypeScript, Tailwind CSS, Lucide, Framer Motion** | Main web frontend and desktop UI bundle. Features infinite draggable Homarr 2D canvas, settings manifest, full PTY web terminal, and guide docs. Deployed to `/usr/share/tinapple-dash/web/dist/`. |
 | [`tinapple-dash/`](file:///home/tinapple/tinapple/tinapple-dash/) | **Go (Gin), systemd integration, polkit, SSE streams** | Core appliance backend daemon listening on port `:8088`. Serves REST APIs (`/api/v1/services`, `/api/v1/system/proton-exit`, `/api/v1/wallpapers`), static dashboard files, and `/download/apk` releases. |
 | [`tinapple-service-*/`](file:///home/tinapple/tinapple/) | **Systemd units, Arch Linux PKGBUILDs, Bash/Python daemons** | Modular service orchestration: `tinapple-service-media` (Jellyfin, Sonarr, Radarr, qBittorrent), `tinapple-service-downloads`, `tinapple-service-infrastructure`, and `tinapple-service-backups`. |
-| [`scripts/`](file:///home/tinapple/tinapple/scripts/) | **Bash, Python 3** | Automation scripts including [`build-desktop-releases.sh`](file:///home/tinapple/tinapple/scripts/build-desktop-releases.sh) (multiplatform packager), [`stage-live-artifacts.sh`](file:///home/tinapple/tinapple/scripts/stage-live-artifacts.sh), and [`torrent-healer.py`](file:///home/tinapple/tinapple/scripts/torrent-healer.py). |
-| [`out/releases/`](file:///home/tinapple/tinapple/out/releases/) | **APK, AppImage, DMG, EXE, ZIP, IPA, SHA256SUMS** | Output directory for all compiled client artifacts and cryptographic signatures. |
+| [`scripts/`](file:///home/tinapple/tinapple/scripts/) | **Bash, Python 3** | Automation scripts including [`build-desktop-releases.sh`](file:///home/tinapple/tinapple/scripts/build-desktop-releases.sh) (multiplatform packager), [`stage-live-artifacts.sh`](file:///home/tinapple/tinapple/scripts/stage-live-artifacts.sh), and [`tinapple-torrent-healer`](file:///home/tinapple/tinapple/scripts/tinapple-torrent-healer). |
+| [`out/releases/`](file:///home/tinapple/tinapple/out/releases/) | **APK, AppImage, DMG, EXE, ZIP, IPA, SHA256SUMS** | Packaged client release artifacts and checksums; validate each platform's binaries independently. |
 
 ---
 
 ## 3. Server Environment & Hardware Context
 
-- **Node Hostname**: `tinapple-server` (or `appliance-node`)
-- **OS**: Arch Linux x86_64
-- **Local Network IP**: `192.168.1.103`
-- **Tailscale Tailnet IP**: `100.67.207.60` (`pineapple-server.taildb42a2.ts.net`)
-- **Active Web Dashboard Port**: `:8088` (Reverse-proxied via Nginx)
+- **Node Hostname**: `tinapple-server` (Dell Latitude 7300, i5-8265U, 7.6 GiB RAM)
+- **OS**: Arch Linux x86_64 (`linux-lts` 6.18.60-1-lts)
+- **Local Network IP**: `192.168.1.103` (Wi-Fi `wlo1`, gateway `192.168.1.1`)
+- **Tailscale Tailnet IP**: `100.67.207.60` (`tinapple-server.tail3dee69.ts.net`)
+- **Public Tailscale Funnel**: `https://tinapple-server.tail3dee69.ts.net:8443` -> `http://127.0.0.1:4567` (Suwayomi, public user-managed access)
+- **Active Web Dashboard Port**: `:8088` (Reverse-proxied via Caddy under unit `tinapple-nginx.service`)
+- **Cloudflare WARP**: Disconnected, stopped, disabled, and masked (`warp-svc.service`)
 - **Connected ADB Target**: Google Pixel 10a at `100.111.180.87:5555`
-- **Android SDK Path**: `/opt/android-sdk` (build-tools `35.0.0`, platforms `android-35`)
+- **Android SDK Path**: `/opt/android-sdk` (build-tools `34.0.0`, `35.0.0`, platforms `android-35`)
 - **Android Release Keystore**: [`tinapple-android/keystore/tinapple-release.keystore`](file:///home/tinapple/tinapple/tinapple-android/keystore/tinapple-release.keystore) (alias `tinapple`)
 
 ---
@@ -72,13 +74,45 @@
   - Parallel `/health` probes across LAN (`192.168.1.103:8088`), Tailscale (`100.67.207.60:8088`), and HTTPS domain.
 
 ### B. Proton VPN Exit Node Control
-- The server routes outbound traffic through Proton VPN WireGuard (`/etc/wireguard/proton.conf` / `wg-quick@proton`).
+- Proton VPN WireGuard (`/etc/wireguard/proton.conf` / `wg-quick@proton`) is an optional, user-controlled outbound privacy layer. Both ON and OFF modes are intentional; absence of the tunnel when OFF is expected. The idle `proton.VPN.service` daemon is not evidence of an active VPN tunnel.
 - Controlled via `/api/v1/system/proton-exit` on the backend daemon.
 - WireGuard `PostUp` includes `100.64.0.0/10` routing rules to ensure local LAN and Tailscale connectivity remain fully unblocked while VPN is active.
 
 ---
 
 ## 5. Changelog & Active State Ledger
+
+### Commit `f58341b` | fix(sync): refine pre-commit and pre-push hook behavior for GEMINI.md (2026-11-08)
+- **Commit**: `f58341b`
+- **Subject**: fix(sync): refine pre-commit and pre-push hook behavior for GEMINI.md
+- **Key Files**: `scripts/sync-gemini-ledger.py`
+
+### Maintenance (2026-11-09) | feat(clients): switch Ombi client port to 5055 and release Android v2.0.1
+- **Scope**: Updated Ombi client-facing launcher port from 5000 to 5055 across `tinapple-hub` and `tinapple-android` to route directly via the Caddy Tailscale guest compatibility bridge without affecting internal daemon telemetry (which stays on 5000).
+- **Key Changes**:
+  - `tinapple-android`: Added `displayPort: Int?` to `ServiceItem` (mapping Ombi to 5055), updated `TinappleApiClient.getServicePortalUrl()`, `ServiceCard.kt`, and `ServicesSection.kt`. Bumped app version to `versionCode 5`, `versionName "2.0.1"`.
+  - `tinapple-hub`: Updated default port, service maps, quick launchers, Homarr widgets, guides, and store listings to port `5055` (`serviceRegistry.ts`, `api.ts`, `ServicesManager.tsx`, `HomarrBoard.tsx`, `HomarrWidgets.tsx`, `ChaddyStore.tsx`, `UnifiedAppPage.tsx`, `MobileDashboardView.tsx`, `guidesCatalog.tsx`).
+  - Automated tests: Added `tinapple-hub/tests/ombi-url.test.mjs` and `tinapple-android/app/src/test/java/org/tinapple/hub/ServiceItemTest.kt`.
+  - Built production assets: Web frontend rebuilt with Vite (`npm run build`) and deployed to `/usr/share/tinapple-dash/web/dist/`. Native Android signed release APK compiled with Gradle (`./gradlew assembleRelease`), deployed to `/home/tinapple/Documents/Antigravity-Share/tinapple-client.apk`, `/usr/share/tinapple-dash/web/dist/tinapple-client.apk` (+ sha256), and `out/releases/tinapple-android-client.apk`. The first build was installed on Pixel 10a via ADB; the final reviewed build is available to download, but the phone was offline for final installation.
+  - Codex review preserved the existing Tailscale-IP fallback for browser HTTP portals opened from HTTPS `*.ts.net` origins, corrected service-card variable scope and mobile icon typing, and fixed an existing invalid `this.fetch` call so TypeScript checking passes. Browser interaction verified the desktop Ombi title/port links reach its login page on `:5055`; mobile labels/URLs are correct, but an overlapping navigation layer prevented completing the emulated mobile click. A real phone tap remains unverified.
+  - Final validation: TypeScript no-emit check, four web tests, two native unit tests, web production build, and signed release build passed. APK v2/v3 signatures and unchanged signing identity verified. Final APK SHA-256: `569a840af5236ae110fff6fecd0a08d1d58d125ee682cf2fefa28df5fb5f9fdf`; shared aliases, staging/download copies, checksum endpoints and Android release-manifest entries refreshed. Backend Ombi service/API metadata still uses native port 5000.
+
+### Maintenance (2026-11-09) | ops: diagnose friend Ombi access, establish Caddy port 5055 compatibility bridge, patch Tailscale ACL policy
+- **Scope**: Diagnosed why the trusted guest account cannot reach Ombi; added a Caddy compatibility bridge and prepared a Tailscale ACL policy patch.
+- **Root Cause**: Ombi runs on port 5000 (account `icekimi` active), but active Tailscale `PacketFilterRules` for `group:guests` only permits legacy Seerr port 5055 and lacks port 5000.
+- **Key Changes**:
+  - Configured Caddy compatibility reverse proxy on `:5055` (`reverse_proxy localhost:5000`), with the same bridge preserved in `configs/caddy/Caddyfile` for deployment. Server-side HTTP/login-page/asset checks pass through `http://100.67.207.60:5055/`, and live guest rules allow TCP 5055; final reachability from the friend's device remains to be confirmed.
+  - Updated local Tailscale policy files (`tailscale-acl.hujson` and `tailscale-acl.json` in `Antigravity-Share/`) to add `"100.67.207.60:5000"` for `group:guests`. Applying this in Tailscale Admin Console will enable standard direct port 5000 access.
+  - Snapshots and rollback scripts saved to `/var/lib/tinapple-maintenance/20261109T093000Z/`.
+
+### Maintenance (2026-11-09) | ops: disable unused Cloudflare WARP proxy, enable public Tailscale Funnel for Suwayomi, reconcile server context
+- **Scope**: Resolved unintended WARP operation, published public Suwayomi Funnel, and corrected server documentation without disrupting running media services.
+- **Key Changes**:
+  - Investigated local WARP proxy on `127.0.0.1:40000`; found no consumers in inspected service configurations or the connection snapshot (FlareSolverr and TMDb relay operate independently). Disconnected `warp-cli`, stopped, disabled, and masked `warp-svc.service`; local application checks passed.
+  - Reconfigured Tailscale Funnel on `:8443` from stale unresolvable `tinarchy` / port 4568 to active `https://tinapple-server.tail3dee69.ts.net:8443` proxying `http://127.0.0.1:4567` (Suwayomi). Public ingress verified over TLS with Let's Encrypt certificates, HTML/JS/CSS assets, and GraphQL `aboutServer` query. Authentication remains user-managed (`authMode NONE`).
+  - Reconciled `CODEX.md` (and mirrored to `/home/tinapple/CODEX.md`) with accurate runtime hardware, Wi-Fi interface (`wlo1`), Caddy reverse proxy (`tinapple-nginx.service`), active ports (Ombi on `:5000`, FileBrowser on `:8081`), lowercase `/srv/media` paths, and toolchain versions.
+  - Snapshot and rollback files saved to `/var/lib/tinapple-maintenance/20261109T050800Z/`.
+  - Codex review removed the obsolete `tinarchy` Funnel mapping while preserving the working current-host mapping, and completed rollback restoration for the exact saved Serve/Funnel configuration. The keyring WKD refresh failure was left unchanged; package-signing keys are separate from sudo authorization.
 
 ### Commit `c755808` | feat(ai): configure automated sync-gemini skill and hooks for AGY CLI and Codex CLI (2026-11-08)
 - **Commit**: `c755808`

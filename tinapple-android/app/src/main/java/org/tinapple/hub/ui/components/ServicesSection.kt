@@ -84,6 +84,7 @@ fun ServicesSection(
                         (item.displayName?.lowercase()?.contains(q) == true) ||
                         (item.tagline?.lowercase()?.contains(q) == true) ||
                         (item.port?.toString()?.contains(q) == true) ||
+                        (item.displayPort?.toString()?.contains(q) == true) ||
                         item.category.lowercase().contains(q)
             }
 

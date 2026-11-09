@@ -151,3 +151,8 @@ http://:8095 {
 		reverse_proxy localhost:8096
 	}
 }
+
+# Ombi compatibility bridge for the existing Tailscale guest allow-rule.
+http://:5055 {
+	reverse_proxy localhost:5000
+}

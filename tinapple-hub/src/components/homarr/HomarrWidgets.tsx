@@ -1360,7 +1360,7 @@ export const HomarrPortMatrixWidget: React.FC<{ onOpenTools?: () => void }> = ({
     { name: 'Manga', port: 4567, path: serviceRegistry.resolveUrl('suwayomi'), color: 'text-amber-400' },
     { name: 'Torrent', port: 8080, path: serviceRegistry.resolveUrl('qbittorrent'), color: 'text-sky-400' },
     { name: 'Sync', port: 8384, path: serviceRegistry.resolveUrl('syncthing'), color: 'text-emerald-400' },
-    { name: 'Ombi', port: 5000, path: serviceRegistry.resolveUrl('ombi'), color: 'text-amber-500' },
+    { name: 'Ombi', port: 5055, path: serviceRegistry.resolveUrl('ombi'), color: 'text-amber-500' },
     { name: 'AdGuard', port: 3000, path: serviceRegistry.resolveUrl('adguard'), color: 'text-teal-400' },
     { name: 'Vault', port: 8000, path: serviceRegistry.resolveUrl('vaultwarden'), color: 'text-indigo-400' },
   ];
@@ -1634,7 +1634,7 @@ export const HomarrRequestsWidget: React.FC = () => {
               <span className="font-bold text-on-surface text-sm">Ombi Requests</span>
               <span className={`w-2 h-2 rounded-full ${online ? 'bg-emerald-400' : 'bg-rose-400'} shrink-0`} title={online ? 'Ombi Online' : 'Ombi Offline'} />
             </div>
-            <span className="text-[10px] text-on-surface-variant font-mono">Port :5000 • Reverse Proxy /ombi</span>
+            <span className="text-[10px] text-on-surface-variant font-mono">Port :5055 • Reverse Proxy /ombi</span>
           </div>
         </div>
 

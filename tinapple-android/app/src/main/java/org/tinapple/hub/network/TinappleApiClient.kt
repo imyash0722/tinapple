@@ -45,7 +45,7 @@ class TinappleApiClient(private val baseUrlProvider: () -> String) {
     )
 
     fun getServicePortalUrl(service: ServiceItem): String? {
-        val port = service.port ?: return null
+        val port = service.displayPort ?: service.port ?: return null
         if (port <= 0) return null
 
         val cleanName = service.name.lowercase().removeSuffix(".service").substringBefore("@")
@@ -55,7 +55,11 @@ class TinappleApiClient(private val baseUrlProvider: () -> String) {
         return try {
             val uri = URI(currentOrigin)
             val host = uri.host ?: "192.168.1.103"
-            "http://$host:$port/"
+            val isOmbi = cleanName == "ombi" || service.id.equals("ombi", ignoreCase = true)
+            val portalHost = if (isOmbi && host.endsWith(".ts.net")) {
+                DiscoveryEngine.DEFAULT_TAILSCALE_HOST
+            } else host
+            "http://$portalHost:$port/"
         } catch (_: Exception) {
             "http://192.168.1.103:$port/"
         }

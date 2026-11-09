@@ -297,30 +297,35 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({
                   </div>
 
                   {/* Service Metadata: Port & RAM with Clickable Link */}
-                  <div className="flex items-center gap-3 my-3 text-[11px] font-sans tabular-nums text-tinapple-muted">
-                    {service.port ? (
-                      serviceUrl && isActive ? (
-                        <a
-                          href={serviceUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="flex items-center gap-1 text-tinapple-gold hover:text-emerald-400 font-semibold transition-colors"
-                          title={`Open port :${service.port}`}
-                        >
-                          <span>Port :{service.port}</span>
-                          <ExternalLink className="w-3 h-3" />
-                        </a>
-                      ) : (
-                        <span className="flex items-center gap-1 text-tinapple-gold font-semibold">
-                          Port :{service.port}
-                        </span>
-                      )
-                    ) : null}
-                    {service.memoryBytes ? (
-                      <span>RAM: {(service.memoryBytes / (1024 * 1024)).toFixed(2)} MB</span>
-                    ) : null}
-                    <span className="capitalize text-tinapple-green font-medium">{service.category}</span>
-                  </div>
+                  {(() => {
+                    const displayPort = service.name.toLowerCase().replace(/\.service$/, '').replace(/@.*$/, '') === 'ombi' ? 5055 : service.port;
+                    return (
+                      <div className="flex items-center gap-3 my-3 text-[11px] font-sans tabular-nums text-tinapple-muted">
+                        {displayPort ? (
+                          serviceUrl && isActive ? (
+                            <a
+                              href={serviceUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="flex items-center gap-1 text-tinapple-gold hover:text-emerald-400 font-semibold transition-colors"
+                              title={`Open port :${displayPort}`}
+                            >
+                              <span>Port :{displayPort}</span>
+                              <ExternalLink className="w-3 h-3" />
+                            </a>
+                          ) : (
+                            <span className="flex items-center gap-1 text-tinapple-gold font-semibold">
+                              Port :{displayPort}
+                            </span>
+                          )
+                        ) : null}
+                        {service.memoryBytes ? (
+                          <span>RAM: {(service.memoryBytes / (1024 * 1024)).toFixed(2)} MB</span>
+                        ) : null}
+                        <span className="capitalize text-tinapple-green font-medium">{service.category}</span>
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 {/* Control Action Buttons */}
@@ -513,24 +518,27 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({
                     </td>
                     <td className="px-4 py-3 capitalize text-primary">{service.category}</td>
                     <td className="px-4 py-3 text-primary font-semibold">
-                      {service.port ? (
-                        serviceUrl && isActive ? (
-                          <a
-                            href={serviceUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-primary hover:text-primary/80 font-semibold inline-flex items-center gap-1 transition-colors"
-                            title={`Open port :${service.port}`}
-                          >
-                            <span>:{service.port}</span>
-                            <ExternalLink className="w-2.5 h-2.5" />
-                          </a>
+                      {(() => {
+                        const displayPort = service.name.toLowerCase().replace(/\.service$/, '').replace(/@.*$/, '') === 'ombi' ? 5055 : service.port;
+                        return displayPort ? (
+                          serviceUrl && isActive ? (
+                            <a
+                              href={serviceUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-primary hover:text-primary/80 font-semibold inline-flex items-center gap-1 transition-colors"
+                              title={`Open port :${displayPort}`}
+                            >
+                              <span>:{displayPort}</span>
+                              <ExternalLink className="w-2.5 h-2.5" />
+                            </a>
+                          ) : (
+                            `:${displayPort}`
+                          )
                         ) : (
-                          `:${service.port}`
-                        )
-                      ) : (
-                        '—'
-                      )}
+                          '—'
+                        );
+                      })()}
                     </td>
                     <td className="px-4 py-3 text-on-surface-variant">
                       {service.memoryBytes

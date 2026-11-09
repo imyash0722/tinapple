@@ -248,7 +248,7 @@ export const QuickConnectCard: React.FC<QuickConnectCardProps> = ({
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5">
                   <span className="text-xs font-bold text-on-surface group-hover:text-emerald-300 transition-colors">Android Companion</span>
-                  <span className="text-[9px] font-sans tabular-nums px-1.5 py-0.5 bg-emerald-500/10 text-emerald-400 rounded-full font-bold">v2.0.0 APK</span>
+                  <span className="text-[9px] font-sans tabular-nums px-1.5 py-0.5 bg-emerald-500/10 text-emerald-400 rounded-full font-bold">v2.0.1 APK</span>
                 </div>
                 <p className="text-[10px] text-on-surface-variant font-mono truncate">Native Kotlin & Compose Release</p>
               </div>

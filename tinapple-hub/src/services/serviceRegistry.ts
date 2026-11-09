@@ -95,16 +95,19 @@ export class ApplianceService {
       isDirectPortAccess = port === '8088' || port === '5173' || port === '3000' || this.directPortPreferred;
     } else if (currentOrigin) {
       try {
-        const u = new URL(currentOrigin);
-        hostname = u.hostname;
-        if (hostname.endsWith('.ts.net')) {
-          hostname = getTailscaleIp();
-        }
+        const u = currentOrigin.startsWith('http://') || currentOrigin.startsWith('https://')
+          ? new URL(currentOrigin)
+          : new URL(`http://${currentOrigin}`);
+        hostname = u.hostname || getTailscaleIp();
         isDirectPortAccess = u.port === '8088' || this.directPortPreferred;
       } catch {
-        // ignore
+        hostname = currentOrigin;
       }
     }
+
+    // Browsers upgrade HTTP on *.ts.net to HTTPS, including secondary ports.
+    // Plain-HTTP portals must use the node's Tailscale IP instead.
+    if (hostname.endsWith('.ts.net')) hostname = getTailscaleIp();
 
     if (this.port > 0 && isDirectPortAccess) {
       return `http://${hostname}:${this.port}/`;
@@ -201,15 +204,25 @@ export class ApplianceServiceRegistry {
   /**
    * Helper to resolve open URL by ID or port
    */
-  public resolveUrl(idOrPort: string | number): string {
+  public resolveUrl(idOrPort: string | number, currentOrigin?: string): string {
     if (typeof idOrPort === 'number') {
       const match = this.getByPort(idOrPort);
-      if (match) return match.getOpenUrl();
-      const host = typeof window !== 'undefined' ? window.location.hostname : getTailscaleIp();
+      if (match) return match.getOpenUrl(currentOrigin);
+      let host = getTailscaleIp();
+      if (typeof window !== 'undefined' && window.location?.hostname) {
+        host = window.location.hostname;
+      } else if (currentOrigin) {
+        try {
+          const u = new URL(currentOrigin);
+          host = u.hostname || getTailscaleIp();
+        } catch {
+          host = currentOrigin;
+        }
+      }
       return `http://${host}:${idOrPort}/`;
     }
     const match = this.get(idOrPort);
-    if (match) return match.getOpenUrl();
+    if (match) return match.getOpenUrl(currentOrigin);
     return `/${idOrPort}`;
   }
 
@@ -235,7 +248,7 @@ export class ApplianceServiceRegistry {
         tagline: 'Leading Requests & User Management Portal',
         category: 'media',
         icon: '🍿',
-        port: 5000,
+        port: 5055,
         subpath: '/ombi',
         guideId: 'ombi',
         directPortPreferred: true,

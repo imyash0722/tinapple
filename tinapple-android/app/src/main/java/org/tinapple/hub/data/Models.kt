@@ -22,6 +22,13 @@ data class ServiceItem(
     val effectiveDisplayName: String
         get() = displayName?.takeIf { it.isNotBlank() } ?: name.capitalizeFirst()
 
+    val displayPort: Int?
+        get() {
+            val clean = name.lowercase().removeSuffix(".service").substringBefore("@")
+            val cleanId = id?.lowercase() ?: ""
+            return if (clean == "ombi" || cleanId == "ombi") 5055 else port
+        }
+
     val isRunning: Boolean
         get() = running || activeState == "active"
 

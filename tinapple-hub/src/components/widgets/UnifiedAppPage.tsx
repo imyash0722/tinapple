@@ -117,14 +117,14 @@ const APP_METADATA_MAP: Record<
   ombi: {
     unit: 'ombi.service',
     path: '/ombi/',
-    port: 5000,
+    port: 5055,
     categoryName: 'Media & Requests',
     description: 'Media discovery and automated request manager integrated with Jellyfin, Radarr, and Sonarr.',
   },
   seerr: {
     unit: 'ombi.service',
     path: '/ombi/',
-    port: 5000,
+    port: 5055,
     categoryName: 'Media & Requests',
     description: 'Media discovery and automated request manager integrated with Jellyfin, Radarr, and Sonarr.',
   },

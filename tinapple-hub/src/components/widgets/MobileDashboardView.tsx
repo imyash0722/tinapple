@@ -66,7 +66,7 @@ export const MobileDashboardView: React.FC<MobileDashboardViewProps> = ({
   // Quick primary launchers
   const primaryLaunchers = [
     { id: 'jellyfin', name: 'Jellyfin', port: 8096, category: 'Cinema & TV', icon: <Film className="w-5 h-5 text-purple-400" /> },
-    { id: 'ombi', name: 'Ombi Requests', port: 5000, category: 'Media Portal', icon: <Film className="w-5 h-5 text-amber-500" /> },
+    { id: 'ombi', name: 'Ombi Requests', port: 5055, category: 'Media Portal', icon: <Film className="w-5 h-5 text-amber-500" /> },
     { id: 'navidrome', name: 'Navidrome', port: 4533, category: 'Lossless Music', icon: <Music className="w-5 h-5 text-emerald-400" /> },
     { id: 'suwayomi', name: 'Suwayomi', port: 4567, category: 'Manga & Comics', icon: <BookOpen className="w-5 h-5 text-sky-400" /> },
     { id: 'qbittorrent', name: 'qBittorrent', port: 8080, category: 'Downloads', icon: <Download className="w-5 h-5 text-amber-400" /> },
@@ -212,7 +212,7 @@ export const MobileDashboardView: React.FC<MobileDashboardViewProps> = ({
               >
                 <div className="flex items-center justify-between">
                   <div className="w-8 h-8 rounded-xl bg-surface-container-highest flex items-center justify-center shrink-0">
-                    <AppBrandIcon name={app.id} className="w-4 h-4 text-on-surface" />
+                    <AppBrandIcon id={app.id} className="w-4 h-4 text-on-surface" />
                   </div>
                   <span className={`w-2 h-2 rounded-full ${isRunning ? 'bg-emerald-400' : 'bg-zinc-500'}`} />
                 </div>
@@ -243,7 +243,7 @@ export const MobileDashboardView: React.FC<MobileDashboardViewProps> = ({
                 <h4 className="text-xs font-bold text-on-surface">Ombi Media Requests</h4>
                 <span className={`w-2 h-2 rounded-full ${ombiOnline ? 'bg-emerald-400' : 'bg-rose-400'} shrink-0`} />
               </div>
-              <span className="text-[10px] text-on-surface-variant font-mono">Port :5000 • Reverse Proxy /ombi</span>
+              <span className="text-[10px] text-on-surface-variant font-mono">Port :5055 • Reverse Proxy /ombi</span>
             </div>
           </div>
 

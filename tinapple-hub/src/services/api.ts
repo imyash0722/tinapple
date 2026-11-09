@@ -174,7 +174,7 @@ export function getServiceHost(): string {
     if (customUrl) {
       try {
         const parsed = new URL(customUrl);
-        return parsed.hostname;
+        return parsed.hostname.endsWith('.ts.net') ? getTailscaleIp() : parsed.hostname;
       } catch {}
     }
     const h = window.location.hostname;
@@ -193,9 +193,9 @@ export const SERVICE_PORT_MAP: Record<string, number> = {
   qbittorrent: 8080,
   vault: 8000,
   vaultwarden: 8000,
-  ombi: 5000,
-  seerr: 5000,
-  jellyseerr: 5000,
+  ombi: 5055,
+  seerr: 5055,
+  jellyseerr: 5055,
   navidrome: 4533,
   syncthing: 8384,
   adguard: 3000,
@@ -470,7 +470,7 @@ export const MOCK_SERVICES: ServiceInfo[] = [
     subState: 'running',
     unitFileState: 'enabled',
     category: 'media',
-    port: 5000,
+    port: 5055,
   },
   {
     name: 'radarr',
@@ -737,6 +737,8 @@ class ApiService {
           activeState = 'not_installed';
         }
 
+        const cleanName = (s.name || s.id || '').toLowerCase().replace(/\.service$/, '').replace(/@.*$/, '');
+        const effectivePort = cleanName === 'ombi' ? 5055 : (s.port > 0 ? s.port : undefined);
         return {
           name: s.name || s.id || 'unknown',
           displayName: s.displayName || s.name || s.id || 'Service',
@@ -746,7 +748,7 @@ class ApiService {
           subState: s.subState || (s.running ? 'running' : 'dead'),
           unitFileState: s.unitFileState || (s.enabled ? 'enabled' : 'disabled'),
           category: s.category || 'system',
-          port: s.port > 0 ? s.port : undefined,
+          port: effectivePort,
           installed: Boolean(s.installed),
           running: Boolean(s.running),
           icon: s.icon || s.name,
@@ -1821,7 +1823,7 @@ class ApiService {
 
   async getSystemUpdates(): Promise<SystemUpdateManifest | null> {
     try {
-      const res = await this.fetch(`${getApiBaseUrl()}/system/updates`);
+      const res = await fetch(`${getApiBaseUrl()}/system/updates`);
       if (!res.ok) return null;
       return await res.json();
     } catch {

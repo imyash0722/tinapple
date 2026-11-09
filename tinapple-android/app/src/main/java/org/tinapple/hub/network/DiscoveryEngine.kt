@@ -11,6 +11,7 @@ import okhttp3.Request
 import java.util.concurrent.TimeUnit
 
 object DiscoveryEngine {
+    const val DEFAULT_TAILSCALE_HOST = "100.67.207.60"
     private const val PREFS_NAME = "tinapple_network_prefs"
     private const val KEY_SERVER_ORIGIN = "cached_server_origin"
 

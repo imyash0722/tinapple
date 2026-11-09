@@ -377,7 +377,7 @@ const FALLBACK_APPS: AppInfo[] = [
     package: 'ombi-bin',
     unit: 'ombi.service',
     binary: 'Ombi',
-    port: 5000,
+    port: 5055,
     icon: 'ombi',
     accentColor: '#E37200',
     installed: false,
@@ -481,7 +481,7 @@ const FALLBACK_PACKS: AppliancePackStatus[] = [
       'qBittorrent client authenticated and synced (:8080)',
       'Prowlarr public trackers (YTS, Nyaa, TPB, LimeTorrents) linked',
       'Bazarr multi-language subtitle automator connected',
-      'Ombi 1-click requests linked to Jellyfin & Servarrs (:5000)',
+      'Ombi 1-click requests linked to Jellyfin & Servarrs (:5055)',
       'Pinchflat automated YouTube manager with Jellyfin NFO tags (:8945)',
     ],
     installedCount: 0,
@@ -1196,7 +1196,7 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({
                             <AppBrandIcon id={appId} size={18} />
                             <span className="font-semibold">{app?.name.split(' ')[0] || appId}</span>
                             {app && app.port > 0 && (
-                              <span className="text-[10px] text-tinapple-muted">:{app.port}</span>
+                              <span className="text-[10px] text-tinapple-muted">:{serviceRegistry.get(app.id)?.port ?? app.port}</span>
                             )}
                             {isAppRunning ? (
                               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" title="Running" />
@@ -1334,14 +1334,14 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({
                       {pack.id === 'seerr-stack' && (
                         <>
                           <a
-                            href={getAppUrl(5000)}
+                            href={getAppUrl(5055)}
                             target="_blank"
                             rel="noreferrer"
                             className="flex items-center gap-1 px-3 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 border border-amber-500/40 text-xs font-mono font-bold transition-all shadow-sm"
                             title="Open Ombi Requests WebUI"
                           >
                             <ExternalLink className="w-3 h-3" />
-                            Ombi (:5000)
+                            Ombi (:5055)
                           </a>
                           <a
                             href={getAppUrl(8096)}
@@ -1691,7 +1691,7 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({
                   <div className="mt-4 pt-3 border-t border-tinapple-border/70 flex items-center justify-between text-[11px] font-mono text-tinapple-muted">
                     <span>Unit: <code className="text-slate-300">{app.unit}</code></span>
                     {app.port > 0 && (
-                      <span className="text-emerald-400 font-bold">Port :{app.port}</span>
+                      <span className="text-emerald-400 font-bold">Port :{serviceRegistry.get(app.id)?.port ?? app.port}</span>
                     )}
                   </div>
                 </div>
