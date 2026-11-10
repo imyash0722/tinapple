@@ -12,23 +12,23 @@ func TestCheckClientRole(t *testing.T) {
 	ctx := context.Background()
 
 	// 1. Loopback
-	isOwner, user := mgr.CheckClientRole(ctx, "127.0.0.1")
+	isOwner, user := mgr.CheckClientRole(ctx, nil, "127.0.0.1")
 	if !isOwner || user != "localhost" {
 		t.Errorf("expected 127.0.0.1 to be owner, got %v (%s)", isOwner, user)
 	}
 
-	isOwner, user = mgr.CheckClientRole(ctx, "::1")
+	isOwner, user = mgr.CheckClientRole(ctx, nil, "::1")
 	if !isOwner || user != "localhost" {
 		t.Errorf("expected ::1 to be owner, got %v (%s)", isOwner, user)
 	}
 
 	// 2. Private LAN
-	isOwner, user = mgr.CheckClientRole(ctx, "192.168.1.109")
+	isOwner, user = mgr.CheckClientRole(ctx, nil, "192.168.1.109")
 	if !isOwner || user != "lan-owner" {
 		t.Errorf("expected 192.168.1.109 to be owner, got %v (%s)", isOwner, user)
 	}
 
-	isOwner, user = mgr.CheckClientRole(ctx, "10.0.5.20")
+	isOwner, user = mgr.CheckClientRole(ctx, nil, "10.0.5.20")
 	if !isOwner || user != "lan-owner" {
 		t.Errorf("expected 10.0.5.20 to be owner, got %v (%s)", isOwner, user)
 	}
@@ -54,19 +54,19 @@ exit 1
 	t.Setenv("PATH", dir+":"+os.Getenv("PATH"))
 
 	// Owner Tailscale IP
-	isOwner, user = mgr.CheckClientRole(ctx, "100.103.108.21")
+	isOwner, user = mgr.CheckClientRole(ctx, nil, "100.103.108.21")
 	if !isOwner || user != "yatinrajesh77@gmail.com" {
 		t.Errorf("expected 100.103.108.21 to be owner, got %v (%s)", isOwner, user)
 	}
 
 	// Friend Tailscale IP
-	isOwner, user = mgr.CheckClientRole(ctx, "100.67.155.4")
+	isOwner, user = mgr.CheckClientRole(ctx, nil, "100.67.155.4")
 	if isOwner {
 		t.Errorf("expected 100.67.155.4 to NOT be owner, got %v (%s)", isOwner, user)
 	}
 
 	// 4. External public IP
-	isOwner, user = mgr.CheckClientRole(ctx, "8.8.8.8")
+	isOwner, user = mgr.CheckClientRole(ctx, nil, "8.8.8.8")
 	if isOwner {
 		t.Errorf("expected 8.8.8.8 to NOT be owner, got %v (%s)", isOwner, user)
 	}

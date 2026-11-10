@@ -103,7 +103,32 @@ if [[ -f /usr/local/bin/tinapple-configure-seerr ]]; then
   fi
 fi
 
-# 8. Ensure Wallpaper Gallery from imyash0722/Wallpapers is synchronized
+# 8. Ensure Navidrome lossless library rules & playlist synchronizer
+echo "[*] Synchronizing Navidrome lossless configuration and playlist tools..."
+if [[ -f /etc/navidrome/navidrome.toml ]]; then
+  if ! grep -q "PurgeMissing" /etc/navidrome/navidrome.toml; then
+    echo -e "\n[Scanner]\nPurgeMissing = \"always\"" >> /etc/navidrome/navidrome.toml
+    echo "[✓] Configured Navidrome PurgeMissing = always in /etc/navidrome/navidrome.toml"
+    if systemctl is-active --quiet navidrome 2>/dev/null; then
+      systemctl restart navidrome || true
+    fi
+  fi
+fi
+
+# Ensure flac utility is available for maximum lossless level 8 compression & metadata
+if ! command -v flac >/dev/null 2>&1 || ! command -v metaflac >/dev/null 2>&1; then
+  pacman -S --noconfirm --needed flac >/dev/null 2>&1 || true
+fi
+
+# Ensure tinapple-update-playlists is installed and symlinked
+if [[ -f /usr/local/bin/tinapple-update-playlists ]]; then
+  chmod +x /usr/local/bin/tinapple-update-playlists
+  install -d -m 0775 -o root -g media /srv/media/music/Playlists
+  ln -sf /usr/local/bin/tinapple-update-playlists /srv/media/music/Playlists/update_playlists.py
+  echo "[✓] tinapple-update-playlists synchronizer ready"
+fi
+
+# 9. Ensure Wallpaper Gallery from imyash0722/Wallpapers is synchronized
 WP_TARGET="/usr/share/tinapple-dash/wallpapers"
 echo "[*] Ensuring wallpaper gallery is synchronized from imyash0722/Wallpapers..."
 install -d -m 0755 "$WP_TARGET"

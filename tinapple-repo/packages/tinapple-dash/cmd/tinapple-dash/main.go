@@ -85,6 +85,28 @@ func main() {
 	r.GET("/download/apk", func(c *gin.Context) {
 		c.Redirect(http.StatusFound, "/tinapple-client.apk")
 	})
+	r.GET("/download/android", func(c *gin.Context) {
+		c.Redirect(http.StatusFound, "/tinapple-client.apk")
+	})
+
+	// Multi-platform releases endpoints
+	releasesDir := filepath.Join(distDir, "releases")
+	if _, err := os.Stat("out/releases"); err == nil {
+		releasesDir = "out/releases"
+	}
+	r.Static("/download/releases", releasesDir)
+	r.GET("/download/desktop", func(c *gin.Context) {
+		c.Redirect(http.StatusFound, "/download/releases/tinapple-desktop-linux-x86_64.AppImage")
+	})
+	r.GET("/download/windows", func(c *gin.Context) {
+		c.Redirect(http.StatusFound, "/download/releases/tinapple-desktop-windows-x64.exe")
+	})
+	r.GET("/download/macos", func(c *gin.Context) {
+		c.Redirect(http.StatusFound, "/download/releases/tinapple-desktop-macos-universal.dmg")
+	})
+	r.GET("/download/ios", func(c *gin.Context) {
+		c.Redirect(http.StatusFound, "/download/releases/tinapple-ios-client.ipa")
+	})
 
 	// Suwayomi-Tsumiru Manga Client APK route
 	tsumiruApkPath := filepath.Join(distDir, "tsumiru-client.apk")
@@ -97,68 +119,96 @@ func main() {
 	})
 
 	// Suwayomi & Tsumiru Web Redirects to Suwayomi reader on :4567
-	handleSuwayomiRedirect := func(c *gin.Context) {
-		host := c.Request.Host
-		if colon := strings.Index(host, ":"); colon != -1 {
-			host = host[:colon]
-		}
-		c.Redirect(http.StatusFound, "http://"+host+":4567/")
-	}
-	r.GET("/tsumiru", handleSuwayomiRedirect)
-	r.GET("/tsumiru/*filepath", handleSuwayomiRedirect)
-	r.GET("/suwayomi", handleSuwayomiRedirect)
-	r.GET("/suwayomi/*filepath", handleSuwayomiRedirect)
+	// Handled seamlessly in NoRoute middleware without route collisions
 
 	if _, err := os.Stat(filepath.Join(distDir, "index.html")); err == nil {
 		r.Static("/assets", filepath.Join(distDir, "assets"))
 		r.Static("/icons", filepath.Join(distDir, "icons"))
-		if _, err := os.Stat(filepath.Join(distDir, "guides")); err == nil {
-			r.Static("/guides", filepath.Join(distDir, "guides"))
-		}
 		if _, err := os.Stat(filepath.Join(distDir, "images")); err == nil {
 			r.Static("/images", filepath.Join(distDir, "images"))
 		}
 		wpDir := api.FindWallpapersDir(distDir)
 		r.Static("/wallpapers", wpDir)
 		r.StaticFile("/favicon.ico", filepath.Join(distDir, "favicon.ico"))
+		r.StaticFile("/sw.js", filepath.Join(distDir, "sw.js"))
+		r.StaticFile("/manifest.json", filepath.Join(distDir, "manifest.json"))
 		serveIndex := func(c *gin.Context) {
 			c.Header("Cache-Control", "no-cache, no-store, must-revalidate, max-age=0")
 			c.Header("Pragma", "no-cache")
 			c.Header("Expires", "0")
 			c.File(filepath.Join(distDir, "index.html"))
 		}
-		guideMap := map[string]string{
-			"/guide/plezy":       "/guides/plezy.html",
-			"/guide/jellyfin":    "/guides/plezy.html",
-			"/guide/seerr":       "/guides/seerr.html",
-			"/guide/servarr":     "/guides/seerr.html",
-			"/guide/adguard":     "/guides/adguard.html",
-			"/guide/navidrome":   "/guides/navidrome.html",
-			"/guide/syncyomi":    "/guides/syncyomi.html",
-			"/guide/beeper":      "/guides/beeper.html",
-			"/guide/vaultwarden": "/guides/vaultwarden.html",
-			"/guide/syncthing":   "/guides/syncthing.html",
-			"/guide/obsidian":    "/guides/obsidian.html",
-			"/guide/ssh":         "/guides/ssh.html",
-			"/guide/tor":         "/guides/tor.html",
-		}
-		for routePath, targetFile := range guideMap {
-			tgt := targetFile
-			r.GET(routePath, func(c *gin.Context) {
-				c.Redirect(http.StatusFound, tgt)
-			})
-		}
+
+		// Clean unified guides handling: serves static HTML if .html requested, otherwise React SPA
+		guidesDir := filepath.Join(distDir, "guides")
+		r.GET("/guides", serveIndex)
+		r.GET("/guides/*filepath", func(c *gin.Context) {
+			param := c.Param("filepath")
+			if strings.HasSuffix(param, ".html") {
+				target := filepath.Join(guidesDir, filepath.Clean(param))
+				if _, err := os.Stat(target); err == nil {
+					c.File(target)
+					return
+				}
+			}
+			serveIndex(c)
+		})
 
 		r.GET("/", serveIndex)
+
 		r.NoRoute(func(c *gin.Context) {
 			path := c.Request.URL.Path
-			if strings.HasPrefix(path, "/tsumiru") || strings.HasPrefix(path, "/suwayomi") {
-				host := c.Request.Host
-				if colon := strings.Index(host, ":"); colon != -1 {
-					host = host[:colon]
-				}
-				c.Redirect(http.StatusFound, "http://"+host+":4567/")
+
+			// Check if file exists directly in distDir (e.g. icons, sw.js, manifest.json)
+			targetFile := filepath.Join(distDir, filepath.Clean(path))
+			if fi, err := os.Stat(targetFile); err == nil && !fi.IsDir() {
+				c.File(targetFile)
 				return
+			}
+
+			// Unified App & Guide routes: always serve Pineapple Hub React SPA
+			if strings.HasSuffix(path, "-guide") || strings.HasPrefix(path, "/app/") || strings.HasPrefix(path, "/guide/") || strings.HasPrefix(path, "/guides/") || path == "/guides" || path == "/guides/" {
+				serveIndex(c)
+				return
+			}
+
+			// Direct port service redirects for dev/8088 dashboard access
+			servicePortRedirects := map[string]int{
+				"/seerr":       5055,
+				"/jellyseerr":  5055,
+				"/jellyfin":    8096,
+				"/qbittorrent": 8080,
+				"/radarr":      7878,
+				"/sonarr":      8989,
+				"/prowlarr":    9696,
+				"/bazarr":      6767,
+				"/syncthing":   8384,
+				"/adguard":     3000,
+				"/adguardhome": 3000,
+				"/vault":       8000,
+				"/vaultwarden": 8000,
+				"/navidrome":   4533,
+				"/pinchflat":   8945,
+				"/youtube":     8945,
+				"/suwayomi":    4567,
+				"/tsumiru":     4567,
+				"/homarr":      7575,
+			}
+
+			cleanPath := strings.TrimRight(strings.ToLower(path), "/")
+			for prefix, port := range servicePortRedirects {
+				if cleanPath == prefix || strings.HasPrefix(cleanPath, prefix+"/") {
+					host := c.Request.Host
+					if colon := strings.Index(host, ":"); colon != -1 {
+						host = host[:colon]
+					}
+					proto := "http"
+					if port == 8000 && (c.Request.TLS != nil || c.GetHeader("X-Forwarded-Proto") == "https") {
+						proto = "https"
+					}
+					c.Redirect(http.StatusFound, fmt.Sprintf("%s://%s:%d/", proto, host, port))
+					return
+				}
 			}
 			if strings.HasPrefix(path, "/api") ||
 				strings.HasPrefix(path, "/assets") ||

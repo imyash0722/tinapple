@@ -1,0 +1,13 @@
+# Navidrome Music Server Configuration Template
+MusicFolder = "/srv/media/music"
+DataFolder = "/var/lib/navidrome"
+LogLevel = "info"
+Address = "0.0.0.0"
+Port = 4533
+ScanInterval = "1m"
+SessionTimeout = "48h"
+EnableTranscodingConfig = true
+
+[Scanner]
+PurgeMissing = "always"
+

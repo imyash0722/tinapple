@@ -1,0 +1,150 @@
+#!/usr/bin/env python3
+"""
+Tinapple Playlist Generator & Navidrome Synchronizer
+Maintains smart, sorted M3U playlists for all downloaded lossless tracks
+and curated melody collections under /srv/media/music/Playlists.
+"""
+
+import os
+import re
+import subprocess
+
+BASE_DIR = "/srv/media/music/Playlists"
+FAV_DIR = os.path.join(BASE_DIR, "Favorite Recognizable Melodies")
+
+# Curated categories for recognizable melodies
+CATEGORIES = {
+    "The Most Recognizable Melodies From The 2010s": [
+        "SICKO MODE", "Dark Horse", "Levels", "Alone", "Heads Will Roll", "Trap Queen", "Let Me Love You"
+    ],
+    "The Most Recognizable Melodies From The 2020s": [
+        "Not Like Us", "FE!N", "INDUSTRY BABY", "STAY", "Laugh Now Cry Later", "Timeless", "Chess"
+    ],
+    "TOP Most Recognizable Rap Melodies Of All Time": [
+        "Still D.R.E.", "Day 'n' Nite", "Crank That", "Look At Me!", "HUMBLE.", "The Next Episode", "The Real Slim Shady", "Paris"
+    ],
+    "The Most Recognizable Melodies Of All Time (Club - Dance - Pop)": [
+        "The Final Countdown", "Yeah!", "Turn Down for What", "STAY", "Levels", "Gypsy Woman", "Stereo Love", "On The Floor"
+    ],
+    "MOST Recognizable Melodies From Viral Trends Of All Time": [
+        "Stereo Love", "Astronomia", "Resonance", "Dark Fantasy", "The Box", "Black Beatles", "Savage Love"
+    ],
+    "The Most Recognizable Trap Melodies Of All Time": [
+        "March Madness", "Trap Queen", "Choppa", "Solo", "Slippery", "U.O.E.N.O."
+    ],
+    "Recognizable Piano Melodies": [
+        "DJ Got Us Fallin' In Love", "Faded", "Viva La Vida", "Fireflies", "Riptide", "The Nights", "7 Years", "Dynamite", "Counting Stars"
+    ]
+}
+
+def get_flac_meta(fpath):
+    title = ""
+    artist = ""
+    duration = 0
+    try:
+        res = subprocess.run(
+            ["metaflac", "--show-tag=TITLE", "--show-tag=ARTIST", "--show-total-samples", "--show-sample-rate", fpath],
+            capture_output=True, text=True, check=False
+        )
+        lines = res.stdout.strip().splitlines()
+        for l in lines:
+            if l.lower().startswith("title="):
+                title = l[6:].strip()
+            elif l.lower().startswith("artist="):
+                artist = l[7:].strip()
+        num_lines = [l for l in lines if l.isdigit()]
+        if len(num_lines) >= 2:
+            total_samples = int(num_lines[-2])
+            sample_rate = int(num_lines[-1])
+            if sample_rate > 0:
+                duration = int(total_samples / sample_rate)
+    except Exception:
+        pass
+
+    if not title:
+        basename = os.path.basename(fpath)
+        clean = re.sub(r"^\d+\s*-\s*", "", basename)
+        clean = os.path.splitext(clean)[0]
+        if " - " in clean:
+            artist, title = clean.split(" - ", 1)
+        else:
+            title = clean
+            artist = "Unknown Artist"
+
+    return {
+        "title": title,
+        "artist": artist,
+        "duration": duration,
+        "path": fpath,
+        "filename": os.path.basename(fpath)
+    }
+
+def main():
+    if not os.path.exists(BASE_DIR):
+        print(f"Directory {BASE_DIR} does not exist.")
+        return
+
+    # 1. Update standalone playlist folders (e.g. Brazilian Phonk, etc.)
+    for entry in sorted(os.listdir(BASE_DIR)):
+        entry_path = os.path.join(BASE_DIR, entry)
+        if os.path.isdir(entry_path) and entry != "Favorite Recognizable Melodies":
+            flacs = [os.path.join(entry_path, f) for f in os.listdir(entry_path) if f.lower().endswith(".flac")]
+            if flacs:
+                meta_list = [get_flac_meta(fp) for fp in flacs]
+                # Sort songs by track number / filename
+                meta_list.sort(key=lambda x: x["filename"])
+                m3u_file = os.path.join(BASE_DIR, f"{entry}.m3u")
+                with open(m3u_file, "w", encoding="utf-8") as f:
+                    f.write("#EXTM3U\n")
+                    for m in meta_list:
+                        dur = m["duration"] or -1
+                        f.write(f"#EXTINF:{dur},{m['artist']} - {m['title']}\n")
+                        rel = f"{entry}/{m['filename']}"
+                        f.write(f"{rel}\n")
+                print(f"✓ Generated {entry}.m3u with {len(meta_list)} sorted tracks.")
+
+    # 2. Update Favorite Recognizable Melodies & Categorized Sub-playlists
+    if os.path.exists(FAV_DIR):
+        fav_flacs = [os.path.join(FAV_DIR, f) for f in os.listdir(FAV_DIR) if f.lower().endswith(".flac")]
+        if fav_flacs:
+            fav_meta = [get_flac_meta(fp) for fp in fav_flacs]
+            # Sort songs alphabetically by track title
+            fav_meta.sort(key=lambda x: x["title"].lower())
+
+            # Master Favorite Recognizable Melodies.m3u
+            master_m3u = os.path.join(BASE_DIR, "Favorite Recognizable Melodies.m3u")
+            with open(master_m3u, "w", encoding="utf-8") as f:
+                f.write("#EXTM3U\n")
+                for m in fav_meta:
+                    dur = m["duration"] or -1
+                    f.write(f"#EXTINF:{dur},{m['artist']} - {m['title']}\n")
+                    f.write(f"Favorite Recognizable Melodies/{m['filename']}\n")
+            print(f"✓ Generated Favorite Recognizable Melodies.m3u with {len(fav_meta)} sorted tracks.")
+
+            # Categorized Playlists
+            for cat_name, keywords in CATEGORIES.items():
+                matched = []
+                for m in fav_meta:
+                    search_str = f"{m['title']} {m['filename']}".lower()
+                    if any(kw.lower() in search_str for kw in keywords):
+                        matched.append(m)
+                # Sort matched tracks alphabetically by title
+                matched.sort(key=lambda x: x["title"].lower())
+                cat_m3u = os.path.join(BASE_DIR, f"{cat_name}.m3u")
+                with open(cat_m3u, "w", encoding="utf-8") as f:
+                    f.write("#EXTM3U\n")
+                    for m in matched:
+                        dur = m["duration"] or -1
+                        f.write(f"#EXTINF:{dur},{m['artist']} - {m['title']}\n")
+                        f.write(f"Favorite Recognizable Melodies/{m['filename']}\n")
+                print(f"✓ Generated {cat_name}.m3u with {len(matched)} sorted tracks.")
+
+    # 3. Trigger Navidrome to scan updated playlists
+    try:
+        print("Scanning updated playlists into Navidrome...")
+        subprocess.run(["sudo", "-n", "/usr/bin/navidrome", "scan", "--configfile", "/etc/navidrome/navidrome.toml"], check=False)
+    except Exception as e:
+        print(f"Navidrome scan notice: {e}")
+
+if __name__ == "__main__":
+    main()

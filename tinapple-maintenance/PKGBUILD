@@ -1,18 +1,18 @@
 # Maintainer: tinapple Project
 pkgname=tinapple-maintenance
 pkgver=0.0.1
-pkgrel=2
+pkgrel=3
 pkgdesc="System health checks and bootable Btrfs recovery for tinapple"
 arch=(any)
 license=(MIT)
-depends=('snapper' 'btrfs-progs' 'smartmontools' 'jq' 'python' 'util-linux' 'coreutils')
+depends=('snapper' 'btrfs-progs' 'smartmontools' 'jq' 'python' 'util-linux' 'coreutils' 'flac')
 optdepends=('limine: Limine recovery entries' 'grub: GRUB recovery entries')
 install=tinapple-maintenance.install
 source=()
 sha256sums=()
 package() {
   cd "$startdir"
-  for script in tinapple-health-check tinapple-update-hook tinapple-update tinapple-rollback tinapple-snapshot-boot; do
+  for script in tinapple-health-check tinapple-update-hook tinapple-update tinapple-update-playlists tinapple-rollback tinapple-snapshot-boot; do
     install -Dm755 "bin/$script" "$pkgdir/usr/bin/$script"
   done
   install -Dm644 lib/init-snapper.sh "$pkgdir/usr/lib/tinapple-maintenance/init-snapper.sh"

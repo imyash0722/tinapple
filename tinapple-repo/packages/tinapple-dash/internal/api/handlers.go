@@ -2,12 +2,14 @@ package api
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"regexp"
 	"runtime"
 	"strings"
@@ -66,7 +68,7 @@ func (h *Handler) getClientIP(c *gin.Context) string {
 
 func (h *Handler) getClientRole(c *gin.Context) (bool, string) {
 	clientIP := h.getClientIP(c)
-	return h.tailscaleMgr.CheckClientRole(c.Request.Context(), clientIP)
+	return h.tailscaleMgr.CheckClientRole(c.Request.Context(), h.rolesMgr, clientIP)
 }
 
 func (h *Handler) UserRole(c *gin.Context) {
@@ -172,9 +174,17 @@ func SetupRoutes(r *gin.Engine, cfg *config.Manifest, svcMgr *services.SystemdMa
 		v1.POST("/tailscale/up", h.UpTailscale)
 		v1.POST("/tailscale/down", h.DownTailscale)
 
-		// Tor Anonymity & Privacy Exit
+		// Tor & Proton Anonymity & Privacy Exit
 		v1.GET("/system/tor-exit", h.GetTorStatus)
 		v1.POST("/system/tor-exit", h.ToggleTorStatus)
+		v1.GET("/system/proton-exit", h.GetProtonStatus)
+		v1.POST("/system/proton-exit", h.ToggleProtonStatus)
+		v1.GET("/system/proton/config", h.GetProtonStatus)
+		v1.POST("/system/proton/signin", h.ProtonSignIn)
+		v1.POST("/system/proton/signout", h.ProtonSignOut)
+		v1.GET("/system/proton/wireguard", h.GetProtonWireGuard)
+		v1.POST("/system/proton/wireguard", h.ProtonSetWireGuard)
+		v1.DELETE("/system/proton/wireguard", h.ProtonClearWireGuard)
 
 		// Wallpapers (Tinarchy style with video loops and custom upload)
 		v1.GET("/wallpapers", h.ListWallpapers)
@@ -195,19 +205,49 @@ func SetupRoutes(r *gin.Engine, cfg *config.Manifest, svcMgr *services.SystemdMa
 
 		// Tailscale Mesh RBAC & User Management (Tinarchy architecture)
 		v1.GET("/users", h.GetUsers)
+		v1.POST("/users/add", h.AddUser)
 		v1.POST("/users/role", h.UpdateUserRole)
 		v1.POST("/users/permissions", h.UpdateUserPermissions)
 		v1.POST("/users/guest-tor-exit", h.UpdateGuestTorExit)
+
+		// Persistent Dashboard Layout & Client Settings
+		v1.GET("/dashboard/layout", h.GetDashboardLayout)
+		v1.POST("/dashboard/layout", h.SaveDashboardLayout)
+		v1.GET("/user/settings", h.GetUserSettings)
+		v1.POST("/user/settings", h.SaveUserSettings)
+
+		// Error Logger, Machine Diagnostics & Gemini AI Analysis
+		v1.GET("/system/errors", h.GetSystemErrors)
+		v1.POST("/system/errors/client", h.ReportClientError)
+		v1.POST("/system/errors/clear", h.ClearClientErrors)
+		v1.GET("/ai/status", h.GetAIStatus)
+		v1.POST("/ai/test-key", h.TestAIKey)
+		v1.POST("/ai/analyze-error", h.AnalyzeErrorWithAI)
 
 		// WebSocket
 		v1.GET("/ws", h.WebSocketHandler)
 	}
 
+	// Error Logger & Machine Diagnostics (Direct /api paths for cross-compatibility)
+	r.GET("/api/system/errors", h.GetSystemErrors)
+	r.POST("/api/system/errors/client", h.ReportClientError)
+	r.POST("/api/system/errors/clear", h.ClearClientErrors)
+	r.GET("/api/ai/status", h.GetAIStatus)
+	r.POST("/api/ai/test-key", h.TestAIKey)
+	r.POST("/api/ai/analyze-error", h.AnalyzeErrorWithAI)
+
 	// Tailscale Mesh RBAC (Direct /api paths for cross-compatibility)
 	r.GET("/api/users", h.GetUsers)
+	r.POST("/api/users/add", h.AddUser)
 	r.POST("/api/users/role", h.UpdateUserRole)
 	r.POST("/api/users/permissions", h.UpdateUserPermissions)
 	r.POST("/api/users/guest-tor-exit", h.UpdateGuestTorExit)
+
+	// Dashboard Layout & Client Settings Direct /api endpoints
+	r.GET("/api/dashboard/layout", h.GetDashboardLayout)
+	r.POST("/api/dashboard/layout", h.SaveDashboardLayout)
+	r.GET("/api/user/settings", h.GetUserSettings)
+	r.POST("/api/user/settings", h.SaveUserSettings)
 
 	// Universal Client Pairing Endpoint (Tinarchy style)
 	r.GET("/pair.sh", h.ServePairScript)
@@ -221,9 +261,20 @@ func SetupRoutes(r *gin.Engine, cfg *config.Manifest, svcMgr *services.SystemdMa
 	r.GET("/api/v1/manga/:id/thumbnail", h.ProxyMangaThumbnail)
 	r.HEAD("/api/v1/manga/:id/thumbnail", h.ProxyMangaThumbnail)
 	r.GET("/api/widgets/manga/thumbnail/:id", h.ProxyMangaThumbnail)
+	r.GET("/api/widgets/jellyfin", h.WidgetJellyfin)
+	r.GET("/api/widgets/jellyfin/image/:id", h.ProxyJellyfinImage)
+	r.GET("/api/widgets/seerr", h.WidgetSeerr)
 	r.GET("/api/beeper/status", h.BeeperStatus)
 	r.GET("/api/system/tor-exit", h.GetTorStatus)
 	r.POST("/api/system/tor-exit", h.ToggleTorStatus)
+	r.GET("/api/system/proton-exit", h.GetProtonStatus)
+	r.POST("/api/system/proton-exit", h.ToggleProtonStatus)
+	r.GET("/api/system/proton/config", h.GetProtonStatus)
+	r.POST("/api/system/proton/signin", h.ProtonSignIn)
+	r.POST("/api/system/proton/signout", h.ProtonSignOut)
+	r.GET("/api/system/proton/wireguard", h.GetProtonWireGuard)
+	r.POST("/api/system/proton/wireguard", h.ProtonSetWireGuard)
+	r.DELETE("/api/system/proton/wireguard", h.ProtonClearWireGuard)
 
 	// Wallpaper APIs (compatible with v1 and legacy Tinarchy paths)
 	r.GET("/api/wallpapers", h.ListWallpapers)
@@ -897,6 +948,235 @@ func (h *Handler) GetTorStatus(c *gin.Context) {
 	})
 }
 
+// GetProtonStatus returns whether Proton VPN exit node is active
+func (h *Handler) GetProtonStatus(c *gin.Context) {
+	// 1. Direct kernel WireGuard interface detection (checks proton0 and proton interfaces)
+	wgOut, _ := exec.Command("wg", "show", "proton0").CombinedOutput()
+	wgActive := len(bytes.TrimSpace(wgOut)) > 0
+	if !wgActive {
+		wgOut, _ = exec.Command("wg", "show", "proton").CombinedOutput()
+		wgActive = len(bytes.TrimSpace(wgOut)) > 0
+	}
+
+	daemonActive := exec.Command("systemctl", "is-active", "--quiet", "proton.VPN.service").Run() == nil ||
+		exec.Command("systemctl", "is-active", "--quiet", "wg-quick@proton.service").Run() == nil
+
+	active := wgActive || daemonActive
+	configured := active
+
+	// Check if WireGuard profile exists
+	if _, err := os.Stat("/etc/wireguard/proton.conf"); err == nil {
+		configured = true
+	}
+
+	details := "Disconnected"
+	if active {
+		details = "Active via Swiss WireGuard (proton0) • Protected"
+		// Extract transfer stats or endpoint if available
+		wgStr := string(wgOut)
+		if idx := strings.Index(wgStr, "endpoint:"); idx != -1 {
+			endpointLine := strings.Split(wgStr[idx:], "\n")[0]
+			parts := strings.Fields(endpointLine)
+			if len(parts) >= 2 {
+				details = fmt.Sprintf("Active via Swiss WireGuard (%s) • Protected", parts[1])
+			}
+		}
+	} else if configured {
+		details = "Configured (WireGuard profile ready)"
+	} else {
+		details = "Unconfigured • Sign in or add WireGuard profile"
+	}
+
+	status := "stopped"
+	if active {
+		status = "running"
+	} else if !configured {
+		status = "unconfigured"
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"active":     active,
+		"status":     status,
+		"configured": configured,
+		"details":    details,
+		"routed_services": []string{
+			"jellyfin",
+			"suwayomi",
+			"qbittorrent",
+			"radarr",
+			"sonarr",
+			"prowlarr",
+			"bazarr",
+			"pinchflat",
+			"navidrome",
+		},
+	})
+}
+
+// ToggleProtonStatus connects or disconnects Proton VPN
+func (h *Handler) ToggleProtonStatus(c *gin.Context) {
+	var req struct {
+		Active bool `json:"active"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if _, err := os.Stat("/usr/local/bin/tinapple-proton"); err == nil {
+		action := "disconnect"
+		if req.Active {
+			action = "connect"
+		}
+		out, _ := exec.Command("/usr/local/bin/tinapple-proton", action).CombinedOutput()
+		var res map[string]interface{}
+		if json.Unmarshal(out, &res) == nil {
+			c.JSON(http.StatusOK, res)
+			return
+		}
+	}
+
+	var output string
+	if req.Active {
+		_ = exec.Command("systemctl", "start", "proton.VPN.service").Run()
+		out, err := exec.Command("protonvpn", "connect", "-f").CombinedOutput()
+		output = string(out)
+		if err != nil && (strings.Contains(output, "signin") || strings.Contains(output, "No account")) {
+			// Try WireGuard fallback if configured
+			if _, statErr := os.Stat("/etc/wireguard/proton.conf"); statErr == nil {
+				_ = exec.Command("systemctl", "start", "wg-quick@proton.service").Run()
+			}
+		}
+	} else {
+		out, _ := exec.Command("protonvpn", "disconnect").CombinedOutput()
+		output = string(out)
+		_ = exec.Command("systemctl", "stop", "wg-quick@proton.service").Run()
+	}
+
+	out, _ := exec.Command("protonvpn", "status").CombinedOutput()
+	outStr := string(out)
+	active := strings.Contains(outStr, "Status: Connected") || strings.Contains(outStr, "Connected to")
+	if !active {
+		active = exec.Command("systemctl", "is-active", "--quiet", "wg-quick@proton.service").Run() == nil
+	}
+
+	status := "stopped"
+	if active {
+		status = "running"
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"active": active,
+		"status": status,
+		"output": output,
+	})
+}
+
+// ProtonSignIn authenticates to Proton VPN using username and password (plus optional TOTP)
+func (h *Handler) ProtonSignIn(c *gin.Context) {
+	var req struct {
+		Username string `json:"username" binding:"required"`
+		Password string `json:"password" binding:"required"`
+		TOTP     string `json:"totp"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	args := []string{"signin", req.Username, req.Password}
+	if req.TOTP != "" {
+		args = append(args, req.TOTP)
+	}
+	out, err := exec.Command("/usr/local/bin/tinapple-proton", args...).CombinedOutput()
+	var res map[string]interface{}
+	if json.Unmarshal(out, &res) == nil {
+		if err != nil && res["success"] == false {
+			c.JSON(http.StatusBadRequest, res)
+			return
+		}
+		// If signin was successful, optionally auto-connect
+		if res["success"] == true {
+			connectOut, _ := exec.Command("/usr/local/bin/tinapple-proton", "connect").CombinedOutput()
+			var connectRes map[string]interface{}
+			if json.Unmarshal(connectOut, &connectRes) == nil {
+				c.JSON(http.StatusOK, connectRes)
+				return
+			}
+		}
+		c.JSON(http.StatusOK, res)
+		return
+	}
+	c.JSON(http.StatusInternalServerError, gin.H{"error": string(out)})
+}
+
+// ProtonSignOut logs out of Proton VPN CLI
+func (h *Handler) ProtonSignOut(c *gin.Context) {
+	out, _ := exec.Command("/usr/local/bin/tinapple-proton", "signout").CombinedOutput()
+	var res map[string]interface{}
+	if json.Unmarshal(out, &res) == nil {
+		c.JSON(http.StatusOK, res)
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"success": true, "message": "Signed out"})
+}
+
+// GetProtonWireGuard returns info about saved WireGuard profile
+func (h *Handler) GetProtonWireGuard(c *gin.Context) {
+	out, _ := exec.Command("/usr/local/bin/tinapple-proton", "get-wireguard").CombinedOutput()
+	var res map[string]interface{}
+	if json.Unmarshal(out, &res) == nil {
+		c.JSON(http.StatusOK, res)
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"exists": false})
+}
+
+// ProtonSetWireGuard updates /etc/wireguard/proton.conf
+func (h *Handler) ProtonSetWireGuard(c *gin.Context) {
+	var req struct {
+		Config     string `json:"config" binding:"required"`
+		ConnectNow bool   `json:"connect_now"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	cmd := exec.Command("/usr/local/bin/tinapple-proton", "set-wireguard")
+	cmd.Stdin = strings.NewReader(req.Config)
+	out, err := cmd.CombinedOutput()
+	var res map[string]interface{}
+	if json.Unmarshal(out, &res) == nil {
+		if err != nil || res["success"] == false {
+			c.JSON(http.StatusBadRequest, res)
+			return
+		}
+		if req.ConnectNow {
+			connectOut, _ := exec.Command("/usr/local/bin/tinapple-proton", "connect").CombinedOutput()
+			var connectRes map[string]interface{}
+			if json.Unmarshal(connectOut, &connectRes) == nil {
+				c.JSON(http.StatusOK, connectRes)
+				return
+			}
+		}
+		c.JSON(http.StatusOK, res)
+		return
+	}
+	c.JSON(http.StatusInternalServerError, gin.H{"error": string(out)})
+}
+
+// ProtonClearWireGuard removes /etc/wireguard/proton.conf
+func (h *Handler) ProtonClearWireGuard(c *gin.Context) {
+	out, _ := exec.Command("/usr/local/bin/tinapple-proton", "clear-wireguard").CombinedOutput()
+	var res map[string]interface{}
+	if json.Unmarshal(out, &res) == nil {
+		c.JSON(http.StatusOK, res)
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"success": true})
+}
+
 // ToggleTorStatus starts or stops tor.service
 func (h *Handler) ToggleTorStatus(c *gin.Context) {
 	var req struct {
@@ -923,6 +1203,50 @@ func (h *Handler) ToggleTorStatus(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"active": active,
 		"status": status,
+	})
+}
+
+// AddUser adds or grants role/permissions to a shared user
+type addUserReq struct {
+	LoginName       string   `json:"login_name" binding:"required"`
+	Role            string   `json:"role"`
+	AllowedServices []string `json:"allowed_services"`
+}
+
+func (h *Handler) AddUser(c *gin.Context) {
+	clientIP := h.getClientIP(c)
+	payload, _ := h.tailscaleMgr.GetUserManagementData(c.Request.Context(), h.rolesMgr, clientIP)
+	if payload != nil && !payload.CanManageRoles {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Forbidden: Only the Owner can add users or modify roles"})
+		return
+	}
+
+	var req addUserReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	ownerLogin := ""
+	if payload != nil {
+		for _, u := range payload.TailscaleUsers {
+			if u.IsOwner {
+				ownerLogin = u.LoginName
+				break
+			}
+		}
+	}
+
+	if err := h.rolesMgr.AddUser(req.LoginName, req.Role, req.AllowedServices, ownerLogin); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	h.tailscaleMgr.InvalidateRoleCache()
+
+	c.JSON(http.StatusOK, gin.H{
+		"success":    true,
+		"login_name": req.LoginName,
+		"role":       req.Role,
 	})
 }
 
@@ -1424,7 +1748,7 @@ func (h *Handler) ThermalInfo(c *gin.Context) {
 	})
 }
 
-// SetThermalProfile sets thermal profile
+// SetThermalProfile sets thermal profile and applies CPU frequency scaling
 func (h *Handler) SetThermalProfile(c *gin.Context) {
 	var req struct {
 		Profile string `json:"profile" binding:"required,oneof=balanced performance quiet server"`
@@ -1433,7 +1757,28 @@ func (h *Handler) SetThermalProfile(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"status": "ok", "profile": req.Profile})
+
+	h.telemetry.SetThermalProfile(req.Profile)
+	h.cfg.Hardware.ThermalProfile = req.Profile
+
+	// Apply CPU scaling governor
+	gov := "schedutil"
+	switch req.Profile {
+	case "quiet":
+		gov = "powersave"
+	case "performance":
+		gov = "performance"
+	case "balanced":
+		gov = "schedutil"
+	}
+
+	// Try writing to cpufreq governors
+	cpus, _ := filepath.Glob("/sys/devices/system/cpu/cpu*/cpufreq/scaling_governor")
+	for _, cpuGov := range cpus {
+		_ = os.WriteFile(cpuGov, []byte(gov), 0644)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"status": "ok", "profile": req.Profile, "governor": gov})
 }
 
 // PowerProfileInfo returns power profile info
@@ -1453,7 +1798,26 @@ func (h *Handler) SetPowerProfile(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"status": "ok", "profile": req.Profile})
+
+	h.telemetry.SetPowerProfile(req.Profile)
+	h.cfg.Hardware.PowerProfile = req.Profile
+
+	gov := "schedutil"
+	switch req.Profile {
+	case "power-saver":
+		gov = "powersave"
+	case "performance":
+		gov = "performance"
+	case "balanced":
+		gov = "schedutil"
+	}
+
+	cpus, _ := filepath.Glob("/sys/devices/system/cpu/cpu*/cpufreq/scaling_governor")
+	for _, cpuGov := range cpus {
+		_ = os.WriteFile(cpuGov, []byte(gov), 0644)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"status": "ok", "profile": req.Profile, "governor": gov})
 }
 
 // GetSession returns current session mode
@@ -1598,19 +1962,51 @@ func (h *Handler) ResetPlayit(c *gin.Context) {
 }
 
 func (h *Handler) WidgetQBittorrent(c *gin.Context) {
-	client := http.Client{Timeout: 1 * time.Second}
+	client := http.Client{Timeout: 2 * time.Second}
 	for _, port := range []int{8080, 8084} {
 		resp, err := client.Get(fmt.Sprintf("http://127.0.0.1:%d/api/v2/transfer/info", port))
 		if err == nil && resp.StatusCode == 200 {
 			defer resp.Body.Close()
 			var data map[string]interface{}
 			if err := json.NewDecoder(resp.Body).Decode(&data); err == nil {
+				torrentsList := make([]map[string]interface{}, 0)
+				activeCount := 0
+				totalCount := 0
+
+				tResp, tErr := client.Get(fmt.Sprintf("http://127.0.0.1:%d/api/v2/torrents/info?limit=15&sort=progress", port))
+				if tErr == nil && tResp.StatusCode == 200 {
+					defer tResp.Body.Close()
+					var tData []map[string]interface{}
+					if err := json.NewDecoder(tResp.Body).Decode(&tData); err == nil {
+						totalCount = len(tData)
+						for _, t := range tData {
+							state, _ := t["state"].(string)
+							stateLower := strings.ToLower(state)
+							if strings.Contains(stateLower, "dl") || strings.Contains(stateLower, "up") || strings.Contains(stateLower, "download") {
+								activeCount++
+							}
+							torrentsList = append(torrentsList, map[string]interface{}{
+								"name":     t["name"],
+								"progress": t["progress"],
+								"size":     t["size"],
+								"dlspeed":  t["dlspeed"],
+								"upspeed":  t["upspeed"],
+								"state":    t["state"],
+								"eta":      t["eta"],
+							})
+						}
+					}
+				}
+
 				c.JSON(http.StatusOK, gin.H{
 					"online":            true,
 					"dl_speed":          data["dl_info_speed"],
 					"up_speed":          data["up_info_speed"],
 					"dht_nodes":         data["dht_nodes"],
 					"connection_status": data["connection_status"],
+					"total_torrents":    totalCount,
+					"active_torrents":   activeCount,
+					"torrents":          torrentsList,
 				})
 				return
 			}
@@ -1624,6 +2020,7 @@ func (h *Handler) WidgetQBittorrent(c *gin.Context) {
 		"connection_status": "disconnected",
 		"total_torrents":    0,
 		"active_torrents":   0,
+		"torrents":          []interface{}{},
 	})
 }
 
@@ -1802,6 +2199,7 @@ func (h *Handler) WidgetManga(c *gin.Context) {
 }
 
 // ProxyMangaThumbnail proxies thumbnail requests to Suwayomi and sets proper image content-type
+// Fast-path: checks /var/lib/suwayomi/downloads/thumbnails/{id}.* directly from local SSD via sendfile(2)
 func (h *Handler) ProxyMangaThumbnail(c *gin.Context) {
 	isOwner, _ := h.getClientRole(c)
 	if !isOwner {
@@ -1810,8 +2208,25 @@ func (h *Handler) ProxyMangaThumbnail(c *gin.Context) {
 	}
 
 	id := c.Param("id")
+	if id == "" {
+		c.Status(http.StatusBadRequest)
+		return
+	}
+
+	// 1. Fast-Path: Serve directly from local disk cache if available (zero-copy sendfile)
+	cacheDir := "/var/lib/suwayomi/downloads/thumbnails"
+	for _, ext := range []string{".webp", ".jpg", ".jpeg", ".png", ".avif", ".gif"} {
+		localPath := filepath.Join(cacheDir, id+ext)
+		if fi, err := os.Stat(localPath); err == nil && !fi.IsDir() && fi.Size() > 0 {
+			c.Header("Cache-Control", "public, max-age=31536000, immutable")
+			c.File(localPath)
+			return
+		}
+	}
+
+	// 2. Slow-Path: Query Suwayomi directly to fetch and populate disk cache
 	targetURL := fmt.Sprintf("http://127.0.0.1:4567/api/v1/manga/%s/thumbnail", id)
-	client := &http.Client{Timeout: 5 * time.Second}
+	client := &http.Client{Timeout: 10 * time.Second}
 	req, err := http.NewRequestWithContext(c.Request.Context(), "GET", targetURL, nil)
 	if err != nil {
 		c.Status(http.StatusNotFound)
@@ -1848,8 +2263,246 @@ func (h *Handler) ProxyMangaThumbnail(c *gin.Context) {
 	}
 
 	c.Header("Content-Type", contentType)
-	c.Header("Cache-Control", "public, max-age=86400")
+	c.Header("Cache-Control", "public, max-age=31536000, immutable")
 	c.Data(http.StatusOK, contentType, bodyBytes)
+}
+
+func getJellyfinToken() string {
+	// 1. Query Devices table in Jellyfin SQLite database (highest permission tokens)
+	cmdDev := exec.Command("sqlite3", "/var/lib/jellyfin/data/jellyfin.db", "SELECT AccessToken FROM Devices WHERE AccessToken IS NOT NULL AND AccessToken != '' ORDER BY Id DESC LIMIT 1;")
+	if out, err := cmdDev.Output(); err == nil {
+		tok := strings.TrimSpace(string(out))
+		if tok != "" {
+			return tok
+		}
+	}
+
+	// 2. Query ApiKeys table in Jellyfin SQLite database
+	cmdKey := exec.Command("sqlite3", "/var/lib/jellyfin/data/jellyfin.db", "SELECT AccessToken FROM ApiKeys ORDER BY Id DESC LIMIT 1;")
+	if out, err := cmdKey.Output(); err == nil {
+		tok := strings.TrimSpace(string(out))
+		if tok != "" {
+			return tok
+		}
+	}
+
+	// 3. Check Seerr settings.json
+	if data, err := os.ReadFile("/var/lib/seerr/settings.json"); err == nil {
+		var s struct {
+			Jellyfin struct {
+				ApiKey string `json:"apiKey"`
+			} `json:"jellyfin"`
+		}
+		if err := json.Unmarshal(data, &s); err == nil && s.Jellyfin.ApiKey != "" {
+			return s.Jellyfin.ApiKey
+		}
+	}
+
+	return ""
+}
+
+func (h *Handler) WidgetJellyfin(c *gin.Context) {
+	client := http.Client{Timeout: 3 * time.Second}
+
+	resp, err := client.Get("http://127.0.0.1:8096/System/Info/Public")
+	if err != nil || resp.StatusCode != http.StatusOK {
+		c.JSON(http.StatusOK, gin.H{
+			"online":     false,
+			"serverName": "Jellyfin",
+			"nowPlaying": []interface{}{},
+			"recent":     []interface{}{},
+		})
+		return
+	}
+	defer resp.Body.Close()
+
+	var publicInfo struct {
+		ServerName string `json:"ServerName"`
+		Version    string `json:"Version"`
+		Id         string `json:"Id"`
+	}
+	_ = json.NewDecoder(resp.Body).Decode(&publicInfo)
+
+	token := getJellyfinToken()
+	nowPlaying := make([]map[string]interface{}, 0)
+	recent := make([]map[string]interface{}, 0)
+
+	if token != "" {
+		// Sessions
+		sessReq, err := http.NewRequestWithContext(c.Request.Context(), "GET", "http://127.0.0.1:8096/Sessions", nil)
+		if err == nil {
+			sessReq.Header.Set("X-Emby-Token", token)
+			sessReq.Header.Set("Authorization", fmt.Sprintf("MediaBrowser Client=\"Tinapple\", Device=\"Hub\", DeviceId=\"tinapple-dash\", Version=\"1.0.0\", Token=\"%s\"", token))
+			if sessResp, err := client.Do(sessReq); err == nil && sessResp.StatusCode == http.StatusOK {
+				defer sessResp.Body.Close()
+				var sessions []struct {
+					Id             string `json:"Id"`
+					UserName       string `json:"UserName"`
+					Client         string `json:"Client"`
+					DeviceName     string `json:"DeviceName"`
+					NowPlayingItem *struct {
+						Id                 string `json:"Id"`
+						Name               string `json:"Name"`
+						SeriesName         string `json:"SeriesName"`
+						SeasonName         string `json:"SeasonName"`
+						Type               string `json:"Type"`
+						RunTimeTicks       int64  `json:"RunTimeTicks"`
+						PrimaryImageItemId string `json:"PrimaryImageItemId"`
+					} `json:"NowPlayingItem"`
+					PlayState *struct {
+						PositionTicks int64 `json:"PositionTicks"`
+						IsPaused      bool  `json:"IsPaused"`
+					} `json:"PlayState"`
+				}
+				if json.NewDecoder(sessResp.Body).Decode(&sessions) == nil {
+					for _, s := range sessions {
+						if s.NowPlayingItem != nil {
+							imgId := s.NowPlayingItem.Id
+							if s.NowPlayingItem.PrimaryImageItemId != "" {
+								imgId = s.NowPlayingItem.PrimaryImageItemId
+							}
+							posSec := int64(0)
+							if s.PlayState != nil {
+								posSec = s.PlayState.PositionTicks / 10000000
+							}
+							item := map[string]interface{}{
+								"id":         s.NowPlayingItem.Id,
+								"name":       s.NowPlayingItem.Name,
+								"seriesName": s.NowPlayingItem.SeriesName,
+								"type":       s.NowPlayingItem.Type,
+								"user":       s.UserName,
+								"client":     s.Client,
+								"device":     s.DeviceName,
+								"imageUrl":   fmt.Sprintf("/api/widgets/jellyfin/image/%s", imgId),
+								"isPaused":   s.PlayState != nil && s.PlayState.IsPaused,
+								"position":   posSec,
+								"duration":   s.NowPlayingItem.RunTimeTicks / 10000000,
+							}
+							nowPlaying = append(nowPlaying, item)
+						}
+					}
+				}
+			}
+		}
+
+		// Recent items
+		itemsReq, err := http.NewRequestWithContext(c.Request.Context(), "GET", "http://127.0.0.1:8096/Items?Recursive=true&SortBy=DateCreated&SortOrder=Descending&Limit=12&IncludeItemTypes=Movie,Series,Episode&Fields=PrimaryImageAspectRatio,Overview", nil)
+		if err == nil {
+			itemsReq.Header.Set("X-Emby-Token", token)
+			itemsReq.Header.Set("Authorization", fmt.Sprintf("MediaBrowser Client=\"Tinapple\", Device=\"Hub\", DeviceId=\"tinapple-dash\", Version=\"1.0.0\", Token=\"%s\"", token))
+			if itemsResp, err := client.Do(itemsReq); err == nil && itemsResp.StatusCode == http.StatusOK {
+				defer itemsResp.Body.Close()
+				var itemsResult struct {
+					Items []struct {
+						Id           string `json:"Id"`
+						Name         string `json:"Name"`
+						SeriesName   string `json:"SeriesName"`
+						Type         string `json:"Type"`
+						RunTimeTicks int64  `json:"RunTimeTicks"`
+					} `json:"Items"`
+				}
+				if json.NewDecoder(itemsResp.Body).Decode(&itemsResult) == nil {
+					for _, it := range itemsResult.Items {
+						recent = append(recent, map[string]interface{}{
+							"id":         it.Id,
+							"name":       it.Name,
+							"seriesName": it.SeriesName,
+							"type":       it.Type,
+							"imageUrl":   fmt.Sprintf("/api/widgets/jellyfin/image/%s", it.Id),
+							"duration":   it.RunTimeTicks / 10000000,
+						})
+					}
+				}
+			}
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"online":     true,
+		"serverName": publicInfo.ServerName,
+		"version":    publicInfo.Version,
+		"nowPlaying": nowPlaying,
+		"recent":     recent,
+	})
+}
+
+func (h *Handler) ProxyJellyfinImage(c *gin.Context) {
+	id := c.Param("id")
+	if id == "" {
+		c.Status(http.StatusNotFound)
+		return
+	}
+
+	imgType := c.DefaultQuery("type", "Primary")
+	tag := c.Query("tag")
+
+	targetURL := fmt.Sprintf("http://127.0.0.1:8096/Items/%s/Images/%s", id, imgType)
+	if tag != "" {
+		targetURL += "?tag=" + tag
+	}
+
+	client := http.Client{Timeout: 5 * time.Second}
+	req, err := http.NewRequestWithContext(c.Request.Context(), "GET", targetURL, nil)
+	if err != nil {
+		c.Status(http.StatusNotFound)
+		return
+	}
+
+	token := getJellyfinToken()
+	if token != "" {
+		req.Header.Set("X-Emby-Token", token)
+	}
+
+	resp, err := client.Do(req)
+	if err != nil || resp.StatusCode != http.StatusOK {
+		c.Redirect(http.StatusTemporaryRedirect, "/icons/jellyfin.svg")
+		return
+	}
+	defer resp.Body.Close()
+
+	c.Header("Cache-Control", "public, max-age=86400")
+	c.DataFromReader(http.StatusOK, resp.ContentLength, resp.Header.Get("Content-Type"), resp.Body, nil)
+}
+
+func (h *Handler) WidgetSeerr(c *gin.Context) {
+	client := http.Client{Timeout: 3 * time.Second}
+	apiKey := ""
+	if data, err := os.ReadFile("/var/lib/seerr/settings.json"); err == nil {
+		var s struct {
+			Main struct {
+				ApiKey string `json:"apiKey"`
+			} `json:"main"`
+		}
+		if err := json.Unmarshal(data, &s); err == nil {
+			apiKey = s.Main.ApiKey
+		}
+	}
+
+	req, err := http.NewRequestWithContext(c.Request.Context(), "GET", "http://127.0.0.1:5055/api/v1/request?take=10&sort=added", nil)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"online": false, "requests": []interface{}{}})
+		return
+	}
+	if apiKey != "" {
+		req.Header.Set("X-Api-Key", apiKey)
+	}
+
+	resp, err := client.Do(req)
+	if err != nil || resp.StatusCode != http.StatusOK {
+		c.JSON(http.StatusOK, gin.H{"online": false, "requests": []interface{}{}})
+		return
+	}
+	defer resp.Body.Close()
+
+	var result struct {
+		Results []map[string]interface{} `json:"results"`
+	}
+	_ = json.NewDecoder(resp.Body).Decode(&result)
+
+	c.JSON(http.StatusOK, gin.H{
+		"online":   true,
+		"requests": result.Results,
+	})
 }
 
 func (h *Handler) BeeperStatus(c *gin.Context) {
@@ -2044,6 +2697,7 @@ func (h *Handler) UpdateUserRole(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+	h.tailscaleMgr.InvalidateRoleCache()
 
 	c.JSON(http.StatusOK, gin.H{
 		"success":     true,
@@ -2086,6 +2740,7 @@ func (h *Handler) UpdateUserPermissions(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+	h.tailscaleMgr.InvalidateRoleCache()
 
 	c.JSON(http.StatusOK, gin.H{
 		"success":          true,
@@ -2117,6 +2772,107 @@ func (h *Handler) UpdateGuestTorExit(c *gin.Context) {
 		"success":                  true,
 		"hide_tor_exit_for_guests": res,
 	})
+}
+
+// GetDashboardLayout returns persistent canvas layout and widgets
+func (h *Handler) GetDashboardLayout(c *gin.Context) {
+	layoutPath := "/etc/tinapple/dashboard_layout.json"
+	data, err := os.ReadFile(layoutPath)
+	if err != nil {
+		data, err = os.ReadFile("/var/lib/tinapple/dashboard_layout.json")
+	}
+	if err != nil || len(data) == 0 {
+		c.JSON(http.StatusOK, gin.H{
+			"version":  2,
+			"widgets":  []interface{}{},
+			"viewport": gin.H{"panX": 0, "panY": 0, "zoom": 1.0},
+			"empty":    true,
+		})
+		return
+	}
+	var layout interface{}
+	if err := json.Unmarshal(data, &layout); err != nil {
+		c.JSON(http.StatusOK, gin.H{"version": 2, "widgets": []interface{}{}, "empty": true})
+		return
+	}
+	c.JSON(http.StatusOK, layout)
+}
+
+// SaveDashboardLayout persists canvas layout and widgets to disk
+func (h *Handler) SaveDashboardLayout(c *gin.Context) {
+	var body map[string]interface{}
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid json layout payload: " + err.Error()})
+		return
+	}
+
+	data, err := json.MarshalIndent(body, "", "  ")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to encode layout json: " + err.Error()})
+		return
+	}
+
+	layoutDir := "/etc/tinapple"
+	if err := os.MkdirAll(layoutDir, 0755); err != nil {
+		layoutDir = "/var/lib/tinapple"
+		_ = os.MkdirAll(layoutDir, 0755)
+	}
+
+	targetPath := filepath.Join(layoutDir, "dashboard_layout.json")
+	if err := os.WriteFile(targetPath, data, 0644); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to write layout file: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"status": "ok", "message": "dashboard layout saved successfully", "path": targetPath})
+}
+
+// GetUserSettings returns persistent client/user preferences (theme, Matugen tokens, server URL)
+func (h *Handler) GetUserSettings(c *gin.Context) {
+	settingsPath := "/etc/tinapple/user_settings.json"
+	data, err := os.ReadFile(settingsPath)
+	if err != nil {
+		data, err = os.ReadFile("/var/lib/tinapple/user_settings.json")
+	}
+	if err != nil || len(data) == 0 {
+		c.JSON(http.StatusOK, gin.H{"empty": true})
+		return
+	}
+	var settings interface{}
+	if err := json.Unmarshal(data, &settings); err != nil {
+		c.JSON(http.StatusOK, gin.H{"empty": true})
+		return
+	}
+	c.JSON(http.StatusOK, settings)
+}
+
+// SaveUserSettings persists client/user preferences to disk
+func (h *Handler) SaveUserSettings(c *gin.Context) {
+	var body map[string]interface{}
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid settings payload: " + err.Error()})
+		return
+	}
+
+	data, err := json.MarshalIndent(body, "", "  ")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to encode settings: " + err.Error()})
+		return
+	}
+
+	settingsDir := "/etc/tinapple"
+	if err := os.MkdirAll(settingsDir, 0755); err != nil {
+		settingsDir = "/var/lib/tinapple"
+		_ = os.MkdirAll(settingsDir, 0755)
+	}
+
+	targetPath := filepath.Join(settingsDir, "user_settings.json")
+	if err := os.WriteFile(targetPath, data, 0644); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to write settings file: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"status": "ok", "message": "user settings saved successfully", "path": targetPath})
 }
 
 

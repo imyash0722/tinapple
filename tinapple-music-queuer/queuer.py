@@ -128,7 +128,7 @@ class AntraSession:
             raise RuntimeError(f"Failed to resolve URL {playlist_url}: HTTP {res.status_code} {res.text}")
         return res.json()
 
-    def create_job(self, playlist_url, start_idx, end_idx):
+    def create_job(self, playlist_url, start_idx, end_idx, max_retries=15, retry_delay=45):
         self.ensure_login()
         url = f"{self.cfg['base_url']}/api/jobs"
         payload = {
@@ -138,10 +138,24 @@ class AntraSession:
             "end_index": end_idx,
             "client_packaging": False
         }
-        res = self.session.post(url, json=payload, timeout=30)
-        if res.status_code in (200, 201):
-            return res.json()
-        raise RuntimeError(f"Failed to create job: HTTP {res.status_code} {res.text}")
+        for attempt in range(1, max_retries + 1):
+            res = self.session.post(url, json=payload, timeout=30)
+            if res.status_code in (200, 201):
+                return res.json()
+            if res.status_code == 429:
+                detail = res.text
+                try:
+                    detail = res.json().get("detail", detail)
+                except Exception:
+                    pass
+                logger.warning(f"Antra is busy / rate-limited (attempt {attempt}/{max_retries}): {detail}. Waiting {retry_delay}s...")
+                time.sleep(retry_delay)
+                continue
+            if res.status_code == 401:
+                self.login()
+                continue
+            raise RuntimeError(f"Failed to create job: HTTP {res.status_code} {res.text}")
+        raise RuntimeError(f"Failed to create job after {max_retries} attempts: Antra server is busy.")
 
     async def run_job_stream(self, job_id, ws_token, on_progress=None, on_track_failed=None):
         cookie_header = "; ".join([f"{c.name}={c.value}" for c in self.session.cookies])
@@ -206,20 +220,30 @@ class AntraSession:
         logger.info(f"Downloaded {file_size_mb:.2f} MB. Extracting to {dest_dir}...")
 
         os.makedirs(dest_dir, exist_ok=True)
-        with zipfile.ZipFile(tmp_zip, 'r') as zip_ref:
-            for member in zip_ref.infolist():
-                if member.is_dir():
-                    continue
-                basename = os.path.basename(member.filename)
-                if not basename or basename.startswith('.'):
-                    continue
-                target_path = os.path.join(dest_dir, basename)
-                with zip_ref.open(member) as source, open(target_path, "wb") as target:
-                    shutil.copyfileobj(source, target)
-                try:
-                    os.chmod(target_path, 0o664)
-                except Exception:
-                    pass
+        if zipfile.is_zipfile(tmp_zip):
+            with zipfile.ZipFile(tmp_zip, 'r') as zip_ref:
+                for member in zip_ref.infolist():
+                    if member.is_dir():
+                        continue
+                    basename = os.path.basename(member.filename)
+                    if not basename or basename.startswith('.'):
+                        continue
+                    target_path = os.path.join(dest_dir, basename)
+                    with zip_ref.open(member) as source, open(target_path, "wb") as target:
+                        shutil.copyfileobj(source, target)
+                    try:
+                        os.chmod(target_path, 0o664)
+                    except Exception:
+                        pass
+        else:
+            # Single audio track served directly (not zipped)
+            clean_name = os.path.basename(filename) or "track.flac"
+            target_path = os.path.join(dest_dir, clean_name)
+            shutil.copyfile(tmp_zip, target_path)
+            try:
+                os.chmod(target_path, 0o664)
+            except Exception:
+                pass
 
         try:
             os.remove(tmp_zip)
@@ -231,7 +255,20 @@ class AntraSession:
         except Exception:
             pass
 
-        logger.info(f"Successfully extracted FLAC files into: {dest_dir}")
+        # Apply maximum lossless FLAC level 8 compression post-download
+        if shutil.which("flac"):
+            logger.info("Applying maximum lossless compression (FLAC level 8)...")
+            import subprocess
+            for root, _, files in os.walk(dest_dir):
+                for f in files:
+                    if f.lower().endswith(".flac"):
+                        full_f = os.path.join(root, f)
+                        try:
+                            subprocess.run(["flac", "-8", "--force", "--silent", full_f], check=False)
+                        except Exception:
+                            pass
+
+        logger.info(f"Successfully extracted and optimized FLAC files into: {dest_dir}")
         return True
 
 def add_url_to_queue(url):
@@ -319,7 +356,7 @@ def process_queue():
         batch["status"] = "in_progress"
         save_queue(q)
 
-        folder_name = sanitize_folder_name(item["name"])
+        folder_name = sanitize_folder_name(item.get("folder") or item["name"])
         dest_dir = os.path.join(cfg["output_dir"], "Playlists", folder_name)
 
         logger.info(f"\n========================================================")
@@ -371,6 +408,13 @@ def process_queue():
             item["status"] = "completed"
             item["completed_at"] = datetime.now().isoformat()
             logger.info(f"✓ FULL PLAYLIST COMPLETED: '{item['name']}'")
+            updater = "/srv/media/music/Playlists/update_playlists.py"
+            if os.path.exists(updater):
+                try:
+                    import subprocess
+                    subprocess.run([updater], check=False)
+                except Exception:
+                    pass
         elif any_failed and not any(b["status"] == "pending" for b in item["batches"]):
             item["status"] = "partial"
 

@@ -28,7 +28,7 @@ var knownWebApps = map[int]string{
 	8096: "Jellyfin Media",
 	8080: "qBittorrent / Web",
 	8084: "qBittorrent Alt",
-	8085: "MeTube Downloader",
+	8945:  "Pinchflat YouTube Manager",
 	4567: "Suwayomi Manga",
 	4533: "Navidrome Music",
 	8384: "Syncthing Web GUI",
@@ -218,12 +218,21 @@ func (h *Handler) GetFailedUnits(c *gin.Context) {
 	})
 }
 
-// GetKernelLogs returns recent kernel or journal alerts
+// GetKernelLogs returns recent kernel or journal alerts as both an array of lines and raw string
 func (h *Handler) GetKernelLogs(c *gin.Context) {
 	cmd := exec.Command("journalctl", "-p", "3", "-xb", "-n", "30", "--no-pager")
 	out, _ := cmd.CombinedOutput()
+	outStr := strings.TrimSpace(string(out))
+
+	var lines []string
+	if len(outStr) > 0 {
+		lines = strings.Split(outStr, "\n")
+	} else {
+		lines = []string{}
+	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"logs": string(out),
+		"logs": lines,
+		"raw":  outStr,
 	})
 }

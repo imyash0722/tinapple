@@ -14,16 +14,37 @@ import (
 )
 
 type Collector struct {
-	svcMgr    *services.SystemdManager
-	mu        sync.RWMutex
-	lastData  map[string]interface{}
+	svcMgr         *services.SystemdManager
+	mu             sync.RWMutex
+	lastData       map[string]interface{}
+	thermalProfile string
+	powerProfile   string
 }
 
 func NewCollector(svcMgr *services.SystemdManager, cfg interface{}) *Collector {
 	return &Collector{
-		svcMgr:   svcMgr,
-		lastData: make(map[string]interface{}),
+		svcMgr:         svcMgr,
+		lastData:       make(map[string]interface{}),
+		thermalProfile: "balanced",
+		powerProfile:   "balanced",
 	}
+}
+
+func (c *Collector) SetThermalProfile(p string) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.thermalProfile = p
+	if c.lastData != nil {
+		if th, ok := c.lastData["thermal"].(map[string]interface{}); ok {
+			th["profile"] = p
+		}
+	}
+}
+
+func (c *Collector) SetPowerProfile(p string) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.powerProfile = p
 }
 
 func (c *Collector) Start(ctx context.Context, interval time.Duration) {
@@ -61,6 +82,11 @@ func (c *Collector) collect() {
 	
 	// Thermal info
 	thermalInfo := getThermalInfo()
+	if c.thermalProfile == "" {
+		c.thermalProfile = "balanced"
+	}
+	thermalInfo["profile"] = c.thermalProfile
+	thermalInfo["power_profile"] = c.powerProfile
 	
 	// Service statuses
 	svcStatuses := make(map[string]string)
@@ -147,36 +173,68 @@ func getCPUInfo() map[string]interface{} {
 }
 
 func getBatteryInfo() map[string]interface{} {
-	capData, err := os.ReadFile("/sys/class/power_supply/BAT1/capacity")
-	if err != nil {
-		capData, err = os.ReadFile("/sys/class/power_supply/BAT0/capacity")
+	batDir := "/sys/class/power_supply/BAT1"
+	if _, err := os.Stat(batDir); err != nil {
+		batDir = "/sys/class/power_supply/BAT0"
 	}
+
+	capData, err := os.ReadFile(batDir + "/capacity")
 	if err != nil {
 		return map[string]interface{}{
-			"present":        false,
-			"percent":        0,
-			"charging":       false,
-			"charge_limit":   80,
-			"health_percent": 100,
+			"present":                false,
+			"percent":                0,
+			"charging":               false,
+			"charge_limit":           100,
+			"charge_limit_supported": false,
+			"hardware_locked":        true,
+			"health_percent":         100,
 		}
 	}
 
 	var capVal int
 	fmt.Sscanf(string(capData), "%d", &capVal)
 
-	statusData, err := os.ReadFile("/sys/class/power_supply/BAT1/status")
-	if err != nil {
-		statusData, _ = os.ReadFile("/sys/class/power_supply/BAT0/status")
-	}
+	statusData, _ := os.ReadFile(batDir + "/status")
 	statusStr := strings.TrimSpace(string(statusData))
 	isCharging := strings.EqualFold(statusStr, "Charging")
 
+	// Check whether programmable charge threshold is supported by hardware/EC
+	threshPath := batDir + "/charge_control_end_threshold"
+	hasThreshold := false
+	chargeLimit := 100
+	if data, err := os.ReadFile(threshPath); err == nil {
+		hasThreshold = true
+		fmt.Sscanf(string(data), "%d", &chargeLimit)
+	}
+
+	// Calculate real health percentage from full / design
+	healthPercent := 98
+	var fullVal, designVal int64
+	if fullData, err := os.ReadFile(batDir + "/charge_full"); err == nil {
+		fmt.Sscanf(string(fullData), "%d", &fullVal)
+	} else if fullData, err := os.ReadFile(batDir + "/energy_full"); err == nil {
+		fmt.Sscanf(string(fullData), "%d", &fullVal)
+	}
+	if designData, err := os.ReadFile(batDir + "/charge_full_design"); err == nil {
+		fmt.Sscanf(string(designData), "%d", &designVal)
+	} else if designData, err := os.ReadFile(batDir + "/energy_full_design"); err == nil {
+		fmt.Sscanf(string(designData), "%d", &designVal)
+	}
+	if fullVal > 0 && designVal > 0 {
+		calc := int(float64(fullVal) / float64(designVal) * 100.0)
+		if calc > 0 && calc <= 100 {
+			healthPercent = calc
+		}
+	}
+
 	return map[string]interface{}{
-		"present":        true,
-		"percent":        capVal,
-		"charging":       isCharging,
-		"charge_limit":   80,
-		"health_percent": 98,
+		"present":                true,
+		"percent":                capVal,
+		"charging":               isCharging,
+		"charge_limit":           chargeLimit,
+		"charge_limit_supported": hasThreshold,
+		"hardware_locked":        !hasThreshold,
+		"health_percent":         healthPercent,
 	}
 }
 
@@ -186,13 +244,24 @@ func getMemInfo() map[string]interface{} {
 		return map[string]interface{}{"total": 0, "available": 0, "used_percent": 0}
 	}
 	
-	var total, available uint64
+	var total, available, buffers, cached, swapTotal, swapFree uint64
 	for _, line := range strings.Split(string(data), "\n") {
-		if strings.HasPrefix(line, "MemTotal:") {
-			fmt.Sscanf(line, "MemTotal: %d kB", &total)
-		}
-		if strings.HasPrefix(line, "MemAvailable:") {
-			fmt.Sscanf(line, "MemAvailable: %d kB", &available)
+		fields := strings.Fields(line)
+		if len(fields) >= 2 {
+			switch fields[0] {
+			case "MemTotal:":
+				fmt.Sscanf(fields[1], "%d", &total)
+			case "MemAvailable:":
+				fmt.Sscanf(fields[1], "%d", &available)
+			case "Buffers:":
+				fmt.Sscanf(fields[1], "%d", &buffers)
+			case "Cached:":
+				fmt.Sscanf(fields[1], "%d", &cached)
+			case "SwapTotal:":
+				fmt.Sscanf(fields[1], "%d", &swapTotal)
+			case "SwapFree:":
+				fmt.Sscanf(fields[1], "%d", &swapFree)
+			}
 		}
 	}
 	
@@ -200,11 +269,57 @@ func getMemInfo() map[string]interface{} {
 	if total > 0 {
 		usedPercent = float64(total-available) / float64(total) * 100
 	}
-	
+
+	var zramActive bool
+	var zramTotalBytes, zramUsedBytes uint64
+
+	// Parse /proc/swaps for live zram device usage
+	if swapData, err := os.ReadFile("/proc/swaps"); err == nil {
+		for _, line := range strings.Split(string(swapData), "\n") {
+			fields := strings.Fields(line)
+			if len(fields) >= 5 && strings.Contains(fields[0], "zram") {
+				var sizeKb, usedKb uint64
+				fmt.Sscanf(fields[2], "%d", &sizeKb)
+				fmt.Sscanf(fields[3], "%d", &usedKb)
+				zramActive = true
+				zramTotalBytes += sizeKb * 1024
+				zramUsedBytes += usedKb * 1024
+			}
+		}
+	}
+
+	// Fallback to /sys/block/zram0/disksize if zram block device exists
+	if !zramActive {
+		if disksizeData, err := os.ReadFile("/sys/block/zram0/disksize"); err == nil {
+			var sz uint64
+			if _, err := fmt.Sscanf(strings.TrimSpace(string(disksizeData)), "%d", &sz); err == nil && sz > 0 {
+				zramTotalBytes = sz
+			}
+		}
+	}
+
+	swapUsed := uint64(0)
+	if swapTotal > swapFree {
+		swapUsed = (swapTotal - swapFree) * 1024
+	}
+
+	usedBytes := uint64(0)
+	if total > available {
+		usedBytes = (total - available) * 1024
+	}
+
 	return map[string]interface{}{
 		"total_bytes":      total * 1024,
 		"available_bytes":  available * 1024,
+		"used_bytes":       usedBytes,
 		"used_percent":     usedPercent,
+		"buffers_bytes":    buffers * 1024,
+		"cached_bytes":     cached * 1024,
+		"swap_total_bytes": swapTotal * 1024,
+		"swap_used_bytes":  swapUsed,
+		"zram_active":      zramActive,
+		"zram_total_bytes": zramTotalBytes,
+		"zram_used_bytes":  zramUsedBytes,
 	}
 }
 

@@ -11,6 +11,7 @@ import (
 	"os/exec"
 	"os/user"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -61,6 +62,93 @@ func ensurePacmanReliability() {
 			_ = os.WriteFile(pacmanConf, []byte(newContent), 0644)
 		}
 	}
+}
+
+// applySuwayomiGovernor applies adaptive thermal and multi-core drop-in overrides to suwayomi-server.service.
+// For low-spec laptops (e.g. 2 cores / 4 threads), it strictly limits CPU and sets low priority (Nice=10)
+// to prevent overheating. On systems with 6+ threads, it allocates higher burst capacity and JVM memory.
+func applySuwayomiGovernor() error {
+	dropInDir := "/etc/systemd/system/suwayomi-server.service.d"
+	if err := os.MkdirAll(dropInDir, 0755); err != nil {
+		return err
+	}
+
+	cores := runtime.NumCPU()
+	var quota string
+	var nice int
+	var weight int
+
+	switch {
+	case cores <= 2:
+		quota = "75%"
+		nice = 10
+		weight = 50
+	case cores <= 4:
+		// 1st gen mobile i5 / dual-core 4-thread laptops: preserve strict thermal limits
+		quota = "85%"
+		nice = 10
+		weight = 50
+	case cores <= 6:
+		quota = "175%"
+		nice = 5
+		weight = 80
+	default:
+		// 8+ threads: allow burst up to 2.5 cores, leaving 5.5+ cores completely free
+		quota = "250%"
+		nice = 5
+		weight = 100
+	}
+
+	var totalRamKB int64 = 4000000
+	if memData, err := os.ReadFile("/proc/meminfo"); err == nil {
+		for _, line := range strings.Split(string(memData), "\n") {
+			if strings.HasPrefix(line, "MemTotal:") {
+				parts := strings.Fields(line)
+				if len(parts) >= 2 {
+					if val, parseErr := strconv.ParseInt(parts[1], 10, 64); parseErr == nil {
+						totalRamKB = val
+					}
+				}
+				break
+			}
+		}
+	}
+
+	var javaMem string
+	if totalRamKB <= 4500000 {
+		javaMem = "-Xms128m -Xmx768m -XX:+UseG1GC -Dh2.cacheSize=65536 -Dh2.objectCache=true"
+	} else {
+		javaMem = "-Xms256m -Xmx1536m -XX:+UseG1GC -Dh2.cacheSize=131072 -Dh2.objectCache=true"
+	}
+
+	content := fmt.Sprintf(
+		"[Service]\n# Adaptive Governor: dynamically calculated for %d CPU threads & %dMB RAM\nCPUQuota=%s\nCPUWeight=%d\nNice=%d\nEnvironment=\"JAVA_ARGS=-Dsuwayomi.tachidesk.config.server.initialOpenInBrowserEnabled=false -Dsuwayomi.tachidesk.config.server.systemTrayEnabled=false %s\"\n",
+		cores, totalRamKB/1024, quota, weight, nice, javaMem,
+	)
+
+	if err := os.WriteFile(filepath.Join(dropInDir, "tinapple-override.conf"), []byte(content), 0644); err != nil {
+		return err
+	}
+	suwayomiConf := "/etc/suwayomi/server.conf"
+	if confBytes, err := os.ReadFile(suwayomiConf); err == nil {
+		confStr := string(confBytes)
+		newJavaArgs := fmt.Sprintf("JAVA_ARGS=\"-Dsuwayomi.tachidesk.config.server.initialOpenInBrowserEnabled=false -Dsuwayomi.tachidesk.config.server.systemTrayEnabled=false %s\"", javaMem)
+		lines := strings.Split(confStr, "\n")
+		found := false
+		for i, line := range lines {
+			if strings.HasPrefix(strings.TrimSpace(line), "JAVA_ARGS=") {
+				lines[i] = newJavaArgs
+				found = true
+				break
+			}
+		}
+		if !found {
+			lines = append(lines, newJavaArgs)
+		}
+		_ = os.WriteFile(suwayomiConf, []byte(strings.Join(lines, "\n")), 0644)
+	}
+	_ = exec.Command("systemctl", "daemon-reload").Run()
+	return nil
 }
 
 type AppDefinition struct {
@@ -191,19 +279,34 @@ func NewAppManager() *AppManager {
 			ConfigPath:  "/home/media/.config/qBittorrent/qBittorrent.conf",
 		},
 		{
-			ID:          "metube",
-			Name:        "MeTube YouTube Downloader",
-			Description: "Headless Web GUI for downloading YouTube videos and playlists with automated Kodi/Jellyfin NFO metadata and poster streaming integration.",
-			Tagline:     "Headless YouTube downloader & media streaming engine",
-			Category:    "downloads",
-			Package:     "metube",
-			Unit:        "metube.service",
-			Binary:      "metube",
-			Port:        8085,
+			ID:          "homarr",
+			Name:        "Homarr Dashboard Engine",
+			Description: "Customizable homelab dashboard engine with real-time integration widgets, ping telemetry, torrent monitors, and multi-user authentication.",
+			Tagline:     "Official upstream Homarr dashboard",
+			Category:    "system",
+			Package:     "homarr",
+			Unit:        "homarr.service",
+			Binary:      "docker",
+			Port:        7575,
+			Icon:        "homarr",
+			AccentColor: "#E65100",
+			ConfigPath:  "/var/lib/homarr/configs",
+			WebURL:      "http://{host}:7575",
+		},
+		{
+			ID:          "pinchflat",
+			Name:        "Pinchflat YouTube Manager",
+			Description: "Automated YouTube channel and playlist archiver with Kodi/Jellyfin NFO metadata, SponsorBlock integration, chapter markers, and automated media library indexing.",
+			Tagline:     "Automated YouTube channel archiver & Jellyfin media sync",
+			Category:    "media",
+			Package:     "pinchflat",
+			Unit:        "pinchflat.service",
+			Binary:      "docker",
+			Port:        8945,
 			Icon:        "youtube",
 			AccentColor: "#FF0000",
-			ConfigPath:  "/etc/tinapple/metube.env",
-			WebURL:      "http://{host}:8085",
+			ConfigPath:  "/var/lib/pinchflat",
+			WebURL:      "http://{host}:8945",
 		},
 		{
 			ID:           "suwayomi",
@@ -234,6 +337,20 @@ func NewAppManager() *AppManager {
 			Icon:        "navidrome",
 			AccentColor: "#0086D6",
 			ConfigPath:  "/etc/navidrome/navidrome.toml",
+		},
+		{
+			ID:          "tinapple-music-queuer",
+			Name:        "Tinapple Music Queuer",
+			Description: "Automated studio lossless FLAC audio resolver & queue daemon for Navidrome via Antra.",
+			Tagline:     "Lossless FLAC queuer for Navidrome",
+			Category:    "media",
+			Package:     "tinapple-music-queuer",
+			Unit:        "tinapple-music-queuer.service",
+			Binary:      "tinapple-music-queuer",
+			Port:        0,
+			Icon:        "navidrome",
+			AccentColor: "#00E5FF",
+			ConfigPath:  "/home/pineapple/.config/tinapple/music_queuer.json",
 		},
 		{
 			ID:          "tailscale",
@@ -542,33 +659,51 @@ func NewAppManager() *AppManager {
 			ID:          "seerr-stack",
 			Name:        "Ultimate Streaming & Servarr Stack",
 			Tagline:     "Zero-touch 4K/1080p streaming cloud with automated discovery",
-			Description: "Complete media automation stack featuring Jellyfin streaming server, Jellyseerr discovery and user requests portal, Radarr & Sonarr automated indexers via Prowlarr, Bazarr subtitle synchronization, and qBittorrent high-speed engine.",
+			Description: "Complete media automation stack featuring Jellyfin streaming server, Jellyseerr discovery and user requests portal, Radarr & Sonarr automated indexers via Prowlarr, Bazarr subtitle synchronization, qBittorrent engine, and Pinchflat YouTube manager.",
 			Badge:       "STREAMING & MEDIA",
 			AccentColor: "#AA5CC3",
 			Icon:        "seerr",
-			Apps:        []string{"jellyfin", "seerr", "radarr", "sonarr", "prowlarr", "bazarr", "qbittorrent"},
+			Apps:        []string{"jellyfin", "seerr", "radarr", "sonarr", "prowlarr", "bazarr", "qbittorrent", "pinchflat"},
 			Features: []string{
-				"Automated root libraries in /srv/media/{movies,shows}",
+				"Automated root libraries in /srv/media/{movies,shows,youtube}",
 				"qBittorrent client authenticated and synced (:8080)",
 				"Prowlarr public trackers (YTS, Nyaa, TPB, LimeTorrents) linked",
 				"Bazarr multi-language subtitle automator connected",
 				"Jellyseerr 1-click requests linked to Jellyfin & Servarrs (:5055)",
+				"Pinchflat automated YouTube manager with Jellyfin NFO tags (:8945)",
 			},
 		},
 		{
 			ID:          "manga-suite",
-			Name:        "Manga & Comic Infinite Library",
-			Tagline:     "Decentralized manga streaming & multi-device reading sync",
-			Description: "Self-hosted manga, comic, and webtoon streaming hub powered by Suwayomi with 1,000+ Keiyoushi source extensions, built-in Suwayomi-Tsumiru reader, and SyncYomi sync bridge for Tachiyomi, Mihon, and Kuukiyomi.",
+			Name:        "Manga Infinite Library (Suwayomi + Tsumiru)",
+			Tagline:     "Self-hosted manga streaming with native Web & Tsumiru client",
+			Description: "Decentralized manga, comic, and webtoon streaming hub powered by Suwayomi Server with 1,000+ Keiyoushi source extensions, native desktop WebUI, and direct native integration for the Suwayomi-Tsumiru phone client. Real-time server-side synchronization with zero extra bridges needed.",
 			Badge:       "MANGA & COMICS",
 			AccentColor: "#F43F5E",
 			Icon:        "suwayomi",
-			Apps:        []string{"suwayomi", "syncyomi"},
+			Apps:        []string{"suwayomi"},
 			Features: []string{
 				"1,000+ Keiyoushi manga source extensions enabled",
 				"Local library storage in /srv/media/manga",
-				"Suwayomi-Tsumiru native web reader (:4567 /tsumiru/)",
-				"SyncYomi cross-device reading progress synchronization (:8282)",
+				"Native Suwayomi WebUI for desktop (:4567)",
+				"Native Tsumiru client APK for mobile with direct server sync",
+				"Zero-overhead direct SQLite server synchronization",
+			},
+		},
+		{
+			ID:          "manga-syncyomi",
+			Name:        "Manga & Mihon Sync Bridge (Suwayomi + SyncYomi)",
+			Tagline:     "Suwayomi manga server paired with SyncYomi cross-device bridge",
+			Description: "Complete manga ecosystem featuring Suwayomi server with 1,000+ Keiyoushi extensions, paired with SyncYomi synchronization bridge for external standalone readers (Mihon, TachiyomiJ2K, TachiyomiSY, and Kuukiyomi).",
+			Badge:       "MIHON & SYNC",
+			AccentColor: "#EC4899",
+			Icon:        "syncyomi",
+			Apps:        []string{"suwayomi", "syncyomi"},
+			Features: []string{
+				"Suwayomi manga server with Keiyoushi extension repository (:4567)",
+				"SyncYomi multi-device sync bridge for standalone Mihon/Tachiyomi (:8282)",
+				"Local library storage in /srv/media/manga",
+				"Cross-device reading progress sync for offline mobile readers",
 			},
 		},
 		{
@@ -591,15 +726,16 @@ func NewAppManager() *AppManager {
 			ID:          "audiophile-cloud",
 			Name:        "Audiophile Music Cloud & Downloader",
 			Tagline:     "Lossless Subsonic audio streaming & offline YouTube archiver",
-			Description: "Modern high-fidelity music streaming server compatible with Symfonium, Feishin, and Substreamer, integrated with MeTube for headless scheduled downloading of YouTube Music tracks, albums, and playlists.",
+			Description: "Modern high-fidelity music streaming server compatible with Symfonium, Feishin, and Substreamer, integrated with Antra lossless FLAC queuer and Pinchflat audio archiver.",
 			Badge:       "MUSIC & AUDIO",
 			AccentColor: "#FF7F00",
 			Icon:        "navidrome",
-			Apps:        []string{"navidrome", "metube"},
+			Apps:        []string{"navidrome", "tinapple-music-queuer", "pinchflat"},
 			Features: []string{
 				"Subsonic & Airsonic REST API support for mobile & desktop players",
 				"Storage in /srv/media/music with automated library scanning",
-				"Headless MeTube YouTube/SoundCloud playlist archiver (:8085)",
+				"Automated Spotify & Apple Music lossless FLAC queuer (Antra)",
+				"Pinchflat YouTube & audio channel archiver (:8945)",
 				"On-the-fly FLAC/Opus/MP3 transcoding",
 			},
 		},
@@ -792,18 +928,20 @@ func (m *AppManager) inspectAppFast(app AppDefinition, installedPkgs map[string]
 		isPkgInstalled = installedPkgs[app.Package]
 	}
 
-	if !binaryFound && !isPkgInstalled && app.ID != "minecraft" && app.ID != "niri" && app.ID != "playit" {
-		status.Installed = false
-		status.Status = "not_installed"
-		status.Config["port"] = strconv.Itoa(app.Port)
-		return status
-	}
-
 	props := getSystemdProperties(app.Unit)
 	loadState := props["LoadState"]
 	activeState := props["ActiveState"]
 	subState := props["SubState"]
 	unitFileState := props["UnitFileState"]
+
+	isSystemdAvailable := loadState == "loaded" || activeState == "active" || activeState == "activating"
+
+	if !binaryFound && !isPkgInstalled && !isSystemdAvailable && app.ID != "minecraft" && app.ID != "niri" && app.ID != "playit" {
+		status.Installed = false
+		status.Status = "not_installed"
+		status.Config["port"] = strconv.Itoa(app.Port)
+		return status
+	}
 
 	if loadState != "" {
 		status.LoadState = loadState
@@ -818,7 +956,7 @@ func (m *AppManager) inspectAppFast(app AppDefinition, installedPkgs map[string]
 		status.Enabled = true
 	}
 
-	if binaryFound || isPkgInstalled || loadState == "loaded" {
+	if binaryFound || isPkgInstalled || isSystemdAvailable {
 		status.Installed = true
 	}
 
@@ -1104,14 +1242,47 @@ WantedBy=multi-user.target
 		return fmt.Errorf("failed to create bbctl.service: %w", err)
 	}
 
-	beeperCtlScript := "/mnt/shared/projects/tinapple/tinarchy-src/configs/scripts/beeper-ctl.sh"
-	if _, err := os.Stat(beeperCtlScript); err == nil {
-		_ = exec.Command("install", "-m", "755", beeperCtlScript, "/usr/local/bin/beeper").Run()
+	beeperCandidates := []string{
+		"/usr/local/bin/beeper-ctl",
+		"/usr/local/bin/beeper",
+		"/mnt/shared/projects/tinapple/scripts/beeper-ctl",
+		"/mnt/shared/projects/tinapple/tinarchy-src/configs/scripts/beeper-ctl.sh",
+	}
+	for _, p := range beeperCandidates {
+		if _, err := os.Stat(p); err == nil && p != "/usr/local/bin/beeper" {
+			_ = exec.Command("install", "-m", "755", p, "/usr/local/bin/beeper").Run()
+			break
+		}
 	}
 
 	m.AppendLog("beeper", "command", "$ systemctl daemon-reload")
 	_ = m.runStreamCmd(ctx, "beeper", "systemctl", "daemon-reload")
 	return nil
+}
+
+func installSyncyomi(m *AppManager) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	defer cancel()
+
+	scriptCandidates := []string{
+		"/usr/local/bin/tinapple-install-syncyomi",
+		"/usr/bin/tinapple-install-syncyomi",
+		"/mnt/shared/projects/tinapple/scripts/tinapple-install-syncyomi",
+		"/mnt/shared/projects/tinapple/tinarchy-src/configs/scripts/install-syncyomi.sh",
+	}
+	var scriptPath string
+	for _, p := range scriptCandidates {
+		if _, err := os.Stat(p); err == nil {
+			scriptPath = p
+			break
+		}
+	}
+	if scriptPath != "" {
+		return m.runStreamCmd(ctx, "syncyomi", scriptPath)
+	}
+
+	primaryUser, _ := getSystemPrimaryUser()
+	return m.runStreamCmd(ctx, "syncyomi", "sudo", "-u", primaryUser, "paru", "-S", "--noconfirm", "--needed", "--skipreview", "syncyomi-bin")
 }
 
 func installFilebrowser() error {
@@ -1349,37 +1520,133 @@ WantedBy=multi-user.target
 	return nil
 }
 
-func installMetube() error {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+func installPinchflat(m *AppManager) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 	defer cancel()
 
-	cleanStalePacmanLock()
-	cmdDeps := exec.CommandContext(ctx, "pacman", "-S", "--noconfirm", "--needed",
-		"python", "python-aiohttp", "python-socketio", "python-watchfiles", "yt-dlp", "ffmpeg", "aria2")
-	_ = cmdDeps.Run()
+	_ = m.runStreamCmd(ctx, "pinchflat", "systemctl", "enable", "--now", "docker")
 
 	_ = os.MkdirAll("/srv/media/youtube", 0775)
 	_ = os.MkdirAll("/srv/media/youtube-music", 0775)
-	_ = os.MkdirAll("/var/lib/metube", 0755)
-	_ = os.MkdirAll("/etc/tinapple", 0755)
+	_ = os.MkdirAll("/var/lib/pinchflat", 0775)
+	_ = exec.Command("chown", "-R", "root:media", "/srv/media/youtube", "/srv/media/youtube-music").Run()
+	_ = exec.Command("chmod", "-R", "775", "/srv/media/youtube", "/srv/media/youtube-music").Run()
+	_ = exec.Command("chmod", "-R", "g+s", "/srv/media/youtube", "/srv/media/youtube-music").Run()
+
+	m.AppendLog("pinchflat", "info", "Pulling official Pinchflat container image...")
+	_ = m.runStreamCmd(ctx, "pinchflat", "docker", "pull", "ghcr.io/kieraneglin/pinchflat:latest")
 
 	serviceContent := `[Unit]
-Description=MeTube Headless YouTube Downloader
-After=network.target
+Description=Pinchflat YouTube Media Manager for Jellyfin
+After=docker.service network.target
+Requires=docker.service
 
 [Service]
 Type=simple
-EnvironmentFile=-/etc/tinapple/metube.env
-ExecStart=/usr/local/bin/metube
 Restart=always
 RestartSec=5
+ExecStartPre=-/usr/bin/docker stop pinchflat
+ExecStartPre=-/usr/bin/docker rm pinchflat
+ExecStart=/usr/bin/docker run --name pinchflat \
+  --net=host \
+  -e TZ=Asia/Kolkata \
+  -e PORT=8945 \
+  -v /var/lib/pinchflat:/config \
+  -v /srv/media/youtube:/downloads \
+  ghcr.io/kieraneglin/pinchflat:latest
+ExecStop=/usr/bin/docker stop pinchflat
 
 [Install]
 WantedBy=multi-user.target
 `
-	if err := os.WriteFile("/etc/systemd/system/metube.service", []byte(serviceContent), 0644); err != nil {
-		return fmt.Errorf("failed to create metube.service: %w", err)
+	if err := os.WriteFile("/etc/systemd/system/pinchflat.service", []byte(serviceContent), 0644); err != nil {
+		return fmt.Errorf("failed to create pinchflat.service: %w", err)
 	}
+
+	// Pre-provision Jellyfin YouTube library definition if Jellyfin is installed
+	if _, err := os.Stat("/var/lib/jellyfin"); err == nil {
+		jellyLibDir := "/var/lib/jellyfin/root/default/YouTube"
+		_ = os.MkdirAll(jellyLibDir, 0775)
+		_ = os.Symlink("/srv/media/youtube", filepath.Join(jellyLibDir, "YouTube"))
+		optionsXML := `<?xml version="1.0" encoding="utf-8"?>
+<LibraryOptions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <Enabled>true</Enabled>
+  <EnablePhotos>false</EnablePhotos>
+  <EnableRealtimeMonitor>true</EnableRealtimeMonitor>
+  <EnableChapterImageExtraction>true</EnableChapterImageExtraction>
+  <ExtractChapterImagesDuringLibraryScan>true</ExtractChapterImagesDuringLibraryScan>
+  <PathInfos>
+    <MediaPathInfo>
+      <Path>/srv/media/youtube</Path>
+    </MediaPathInfo>
+  </PathInfos>
+  <TypeOptions>
+    <TypeOptions>
+      <Type>Movie</Type>
+      <MetadataFetchers>
+        <string>Nfo</string>
+      </MetadataFetchers>
+      <MetadataFetcherOrder>
+        <string>Nfo</string>
+      </MetadataFetcherOrder>
+      <ImageFetchers>
+        <string>Embedded</string>
+        <string>Screen Grabber</string>
+      </ImageFetchers>
+    </TypeOptions>
+  </TypeOptions>
+</LibraryOptions>
+`
+		_ = os.WriteFile(filepath.Join(jellyLibDir, "options.xml"), []byte(optionsXML), 0644)
+		_ = exec.Command("chown", "-R", "jellyfin:jellyfin", jellyLibDir).Run()
+	}
+
+	_ = m.runStreamCmd(ctx, "pinchflat", "systemctl", "daemon-reload")
+	_ = m.runStreamCmd(ctx, "pinchflat", "systemctl", "enable", "--now", "pinchflat.service")
+	return nil
+}
+
+func installHomarr(m *AppManager) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+	defer cancel()
+
+	_ = m.runStreamCmd(ctx, "homarr", "systemctl", "enable", "--now", "docker")
+
+	_ = os.MkdirAll("/var/lib/homarr/configs", 0775)
+	_ = os.MkdirAll("/var/lib/homarr/icons", 0775)
+	_ = os.MkdirAll("/var/lib/homarr/data", 0775)
+
+	m.AppendLog("homarr", "info", "Pulling official Homarr dashboard container image (ghcr.io/ajnart/homarr:latest)...")
+	_ = m.runStreamCmd(ctx, "homarr", "docker", "pull", "ghcr.io/ajnart/homarr:latest")
+
+	serviceContent := `[Unit]
+Description=Homarr Dashboard Engine
+After=docker.service network.target
+Requires=docker.service
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=5
+ExecStartPre=-/usr/bin/docker stop homarr
+ExecStartPre=-/usr/bin/docker rm homarr
+ExecStart=/usr/bin/docker run --name homarr \
+  -p 7575:7575 \
+  -e TZ=Asia/Kolkata \
+  -v /var/lib/homarr/configs:/app/data/configs \
+  -v /var/lib/homarr/icons:/app/public/icons \
+  -v /var/lib/homarr/data:/data \
+  -v /var/run/docker.sock:/var/run/docker.sock:ro \
+  ghcr.io/ajnart/homarr:latest
+ExecStop=/usr/bin/docker stop homarr
+
+[Install]
+WantedBy=multi-user.target
+`
+	if err := os.WriteFile("/etc/systemd/system/homarr.service", []byte(serviceContent), 0644); err != nil {
+		return fmt.Errorf("failed to create homarr.service: %w", err)
+	}
+	_ = m.runStreamCmd(ctx, "homarr", "systemctl", "daemon-reload")
 	return nil
 }
 
@@ -1496,6 +1763,12 @@ func (m *AppManager) runStreamCmd(ctx context.Context, appID string, name string
 }
 
 func (m *AppManager) ListPacks() []AppliancePackStatus {
+	apps := m.ListApps()
+	appMap := make(map[string]AppStatus, len(apps))
+	for _, a := range apps {
+		appMap[a.ID] = a
+	}
+
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
@@ -1512,8 +1785,7 @@ func (m *AppManager) ListPacks() []AppliancePackStatus {
 		runningCount := 0
 
 		for _, appID := range pack.Apps {
-			if def, exists := m.apps[appID]; exists {
-				st := m.inspectApp(def)
+			if st, exists := appMap[appID]; exists {
 				status.AppsStatus = append(status.AppsStatus, st)
 				if st.Installed {
 					installedCount++
@@ -1535,6 +1807,12 @@ func (m *AppManager) ListPacks() []AppliancePackStatus {
 }
 
 func (m *AppManager) GetPack(id string) (*AppliancePackStatus, error) {
+	apps := m.ListApps()
+	appMap := make(map[string]AppStatus, len(apps))
+	for _, a := range apps {
+		appMap[a.ID] = a
+	}
+
 	m.mu.RLock()
 	pack, ok := m.packs[id]
 	m.mu.RUnlock()
@@ -1552,8 +1830,7 @@ func (m *AppManager) GetPack(id string) (*AppliancePackStatus, error) {
 	runningCount := 0
 
 	for _, appID := range pack.Apps {
-		if def, exists := m.apps[appID]; exists {
-			st := m.inspectApp(def)
+		if st, exists := appMap[appID]; exists {
 			status.AppsStatus = append(status.AppsStatus, st)
 			if st.Installed {
 				installedCount++
@@ -1570,6 +1847,30 @@ func (m *AppManager) GetPack(id string) (*AppliancePackStatus, error) {
 	status.AllRunning = (runningCount == len(pack.Apps) && len(pack.Apps) > 0)
 
 	return &status, nil
+}
+
+func (m *AppManager) ensureMasterPreflight(ctx context.Context, id string) error {
+	masterScripts := []string{
+		"/usr/local/bin/tinapple-master-install",
+		"/usr/bin/tinapple-master-install",
+		"/mnt/shared/projects/tinapple/scripts/tinapple-master-install",
+	}
+	var scriptPath string
+	for _, p := range masterScripts {
+		if _, err := os.Stat(p); err == nil {
+			scriptPath = p
+			break
+		}
+	}
+	if scriptPath != "" {
+		m.AppendLog(id, "info", ">>> Executing master installer pre-flight check...")
+		if err := m.runStreamCmd(ctx, id, scriptPath); err != nil {
+			m.AppendLog(id, "warn", fmt.Sprintf("Notice during pre-flight: %v", err))
+		}
+	} else {
+		cleanStalePacmanLock()
+	}
+	return nil
 }
 
 func (m *AppManager) Install(id string) error {
@@ -1589,6 +1890,10 @@ func (m *AppManager) installUnlocked(id string) error {
 	m.SetInstallState("running", id, app.Name)
 	m.AppendLog(id, "command", fmt.Sprintf(">>> Initiating deployment pipeline for %s (%s)...", app.Name, id))
 
+	preCtx, preCancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	_ = m.ensureMasterPreflight(preCtx, id)
+	preCancel()
+
 	var installErr error
 	switch id {
 	case "playit":
@@ -1597,9 +1902,24 @@ func (m *AppManager) installUnlocked(id string) error {
 	case "filebrowser":
 		m.AppendLog(id, "info", "Downloading official FileBrowser Quantum binary release...")
 		installErr = installFilebrowser()
-	case "metube":
-		m.AppendLog(id, "info", "Installing MeTube Python requirements (yt-dlp, ffmpeg, aiohttp)...")
-		installErr = installMetube()
+	case "homarr":
+		m.AppendLog(id, "info", "Deploying official Homarr dashboard engine container...")
+		installErr = installHomarr(m)
+	case "pinchflat", "metube":
+		m.AppendLog(id, "info", "Deploying Pinchflat YouTube media manager container...")
+		installErr = installPinchflat(m)
+	case "tinapple-music-queuer":
+		m.AppendLog(id, "info", "Fetching Tinapple Music Queuer from github.com/imyash0722/tinapple-music-queuer...")
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+		defer cancel()
+		tmpDir := "/tmp/tinapple-music-queuer-install"
+		_ = os.RemoveAll(tmpDir)
+		if err := m.runStreamCmd(ctx, id, "git", "clone", "--depth=1", "https://github.com/imyash0722/tinapple-music-queuer.git", tmpDir); err != nil {
+			installErr = err
+		} else {
+			installErr = m.runStreamCmd(ctx, id, "bash", filepath.Join(tmpDir, "install.sh"))
+			_ = os.RemoveAll(tmpDir)
+		}
 	case "minecraft":
 		m.AppendLog(id, "info", "Deploying PaperMC / PurpurMC appliance server runtime...")
 		installErr = installMinecraftServer()
@@ -1615,6 +1935,9 @@ func (m *AppManager) installUnlocked(id string) error {
 	case "beeper":
 		m.AppendLog(id, "info", "Fetching official Beeper Bridge Manager (bbctl) release from GitHub...")
 		installErr = installBeeper(m)
+	case "syncyomi":
+		m.AppendLog(id, "info", "Deploying SyncYomi manga synchronization bridge...")
+		installErr = installSyncyomi(m)
 	case "protonvpn":
 		cleanStalePacmanLock()
 		m.AppendLog(id, "info", "Installing Proton VPN CLI, split-tunneling daemon & WireGuard tools...")
@@ -1645,6 +1968,23 @@ func (m *AppManager) installUnlocked(id string) error {
 			if _, err := os.Stat(cfgFile); os.IsNotExist(err) {
 				_ = os.WriteFile(cfgFile, []byte("{\n  \"email\": \"user@example.com\",\n  \"password\": \"changeme\"\n}\n"), 0644)
 				_ = exec.Command("chown", "-R", "jdownloader:jdownloader", "/opt/JDownloader").Run()
+			}
+		}
+	case "suwayomi":
+		if app.Package != "" {
+			cleanStalePacmanLock()
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+			defer cancel()
+			installErr = m.runStreamCmd(ctx, id, "pacman", "-S", "--noconfirm", "--needed", app.Package)
+			if installErr != nil {
+				primaryUser, _ := getSystemPrimaryUser()
+				m.AppendLog(id, "warn", fmt.Sprintf("Pacman failed, attempting AUR via paru as %s...", primaryUser))
+				installErr = m.runStreamCmd(ctx, id, "sudo", "-u", primaryUser, "paru", "-S", "--noconfirm", "--needed", "--skipreview", app.Package)
+			}
+		}
+		if installErr == nil {
+			if err := applySuwayomiGovernor(); err == nil {
+				m.AppendLog(id, "info", "[✓] Thermal & single-core runaway protection (CPUQuota=75%, Nice=10) applied to suwayomi-server")
 			}
 		}
 	default:
@@ -1709,6 +2049,10 @@ func (m *AppManager) InstallPack(id string) error {
 
 	m.SetInstallState("running", id, pack.Name)
 	m.AppendLog(id, "command", fmt.Sprintf(">>> Initiating deployment pipeline for pack %s (%d apps)...", pack.Name, len(pack.Apps)))
+
+	preCtx, preCancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	_ = m.ensureMasterPreflight(preCtx, id)
+	preCancel()
 
 	for i, appID := range pack.Apps {
 		m.mu.RLock()
@@ -1798,8 +2142,26 @@ func (m *AppManager) configurePackUnlocked(id string) error {
 		_ = exec.Command("chmod", "-R", "775", "/srv/media/manga").Run()
 		_ = exec.Command("chmod", "-R", "g+s", "/srv/media/manga").Run()
 		m.AppendLog(id, "info", "[✓] Storage /srv/media/manga configured with media group permissions")
+		if err := applySuwayomiGovernor(); err == nil {
+			m.AppendLog(id, "info", "[✓] Thermal & core protection (CPUQuota=75%, Nice=10) applied to suwayomi-server")
+		}
 		_ = exec.Command("systemctl", "restart", "suwayomi-server").Run()
 		m.AppendLog(id, "info", "[✓] Suwayomi Manga Server reloaded and active on port 4567")
+		m.AppendLog(id, "info", "[✓] Tsumiru native client ready for phone sync")
+
+	case "manga-syncyomi":
+		_ = os.MkdirAll("/srv/media/manga", 0775)
+		_ = exec.Command("chown", "-R", "root:media", "/srv/media/manga").Run()
+		_ = exec.Command("chmod", "-R", "775", "/srv/media/manga").Run()
+		_ = exec.Command("chmod", "-R", "g+s", "/srv/media/manga").Run()
+		m.AppendLog(id, "info", "[✓] Storage /srv/media/manga configured with media group permissions")
+		if err := applySuwayomiGovernor(); err == nil {
+			m.AppendLog(id, "info", "[✓] Thermal & core protection (CPUQuota=75%, Nice=10) applied to suwayomi-server")
+		}
+		_ = exec.Command("systemctl", "restart", "suwayomi-server").Run()
+		_ = exec.Command("systemctl", "restart", "syncyomi").Run()
+		m.AppendLog(id, "info", "[✓] Suwayomi Manga Server active on port 4567")
+		m.AppendLog(id, "info", "[✓] SyncYomi Mihon/Tachiyomi sync bridge active on port 8282")
 
 	case "privacy-shield":
 		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
@@ -1821,16 +2183,23 @@ func (m *AppManager) configurePackUnlocked(id string) error {
 			_ = exec.Command("usermod", "-aG", "media", u).Run()
 		}
 		_ = exec.Command("systemctl", "restart", "navidrome").Run()
-		_ = exec.Command("systemctl", "restart", "metube").Run()
-		m.AppendLog(id, "info", "[✓] /srv/media/music library configured and linked to MeTube downloads")
+		_ = exec.Command("systemctl", "restart", "pinchflat").Run()
+		m.AppendLog(id, "info", "[✓] /srv/media/music library configured and linked to Pinchflat downloads")
 		m.AppendLog(id, "info", "[✓] Navidrome Subsonic music streamer active on port 4533")
 
 	case "cloud-vault":
 		_ = os.MkdirAll("/srv/backups", 0775)
 		_ = exec.Command("chmod", "-R", "775", "/srv/backups").Run()
+		cleanStalePacmanLock()
+		_ = exec.Command("pacman", "-S", "--noconfirm", "--needed", "vaultwarden-web").Run()
+		_ = exec.Command("sed", "-i", "s|^WEB_VAULT_ENABLED=false|WEB_VAULT_ENABLED=true|", "/etc/vaultwarden.env").Run()
+		_ = exec.Command("sed", "-i", "s|^# WEB_VAULT_FOLDER=.*|WEB_VAULT_FOLDER=/usr/share/webapps/vaultwarden-web|", "/etc/vaultwarden.env").Run()
+		_ = exec.Command("sed", "-i", "s|^# ROCKET_ADDRESS=0.0.0.0|ROCKET_ADDRESS=0.0.0.0|", "/etc/vaultwarden.env").Run()
+		_ = exec.Command("sed", "-i", "s|^# SIGNUPS_ALLOWED=true|SIGNUPS_ALLOWED=true|", "/etc/vaultwarden.env").Run()
+		_ = exec.Command("tailscale", "serve", "--bg", "8000").Run()
 		_ = exec.Command("systemctl", "restart", "vaultwarden").Run()
 		_ = exec.Command("systemctl", "restart", "filebrowser").Run()
-		m.AppendLog(id, "info", "[✓] Vaultwarden Bitwarden-compatible vault active on port 8000")
+		m.AppendLog(id, "info", "[✓] Vaultwarden Bitwarden vault active with Web Vault & Tailscale HTTPS")
 		m.AppendLog(id, "info", "[✓] FileBrowser Quantum file manager active on port 8082")
 
 	case "second-brain":
@@ -1978,7 +2347,16 @@ func (m *AppManager) Uninstall(id string) error {
 		_ = os.RemoveAll("/opt/Sonarr")
 		_ = os.Remove("/usr/local/bin/sonarr")
 		_ = os.Remove("/etc/systemd/system/sonarr.service")
-	case "metube":
+	case "homarr":
+		_ = exec.Command("systemctl", "disable", "--now", "homarr.service").Run()
+		_ = exec.Command("docker", "stop", "homarr").Run()
+		_ = exec.Command("docker", "rm", "-f", "homarr").Run()
+		_ = os.Remove("/etc/systemd/system/homarr.service")
+	case "pinchflat", "metube":
+		_ = exec.Command("systemctl", "disable", "--now", "pinchflat.service").Run()
+		_ = exec.Command("docker", "stop", "pinchflat").Run()
+		_ = exec.Command("docker", "rm", "-f", "pinchflat").Run()
+		_ = os.Remove("/etc/systemd/system/pinchflat.service")
 		_ = os.Remove("/etc/systemd/system/metube.service")
 	case "protonvpn":
 		_ = exec.Command("systemctl", "disable", "--now", "proton.VPN.service").Run()
@@ -2158,6 +2536,30 @@ func (m *AppManager) GetConfig(id string) (map[string]interface{}, error) {
 		}
 	}
 
+	// Parse CPUQuota and Nice from drop-in override
+	var cpuQuota string
+	var niceVal int
+	if rawOverride, ok := res["rawOverride"].(string); ok {
+		for _, line := range strings.Split(rawOverride, "\n") {
+			line = strings.TrimSpace(line)
+			if strings.HasPrefix(line, "CPUQuota=") {
+				cpuQuota = strings.TrimPrefix(line, "CPUQuota=")
+			} else if strings.HasPrefix(line, "Nice=") {
+				if n, err := strconv.Atoi(strings.TrimPrefix(line, "Nice=")); err == nil {
+					niceVal = n
+				}
+			}
+		}
+	}
+	if app.ID == "suwayomi" && cpuQuota == "" {
+		cpuQuota = "75%"
+	}
+	if app.ID == "suwayomi" && niceVal == 0 {
+		niceVal = 10
+	}
+	res["cpuQuota"] = cpuQuota
+	res["nice"] = niceVal
+
 	return res, nil
 }
 
@@ -2167,6 +2569,8 @@ type UpdateConfigRequest struct {
 	RawConfig   string            `json:"rawConfig"`
 	Autostart   *bool             `json:"autostart"`
 	CpuWeight   int               `json:"cpuWeight"`
+	CpuQuota    string            `json:"cpuQuota"`
+	Nice        int               `json:"nice"`
 	IgnorePerms *bool             `json:"ignorePerms"`
 }
 
@@ -2194,7 +2598,7 @@ func (m *AppManager) UpdateConfig(id string, req UpdateConfigRequest) error {
 		}
 	}
 
-	// 3. Drop-in overrides (Port, CPU Weight, Custom Environment)
+	// 3. Drop-in overrides (Port, CPU Weight, CPU Quota, Nice, Custom Environment)
 	dropInDir := fmt.Sprintf("/etc/systemd/system/%s.d", app.Unit)
 	if err := os.MkdirAll(dropInDir, 0755); err != nil {
 		return fmt.Errorf("failed to create override dir: %w", err)
@@ -2207,7 +2611,26 @@ func (m *AppManager) UpdateConfig(id string, req UpdateConfigRequest) error {
 	}
 	if req.CpuWeight > 0 {
 		dropInContent.WriteString(fmt.Sprintf("CPUWeight=%d\n", req.CpuWeight))
+	} else if app.ID == "suwayomi" {
+		dropInContent.WriteString("CPUWeight=50\n")
 	}
+
+	quota := strings.TrimSpace(req.CpuQuota)
+	if app.ID == "suwayomi" && quota == "" {
+		quota = "75%"
+	}
+	if quota != "" && quota != "unlimited" && quota != "0%" {
+		dropInContent.WriteString(fmt.Sprintf("CPUQuota=%s\n", quota))
+	}
+
+	niceVal := req.Nice
+	if app.ID == "suwayomi" && niceVal == 0 {
+		niceVal = 10
+	}
+	if niceVal != 0 {
+		dropInContent.WriteString(fmt.Sprintf("Nice=%d\n", niceVal))
+	}
+
 	for k, v := range req.CustomEnv {
 		dropInContent.WriteString(fmt.Sprintf("Environment=\"%s=%s\"\n", k, v))
 	}
