@@ -87,6 +87,24 @@
 - **Subject**: fix(sync): refine pre-commit and pre-push hook behavior for GEMINI.md
 - **Key Files**: `scripts/sync-gemini-ledger.py`
 
+### Maintenance (2026-11-11) | feat(proxy): complete Caddy migration, resolve Tsukimi 404 delete, and fix Suwayomi multi-source downloads
+- **Scope**: Migrated entire reverse proxy infrastructure from NGINX to clean Caddy across server, repos, installers, updaters, and configs; fixed Tsukimi client 404 delete error; resolved Suwayomi multiple sources failure; and completely deleted "The World's Strongest Witch" anime.
+- **Key Changes**:
+  - **Caddy Reverse Proxy Migration**:
+    - Migrated all reverse proxy directives to `/etc/caddy/Caddyfile` and `configs/caddy/Caddyfile` with modern lossless compression (`encode zstd gzip`), security headers, immutable caching for `/assets/*` and manga thumbnails, and subpath proxies (`/jellyfin`, `/suwayomi`, `/qbittorrent`, `/ombi`, `/navidrome`, `/syncthing`, `/vault`, `/adguard`, `/bazarr`, Matrix routes).
+    - Decommissioned `nginx.service`; aliased `tinapple-nginx.service` to `caddy.service`.
+    - Added Caddy route generator to `tinapple-config-generator` (`routing/caddy.go`, `caddy.go`) generating dynamic service routes into `/etc/caddy/conf.d/tinapple-services.caddy`. Added `caddy-sync` and `proxy-sync` commands.
+    - Updated `scripts/tinapple-update`, `tinapple-installer/backend/lib/deploy.sh`, `tinapple-dash/PKGBUILD`, `tinapple-nginx/PKGBUILD`, and `tinapple-dash.service` to depend on and manage Caddy.
+  - **Tsukimi Deletion 404 Resolution**:
+    - Tsukimi GTK4 client queries `GET /Items/{id}/DeleteInfo` (or `/emby/Items/{id}/DeleteInfo`) before displaying delete prompt. Because Jellyfin removed this endpoint, Tsukimi failed with 404.
+    - Configured Emby compatibility route on Caddy ports `:8096` and `:8095` returning `200 OK {"Paths":[]}`.
+  - **Suwayomi Manga Sources Fix**:
+    - Enabled FlareSolverr fallback proxy in `/var/lib/suwayomi/.local/share/Tachidesk/server.conf` (`server.flareSolverrEnabled = true`, `server.flareSolverrUrl = "http://localhost:8191"`).
+    - Updated extensions (e.g. Asura Scans v1.6.72).
+    - Fixed JVM IPv6 unreachable network bug by adding `-Djava.net.preferIPv4Stack=true` to `suwayomi-server.service`.
+  - **Anime Deletion**:
+    - Completely deleted "The World's Strongest Witch" anime via Sonarr API (`DELETE /api/v3/series/2?deleteFiles=true`) and verified filesystem cleanup and Jellyfin library scan.
+
 ### Maintenance (2026-11-09) | feat(clients): switch Ombi client port to 5055 and release Android v2.0.1
 - **Scope**: Updated Ombi client-facing launcher port from 5000 to 5055 across `tinapple-hub` and `tinapple-android` to route directly via the Caddy Tailscale guest compatibility bridge without affecting internal daemon telemetry (which stays on 5000).
 - **Key Changes**:

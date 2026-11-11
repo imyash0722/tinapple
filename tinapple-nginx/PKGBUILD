@@ -2,11 +2,11 @@
 pkgname=tinapple-nginx
 pkgver=0.0.1
 pkgrel=2
-pkgdesc="NGINX reverse proxy core module for tinapple"
+pkgdesc="Reverse proxy core module for tinapple (powered by Caddy)"
 arch=(any)
 url="https://github.com/tinapple/tinapple-arch"
 license=(MIT)
-depends=('nginx' 'tinapple-config-generator')
+depends=('caddy' 'tinapple-config-generator')
 install=tinapple-nginx.install
 source=(tinapple-nginx.service nginx.conf.template tinapple-nginx-routes.service tinapple-nginx-routes.timer)
 sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP')

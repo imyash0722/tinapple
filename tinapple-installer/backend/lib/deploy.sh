@@ -47,69 +47,73 @@ tinapple_deploy() {
     run_sh "tinapple-config-generator generate $manifest $gen_dir"
   fi
 
-  # 2. Deploy NGINX reverse proxy configuration from manifest services
-  log_info "generating NGINX reverse proxy configuration from manifest services..."
-  run_sh "mkdir -p $target/etc/nginx/conf.d $target/etc/tinapple && cat << 'EON' > $target/etc/nginx/conf.d/tinapple.conf
-# Auto-generated NGINX reverse proxy configuration for tinapple OS
-map \$http_upgrade \$connection_upgrade {
-    default upgrade;
-    ''      close;
+  # 2. Deploy Caddy reverse proxy configuration
+  log_info "generating Caddy reverse proxy configuration..."
+  run_sh "mkdir -p $target/etc/caddy/conf.d $target/etc/tinapple && cat << 'EON' > $target/etc/caddy/Caddyfile
+# Auto-generated Caddy reverse proxy configuration for tinapple OS
+{
+	admin \"unix//run/caddy/admin.socket\"
 }
 
-server {
-    listen 80 default_server;
-    listen [::]:80 default_server;
-    server_name _;
+(compression) {
+	encode zstd gzip
+}
 
-    # Web Hub Dashboard
-    location / {
-        proxy_pass http://127.0.0.1:8088;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade \$http_upgrade;
-        proxy_set_header Connection \$connection_upgrade;
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \$scheme;
-        proxy_read_timeout 86400s;
-        proxy_buffering off;
-    }
+(tinapple_routes) {
+	handle /assets/* {
+		header >Cache-Control \"public, max-age=31536000, immutable\"
+		reverse_proxy localhost:8088
+	}
+	handle_path /jellyfin/* {
+		reverse_proxy localhost:8097 {
+			header_up X-Forwarded-Prefix /jellyfin
+		}
+	}
+	handle /jellyfin {
+		redir /jellyfin/ permanent
+	}
+	handle_path /suwayomi/* {
+		reverse_proxy localhost:4567 {
+			header_up X-Forwarded-Prefix /suwayomi
+		}
+	}
+	handle /suwayomi {
+		redir /suwayomi/ permanent
+	}
+	handle_path /qbittorrent/* {
+		reverse_proxy localhost:8080 {
+			header_up X-Forwarded-Prefix /qbittorrent
+		}
+	}
+	handle /qbittorrent {
+		redir /qbittorrent/ permanent
+	}
+	import /etc/caddy/conf.d/*.caddy
+	handle {
+		reverse_proxy localhost:8088
+	}
+}
 
-    # Jellyfin Media Server
-    location ^~ /jellyfin/ {
-        proxy_pass http://127.0.0.1:8096/;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade \$http_upgrade;
-        proxy_set_header Connection \$connection_upgrade;
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \$scheme;
-    }
+http:// {
+	import compression
+	import tinapple_routes
+}
 
-    # qBittorrent Headless
-    location ^~ /qbittorrent/ {
-        proxy_pass http://127.0.0.1:8080/;
-        proxy_http_version 1.1;
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-    }
-
-    # Suwayomi Manga
-    location ^~ /suwayomi/ {
-        proxy_pass http://127.0.0.1:4567/;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade \$http_upgrade;
-        proxy_set_header Connection \$connection_upgrade;
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \$scheme;
-    }
+http://:8096, http://:8095 {
+	@delete_info path_regexp delete_info (?i)/(?:emby/)?Items/[^/]+/DeleteInfo$
+	handle @delete_info {
+		header Content-Type application/json
+		respond \`{\"Paths\":[]}\` 200
+	}
+	handle_path /emby/* {
+		reverse_proxy localhost:8097
+	}
+	handle {
+		reverse_proxy localhost:8097
+	}
 }
 EON
-cp $target/etc/nginx/conf.d/tinapple.conf $target/etc/tinapple/nginx.conf 2>/dev/null || true"
+cp $target/etc/caddy/Caddyfile $target/etc/tinapple/Caddyfile 2>/dev/null || true"
 
   # 3. Generate systemd drop-ins for service overrides
   log_info "generating systemd drop-ins for service overrides..."

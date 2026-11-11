@@ -1,7 +1,7 @@
 [Unit]
 Description=Tinapple Web Dashboard
 Documentation=https://github.com/tinapple/tinapple-arch
-After=network.target tinapple-nginx.service
+After=network.target caddy.service
 
 [Service]
 Type=simple

@@ -16,7 +16,15 @@ func main() {
 
 	cmd := os.Args[1]
 	switch cmd {
+	case "caddy-sync", "proxy-sync":
+		if err := syncCaddy(os.Args[2:]); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+
 	case "nginx-sync":
+		// Synchronize both Nginx and Caddy to ensure unified multi-proxy transition
+		_ = syncCaddy(os.Args[2:])
 		if err := syncNginx(os.Args[2:]); err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)

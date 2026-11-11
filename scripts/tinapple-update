@@ -152,16 +152,35 @@ if [[ -f /usr/local/bin/tinapple-torrent-healer ]] || [[ -f "${BASH_SOURCE%/*}/t
   echo "[✓] tinapple-torrent-healer watchdog active"
 fi
 
-# 11. Ensure Jellyfin Emby Compatibility Bridge in NGINX (:8096, :8095)
-echo "[*] Ensuring Jellyfin Emby compatibility bridge in NGINX..."
+# 11. Ensure Caddy Reverse Proxy & Compatibility Bridges (:80, :8096, :8095, :5055)
+echo "[*] Ensuring Caddy Reverse Proxy & compatibility bridges..."
 if [[ -f /etc/jellyfin/network.xml ]] && grep -q "<InternalHttpPort>8096</InternalHttpPort>" /etc/jellyfin/network.xml; then
-  echo "[*] Migrating Jellyfin internal HTTP port to 8097 for NGINX bridge..."
+  echo "[*] Migrating Jellyfin internal HTTP port to 8097 for Caddy bridge..."
   sed -i 's/<InternalHttpPort>8096<\/InternalHttpPort>/<InternalHttpPort>8097<\/InternalHttpPort>/' /etc/jellyfin/network.xml 2>/dev/null || true
   if systemctl is-active --quiet jellyfin 2>/dev/null; then
     systemctl restart jellyfin || true
   fi
 fi
 
+mkdir -p /etc/caddy/conf.d
+if [[ -f "${BASH_SOURCE%/*}/../configs/caddy/Caddyfile" ]]; then
+  cp "${BASH_SOURCE%/*}/../configs/caddy/Caddyfile" /etc/caddy/Caddyfile 2>/dev/null || true
+fi
+
+if command -v caddy >/dev/null 2>&1; then
+  if systemctl is-active --quiet nginx 2>/dev/null; then
+    echo "[*] Decommissioning legacy NGINX in favor of Caddy..."
+    systemctl stop nginx 2>/dev/null || true
+    systemctl disable nginx 2>/dev/null || true
+  fi
+  if caddy validate --config /etc/caddy/Caddyfile >/dev/null 2>&1; then
+    systemctl enable --now caddy.service 2>/dev/null || true
+    systemctl reload caddy.service 2>/dev/null || true
+    echo "[✓] Caddy reverse proxy is active and validated"
+  fi
+fi
+
+# Fallback sync for legacy NGINX installations
 if [[ -d /etc/nginx/conf.d ]]; then
   if [[ -f "${BASH_SOURCE%/*}/../configs/nginx/conf.d/jellyfin-bridge.conf" ]]; then
     cp "${BASH_SOURCE%/*}/../configs/nginx/conf.d/jellyfin-bridge.conf" /etc/nginx/conf.d/jellyfin-bridge.conf 2>/dev/null || true
@@ -176,6 +195,7 @@ echo "[*] Reloading systemd daemons and refreshing reverse proxy..."
 systemctl daemon-reload
 
 if command -v tinapple-config-generator >/dev/null 2>&1; then
+  tinapple-config-generator caddy-sync >/dev/null 2>&1 || true
   tinapple-config-generator nginx-sync >/dev/null 2>&1 || true
 fi
 

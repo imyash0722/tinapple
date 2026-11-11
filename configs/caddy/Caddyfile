@@ -2,31 +2,158 @@
 	admin "unix//run/caddy/admin.socket"
 }
 
-(matrix_routes) {
-	# Enable Lossless Compression (Zstandard and Gzip)
+# Lossless compression (Zstandard & Gzip)
+(compression) {
 	encode zstd gzip
+}
 
-	# Matrix Client Discovery
+# Standard security headers
+(security_headers) {
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "SAMEORIGIN"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+}
+
+# Core appliance routing rules (shared across HTTP, Tailscale HTTPS, and LAN IP)
+(tinapple_routes) {
+	# 1. Dashboard & Hub Hashed Static Assets (Immutable Cache)
+	handle /assets/* {
+		header >Cache-Control "public, max-age=31536000, immutable"
+		reverse_proxy localhost:8088
+	}
+
+	# 2. Suwayomi GraphQL API (Compressed Fast-Path)
+	handle /api/graphql* {
+		reverse_proxy localhost:4567
+	}
+
+	# 3. Manga Thumbnails Immutable Fast-Path (direct kernel sendfile via Dash on 8088)
+	@manga_thumb path_regexp manga_thumb ^/api/v1/manga/([0-9]+)/thumbnail$
+	handle @manga_thumb {
+		header >Cache-Control "public, max-age=31536000, immutable"
+		reverse_proxy localhost:8088
+	}
+
+	# 4. Jellyfin Home Theater
+	handle_path /jellyfin/* {
+		reverse_proxy localhost:8097 {
+			header_up X-Forwarded-Prefix /jellyfin
+		}
+	}
+	handle /jellyfin {
+		redir /jellyfin/ permanent
+	}
+
+	# 5. Suwayomi Manga Server
+	handle_path /suwayomi/* {
+		reverse_proxy localhost:4567 {
+			header_up X-Forwarded-Prefix /suwayomi
+		}
+	}
+	handle /suwayomi {
+		redir /suwayomi/ permanent
+	}
+
+	# 6. qBittorrent Web UI
+	handle_path /qbittorrent/* {
+		reverse_proxy localhost:8080 {
+			header_up X-Forwarded-Prefix /qbittorrent
+			header_up Host localhost:8080
+		}
+	}
+	handle /qbittorrent {
+		redir /qbittorrent/ permanent
+	}
+
+	# 7. Ombi Media Requests
+	handle_path /ombi/* {
+		reverse_proxy localhost:5000 {
+			header_up X-Forwarded-Prefix /ombi
+		}
+	}
+	handle /ombi {
+		redir /ombi/ permanent
+	}
+
+	# Legacy Seerr redirect to Ombi
+	handle /seerr* {
+		redir /ombi/ permanent
+	}
+
+	# 8. Navidrome Music Streaming
+	handle_path /navidrome/* {
+		reverse_proxy localhost:4533 {
+			header_up X-Forwarded-Prefix /navidrome
+		}
+	}
+	handle /navidrome {
+		redir /navidrome/ permanent
+	}
+
+	# 9. Syncthing Web UI
+	handle_path /syncthing/* {
+		reverse_proxy localhost:8384 {
+			header_up X-Forwarded-Prefix /syncthing
+			header_up Host localhost:8384
+		}
+	}
+	handle /syncthing {
+		redir /syncthing/ permanent
+	}
+
+	# 10. Vaultwarden Password Manager
+	handle_path /vault/* {
+		reverse_proxy localhost:8000 {
+			header_up X-Forwarded-Prefix /vault
+		}
+	}
+	handle /vault {
+		redir /vault/ permanent
+	}
+
+	# 11. AdGuard Home DNS & Ad-Blocking
+	handle_path /adguard/* {
+		reverse_proxy localhost:3000 {
+			header_up X-Forwarded-Prefix /adguard
+		}
+	}
+	handle /adguard {
+		redir /adguard/ permanent
+	}
+
+	# 12. Bazarr Subtitle Engine
+	handle_path /bazarr/* {
+		reverse_proxy localhost:6767 {
+			header_up X-Forwarded-Prefix /bazarr
+		}
+	}
+	handle /bazarr {
+		redir /bazarr/ permanent
+	}
+
+	# 13. Matrix Client & Server Discovery
 	handle /.well-known/matrix/client {
 		header Content-Type application/json
 		header Access-Control-Allow-Origin *
 		header Access-Control-Allow-Methods "GET, POST, OPTIONS"
 		header Access-Control-Allow-Headers "Origin, X-Requested-With, Content-Type, Accept, Authorization"
-		respond "{\"m.homeserver\":{\"base_url\":\"{scheme}://{host}\"},\"org.matrix.msc3575.proxy\":{\"url\":\"{scheme}://{host}\"}}" 200
+		respond `{"m.homeserver":{"base_url":"{scheme}://{host}"},"org.matrix.msc3575.proxy":{"url":"{scheme}://{host}"}}` 200
 	}
 
-	# Matrix Server Discovery
 	handle /.well-known/matrix/server {
 		header Content-Type application/json
 		header Access-Control-Allow-Origin *
-		respond "{\"m.server\":\"tinapple.local:80\"}" 200
+		respond `{"m.server":"tinapple.local:80"}` 200
 	}
 
 	# Element X Sliding Sync (MSC3575)
 	handle /_matrix/client/unstable/org.matrix.msc3575/sync* {
 		reverse_proxy localhost:8009
 	}
-
 	handle /client/unstable/org.matrix.msc3575/sync* {
 		reverse_proxy localhost:8009
 	}
@@ -35,43 +162,17 @@
 	handle /_matrix/* {
 		reverse_proxy localhost:8008
 	}
-
 	handle /_synapse/* {
 		reverse_proxy localhost:8008
 	}
 
 	# Element Web Client
-	redir /element /element/ permanent
 	handle_path /element/* {
 		root * /usr/share/webapps/element
 		file_server
 	}
-
-	# Suwayomi GraphQL API (Compressed Fast-Path)
-	handle /api/graphql* {
-		reverse_proxy localhost:4567
-	}
-
-	# Manga Thumbnails Immutable Fast-Path (direct kernel sendfile via Dash on 8088)
-	handle /api/v1/manga/*/thumbnail* {
-		header >Cache-Control "public, max-age=31536000, immutable"
-		reverse_proxy localhost:8088
-	}
-
-	# Suwayomi Manga REST API Fallback
-	handle /api/v1/manga* {
-		reverse_proxy localhost:4567
-	}
-
-	# Jellyfin Home Theater Reverse Proxy
-	handle /jellyfin* {
-		reverse_proxy localhost:8096
-	}
-
-	# Dashboard & Hub Hashed Static Assets (Immutable Cache)
-	handle /assets/* {
-		header >Cache-Control "public, max-age=31536000, immutable"
-		reverse_proxy localhost:8088
+	handle /element {
+		redir /element/ permanent
 	}
 
 	# Download Tinapple Root CA
@@ -83,76 +184,68 @@
 		}
 	}
 
-	# Default Hub & Dash fallback
+	# 14. Dynamic service route extensions generated by tinapple-config-generator
+	import /etc/caddy/conf.d/*.caddy
+
+	# 15. Default Hub & Dash fallback
 	handle {
 		reverse_proxy localhost:8088
 	}
 }
 
-# Tailscale HTTPS domain (Automatic Let's Encrypt Certificate)
-tinapple-server.tail3dee69.ts.net {
-	tls {
-		get_certificate tailscale
+# ----------------------------------------------------------------------
+# 1. Standard HTTP Ingress (Port 80) & Reverse-Proxied Tailscale HTTPS
+# ----------------------------------------------------------------------
+http:// {
+	import compression
+	import security_headers
+	import tinapple_routes
+}
+
+# ----------------------------------------------------------------------
+# 3. Jellyfin Emby Compatibility & Tsukimi Fix Bridge (Ports 8096 & 8095)
+# ----------------------------------------------------------------------
+http://:8096, http://:8095 {
+	# Tsukimi DeleteInfo mock - resolves 404 Not Found error when deleting items in Tsukimi
+	@delete_info path_regexp delete_info (?i)/(?:emby/)?Items/[^/]+/DeleteInfo$
+	handle @delete_info {
+		header Content-Type application/json
+		respond `{"Paths":[]}` 200
 	}
-	import matrix_routes
-}
 
-# Vaultwarden Tailscale HTTPS endpoint
-tinapple-server.tail3dee69.ts.net:8000 {
-	tls {
-		get_certificate tailscale
-	}
-	reverse_proxy localhost:8001
-}
-
-# Plain HTTP for Tailscale IP and LAN IP (no SSL warning, direct fast access)
-http://100.67.207.60, http://192.168.1.17, http://192.168.1.103, http://localhost, http://tinapple-server {
-	import matrix_routes
-}
-
-http://100.67.207.60:8000, http://192.168.1.17:8000, http://192.168.1.103:8000, http://localhost:8000 {
-	reverse_proxy localhost:8001
-}
-
-# Persistent 10-Year TLS for direct IP and LAN HTTPS access
-https://100.67.207.60, https://192.168.1.17, https://192.168.1.103, https://localhost, https://tinapple-server {
-	tls /etc/tinapple/certs/tinapple-fullchain.crt /etc/tinapple/certs/tinapple-server.key
-	import matrix_routes
-}
-
-
-# Jellyfin Emby/Legacy Client Compatibility Bridge (for Ombi and legacy clients)
-http://:8095 {
+	# Emby token mapping for legacy clients (Ombi, etc.)
 	@has_emby_token header X-Emby-Token *
 	handle @has_emby_token {
-		reverse_proxy localhost:8096 {
+		reverse_proxy localhost:8097 {
 			header_up Authorization "MediaBrowser Token=\"{http.request.header.X-Emby-Token}\""
 		}
 	}
 	@has_mb_token header X-MediaBrowser-Token *
 	handle @has_mb_token {
-		reverse_proxy localhost:8096 {
+		reverse_proxy localhost:8097 {
 			header_up Authorization "MediaBrowser Token=\"{http.request.header.X-MediaBrowser-Token}\""
 		}
 	}
 	@has_query_key query api_key=*
 	handle @has_query_key {
-		reverse_proxy localhost:8096 {
+		reverse_proxy localhost:8097 {
 			header_up Authorization "MediaBrowser Token=\"{http.request.uri.query.api_key}\""
 		}
 	}
 	@has_query_key_cap query ApiKey=*
 	handle @has_query_key_cap {
-		reverse_proxy localhost:8096 {
+		reverse_proxy localhost:8097 {
 			header_up Authorization "MediaBrowser Token=\"{http.request.uri.query.ApiKey}\""
 		}
 	}
-	handle {
-		reverse_proxy localhost:8096
-	}
-}
 
-# Ombi compatibility bridge for the existing Tailscale guest allow-rule.
-http://:5055 {
-	reverse_proxy localhost:5000
+	# Strip legacy /emby/ prefix from Tsukimi/Emby clients
+	handle_path /emby/* {
+		reverse_proxy localhost:8097
+	}
+
+	# Native Jellyfin pass-through
+	handle {
+		reverse_proxy localhost:8097
+	}
 }
