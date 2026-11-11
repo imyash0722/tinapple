@@ -87,6 +87,22 @@
 - **Subject**: fix(sync): refine pre-commit and pre-push hook behavior for GEMINI.md
 - **Key Files**: `scripts/sync-gemini-ledger.py`
 
+### Maintenance (2026-11-11) | feat(network): configure server as Tailscale exit node with Proton VPN forwarding and split tunneling safeguards
+- **Scope**: Configured server (`pineapple-server`, `100.108.215.120`) to advertise as a Tailscale exit node (`--advertise-exit-node`), enabled permanent IPv4 and IPv6 forwarding with loose reverse path filtering (`rp_filter = 2`), established forwarding and MASQUERADE NAT rules chaining Tailscale exit node clients (`tailscale0`) into Proton VPN (`proton+`), and updated `tinapple-proton` and `tinapple-dash` telemetry.
+- **Key Changes**:
+  - **Tailscale Exit Node Configuration**:
+    - Executed `tailscale set --advertise-exit-node` to advertise routes `0.0.0.0/0` and `::/0`.
+    - Set Tailscale operator to user `pineapple` (`tailscale set --operator=pineapple`) for unprivileged CLI control.
+    - Persisted sysctl parameters in `/etc/sysctl.d/99-tailscale-exit-node.conf`:
+      `net.ipv4.ip_forward = 1`, `net.ipv6.conf.all.forwarding = 1`, `net.ipv4.conf.all.rp_filter = 2`, `net.ipv4.conf.default.rp_filter = 2`.
+  - **Proton VPN Egress & NAT Forwarding**:
+    - Configured iptables FORWARD rules to route packets from `tailscale0` to `proton+` (WireGuard `proton` or CLI `proton0`) and established related/established return path.
+    - Added iptables NAT POSTROUTING `MASQUERADE` for outbound traffic on `proton+` and fallback `wlp3s0`.
+    - Updated `scripts/tinapple-proton` (`ensure_routing_safeguards`, `sanitize_and_save_wireguard`, `setup_exit_node`) and `scripts/pesu-wifi-runner` to automatically enforce exit-node forwarding rules on boot and during VPN lifecycle events.
+  - **Telemetry & Daemon Synchronization**:
+    - Added `tailscale_exit_node` telemetry (`advertised`, `ip_forwarding`, `egress: "proton" | "wan"`) to `tinapple-proton status` and `/api/v1/system/proton-exit`.
+    - Rebuilt `tinapple-dash` daemon binary and deployed to `/usr/local/bin/tinapple-dash`, replacing obsolete binary with live WireGuard state reflection.
+
 ### Maintenance (2026-11-11) | feat(network): configure pesu-wifi boot autorun sequence, Proton VPN split-tunneling bypass, and upgrade to v3.7.15
 - **Scope**: Resolved `pesu-wifi start` failure on server, upgraded binary to v3.7.15, enabled systemd user service recognition, established Proton VPN / WireGuard split tunneling for campus captive portal gateways, and configured automated boot runner (`pesu-wifi-runner`) performing start -> login -> status.
 - **Key Changes**:

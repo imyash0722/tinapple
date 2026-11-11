@@ -9,6 +9,11 @@ for ip in 192.168.254.1 172.16.1.1 10.14.142.1 192.168.1.1; do
 done
 ip rule add to 10.3.0.0/20 table main priority 5195 2>/dev/null || true
 
+# Enforce Tailscale exit node & Proton VPN forwarding safeguards
+if [ -x /usr/local/bin/tinapple-proton ]; then
+    /usr/local/bin/tinapple-proton setup-routing >/dev/null 2>&1 || true
+fi
+
 # 2. Wait up to 15 seconds for campus network route
 for i in {1..15}; do
     if ip route get 192.168.254.1 2>/dev/null | grep -q "dev"; then
