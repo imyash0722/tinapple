@@ -87,6 +87,25 @@
 - **Subject**: fix(sync): refine pre-commit and pre-push hook behavior for GEMINI.md
 - **Key Files**: `scripts/sync-gemini-ledger.py`
 
+### Maintenance (2026-11-11) | feat(network): configure pesu-wifi boot autorun sequence, Proton VPN split-tunneling bypass, and upgrade to v3.7.15
+- **Scope**: Resolved `pesu-wifi start` failure on server, upgraded binary to v3.7.15, enabled systemd user service recognition, established Proton VPN / WireGuard split tunneling for campus captive portal gateways, and configured automated boot runner (`pesu-wifi-runner`) performing start -> login -> status.
+- **Key Changes**:
+  - **Daemon Diagnose & Upgrade**:
+    - Identified that `pesu-wifi start` CLI invoked `systemctl --user start pesu-wifi.service`, which failed with "Unit not found" because `pesu-wifi.service` only existed as a root system unit. Furthermore, v3.6.0's process table search did not match `pesu-wifi start -f`, reporting the daemon as inactive.
+    - Upgraded `pesu-wifi` to v3.7.15 (`/usr/local/bin/pesu-wifi`), resolving PID detection via `pgrep -f "pesu[-_]wifi.*(daemon|start)"` across user sessions. Installed user service definition at `/usr/lib/systemd/user/pesu-wifi.service`.
+    - Synchronized valid credentials (`SILVER@123` for `deltatime-4`) across `/home/pineapple/.config/pesu-wifi/config.json`, `/root/.config/pesu-wifi/config.json`, and global fallback `/etc/pesu-wifi/config.json`.
+  - **Proton VPN Split Tunneling**:
+    - Configured persistent policy routing rules (`priority 5190` -> `table main`) for all PES University captive portal gateways (`192.168.254.1`, `172.16.1.1`, `10.14.142.1`, `192.168.1.1`) and local campus subnet `10.3.0.0/20`.
+    - Integrated split tunneling into `scripts/tinapple-proton` (`ensure_routing_safeguards` and WireGuard `PostUp`/`PostDown` hooks) to ensure captive portal requests bypass any active VPN tunnel.
+  - **Boot Sequence & Autorun**:
+    - Created `scripts/pesu-wifi-runner` (`/usr/local/bin/pesu-wifi-runner`) executing:
+      1. Enforces VPN bypass rules.
+      2. Waits for campus interface route readiness.
+      3. Performs initial login (`pesu-wifi login`).
+      4. Prints live connection status card (`pesu-wifi status`).
+      5. Launches foreground daemon (`pesu-wifi start -f`) with power inhibitor, netlink sockets, and 180s keepalive.
+    - Updated `tinapple-service-network/systemd/pesu-wifi.service` to run `pesu-wifi-runner`.
+
 ### Maintenance (2026-11-11) | feat(proxy): complete Caddy migration, resolve Tsukimi 404 delete, and fix Suwayomi multi-source downloads
 - **Scope**: Migrated entire reverse proxy infrastructure from NGINX to clean Caddy across server, repos, installers, updaters, and configs; fixed Tsukimi client 404 delete error; resolved Suwayomi multiple sources failure; and completely deleted "The World's Strongest Witch" anime.
 - **Key Changes**:

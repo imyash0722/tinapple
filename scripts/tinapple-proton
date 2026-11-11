@@ -35,7 +35,12 @@ def get_tailscale_ip():
     return "100.67.207.60"
 
 def ensure_routing_safeguards():
-    """Ensure responses to Tailscale and LAN/Hotspot are never blackholed by the default VPN route."""
+    """Ensure responses to Tailscale, LAN/Hotspot, and PESU campus captive portal are never blackholed by the default VPN route."""
+    # PESU campus captive portal gateways & subnet bypass rules (split tunneling)
+    for portal_ip in ["192.168.254.1", "172.16.1.1", "10.14.142.1", "192.168.1.1"]:
+        run_cmd(["ip", "rule", "add", "to", portal_ip, "table", "main", "priority", "5190"])
+    run_cmd(["ip", "rule", "add", "to", "10.3.0.0/20", "table", "main", "priority", "5195"])
+
     ts_ip = get_tailscale_ip()
     run_cmd(["ip", "rule", "add", "from", "192.168.4.1", "table", "main", "priority", "5260"])
     run_cmd(["ip", "rule", "add", "from", ts_ip, "table", "52", "priority", "5265"])
@@ -233,6 +238,29 @@ def sanitize_and_save_wireguard(content: str):
 
     # Insert resilient routing safeguards if not already explicitly present
     ts_ip = get_tailscale_ip()
+    post_up_rules = (
+        "iptables -t nat -A POSTROUTING -o %i -j MASQUERADE 2>/dev/null || true; "
+        "ip rule add to 192.168.254.1 table main priority 5190 2>/dev/null || true; "
+        "ip rule add to 172.16.1.1 table main priority 5190 2>/dev/null || true; "
+        "ip rule add to 10.14.142.1 table main priority 5190 2>/dev/null || true; "
+        "ip rule add to 192.168.1.1 table main priority 5190 2>/dev/null || true; "
+        "ip rule add to 10.3.0.0/20 table main priority 5195 2>/dev/null || true; "
+        "ip rule add from 192.168.4.1 table main priority 5260 2>/dev/null || true; "
+        f"ip rule add from {ts_ip} table 52 priority 5265 2>/dev/null || true; "
+        "ip rule add to 100.64.0.0/10 table 52 priority 5268 2>/dev/null || true"
+    )
+    post_down_rules = (
+        "iptables -t nat -D POSTROUTING -o %i -j MASQUERADE 2>/dev/null || true; "
+        "ip rule del to 192.168.254.1 table main priority 5190 2>/dev/null || true; "
+        "ip rule del to 172.16.1.1 table main priority 5190 2>/dev/null || true; "
+        "ip rule del to 10.14.142.1 table main priority 5190 2>/dev/null || true; "
+        "ip rule del to 192.168.1.1 table main priority 5190 2>/dev/null || true; "
+        "ip rule del to 10.3.0.0/20 table main priority 5195 2>/dev/null || true; "
+        "ip rule del from 192.168.4.1 table main priority 5260 2>/dev/null || true; "
+        f"ip rule del from {ts_ip} table 52 priority 5265 2>/dev/null || true; "
+        "ip rule del to 100.64.0.0/10 table 52 priority 5268 2>/dev/null || true"
+    )
+
     final_lines = []
     in_interface = False
     for line in clean_lines:
@@ -241,14 +269,14 @@ def sanitize_and_save_wireguard(content: str):
             in_interface = True
         elif line.strip().startswith("[") and line.strip().lower() != "[interface]":
             if in_interface and not has_post_up:
-                final_lines.insert(len(final_lines) - 1, f"PostUp = iptables -t nat -A POSTROUTING -o %i -j MASQUERADE 2>/dev/null || true; ip rule add from 192.168.4.1 table main priority 5260 2>/dev/null || true; ip rule add from {ts_ip} table 52 priority 5265 2>/dev/null || true; ip rule add to 100.64.0.0/10 table 52 priority 5268 2>/dev/null || true")
-                final_lines.insert(len(final_lines) - 1, "PostDown = iptables -t nat -D POSTROUTING -o %i -j MASQUERADE 2>/dev/null || true")
+                final_lines.insert(len(final_lines) - 1, f"PostUp = {post_up_rules}")
+                final_lines.insert(len(final_lines) - 1, f"PostDown = {post_down_rules}")
                 has_post_up = True
             in_interface = False
 
     if in_interface and not has_post_up:
-        final_lines.append(f"PostUp = iptables -t nat -A POSTROUTING -o %i -j MASQUERADE 2>/dev/null || true; ip rule add from 192.168.4.1 table main priority 5260 2>/dev/null || true; ip rule add from {ts_ip} table 52 priority 5265 2>/dev/null || true; ip rule add to 100.64.0.0/10 table 52 priority 5268 2>/dev/null || true")
-        final_lines.append("PostDown = iptables -t nat -D POSTROUTING -o %i -j MASQUERADE 2>/dev/null || true")
+        final_lines.append(f"PostUp = {post_up_rules}")
+        final_lines.append(f"PostDown = {post_down_rules}")
 
     os.makedirs("/etc/wireguard", exist_ok=True)
     if is_wg_active():

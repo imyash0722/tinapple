@@ -1,0 +1,30 @@
+#!/bin/bash
+set -eo pipefail
+
+echo "⚡ [pesu-wifi] Initializing PESU Wi-Fi startup & split-tunneling safeguards..."
+
+# 1. Enforce Proton VPN / WireGuard split-tunneling bypass rules for captive portal gateways & campus subnet
+for ip in 192.168.254.1 172.16.1.1 10.14.142.1 192.168.1.1; do
+    ip rule add to "$ip" table main priority 5190 2>/dev/null || true
+done
+ip rule add to 10.3.0.0/20 table main priority 5195 2>/dev/null || true
+
+# 2. Wait up to 15 seconds for campus network route
+for i in {1..15}; do
+    if ip route get 192.168.254.1 2>/dev/null | grep -q "dev"; then
+        break
+    fi
+    sleep 1
+done
+
+# 3. Explicit initial login
+echo "➜ [pesu-wifi] Performing initial campus portal login..."
+/usr/local/bin/pesu-wifi login || true
+
+# 4. Query and print live connection status card
+echo "➜ [pesu-wifi] Live connection status:"
+/usr/local/bin/pesu-wifi status || true
+
+# 5. Execute continuous keepalive watchdog daemon in foreground
+echo "⚡ [pesu-wifi] Starting continuous keepalive & auto-reconnect daemon..."
+exec /usr/local/bin/pesu-wifi start -f
