@@ -7,7 +7,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 /home/tinapple/tinapple/scripts/agy-pre-command-hook.py",
+            "command": "python3 /mnt/shared/projects/tinapple/scripts/agy-pre-command-hook.py",
             "timeout": 30
           }
         ]
