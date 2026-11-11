@@ -82,6 +82,19 @@
 
 ## 5. Changelog & Active State Ledger
 
+### Maintenance (2026-11-11) | fix(manga): resolve Suwayomi manga source failures via Tor SOCKS5 proxy and FlareSolverr tunneling
+- **Scope**: Diagnosed root cause of recurring manga source errors in Suwayomi (`suwayomi-server.service`), configured local Tor SOCKS5 tunneling for both Suwayomi JVM and FlareSolverr Chromium containers, and verified chapter browsing and page downloads across all installed sources.
+- **Root Cause**:
+  - PES University campus Wi-Fi firewall (Sophos DPI) intercepts HTTPS connections to manga sources (`cat=17` Entertainment: `api.mangadex.org`, `mangafire.to`, `asurascans.com`, `comix.to`, etc.) and redirects with a `307 Temporary Redirect` to `https://192.168.254.1:8090/v1/ips/block/webcat?cat=17`.
+  - Because Sophos serves dynamically spoofed certificates from an untrusted root (`CN=Sophos SSL CA_C910D2W6X97X455`), the JVM aborted with `PKIX path building failed: sun.security.provider.certpath.SunCertPathBuilderException`. Even if TLS was ignored, queries landed on Sophos HTML block pages.
+- **Key Changes**:
+  - **Suwayomi SOCKS5 Routing**: Configured `/var/lib/suwayomi/.local/share/Tachidesk/server.conf` with `server.socksProxyEnabled = true` and `server.socksProxyPort = "9050"` (local Tor SOCKS5 proxy on `127.0.0.1:9050`).
+  - **FlareSolverr Tor Egress**: Configured `/etc/systemd/system/flaresolverr.service` with `-e PROXY=socks5://127.0.0.1:9050` so Chromium Cloudflare challenges resolve over Tor instead of hitting the Sophos firewall block page.
+  - **Source & Library Validation**:
+    - Verified popular manga lists and chapter metadata: Asura Scans (20 items), MangaFire (50 items), MangaDex (20 items), Vortex Scans (18 items), AllManga (20 items), and Rolia Scan (21 items).
+    - Verified all 9 active library manga titles (8 Asura Scans, 1 AllManga) and confirmed full WebP page rendering and download queues.
+    - Verified ingress via direct Tailscale port `:4567`, Funnel `:8443`, and Caddy reverse proxy `/suwayomi/`.
+
 ### Commit `f58341b` | fix(sync): refine pre-commit and pre-push hook behavior for GEMINI.md (2026-11-08)
 - **Commit**: `f58341b`
 - **Subject**: fix(sync): refine pre-commit and pre-push hook behavior for GEMINI.md
