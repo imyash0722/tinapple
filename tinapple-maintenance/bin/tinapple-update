@@ -142,7 +142,36 @@ fi
 chmod -R 0755 "$WP_TARGET" 2>/dev/null || true
 echo "[✓] Wallpaper collection ready at $WP_TARGET"
 
-# 9. Reload systemd daemon and refresh services
+# 8. Ensure tinapple-torrent-healer watchdog is installed and active
+if [[ -f /usr/local/bin/tinapple-torrent-healer ]] || [[ -f "${BASH_SOURCE%/*}/tinapple-torrent-healer" ]]; then
+  SRC="${BASH_SOURCE%/*}/tinapple-torrent-healer"
+  [[ -f "$SRC" ]] && install -Dm755 "$SRC" /usr/local/bin/tinapple-torrent-healer
+  SVC="${BASH_SOURCE%/*}/tinapple-torrent-healer.service"
+  [[ -f "$SVC" ]] && install -Dm644 "$SVC" /etc/systemd/system/tinapple-torrent-healer.service
+  systemctl enable --now tinapple-torrent-healer.service 2>/dev/null || true
+  echo "[✓] tinapple-torrent-healer watchdog active"
+fi
+
+# 11. Ensure Jellyfin Emby Compatibility Bridge in NGINX (:8096, :8095)
+echo "[*] Ensuring Jellyfin Emby compatibility bridge in NGINX..."
+if [[ -f /etc/jellyfin/network.xml ]] && grep -q "<InternalHttpPort>8096</InternalHttpPort>" /etc/jellyfin/network.xml; then
+  echo "[*] Migrating Jellyfin internal HTTP port to 8097 for NGINX bridge..."
+  sed -i 's/<InternalHttpPort>8096<\/InternalHttpPort>/<InternalHttpPort>8097<\/InternalHttpPort>/' /etc/jellyfin/network.xml 2>/dev/null || true
+  if systemctl is-active --quiet jellyfin 2>/dev/null; then
+    systemctl restart jellyfin || true
+  fi
+fi
+
+if [[ -d /etc/nginx/conf.d ]]; then
+  if [[ -f "${BASH_SOURCE%/*}/../configs/nginx/conf.d/jellyfin-bridge.conf" ]]; then
+    cp "${BASH_SOURCE%/*}/../configs/nginx/conf.d/jellyfin-bridge.conf" /etc/nginx/conf.d/jellyfin-bridge.conf 2>/dev/null || true
+  fi
+  if systemctl is-active --quiet nginx 2>/dev/null; then
+    nginx -t >/dev/null 2>&1 && systemctl reload nginx || true
+  fi
+fi
+
+# 12. Reload systemd daemon and refresh services
 echo "[*] Reloading systemd daemons and refreshing reverse proxy..."
 systemctl daemon-reload
 
