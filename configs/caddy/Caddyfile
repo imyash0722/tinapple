@@ -69,9 +69,9 @@
 		redir /qbittorrent/ permanent
 	}
 
-	# 7. Ombi Media Requests
+	# 7. Media Requests (Seerr / Ombi portal on 5055)
 	handle_path /ombi/* {
-		reverse_proxy localhost:5000 {
+		reverse_proxy localhost:5055 {
 			header_up X-Forwarded-Prefix /ombi
 		}
 	}
@@ -79,9 +79,13 @@
 		redir /ombi/ permanent
 	}
 
-	# Legacy Seerr redirect to Ombi
-	handle /seerr* {
-		redir /ombi/ permanent
+	handle_path /seerr/* {
+		reverse_proxy localhost:5055 {
+			header_up X-Forwarded-Prefix /seerr
+		}
+	}
+	handle /seerr {
+		redir /seerr/ permanent
 	}
 
 	# 8. Navidrome Music Streaming

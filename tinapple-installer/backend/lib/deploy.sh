@@ -88,6 +88,22 @@ tinapple_deploy() {
 	handle /qbittorrent {
 		redir /qbittorrent/ permanent
 	}
+	handle_path /ombi/* {
+		reverse_proxy localhost:5055 {
+			header_up X-Forwarded-Prefix /ombi
+		}
+	}
+	handle /ombi {
+		redir /ombi/ permanent
+	}
+	handle_path /seerr/* {
+		reverse_proxy localhost:5055 {
+			header_up X-Forwarded-Prefix /seerr
+		}
+	}
+	handle /seerr {
+		redir /seerr/ permanent
+	}
 	import /etc/caddy/conf.d/*.caddy
 	handle {
 		reverse_proxy localhost:8088
