@@ -4,8 +4,8 @@ import { Capacitor } from '@capacitor/core';
 
 export const DEFAULT_SERVERS = [
   { id: 'lan-ip', label: 'Local LAN Wi-Fi', url: 'http://192.168.1.103:8088', host: '192.168.1.103' },
-  { id: 'tailscale', label: 'Tailscale Mesh', url: 'http://100.67.207.60:8088', host: '100.67.207.60' },
-  { id: 'tsnet', label: 'Tailscale HTTPS', url: 'https://tinapple-server.tail3dee69.ts.net', host: 'tinapple-server.tail3dee69.ts.net' },
+  { id: 'tailscale', label: 'Tailscale Mesh', url: 'http://100.108.215.120:8088', host: '100.108.215.120' },
+  { id: 'tsnet', label: 'Tailscale HTTPS', url: 'https://pineapple-server.taildb42a2.ts.net', host: 'pineapple-server.taildb42a2.ts.net' },
   { id: 'lan', label: 'Local Hostname', url: 'http://tinapple-server:8088', host: 'tinapple-server' },
   { id: 'hotspot', label: 'Direct AP Hotspot', url: 'http://192.168.4.1:8088', host: '192.168.4.1' },
 ];
@@ -51,8 +51,8 @@ export async function discoverBestServerOrigin(timeoutPerCandidateMs: number = 1
 
   const lastGood = localStorage.getItem('tinapple_last_good_origin');
   const candidates: string[] = [
-    'https://tinapple-server.tail3dee69.ts.net',
-    'http://tinapple-server.tail3dee69.ts.net:8088',
+    'https://pineapple-server.taildb42a2.ts.net',
+    'http://pineapple-server.taildb42a2.ts.net:8088',
   ];
 
   if (lastGood && !candidates.includes(lastGood) && !lastGood.includes('100.108.215.120')) {
@@ -99,7 +99,7 @@ export function isStandaloneClient(): boolean {
   return isCapacitor || isLocalhostWebView || isDevTauri || isCustomProtocol || h === '';
 }
 
-export const DEFAULT_TAILSCALE_IP = '100.67.207.60';
+export const DEFAULT_TAILSCALE_IP = '100.108.215.120';
 
 export function getTailscaleIp(): string {
   if (typeof window !== 'undefined') {
@@ -193,7 +193,7 @@ export const SERVICE_PORT_MAP: Record<string, number> = {
   qbittorrent: 8080,
   vault: 8000,
   vaultwarden: 8000,
-  ombi: 5055,
+  ombi: 5000,
   seerr: 5055,
   jellyseerr: 5055,
   navidrome: 4533,
@@ -204,6 +204,8 @@ export const SERVICE_PORT_MAP: Record<string, number> = {
   youtube: 8945,
   bazarr: 6767,
   element: 8008,
+  mautrix: 8008,
+  matrix: 8008,
   suwayomi: 4567,
   'suwayomi-server': 4567,
   syncyomi: 4567,
@@ -218,7 +220,7 @@ export const SERVICE_PATH_MAP: Record<number, string> = {
   8080: '/qbittorrent/',
   8000: '/vault/',
   5000: '/ombi/',
-  5055: '/ombi/',
+  5055: '/seerr/',
   4533: '/navidrome/',
   8384: '/syncthing/',
   3000: '/adguard/',
@@ -238,6 +240,7 @@ export const SERVICE_NAME_PATH_MAP: Record<string, string> = {
   vaultwarden: '/vault/',
   seerr: '/seerr/',
   jellyseerr: '/seerr/',
+  ombi: '/ombi/',
   navidrome: '/navidrome/',
   syncthing: '/syncthing/',
   adguard: '/adguard/',
@@ -246,6 +249,8 @@ export const SERVICE_NAME_PATH_MAP: Record<string, string> = {
   youtube: '/pinchflat/',
   bazarr: '/bazarr/',
   element: '/element/',
+  mautrix: '/element/',
+  matrix: '/element/',
   suwayomi: '/suwayomi/',
   'suwayomi-server': '/suwayomi/',
   syncyomi: '/suwayomi/',
@@ -303,6 +308,10 @@ export function getServiceUrl(portOrName: number | string, path: string = ''): s
         return base;
       }
       return base.endsWith('/') ? `${base}${cleanPath}` : `${base}/${cleanPath}`;
+    }
+    const mappedSubpath = SERVICE_PATH_MAP[portOrName];
+    if (mappedSubpath) {
+      return mappedSubpath;
     }
     const host = getServiceHost();
     const cleanPath = path ? (path.startsWith('/') ? path.slice(1) : path) : '';
@@ -469,6 +478,16 @@ export const MOCK_SERVICES: ServiceInfo[] = [
     activeState: 'active',
     subState: 'running',
     unitFileState: 'enabled',
+    category: 'media',
+    port: 5000,
+  },
+  {
+    name: 'seerr',
+    displayName: 'Seerr Media Requests',
+    description: 'Modern media request and discovery portal connected to Jellyfin, Radarr, and Sonarr',
+    activeState: 'inactive',
+    subState: 'dead',
+    unitFileState: 'disabled',
     category: 'media',
     port: 5055,
   },
@@ -738,7 +757,7 @@ class ApiService {
         }
 
         const cleanName = (s.name || s.id || '').toLowerCase().replace(/\.service$/, '').replace(/@.*$/, '');
-        const effectivePort = cleanName === 'ombi' ? 5055 : (s.port > 0 ? s.port : undefined);
+        const effectivePort = cleanName === 'ombi' ? (s.port || 5000) : (cleanName === 'seerr' ? (s.port || 5055) : (s.port > 0 ? s.port : undefined));
         return {
           name: s.name || s.id || 'unknown',
           displayName: s.displayName || s.name || s.id || 'Service',

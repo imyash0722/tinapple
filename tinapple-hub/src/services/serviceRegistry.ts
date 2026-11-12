@@ -5,7 +5,7 @@
 
 export type ServiceCategory = 'media' | 'downloads' | 'storage' | 'network' | 'system' | 'custom';
 
-export const DEFAULT_TAILSCALE_IP = '100.67.207.60';
+export const DEFAULT_TAILSCALE_IP = '100.108.215.120';
 
 export function getTailscaleIp(): string {
   if (typeof window !== 'undefined') {
@@ -64,14 +64,17 @@ export class ApplianceService {
 
   /**
    * Resolves the canonical destination URL for opening this service.
-   * If running directly on port 8088 or if directPortPreferred is enabled,
-   * returns the direct HTTP port link (e.g., http://<host>:5055/ for Seerr).
-   * Otherwise resolves clean subpath for reverse proxies without double slashes.
+   * If the service has a reverse proxy subpath defined, always returns the clean subpath
+   * with a trailing slash to keep navigation on the secure HTTPS domain (port 443).
+   * Falls back to direct host:port only for services without reverse proxy routes.
    */
   getOpenUrl(currentOrigin?: string): string {
-    let hostname = getTailscaleIp();
-    let isDirectPortAccess = true;
+    if (this.subpath) {
+      const cleanSub = this.subpath.startsWith('/') ? this.subpath : `/${this.subpath}`;
+      return cleanSub.endsWith('/') ? cleanSub : `${cleanSub}/`;
+    }
 
+    let hostname = getTailscaleIp();
     if (typeof window !== 'undefined' && window.location) {
       const customUrl = localStorage.getItem('tinapple_server_url');
       if (customUrl) {
@@ -83,39 +86,19 @@ export class ApplianceService {
         }
       } else {
         const h = window.location.hostname;
-        if (!h || h === 'localhost' || h === '127.0.0.1' || h.endsWith('.ts.net') || h === 'tauri.localhost') {
-          hostname = getTailscaleIp();
-        } else {
+        if (h && h !== 'tauri.localhost') {
           hostname = h;
         }
       }
-      const port = window.location.port;
-      // If accessed via port 8088 (tinapple-dash Go port), direct port is mandatory
-      // because 8088 does not have reverse proxy path handlers for non-API routes.
-      isDirectPortAccess = port === '8088' || port === '5173' || port === '3000' || this.directPortPreferred;
     } else if (currentOrigin) {
       try {
         const u = currentOrigin.startsWith('http://') || currentOrigin.startsWith('https://')
           ? new URL(currentOrigin)
           : new URL(`http://${currentOrigin}`);
         hostname = u.hostname || getTailscaleIp();
-        isDirectPortAccess = u.port === '8088' || this.directPortPreferred;
       } catch {
         hostname = currentOrigin;
       }
-    }
-
-    // Browsers upgrade HTTP on *.ts.net to HTTPS, including secondary ports.
-    // Plain-HTTP portals must use the node's Tailscale IP instead.
-    if (hostname.endsWith('.ts.net')) hostname = getTailscaleIp();
-
-    if (this.port > 0 && isDirectPortAccess) {
-      return `http://${hostname}:${this.port}/`;
-    }
-
-    if (this.subpath) {
-      const cleanSub = this.subpath.startsWith('/') ? this.subpath : `/${this.subpath}`;
-      return cleanSub;
     }
 
     if (this.port > 0) {
@@ -248,11 +231,24 @@ export class ApplianceServiceRegistry {
         tagline: 'Leading Requests & User Management Portal',
         category: 'media',
         icon: '🍿',
-        port: 5055,
+        port: 5000,
         subpath: '/ombi',
         guideId: 'ombi',
         directPortPreferred: true,
         unit: 'ombi.service',
+      },
+      {
+        id: 'seerr',
+        name: 'Seerr Media Requests',
+        displayName: 'Seerr Media Requests',
+        tagline: 'Automated 1-Click Requests & Approvals',
+        category: 'media',
+        icon: '🍿',
+        port: 5055,
+        subpath: '/seerr',
+        guideId: 'seerr',
+        directPortPreferred: true,
+        unit: 'seerr.service',
       },
       {
         id: 'navidrome',
@@ -438,6 +434,30 @@ export class ApplianceServiceRegistry {
         subpath: '/guides/tor.html',
         guideId: 'tor',
         unit: 'tor.service',
+      },
+      {
+        id: 'mautrix',
+        name: 'Mautrix Matrix Unified Chat',
+        displayName: 'Mautrix Matrix Unified Chat',
+        tagline: 'Self-hosted Matrix Synapse Homeserver & Bridges',
+        category: 'network',
+        icon: '💬',
+        port: 8008,
+        subpath: '/element/',
+        guideId: 'mautrix',
+        unit: 'synapse.service',
+      },
+      {
+        id: 'beeper',
+        name: 'Beeper Matrix Chat Bridges',
+        displayName: 'Beeper Matrix Chat Bridges',
+        tagline: 'Beeper Cloud Multi-Network Chat Bridges',
+        category: 'network',
+        icon: '💬',
+        port: 0,
+        subpath: '/guides/beeper.html',
+        guideId: 'beeper',
+        unit: 'bbctl.service',
       },
 
       // System & Dashboard

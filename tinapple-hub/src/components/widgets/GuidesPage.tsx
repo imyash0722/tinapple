@@ -31,12 +31,12 @@ const resolveDynamicEndpointUrl = (url: string): string => {
   if (!url || !url.startsWith('http')) return url;
   try {
     const parsed = new URL(url);
-    const currentHost = typeof window !== 'undefined' ? window.location.hostname : '100.67.207.60';
+    const currentHost = typeof window !== 'undefined' ? window.location.hostname : '100.108.215.120';
     const port = parseInt(parsed.port, 10);
     if (port) {
       const service = serviceRegistry.getByPort(port);
       if (service) return service.getOpenUrl();
-      if (parsed.hostname === '100.108.215.120' || parsed.hostname === '100.67.207.60') {
+      if (parsed.hostname === '100.108.215.120' || parsed.hostname === 'pineapple-server.taildb42a2.ts.net') {
         parsed.hostname = currentHost;
         return parsed.toString();
       }

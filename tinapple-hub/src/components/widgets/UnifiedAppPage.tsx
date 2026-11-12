@@ -117,13 +117,13 @@ const APP_METADATA_MAP: Record<
   ombi: {
     unit: 'ombi.service',
     path: '/ombi/',
-    port: 5055,
+    port: 5000,
     categoryName: 'Media & Requests',
     description: 'Media discovery and automated request manager integrated with Jellyfin, Radarr, and Sonarr.',
   },
   seerr: {
-    unit: 'ombi.service',
-    path: '/ombi/',
+    unit: 'seerr.service',
+    path: '/seerr/',
     port: 5055,
     categoryName: 'Media & Requests',
     description: 'Media discovery and automated request manager integrated with Jellyfin, Radarr, and Sonarr.',
@@ -193,14 +193,14 @@ const APP_METADATA_MAP: Record<
   },
   tor: {
     unit: 'tor.service',
-    path: 'socks5://100.67.207.60:9050',
+    path: 'socks5://100.108.215.120:9050',
     port: 9050,
     categoryName: 'Privacy & Onion',
     description: 'Onion routing daemon and SOCKS5 proxy providing anonymous privacy exit node capabilities.',
   },
   obsidian: {
     unit: 'couchdb.service',
-    path: 'http://100.67.207.60:5984',
+    path: 'http://100.108.215.120:5984',
     port: 5984,
     categoryName: 'Productivity & Notes',
     description: 'Self-hosted CouchDB synchronization backend for Obsidian LiveSync across all personal devices.',
@@ -242,7 +242,7 @@ const APP_METADATA_MAP: Record<
   },
   samba: {
     unit: 'smbd.service',
-    path: 'smb://100.67.207.60/media',
+    path: 'smb://100.108.215.120/media',
     port: 445,
     categoryName: 'Storage & SMB',
     description: 'High-speed Samba SMB/CIFS network drive server for native Windows, macOS, and Linux network folder mounts.',

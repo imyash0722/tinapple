@@ -54,7 +54,7 @@ export const GUIDES_CATALOG: GuideArticle[] = [
     endpoints: [
       { label: 'Tailscale HTTPS (No Port)', value: 'https://pineapple-server.taildb42a2.ts.net/jellyfin/' },
       { label: 'Permanent MagicDNS', value: 'http://pineapple-server.taildb42a2.ts.net:8096' },
-      { label: 'Tailscale IP Host', value: 'http://100.67.207.60:8096' },
+      { label: 'Tailscale IP Host', value: 'http://100.108.215.120:8096' },
       { label: 'Local LAN Host', value: 'http://10.3.2.105:8096' },
       { label: 'Installed Client', value: '~/.local/bin/plezy (v2.25.0)' },
     ],
@@ -67,7 +67,7 @@ export const GUIDES_CATALOG: GuideArticle[] = [
       {
         title: 'Connect to your Homelab Server',
         description: 'On first launch, choose "Jellyfin" as your server provider, and enter your server address and account credentials.',
-        code: 'http://100.67.207.60:8096',
+        code: 'http://100.108.215.120:8096',
         tip: 'If on your home Wi-Fi network without Tailscale, you can also connect via http://10.3.2.105:8096.',
       },
       {
@@ -101,7 +101,7 @@ export const GUIDES_CATALOG: GuideArticle[] = [
     accentColor: '#3a75c4',
     endpoints: [
       { label: 'Tailscale HTTPS (No Port)', value: 'https://pineapple-server.taildb42a2.ts.net/qbittorrent/' },
-      { label: 'Tailscale IP Host', value: 'http://100.67.207.60:8080' },
+      { label: 'Tailscale IP Host', value: 'http://100.108.215.120:8080' },
       { label: 'Permanent MagicDNS', value: 'http://pineapple-server.taildb42a2.ts.net:8080' },
       { label: 'Downloads Directory', value: '/srv/media/downloads' },
     ],
@@ -150,26 +150,26 @@ export const GUIDES_CATALOG: GuideArticle[] = [
     accentColor: '#f43f5e',
     htmlGuidePath: '/guides/syncyomi.html',
     endpoints: [
-      { label: 'Suwayomi Web Reader', value: 'http://100.67.207.60:4567' },
-      { label: 'SyncYomi Web GUI', value: 'http://100.67.207.60:8282' },
+      { label: 'Suwayomi Web Reader', value: 'http://100.108.215.120:4567' },
+      { label: 'SyncYomi Web GUI', value: 'http://100.108.215.120:8282' },
       { label: 'Tsumiru Phone Port', value: 'Port 4567 (Tailscale or Hotspot 192.168.4.1)' },
     ],
     steps: [
       {
         title: 'Open SyncYomi Dashboard & Generate API Token',
         description: 'Navigate to the SyncYomi web portal, create an account, then go to Settings ➔ API Keys and click "Add API Key". Copy the generated token.',
-        code: 'http://100.67.207.60:8282',
+        code: 'http://100.108.215.120:8282',
       },
       {
         title: 'Configure Mobile Reader (Mihon / Komikku)',
         description: 'On your Android device in Mihon / TachiyomiSY: Settings ➔ Data and Storage ➔ Sync (SyncYomi v2). Enter the SyncYomi host and token.',
-        code: 'Host: http://100.67.207.60:8282',
+        code: 'Host: http://100.108.215.120:8282',
         tip: 'Sync runs automatically every 15 minutes and immediately after closing a chapter.',
       },
       {
         title: 'Direct Suwayomi Desktop & Browser Streaming',
         description: 'To browse extensions and read directly on laptop or PC without syncing, use the Suwayomi web portal on port 4567.',
-        code: 'http://100.67.207.60:4567',
+        code: 'http://100.108.215.120:4567',
       },
     ],
     clientApps: [
@@ -197,7 +197,7 @@ export const GUIDES_CATALOG: GuideArticle[] = [
     endpoints: [
       { label: 'Tailscale HTTPS (No Port)', value: 'https://pineapple-server.taildb42a2.ts.net' },
       { label: 'Element Web Client', value: 'https://pineapple-server.taildb42a2.ts.net/element/' },
-      { label: 'Tailscale IP Host', value: 'http://100.67.207.60' },
+      { label: 'Tailscale IP Host', value: 'http://100.108.215.120' },
       { label: 'Sliding Sync Proxy', value: 'https://pineapple-server.taildb42a2.ts.net (Port 8009 / MSC3575)' },
     ],
     steps: [
@@ -307,14 +307,14 @@ export const GUIDES_CATALOG: GuideArticle[] = [
     accentColor: '#3b82f6',
     htmlGuidePath: '/guides/vaultwarden.html',
     endpoints: [
-      { label: 'Local LAN / Tailscale Port', value: 'http://100.67.207.60:8000' },
+      { label: 'Local LAN / Tailscale Port', value: 'http://100.108.215.120:8000' },
       { label: 'Encrypted SQLite DB', value: '/var/lib/vaultwarden/db.sqlite3' },
     ],
     steps: [
       {
         title: 'Open Web Vault & Create Primary Account',
         description: 'Open the Vaultwarden web interface in your browser and click "Create Account". Use a strong master passphrase.',
-        code: 'http://100.67.207.60:8000',
+        code: 'http://100.108.215.120:8000',
         tip: 'Web Crypto API requires HTTPS or localhost. Connect via Tailscale MagicDNS or configure Caddy SSL for browser autofill.',
       },
       {
@@ -351,20 +351,20 @@ export const GUIDES_CATALOG: GuideArticle[] = [
     accentColor: '#0ea5e9',
     htmlGuidePath: '/guides/syncthing.html',
     endpoints: [
-      { label: 'Web Management GUI', value: 'http://100.67.207.60:8384' },
-      { label: 'Client Auto-Pair Script', value: 'curl http://100.67.207.60:8088/pair.sh | bash' },
+      { label: 'Web Management GUI', value: 'http://100.108.215.120:8384' },
+      { label: 'Client Auto-Pair Script', value: 'curl http://100.108.215.120:8088/pair.sh | bash' },
       { label: 'Sync Protocol Port', value: 'Port 22000 (TCP/UDP)' },
     ],
     steps: [
       {
         title: 'Access Syncthing Web GUI',
         description: 'Open the Syncthing dashboard on port 8384. You will see your node Device ID in the top right (Actions ➔ Show ID).',
-        code: 'http://100.67.207.60:8384',
+        code: 'http://100.108.215.120:8384',
       },
       {
         title: 'One-Command Auto-Pairing for Client PCs',
         description: 'On any client machine on your network (laptop or desktop), run this curl one-liner to install Syncthing, register this server as an introducer, and configure folders automatically:',
-        code: 'curl -fsSL http://100.67.207.60:8088/pair.sh | bash',
+        code: 'curl -fsSL http://100.108.215.120:8088/pair.sh | bash',
         tip: 'Works on Arch, Debian, Ubuntu, Fedora, and macOS.',
       },
       {
@@ -395,7 +395,7 @@ export const GUIDES_CATALOG: GuideArticle[] = [
     accentColor: '#7d4698',
     htmlGuidePath: '/guides/tor.html',
     endpoints: [
-      { label: 'SOCKS5 Proxy Host', value: '100.67.207.60:9050' },
+      { label: 'SOCKS5 Proxy Host', value: '100.108.215.120:9050' },
       { label: 'Tor Control Port', value: '127.0.0.1:9051' },
       { label: 'Local SOCKS5', value: '127.0.0.1:9050' },
     ],
@@ -407,8 +407,8 @@ export const GUIDES_CATALOG: GuideArticle[] = [
       },
       {
         title: 'Configure Client Applications with SOCKS5',
-        description: 'In your browser (Firefox) or applications, set SOCKS5 Proxy to 100.67.207.60 with port 9050. Enable "Proxy DNS when using SOCKS v5" to prevent DNS leaks.',
-        code: 'socks5://100.67.207.60:9050',
+        description: 'In your browser (Firefox) or applications, set SOCKS5 Proxy to 100.108.215.120 with port 9050. Enable "Proxy DNS when using SOCKS v5" to prevent DNS leaks.',
+        code: 'socks5://100.108.215.120:9050',
       },
       {
         title: 'Check Your Onion IP',
@@ -438,8 +438,8 @@ export const GUIDES_CATALOG: GuideArticle[] = [
     accentColor: '#6366f1',
     htmlGuidePath: '/guides/obsidian.html',
     endpoints: [
-      { label: 'CouchDB API & Fauxton WebUI', value: 'http://100.67.207.60:5984/_utils/' },
-      { label: 'Default Vault Database', value: 'http://100.67.207.60:5984/obsidian-vault' },
+      { label: 'CouchDB API & Fauxton WebUI', value: 'http://100.108.215.120:5984/_utils/' },
+      { label: 'Default Vault Database', value: 'http://100.108.215.120:5984/obsidian-vault' },
     ],
     steps: [
       {
@@ -449,7 +449,7 @@ export const GUIDES_CATALOG: GuideArticle[] = [
       {
         title: 'Configure LiveSync Server Settings',
         description: 'In Obsidian Settings ➔ Self-hosted LiveSync: enter the CouchDB URI, username, password, and database name.',
-        code: 'URI: http://100.67.207.60:5984\nDatabase: obsidian-vault',
+        code: 'URI: http://100.108.215.120:5984\nDatabase: obsidian-vault',
         tip: 'Choose "LiveSync" mode for real-time keystroke replication with automated conflict resolution.',
       },
       {
@@ -479,7 +479,7 @@ export const GUIDES_CATALOG: GuideArticle[] = [
     accentColor: '#06b6d4',
     endpoints: [
       { label: 'MagicDNS Domain', value: 'pineapple-server.taildb42a2.ts.net' },
-      { label: 'Tailscale IPv4 Address', value: '100.67.207.60' },
+      { label: 'Tailscale IPv4 Address', value: '100.108.215.120' },
       { label: 'Admin Web Portal', value: 'https://login.tailscale.com/admin' },
     ],
     steps: [
@@ -491,7 +491,7 @@ export const GUIDES_CATALOG: GuideArticle[] = [
       {
         title: 'Connect From Your Phone or Laptop',
         description: 'Install the Tailscale client app on your phone, tablet, or laptop. Log into the same Tailscale account. You can instantly access all ports and web UIs using the server Tailscale IP.',
-        code: 'http://100.67.207.60:8088',
+        code: 'http://100.108.215.120:8088',
         tip: 'Tailscale creates direct peer-to-peer WireGuard tunnels with zero port forwarding required.',
       },
       {
@@ -522,11 +522,11 @@ export const GUIDES_CATALOG: GuideArticle[] = [
     icon: <Film className="w-5 h-5 text-amber-400" />,
     accentColor: '#f59e0b',
     endpoints: [
-      { label: 'Radarr (Movies)', value: 'http://100.67.207.60:7878' },
-      { label: 'Sonarr (Series/Anime)', value: 'http://100.67.207.60:8989' },
-      { label: 'Prowlarr (Trackers)', value: 'http://100.67.207.60:9696' },
-      { label: 'Bazarr (Subtitles)', value: 'http://100.67.207.60:6767' },
-      { label: 'qBittorrent (Engine)', value: 'http://100.67.207.60:8080' },
+      { label: 'Radarr (Movies)', value: 'http://100.108.215.120:7878' },
+      { label: 'Sonarr (Series/Anime)', value: 'http://100.108.215.120:8989' },
+      { label: 'Prowlarr (Trackers)', value: 'http://100.108.215.120:9696' },
+      { label: 'Bazarr (Subtitles)', value: 'http://100.108.215.120:6767' },
+      { label: 'qBittorrent (Engine)', value: 'http://100.108.215.120:8080' },
     ],
     steps: [
       {
@@ -536,12 +536,12 @@ export const GUIDES_CATALOG: GuideArticle[] = [
       {
         title: 'Check Indexers & Sync in Prowlarr',
         description: 'Open Prowlarr on port 9696. Under Indexers, you can add private or public trackers and test connections. Click "Sync App Profiles" to immediately distribute them to Radarr and Sonarr.',
-        code: 'http://100.67.207.60:9696',
+        code: 'http://100.108.215.120:9696',
       },
       {
         title: 'Subtitles Automation in Bazarr',
         description: 'Bazarr monitors your movies and shows libraries, automatically downloading matching SSA/SRT subtitles from OpenSubtitles, Subscene, and YIFY Subtitles.',
-        code: 'http://100.67.207.60:6767',
+        code: 'http://100.108.215.120:6767',
       },
     ],
     clientApps: [
@@ -557,23 +557,56 @@ export const GUIDES_CATALOG: GuideArticle[] = [
     ],
   },
   {
-    id: 'seerr',
-    title: 'Ombi Media Discovery & Requests',
-    subtitle: 'Unified request portal for movies and shows with automated approval and Servarr pipeline',
+    id: 'ombi',
+    title: 'Ombi Media Requests & Discovery',
+    subtitle: 'Unified request portal for movies, shows, and music with automated Servarr pipeline',
     category: 'media',
     icon: <Sparkles className="w-5 h-5 text-amber-400" />,
-    accentColor: '#f59e0b',
-    htmlGuidePath: '/guides/seerr.html',
+    accentColor: '#e37200',
+    htmlGuidePath: '/guides/ombi.html',
     endpoints: [
-      { label: 'Ombi Web Portal', value: 'http://100.67.207.60:5055' },
+      { label: 'Ombi Web Portal', value: 'http://100.108.215.120:5000' },
       { label: 'Connected Jellyfin', value: 'http://127.0.0.1:8096' },
     ],
     steps: [
       {
         title: 'Sign In with Your Jellyfin Credentials',
-        description: 'Navigate to Ombi on port 5055 and log in with your Jellyfin username and password.',
-        code: 'http://100.67.207.60:5055',
-        tip: 'Ombi connects directly to Jellyfin for authentication and library availability.',
+        description: 'Navigate to Ombi on port 5000 and log in with your Jellyfin username and password or Ombi local admin.',
+        code: 'http://100.108.215.120:5000',
+        tip: 'Ombi links directly to Jellyfin for authentication and active media status.',
+      },
+      {
+        title: 'Browse & Request Media',
+        description: 'Discover trending movies, anime, and series with full metadata, release calendars, and cast details.',
+      },
+      {
+        title: 'Automated 1-Click Servarr Pipeline',
+        description: 'Click "Request" on any title. Ombi routes requests automatically to Radarr or Sonarr for seamless download.',
+      },
+    ],
+    clientApps: [
+      { name: 'Ombi Mobile (Android & iOS)', platform: 'Official App', link: 'https://ombi.io' },
+      { name: 'LunaSea (iOS & Android)', platform: 'Servarr App', link: 'https://www.lunasea.app/' },
+    ],
+  },
+  {
+    id: 'seerr',
+    title: 'Seerr Media Discovery & Requests',
+    subtitle: 'Unified request portal for movies and shows with automated approval and Servarr pipeline',
+    category: 'media',
+    icon: <Sparkles className="w-5 h-5 text-purple-400" />,
+    accentColor: '#8b5cf6',
+    htmlGuidePath: '/guides/seerr.html',
+    endpoints: [
+      { label: 'Seerr Web Portal', value: 'http://100.108.215.120:5055' },
+      { label: 'Connected Jellyfin', value: 'http://127.0.0.1:8096' },
+    ],
+    steps: [
+      {
+        title: 'Sign In with Your Jellyfin Credentials',
+        description: 'Navigate to Seerr on port 5055 and log in with your Jellyfin username and password.',
+        code: 'http://100.108.215.120:5055',
+        tip: 'Seerr connects directly to Jellyfin for authentication and library availability.',
       },
       {
         title: 'Browse Trending, Popular & Upcoming Titles',
@@ -581,12 +614,12 @@ export const GUIDES_CATALOG: GuideArticle[] = [
       },
       {
         title: '1-Click Request & Automated Pipeline',
-        description: 'Click "Request" on any title. Ombi automatically routes requests to Radarr or Sonarr, grabs releases via Prowlarr, downloads via qBittorrent, and notifies you when ready in Jellyfin.',
+        description: 'Click "Request" on any title. Seerr automatically routes requests to Radarr or Sonarr, grabs releases via Prowlarr, downloads via qBittorrent, and notifies you when ready in Jellyfin.',
       },
     ],
     clientApps: [
-      { name: 'Ombi Mobile (Android / iOS)', platform: 'Android / iOS', link: 'https://ombi.io', badge: 'Official App' },
       { name: 'Plezy Client', platform: 'Desktop Player', link: 'https://github.com/edde746/plezy' },
+      { name: 'LunaSea (iOS & Android)', platform: 'Servarr App', link: 'https://www.lunasea.app/' },
     ],
     specialConfigs: [
       {
@@ -604,7 +637,7 @@ export const GUIDES_CATALOG: GuideArticle[] = [
     icon: <Download className="w-5 h-5 text-red-400" />,
     accentColor: '#ef4444',
     endpoints: [
-      { label: 'Pinchflat Web Dashboard', value: 'http://100.67.207.60:8945' },
+      { label: 'Pinchflat Web Dashboard', value: 'http://100.108.215.120:8945' },
       { label: 'YouTube Video Library', value: '/srv/media/youtube' },
       { label: 'YouTube Music Library', value: '/srv/media/youtube-music' },
     ],
@@ -612,7 +645,7 @@ export const GUIDES_CATALOG: GuideArticle[] = [
       {
         title: 'Access Pinchflat Dashboard',
         description: 'Open the Pinchflat web interface on port 8945 to manage your archived channels and playlists.',
-        code: 'http://100.67.207.60:8945',
+        code: 'http://100.108.215.120:8945',
       },
       {
         title: 'Subscribe to Channels and Playlists',
@@ -624,7 +657,7 @@ export const GUIDES_CATALOG: GuideArticle[] = [
       },
     ],
     clientApps: [
-      { name: 'Pinchflat WebUI', platform: 'Web / Responsive Mobile', link: 'http://100.67.207.60:8945' },
+      { name: 'Pinchflat WebUI', platform: 'Web / Responsive Mobile', link: 'http://100.108.215.120:8945' },
     ],
     specialConfigs: [
       {
@@ -642,18 +675,18 @@ export const GUIDES_CATALOG: GuideArticle[] = [
     accentColor: '#10b981',
     htmlGuidePath: '/guides/adguard.html',
     endpoints: [
-      { label: 'Admin Web Dashboard', value: 'http://100.67.207.60:3000' },
+      { label: 'Admin Web Dashboard', value: 'http://100.108.215.120:3000' },
       { label: 'DNS Server Port', value: 'Port 53 (TCP/UDP)' },
     ],
     steps: [
       {
         title: 'Open AdGuard Admin Dashboard',
         description: 'Open the AdGuard Home web panel on port 3000 to view query logs, blocked analytics, and blocklist filters.',
-        code: 'http://100.67.207.60:3000',
+        code: 'http://100.108.215.120:3000',
       },
       {
         title: 'Set Router or Phone DNS to Server IP',
-        description: 'Configure your Wi-Fi router DNS or your phone Private DNS settings to point to this server IP (100.67.207.60 or local 10.3.2.105). Every device on your home network will instantly have zero ads across all apps and smart TVs.',
+        description: 'Configure your Wi-Fi router DNS or your phone Private DNS settings to point to this server IP (100.108.215.120 or local 10.3.2.105). Every device on your home network will instantly have zero ads across all apps and smart TVs.',
       },
       {
         title: 'Configure Upstream DNS-over-HTTPS (DoH)',
@@ -662,7 +695,7 @@ export const GUIDES_CATALOG: GuideArticle[] = [
       },
     ],
     clientApps: [
-      { name: 'AdGuard Home WebUI', platform: 'Responsive Web', link: 'http://100.67.207.60:3000' },
+      { name: 'AdGuard Home WebUI', platform: 'Responsive Web', link: 'http://100.108.215.120:3000' },
     ],
     specialConfigs: [
       {
@@ -680,19 +713,19 @@ export const GUIDES_CATALOG: GuideArticle[] = [
     accentColor: '#f59e0b',
     htmlGuidePath: '/guides/navidrome.html',
     endpoints: [
-      { label: 'Navidrome Web Player', value: 'http://100.67.207.60:4533' },
+      { label: 'Navidrome Web Player', value: 'http://100.108.215.120:4533' },
       { label: 'Music Library Path', value: '/srv/media/music' },
     ],
     steps: [
       {
         title: 'Open Navidrome Web Player',
         description: 'Access the high-speed Web Player on port 4533 to create an admin account and browse your audio collection.',
-        code: 'http://100.67.207.60:4533',
+        code: 'http://100.108.215.120:4533',
       },
       {
         title: 'Connect Mobile Subsonic Players',
         description: 'In Symfonium or Substreamer on Android/iOS, choose "Subsonic" provider and enter your server URL:',
-        code: 'http://100.67.207.60:4533',
+        code: 'http://100.108.215.120:4533',
         tip: 'Supports offline caching, gapless playback, and high-res FLAC direct streaming.',
       },
       {
@@ -720,8 +753,8 @@ export const GUIDES_CATALOG: GuideArticle[] = [
     icon: <LayoutGrid className="w-5 h-5 text-amber-400" />,
     accentColor: '#f59e0b',
     endpoints: [
-      { label: 'Tinapple Hub Canvas Board', value: 'http://100.67.207.60:8088 (Dashboard Tab)' },
-      { label: 'Upstream Homarr Container', value: 'http://100.67.207.60:7575' },
+      { label: 'Tinapple Hub Canvas Board', value: 'http://100.108.215.120:8088 (Dashboard Tab)' },
+      { label: 'Upstream Homarr Container', value: 'http://100.108.215.120:7575' },
       { label: 'Config Directory', value: '/opt/homarr/configs' },
       { label: 'Data Directory', value: '/opt/homarr/data' },
     ],
@@ -729,7 +762,7 @@ export const GUIDES_CATALOG: GuideArticle[] = [
       {
         title: 'Interactive Canvas Board in Tinapple Hub',
         description: 'Tinapple Hub integrates an authentic Homarr Canvas Board directly on the main Dashboard tab. Each service tile displays live ping indicators, direct ports, and quick launch triggers without needing extra authentication.',
-        code: 'http://100.67.207.60:8088',
+        code: 'http://100.108.215.120:8088',
       },
       {
         title: 'Deploy Upstream Homarr Container Package',
@@ -740,12 +773,12 @@ export const GUIDES_CATALOG: GuideArticle[] = [
       {
         title: 'Add & Reorder Service Tiles',
         description: 'In the Hub Dashboard, use the Homarr widget controls or Settings modal to reorder, pin, or hide application tiles. To add custom services into the upstream container, open port 7575 and click the + icon in edit mode.',
-        code: 'http://100.67.207.60:7575',
+        code: 'http://100.108.215.120:7575',
       },
     ],
     clientApps: [
-      { name: 'Tinapple Dashboard Hub', platform: 'Responsive Web / PWA', link: 'http://100.67.207.60:8088', badge: 'Active' },
-      { name: 'Upstream Homarr WebUI', platform: 'Containerized Web (Port 7575)', link: 'http://100.67.207.60:7575' },
+      { name: 'Tinapple Dashboard Hub', platform: 'Responsive Web / PWA', link: 'http://100.108.215.120:8088', badge: 'Active' },
+      { name: 'Upstream Homarr WebUI', platform: 'Containerized Web (Port 7575)', link: 'http://100.108.215.120:7575' },
       { name: 'Homarr GitHub Repo', platform: 'Open Source', link: 'https://github.com/ajnart/homarr' },
     ],
     specialConfigs: [
@@ -861,20 +894,20 @@ export const GUIDES_CATALOG: GuideArticle[] = [
     icon: <FolderSync className="w-5 h-5 text-sky-400" />,
     accentColor: '#0ea5e9',
     endpoints: [
-      { label: 'Windows Explorer UNC Path', value: '\\\\100.67.207.60\\media' },
-      { label: 'macOS Finder / Linux URI', value: 'smb://100.67.207.60/media' },
+      { label: 'Windows Explorer UNC Path', value: '\\\\100.108.215.120\\media' },
+      { label: 'macOS Finder / Linux URI', value: 'smb://100.108.215.120/media' },
       { label: 'SMB Port', value: '445 / 139' },
     ],
     steps: [
       {
         title: 'Connect on Windows',
-        description: 'Open File Explorer, press Win+R, enter \\\\100.67.207.60 or \\\\tinapple and sign in with your appliance credentials.',
-        code: '\\\\100.67.207.60\\media',
+        description: 'Open File Explorer, press Win+R, enter \\\\100.108.215.120 or \\\\tinapple and sign in with your appliance credentials.',
+        code: '\\\\100.108.215.120\\media',
       },
       {
         title: 'Connect on macOS / Linux',
-        description: 'In macOS Finder press Cmd+K, enter smb://100.67.207.60/media, and click Connect.',
-        code: 'smb://100.67.207.60/media',
+        description: 'In macOS Finder press Cmd+K, enter smb://100.108.215.120/media, and click Connect.',
+        code: 'smb://100.108.215.120/media',
       },
     ],
     clientApps: [

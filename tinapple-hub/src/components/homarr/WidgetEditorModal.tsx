@@ -214,7 +214,7 @@ export const WidgetEditorModal: React.FC<WidgetEditorModalProps> = ({
               </label>
               <input
                 type="text"
-                placeholder="https://grafana.lan or http://100.67.207.60:3000"
+                placeholder="https://grafana.lan or http://100.108.215.120:3000"
                 value={iframeUrl}
                 onChange={(e) => setIframeUrl(e.target.value)}
                 className="w-full px-3 py-2 rounded-xl bg-surface-container-low border border-slate-700 text-on-surface focus:outline-none focus:border-tinapple-gold"
