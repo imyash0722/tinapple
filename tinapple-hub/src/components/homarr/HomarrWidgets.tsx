@@ -4,6 +4,7 @@ import { SquishSwitch } from '../reactbits/SquishSwitch';
 const ProtonModal = lazy(() => import('../common/ProtonModal').then(m => ({ default: m.ProtonModal })));
 import { api, getServiceHost, getServiceUrl, getActiveServerOrigin } from '../../services/api';
 import { serviceRegistry } from '../../services/serviceRegistry';
+import { getPlatformAppTarget } from '../../utils/platformAppLinks';
 import {
   Cpu,
   HardDrive,
@@ -1222,15 +1223,20 @@ export const HomarrMangaWidget: React.FC = () => {
 
       {/* Footer Navigation */}
       <div className="pt-2.5 border-t border-white/[0.06] flex items-center justify-between gap-2 mt-auto text-xs">
-        <a
-          href="/download/tsumiru"
-          download="tsumiru-client.apk"
-          className="px-2.5 py-1.5 rounded-lg bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/30 text-sky-300 text-[11px] font-bold flex items-center gap-1.5 transition-all"
-          title="Download Tsumiru Android APK for your phone"
-        >
-          <Smartphone className="w-3.5 h-3.5 text-sky-400" />
-          <span>Phone APK</span>
-        </a>
+        {(() => {
+          const appTarget = getPlatformAppTarget('suwayomi', suwayomiWebUrl);
+          const isMobile = appTarget?.platform === 'android' || appTarget?.platform === 'ios';
+          return (
+            <a
+              href={appTarget?.appUrl || '/download/tsumiru'}
+              className="px-2.5 py-1.5 rounded-lg bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/30 text-sky-300 text-[11px] font-bold flex items-center gap-1.5 transition-all"
+              title={appTarget?.title || 'Open Tsumiru manga client'}
+            >
+              <Smartphone className="w-3.5 h-3.5 text-sky-400" />
+              <span>{isMobile ? (appTarget?.label || 'Open Tsumiru') : 'Tsumiru Reader'}</span>
+            </a>
+          );
+        })()}
 
         <a
           href={suwayomiWebUrl}
@@ -1360,7 +1366,7 @@ export const HomarrPortMatrixWidget: React.FC<{ onOpenTools?: () => void }> = ({
     { name: 'Manga', port: 4567, path: serviceRegistry.resolveUrl('suwayomi'), color: 'text-amber-400' },
     { name: 'Torrent', port: 8080, path: serviceRegistry.resolveUrl('qbittorrent'), color: 'text-sky-400' },
     { name: 'Sync', port: 8384, path: serviceRegistry.resolveUrl('syncthing'), color: 'text-emerald-400' },
-    { name: 'Ombi', port: 5055, path: serviceRegistry.resolveUrl('ombi'), color: 'text-amber-500' },
+    { name: 'Ombi', port: 5000, path: serviceRegistry.resolveUrl('ombi'), color: 'text-amber-400' },
     { name: 'AdGuard', port: 3000, path: serviceRegistry.resolveUrl('adguard'), color: 'text-teal-400' },
     { name: 'Vault', port: 8000, path: serviceRegistry.resolveUrl('vaultwarden'), color: 'text-indigo-400' },
   ];
@@ -1585,9 +1591,10 @@ export const HomarrRequestsWidget: React.FC = () => {
   const [requests, setRequests] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  const fetchOmbiData = () => {
-    fetch(`${getActiveServerOrigin()}/api/widgets/ombi`)
-      .then((r) => (r.ok ? r.json() : null))
+  const fetchRequestsData = () => {
+    // Try /api/widgets/seerr first, then fallback to /api/widgets/ombi
+    fetch(`${getActiveServerOrigin()}/api/widgets/seerr`)
+      .then((r) => (r.ok ? r.json() : fetch(`${getActiveServerOrigin()}/api/widgets/ombi`).then((ro) => ro.ok ? ro.json() : null)))
       .then((data) => {
         if (data) {
           setOnline(data.online !== false);
@@ -1600,12 +1607,12 @@ export const HomarrRequestsWidget: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchOmbiData();
-    const interval = setInterval(fetchOmbiData, 10000);
+    fetchRequestsData();
+    const interval = setInterval(fetchRequestsData, 10000);
     return () => clearInterval(interval);
   }, []);
 
-  const ombiUrl = serviceRegistry.resolveUrl('ombi');
+  const seerrUrl = serviceRegistry.resolveUrl('seerr') || serviceRegistry.resolveUrl('ombi');
 
   const getStatusBadge = (req: any) => {
     const label = req.statusLabel || (req.available ? 'Available' : req.approved ? 'Approved' : req.denied ? 'Declined' : 'Pending');
@@ -1634,12 +1641,12 @@ export const HomarrRequestsWidget: React.FC = () => {
               <span className="font-bold text-on-surface text-sm">Ombi Requests</span>
               <span className={`w-2 h-2 rounded-full ${online ? 'bg-emerald-400' : 'bg-rose-400'} shrink-0`} title={online ? 'Ombi Online' : 'Ombi Offline'} />
             </div>
-            <span className="text-[10px] text-on-surface-variant font-mono">Port :5055 • Reverse Proxy /ombi</span>
+            <span className="text-[10px] text-on-surface-variant font-mono">Port :5000 • Reverse Proxy /ombi</span>
           </div>
         </div>
 
         <a
-          href={ombiUrl}
+          href={serviceRegistry.resolveUrl('ombi') || seerrUrl}
           target="_blank"
           rel="noopener noreferrer"
           className="p-1.5 rounded-xl bg-surface-container hover:bg-surface-container-high border border-outline-variant text-on-surface hover:text-primary transition-colors"
@@ -1687,7 +1694,7 @@ export const HomarrRequestsWidget: React.FC = () => {
                 />
               ) : (
                 <div className="w-8 h-12 rounded-md bg-surface-container-highest flex items-center justify-center shrink-0 text-on-surface-variant text-[10px]">
-                  {req.type === 'Movie' ? '🎬' : '📺'}
+                  {req.type === 'Movie' || req.type === 'movie' ? '🎬' : '📺'}
                 </div>
               )}
               <div className="flex-1 min-w-0">
@@ -1707,13 +1714,13 @@ export const HomarrRequestsWidget: React.FC = () => {
             </div>
           ))
         ) : isLoading ? (
-          <div className="py-8 text-center text-xs text-on-surface-variant font-mono">Loading Ombi requests...</div>
+          <div className="py-8 text-center text-xs text-on-surface-variant font-mono">Loading requests...</div>
         ) : (
           <div className="p-6 rounded-xl bg-surface-container/40 border border-dashed border-outline-variant text-center space-y-2 my-auto">
             <span className="text-lg">🍿</span>
             <h5 className="text-xs font-bold text-on-surface">No Recent Requests</h5>
             <p className="text-[10px] text-on-surface-variant">
-              Launch Ombi to search movies, series, or anime and send requests to Jellyfin.
+              Launch Seerr to search movies, series, or anime and send requests to Jellyfin.
             </p>
           </div>
         )}
@@ -1721,14 +1728,14 @@ export const HomarrRequestsWidget: React.FC = () => {
 
       {/* Footer Info */}
       <div className="pt-2.5 border-t border-outline-variant/50 flex items-center justify-between text-xs mt-2 text-on-surface-variant">
-        <span className="text-[10px] font-mono">Pipeline: Ombi → Radarr / Sonarr → Jellyfin</span>
+        <span className="text-[10px] font-mono">Pipeline: Seerr → Radarr / Sonarr → Jellyfin</span>
         <a
-          href={ombiUrl}
+          href={seerrUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-amber-400 hover:text-amber-300 font-bold text-[11px] flex items-center gap-1"
+          className="text-purple-400 hover:text-purple-300 font-bold text-[11px] flex items-center gap-1"
         >
-          <span>Open Ombi Portal →</span>
+          <span>Open Seerr Portal →</span>
         </a>
       </div>
     </div>

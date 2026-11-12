@@ -19,6 +19,7 @@ import {
   Save,
   Loader2,
   BookOpen,
+  Smartphone,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { SpotlightCard } from '../reactbits/SpotlightCard';
@@ -28,6 +29,7 @@ import CircularCarousel, { CircularCarouselItem } from '../reactbits/CircularCar
 import { AppBrandIcon } from '../common/AppBrandIcons';
 import { api, getServiceUrl } from '../../services/api';
 import { serviceRegistry } from '../../services/serviceRegistry';
+import { getPlatformAppTarget } from '../../utils/platformAppLinks';
 import { AppInfo, AppliancePackStatus } from '../../types/api';
 import { StoreTerminal } from './StoreTerminal';
 
@@ -377,9 +379,25 @@ const FALLBACK_APPS: AppInfo[] = [
     package: 'ombi-bin',
     unit: 'ombi.service',
     binary: 'Ombi',
-    port: 5055,
+    port: 5000,
     icon: 'ombi',
     accentColor: '#E37200',
+    installed: false,
+    running: false,
+    status: 'not_installed',
+  },
+  {
+    id: 'seerr',
+    name: 'Seerr Media Requests',
+    tagline: 'Automated 1-click requests & approvals',
+    description: 'Modern media request and discovery portal connected to Jellyfin, Radarr, and Sonarr.',
+    category: 'media',
+    package: 'seerr',
+    unit: 'seerr.service',
+    binary: 'seerr',
+    port: 5055,
+    icon: 'seerr',
+    accentColor: '#8B5CF6',
     installed: false,
     running: false,
     status: 'not_installed',
@@ -417,10 +435,26 @@ const FALLBACK_APPS: AppInfo[] = [
     status: 'not_installed',
   },
   {
+    id: 'mautrix',
+    name: 'Mautrix Matrix Unified Chat',
+    tagline: 'Self-hosted Synapse homeserver & Mautrix bridges',
+    description: 'Self-hosted Matrix communication hub powered by Synapse homeserver, Sliding Sync proxy for Element X, and Mautrix bridges for WhatsApp, Discord, Instagram, and Signal.',
+    category: 'network',
+    package: 'matrix-synapse',
+    unit: 'synapse.service',
+    binary: 'synapse_homeserver',
+    port: 8008,
+    icon: 'matrix',
+    accentColor: '#00D26A',
+    installed: true,
+    running: true,
+    status: 'running',
+  },
+  {
     id: 'beeper',
     name: 'Beeper Matrix Chat Bridges',
-    tagline: 'Self-hosted multi-network Matrix chat bridges',
-    description: 'Self-hosted Matrix chat bridges connecting WhatsApp, Telegram, Signal, Discord, and iMessage.',
+    tagline: 'Beeper cloud-orchestrated multi-network chat bridges',
+    description: 'Beeper CLI bridge manager (bbctl) connecting chat networks to the Beeper cloud app.',
     category: 'network',
     package: 'bbctl',
     unit: 'bbctl.service',
@@ -468,12 +502,12 @@ const FALLBACK_APPS: AppInfo[] = [
 
 const FALLBACK_PACKS: AppliancePackStatus[] = [
   {
-    id: 'seerr-stack',
+    id: 'ombi-stack',
     name: 'Ultimate Streaming & Servarr Stack',
     tagline: 'Zero-touch 4K/1080p streaming cloud with automated discovery',
     description: 'Complete media automation stack featuring Jellyfin streaming server, Ombi discovery and user requests portal, Radarr & Sonarr automated indexers via Prowlarr, Bazarr subtitle synchronization, qBittorrent engine, and Pinchflat YouTube manager.',
     badge: 'STREAMING & MEDIA',
-    accentColor: '#AA5CC3',
+    accentColor: '#E37200',
     icon: 'ombi',
     apps: ['jellyfin', 'ombi', 'radarr', 'sonarr', 'prowlarr', 'bazarr', 'qbittorrent', 'pinchflat'],
     features: [
@@ -481,11 +515,34 @@ const FALLBACK_PACKS: AppliancePackStatus[] = [
       'qBittorrent client authenticated and synced (:8080)',
       'Prowlarr public trackers (YTS, Nyaa, TPB, LimeTorrents) linked',
       'Bazarr multi-language subtitle automator connected',
-      'Ombi 1-click requests linked to Jellyfin & Servarrs (:5055)',
+      'Ombi 1-click requests linked to Jellyfin & Servarrs (:5000)',
       'Pinchflat automated YouTube manager with Jellyfin NFO tags (:8945)',
     ],
-    installedCount: 0,
-    runningCount: 0,
+    installedCount: 8,
+    runningCount: 8,
+    totalCount: 8,
+    allInstalled: true,
+    allRunning: true,
+  },
+  {
+    id: 'seerr-stack',
+    name: 'Ultimate Streaming Stack (Seerr Edition)',
+    tagline: 'Alternate complete media stack featuring modern Seerr discovery portal',
+    description: 'Complete media automation stack featuring Jellyfin streaming server, Seerr (Jellyseerr) discovery and user requests portal, Radarr & Sonarr automated indexers via Prowlarr, Bazarr subtitle synchronization, qBittorrent engine, and Pinchflat YouTube manager.',
+    badge: 'SEERR ALTERNATE',
+    accentColor: '#8B5CF6',
+    icon: 'seerr',
+    apps: ['jellyfin', 'seerr', 'radarr', 'sonarr', 'prowlarr', 'bazarr', 'qbittorrent', 'pinchflat'],
+    features: [
+      'Automated root libraries in /srv/media/{movies,shows,youtube}',
+      'qBittorrent client authenticated and synced (:8080)',
+      'Prowlarr public trackers (YTS, Nyaa, TPB, LimeTorrents) linked',
+      'Bazarr multi-language subtitle automator connected',
+      'Seerr 1-click requests linked to Jellyfin & Servarrs (:5055)',
+      'Pinchflat automated YouTube manager with Jellyfin NFO tags (:8945)',
+    ],
+    installedCount: 7,
+    runningCount: 7,
     totalCount: 8,
     allInstalled: false,
     allRunning: false,
@@ -657,6 +714,49 @@ const FALLBACK_PACKS: AppliancePackStatus[] = [
     installedCount: 0,
     runningCount: 0,
     totalCount: 3,
+    allInstalled: false,
+    allRunning: false,
+  },
+  {
+    id: 'mautrix-suite',
+    name: 'Mautrix Matrix Unified Chat Stack',
+    tagline: 'Self-hosted Synapse homeserver, Sliding Sync & Mautrix bridges',
+    description: 'Complete private communication ecosystem: Synapse Matrix homeserver, MSC3575 Sliding Sync proxy for real-time Element X mobile messaging, and native Mautrix bridges linking WhatsApp, Discord, Instagram, and Signal without third-party cloud intermediaries.',
+    badge: 'MATRIX & CHAT',
+    accentColor: '#00D26A',
+    icon: 'matrix',
+    apps: ['mautrix'],
+    features: [
+      'Synapse Matrix homeserver active on port :8008',
+      'Matrix Sliding Sync proxy (MSC3575) active for Element X mobile',
+      'Native Mautrix WhatsApp, Discord, Instagram, and Signal bridges',
+      'Built-in Element Web client accessible on /element/',
+      'Zero dependency on third-party cloud bridge providers',
+    ],
+    installedCount: 1,
+    runningCount: 1,
+    totalCount: 1,
+    allInstalled: true,
+    allRunning: true,
+  },
+  {
+    id: 'beeper-suite',
+    name: 'Beeper Matrix Bridge Stack',
+    tagline: 'Beeper cloud-orchestrated multi-network bridge manager',
+    description: 'Self-hosted bridge management layer using the official Beeper CLI (bbctl) to bridge WhatsApp, Telegram, Signal, Discord, and Google Messages to the Beeper cloud app.',
+    badge: 'BEEPER & CLOUD',
+    accentColor: '#F43F5E',
+    icon: 'beeper',
+    apps: ['beeper'],
+    features: [
+      'Official bbctl CLI bridge manager daemon',
+      'Multi-account bridge management in ~/.config/bbctl',
+      'Full compatibility with Beeper Desktop, Android, and iOS apps',
+      'Cloud push notifications and cross-device sync via Beeper network',
+    ],
+    installedCount: 0,
+    runningCount: 0,
+    totalCount: 1,
     allInstalled: false,
     allRunning: false,
   },
@@ -1271,7 +1371,7 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({
                           ) : (
                             <Sparkles className="w-4 h-4 text-tinapple-gold" />
                           )}
-                          <span>{pack.id === 'seerr-stack' ? 'Auto-Configure Stack' : 'Sync & Auto-Configure'}</span>
+                          <span>{pack.id === 'ombi-stack' || pack.id === 'seerr-stack' ? 'Auto-Configure Stack' : 'Sync & Auto-Configure'}</span>
                         </span>
                       </StarBorder>
                     )}
@@ -1307,6 +1407,7 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({
                       <button
                         onClick={() => {
                           const packGuideMap: Record<string, string> = {
+                            'ombi-stack': 'ombi',
                             'seerr-stack': 'seerr',
                             'manga-suite': 'syncyomi',
                             'manga-syncyomi': 'syncyomi',
@@ -1316,6 +1417,8 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({
                             'second-brain': 'obsidian',
                             'gaming-anvil': 'tailscale',
                             'truenas-vault': 'syncthing',
+                            'mautrix-suite': 'mautrix',
+                            'beeper-suite': 'beeper',
                           };
                           onOpenGuide(packGuideMap[pack.id] || 'jellyfin');
                         }}
@@ -1331,18 +1434,44 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({
                   {/* Right: Quick Links to Key Stack Services */}
                   {pack.installedCount > 0 && (
                     <div className="flex items-center gap-2">
-                      {pack.id === 'seerr-stack' && (
+                      {pack.id === 'ombi-stack' && (
                         <>
                           <a
-                            href={getAppUrl(5055)}
+                            href={getAppUrl(5000)}
                             target="_blank"
                             rel="noreferrer"
                             className="flex items-center gap-1 px-3 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 border border-amber-500/40 text-xs font-mono font-bold transition-all shadow-sm"
                             title="Open Ombi Requests WebUI"
                           >
                             <ExternalLink className="w-3 h-3" />
-                            Ombi (:5055)
+                            Ombi (:5000)
                           </a>
+                          <a
+                            href={getAppUrl(8096)}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="flex items-center gap-1 px-3 py-2 rounded-xl bg-blue-500/20 hover:bg-blue-500/30 text-blue-200 border border-blue-500/40 text-xs font-mono font-bold transition-all shadow-sm"
+                            title="Open Jellyfin Streamer WebUI"
+                          >
+                            <ExternalLink className="w-3 h-3" />
+                            Jellyfin (:8096)
+                          </a>
+                        </>
+                      )}
+                      {pack.id === 'seerr-stack' && (
+                        <>
+                          {pack.appsStatus?.find(a => a.id === 'seerr')?.installed && (
+                            <a
+                              href={getAppUrl(5055)}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="flex items-center gap-1 px-3 py-2 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-200 border border-purple-500/40 text-xs font-mono font-bold transition-all shadow-sm"
+                              title="Open Seerr Requests WebUI"
+                            >
+                              <ExternalLink className="w-3 h-3" />
+                              Seerr (:5055)
+                            </a>
+                          )}
                           <a
                             href={getAppUrl(8096)}
                             target="_blank"
@@ -1366,15 +1495,21 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({
                             <ExternalLink className="w-3 h-3" />
                             Suwayomi (:4567)
                           </a>
-                          <a
-                            href="/download/tsumiru"
-                            download="tsumiru-client.apk"
-                            className="flex items-center gap-1 px-3 py-2 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-200 border border-purple-500/40 text-xs font-mono font-bold transition-all shadow-sm"
-                            title="Download Tsumiru Android APK for your phone (Connect via :4567)"
-                          >
-                            <Download className="w-3 h-3" />
-                            Tsumiru APK
-                          </a>
+                          {(() => {
+                            const appTarget = getPlatformAppTarget('suwayomi', getAppUrl(4567));
+                            const isMobile = appTarget?.platform === 'android' || appTarget?.platform === 'ios';
+                            return (
+                              <a
+                                href={appTarget?.appUrl || '/download/tsumiru'}
+                                {...(!isMobile ? { download: 'tsumiru-client.apk' } : {})}
+                                className="flex items-center gap-1 px-3 py-2 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-200 border border-purple-500/40 text-xs font-mono font-bold transition-all shadow-sm"
+                                title={appTarget?.title || 'Open Tsumiru manga client'}
+                              >
+                                {isMobile ? <Smartphone className="w-3 h-3" /> : <Download className="w-3 h-3" />}
+                                {appTarget?.label || 'Tsumiru APK'}
+                              </a>
+                            );
+                          })()}
                         </>
                       )}
                       {pack.id === 'privacy-shield' && (
@@ -1443,15 +1578,21 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({
                             <ExternalLink className="w-3 h-3" />
                             Suwayomi (:4567)
                           </a>
-                          <a
-                            href="/download/tsumiru"
-                            download="tsumiru-client.apk"
-                            className="flex items-center gap-1 px-3 py-2 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-200 border border-purple-500/40 text-xs font-mono font-bold transition-all shadow-sm"
-                            title="Download Tsumiru Android APK"
-                          >
-                            <Download className="w-3 h-3" />
-                            Tsumiru APK
-                          </a>
+                          {(() => {
+                            const appTarget = getPlatformAppTarget('suwayomi', getAppUrl(4567));
+                            const isMobile = appTarget?.platform === 'android' || appTarget?.platform === 'ios';
+                            return (
+                              <a
+                                href={appTarget?.appUrl || '/download/tsumiru'}
+                                {...(!isMobile ? { download: 'tsumiru-client.apk' } : {})}
+                                className="flex items-center gap-1 px-3 py-2 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-200 border border-purple-500/40 text-xs font-mono font-bold transition-all shadow-sm"
+                                title={appTarget?.title || 'Open Tsumiru manga client'}
+                              >
+                                {isMobile ? <Smartphone className="w-3 h-3" /> : <Download className="w-3 h-3" />}
+                                {appTarget?.label || 'Tsumiru APK'}
+                              </a>
+                            );
+                          })()}
                         </>
                       )}
                       {pack.id === 'truenas-vault' && (
@@ -1482,6 +1623,18 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({
                         <div className="flex items-center gap-1 px-3 py-2 rounded-xl bg-emerald-500/20 text-emerald-200 border border-emerald-500/40 text-xs font-mono font-bold shadow-sm">
                           <span>PaperMC (:25565)</span>
                         </div>
+                      )}
+                      {pack.id === 'mautrix-suite' && (
+                        <a
+                          href="/element/"
+                          target="_blank"
+                          rel="noreferrer"
+                          className="flex items-center gap-1 px-3 py-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 border border-emerald-500/40 text-xs font-mono font-bold transition-all shadow-sm"
+                          title="Open Element Web Client"
+                        >
+                          <ExternalLink className="w-3 h-3" />
+                          Element Web (/element/)
+                        </a>
                       )}
                     </div>
                   )}
@@ -1540,17 +1693,21 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({
                       <ExternalLink className="w-3.5 h-3.5" />
                       {selectedApp.id === 'suwayomi' ? 'Suwayomi Web' : 'Open WebUI'}
                     </a>
-                    {selectedApp.id === 'suwayomi' && (
-                      <a
-                        href="/download/tsumiru"
-                        download="tsumiru-client.apk"
-                        className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/40 text-xs font-mono font-bold transition-all shadow-sm"
-                        title="Download Tsumiru Native Android APK (Connects via :4567)"
-                      >
-                        <Download className="w-3.5 h-3.5" />
-                        Tsumiru Phone APK
-                      </a>
-                    )}
+                    {selectedApp.id === 'suwayomi' && (() => {
+                      const appTarget = getPlatformAppTarget('suwayomi', getServiceUrl(selectedApp.port || 4567));
+                      const isMobile = appTarget?.platform === 'android' || appTarget?.platform === 'ios';
+                      return (
+                        <a
+                          href={appTarget?.appUrl || '/download/tsumiru'}
+                          {...(!isMobile ? { download: 'tsumiru-client.apk' } : {})}
+                          className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/40 text-xs font-mono font-bold transition-all shadow-sm"
+                          title={appTarget?.title || 'Open Tsumiru manga client'}
+                        >
+                          {isMobile ? <Smartphone className="w-3.5 h-3.5" /> : <Download className="w-3.5 h-3.5" />}
+                          {appTarget?.label || 'Tsumiru Phone APK'}
+                        </a>
+                      );
+                    })()}
                   </>
                 )}
 
@@ -1608,6 +1765,8 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({
                         jellyfin: 'jellyfin',
                         suwayomi: 'syncyomi',
                         'suwayomi-server': 'syncyomi',
+                        mautrix: 'mautrix',
+                        matrix: 'mautrix',
                         beeper: 'beeper',
                         vaultwarden: 'vaultwarden',
                         syncthing: 'syncthing',
@@ -1651,8 +1810,12 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({
                       className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 text-xs font-mono transition-all"
                       title="Uninstall Package"
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
-                      Uninstall
+                      {loadingAction[selectedApp.id] === 'uninstall' ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin text-rose-400" />
+                      ) : (
+                        <Trash2 className="w-3.5 h-3.5" />
+                      )}
+                      <span>{loadingAction[selectedApp.id] === 'uninstall' ? 'Uninstalling...' : 'Uninstall'}</span>
                     </button>
                   </>
                 )}
@@ -1714,17 +1877,21 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({
                             {app.id === 'suwayomi' ? 'WebUI' : 'Open'}
                           </a>
                         )}
-                        {app.id === 'suwayomi' && (
-                          <a
-                            href="/download/tsumiru"
-                            download="tsumiru-client.apk"
-                            className="px-2.5 py-1.5 rounded-lg bg-sky-500/15 hover:bg-sky-500/25 text-sky-300 border border-sky-500/30 text-xs font-mono font-bold flex items-center gap-1"
-                            title="Download Tsumiru Android APK"
-                          >
-                            <Download className="w-3.5 h-3.5" />
-                            APK
-                          </a>
-                        )}
+                        {app.id === 'suwayomi' && (() => {
+                          const appTarget = getPlatformAppTarget('suwayomi', getServiceUrl(app.port || 4567));
+                          const isMobile = appTarget?.platform === 'android' || appTarget?.platform === 'ios';
+                          return (
+                            <a
+                              href={appTarget?.appUrl || '/download/tsumiru'}
+                              {...(!isMobile ? { download: 'tsumiru-client.apk' } : {})}
+                              className="px-2.5 py-1.5 rounded-lg bg-sky-500/15 hover:bg-sky-500/25 text-sky-300 border border-sky-500/30 text-xs font-mono font-bold flex items-center gap-1"
+                              title={appTarget?.title || 'Open Tsumiru manga client'}
+                            >
+                              {isMobile ? <Smartphone className="w-3.5 h-3.5" /> : <Download className="w-3.5 h-3.5" />}
+                              {appTarget?.label || 'APK'}
+                            </a>
+                          );
+                        })()}
                         <button
                           onClick={() => handleAction(app.id, 'restart')}
                           disabled={isLoading}
@@ -1780,6 +1947,8 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({
                             jellyfin: 'jellyfin',
                             suwayomi: 'syncyomi',
                             'suwayomi-server': 'syncyomi',
+                            mautrix: 'mautrix',
+                            matrix: 'mautrix',
                             beeper: 'beeper',
                             vaultwarden: 'vaultwarden',
                             syncthing: 'syncthing',
@@ -1821,7 +1990,11 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({
                           className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 text-xs transition-colors"
                           title="Uninstall package"
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
+                          {loadingAction[app.id] === 'uninstall' ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin text-rose-400" />
+                          ) : (
+                            <Trash2 className="w-3.5 h-3.5" />
+                          )}
                         </button>
                       </>
                     )}

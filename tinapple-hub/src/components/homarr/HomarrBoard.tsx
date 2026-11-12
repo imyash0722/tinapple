@@ -160,7 +160,7 @@ interface CuratedAppliance {
 const CURATED_APPLIANCES: CuratedAppliance[] = [
   // Media & Streaming
   { id: 'jellyfin', name: 'Jellyfin Media Server', tagline: 'Hardware Transcoding & 4K DirectPlay', category: 'media', icon: '🎬', port: 8096, subpath: '/jellyfin', guideId: 'jellyfin' },
-  { id: 'ombi', name: 'Ombi Media Requests', tagline: 'Automated 1-Click Requests & User Management', category: 'media', icon: '🍿', port: 5055, subpath: '/ombi', guideId: 'seerr' },
+  { id: 'ombi', name: 'Ombi Media Requests', tagline: 'Automated 1-Click Requests & User Management', category: 'media', icon: '🍿', port: 5000, subpath: '/ombi', guideId: 'ombi' },
   { id: 'navidrome', name: 'Navidrome Music Server', tagline: 'Lossless Audio & Subsonic API Streaming', category: 'media', icon: '🎵', port: 4533, subpath: '/navidrome', guideId: 'navidrome' },
   { id: 'pinchflat', name: 'Pinchflat YouTube Stack', tagline: 'Automated YouTube Channel Archiver', category: 'media', icon: '📺', port: 8945, subpath: '/pinchflat', guideId: 'pinchflat' },
   { id: 'suwayomi', name: 'Suwayomi Manga Server', tagline: 'Keiyoushi Extensions & Tachiyomi Sync', category: 'media', icon: '📖', port: 4567, subpath: '/suwayomi', guideId: 'suwayomi' },
@@ -181,6 +181,7 @@ const CURATED_APPLIANCES: CuratedAppliance[] = [
   // Network & Privacy
   { id: 'adguard', name: 'AdGuard Home DNS', tagline: 'Network-wide DNS Tracker & Malware Blocker', category: 'network', icon: '🛡️', port: 3000, subpath: '/adguard', guideId: 'adguard' },
   { id: 'tor', name: 'Tor Privacy Onion Proxy', tagline: 'Onion Routing & SOCKS5 Privacy Daemon', category: 'network', icon: '🧅', port: 9050, subpath: '/guides/tor.html', guideId: 'tor' },
+  { id: 'mautrix', name: 'Mautrix Matrix Chat', tagline: 'Self-hosted Synapse Homeserver & Element Web', category: 'network', icon: '💬', port: 8008, subpath: '/element/', guideId: 'mautrix' },
 ];
 
 export interface BoardCategorySection {

@@ -44,8 +44,8 @@ export const MobileDashboardView: React.FC<MobileDashboardViewProps> = ({
   const [isLoadingOmbi, setIsLoadingOmbi] = useState<boolean>(true);
 
   const fetchOmbiData = () => {
-    fetch(`${getActiveServerOrigin()}/api/widgets/ombi`)
-      .then((r) => (r.ok ? r.json() : null))
+    fetch(`${getActiveServerOrigin()}/api/widgets/seerr`)
+      .then((r) => (r.ok ? r.json() : fetch(`${getActiveServerOrigin()}/api/widgets/ombi`).then((ro) => ro.ok ? ro.json() : null)))
       .then((data) => {
         if (data) {
           setOmbiOnline(data.online !== false);
@@ -66,7 +66,7 @@ export const MobileDashboardView: React.FC<MobileDashboardViewProps> = ({
   // Quick primary launchers
   const primaryLaunchers = [
     { id: 'jellyfin', name: 'Jellyfin', port: 8096, category: 'Cinema & TV', icon: <Film className="w-5 h-5 text-purple-400" /> },
-    { id: 'ombi', name: 'Ombi Requests', port: 5055, category: 'Media Portal', icon: <Film className="w-5 h-5 text-amber-500" /> },
+    { id: 'ombi', name: 'Ombi Requests', port: 5000, category: 'Media Portal', icon: <Film className="w-5 h-5 text-amber-400" /> },
     { id: 'navidrome', name: 'Navidrome', port: 4533, category: 'Lossless Music', icon: <Music className="w-5 h-5 text-emerald-400" /> },
     { id: 'suwayomi', name: 'Suwayomi', port: 4567, category: 'Manga & Comics', icon: <BookOpen className="w-5 h-5 text-sky-400" /> },
     { id: 'qbittorrent', name: 'qBittorrent', port: 8080, category: 'Downloads', icon: <Download className="w-5 h-5 text-amber-400" /> },
@@ -243,7 +243,7 @@ export const MobileDashboardView: React.FC<MobileDashboardViewProps> = ({
                 <h4 className="text-xs font-bold text-on-surface">Ombi Media Requests</h4>
                 <span className={`w-2 h-2 rounded-full ${ombiOnline ? 'bg-emerald-400' : 'bg-rose-400'} shrink-0`} />
               </div>
-              <span className="text-[10px] text-on-surface-variant font-mono">Port :5055 • Reverse Proxy /ombi</span>
+              <span className="text-[10px] text-on-surface-variant font-mono">Port :5000 • Reverse Proxy /ombi</span>
             </div>
           </div>
 
@@ -331,24 +331,24 @@ export const MobileDashboardView: React.FC<MobileDashboardViewProps> = ({
               );
             })
           ) : isLoadingOmbi ? (
-            <div className="py-6 text-center text-xs text-on-surface-variant font-mono">Loading Ombi requests...</div>
+            <div className="py-6 text-center text-xs text-on-surface-variant font-mono">Loading requests...</div>
           ) : (
             <div className="py-6 text-center text-xs text-on-surface-variant space-y-1">
               <span>🍿</span>
-              <p>No active media requests in Ombi.</p>
+              <p>No active media requests in Seerr.</p>
             </div>
           )}
         </div>
 
         {/* 1-Tap Launch Button */}
         <a
-          href={getServiceUrl('ombi')}
+          href={getServiceUrl('seerr') || getServiceUrl('ombi')}
           target="_blank"
           rel="noreferrer"
           onClick={() => AndroidBridge.performHaptic('medium')}
           className="w-full py-2.5 px-4 rounded-xl bg-primary text-on-primary font-bold text-xs flex items-center justify-center gap-2 hover:bg-primary/90 active:scale-98 transition-all shadow-sm"
         >
-          <span>Open Ombi Request Portal</span>
+          <span>Open Seerr Request Portal</span>
           <ArrowRight className="w-4 h-4" />
         </a>
       </div>
