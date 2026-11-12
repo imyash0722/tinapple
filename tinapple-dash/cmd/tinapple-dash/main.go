@@ -151,7 +151,24 @@ func main() {
 		r.StaticFile("/favicon.ico", filepath.Join(distDir, "favicon.ico"))
 		r.StaticFile("/sw.js", filepath.Join(distDir, "sw.js"))
 		r.StaticFile("/manifest.json", filepath.Join(distDir, "manifest.json"))
+		isMagicDNSHost := func(host string) bool {
+			hostname := strings.ToLower(strings.Split(host, ":")[0])
+			if hostname == "pineapple-server" ||
+				hostname == "tinapple-server" ||
+				strings.HasSuffix(hostname, ".ts.net") ||
+				(strings.HasPrefix(hostname, "100.") && len(strings.Split(hostname, ".")) == 4) {
+				return true
+			}
+			return false
+		}
+
 		serveIndex := func(c *gin.Context) {
+			// If accessed directly via MagicDNS or Tailscale IP over unencrypted HTTP (e.g. port 8088), upgrade to secure HTTPS
+			if isMagicDNSHost(c.Request.Host) && c.Request.TLS == nil && c.GetHeader("X-Forwarded-Proto") != "https" {
+				target := fmt.Sprintf("https://pineapple-server.taildb42a2.ts.net%s", c.Request.URL.RequestURI())
+				c.Redirect(http.StatusMovedPermanently, target)
+				return
+			}
 			c.Header("Cache-Control", "no-cache, no-store, must-revalidate, max-age=0")
 			c.Header("Pragma", "no-cache")
 			c.Header("Expires", "0")
@@ -218,6 +235,15 @@ func main() {
 			cleanPath := strings.TrimRight(strings.ToLower(path), "/")
 			for prefix, port := range servicePortRedirects {
 				if cleanPath == prefix || strings.HasPrefix(cleanPath, prefix+"/") {
+					// If accessed via MagicDNS, Tailscale, or behind Caddy HTTPS, upgrade to the secure canonical SSL domain
+					if isMagicDNSHost(c.Request.Host) || c.GetHeader("X-Forwarded-Proto") == "https" {
+						targetURI := c.Request.URL.RequestURI()
+						if !strings.HasSuffix(targetURI, "/") && !strings.Contains(targetURI, "?") {
+							targetURI += "/"
+						}
+						c.Redirect(http.StatusMovedPermanently, fmt.Sprintf("https://pineapple-server.taildb42a2.ts.net%s", targetURI))
+						return
+					}
 					host := c.Request.Host
 					if colon := strings.Index(host, ":"); colon != -1 {
 						host = host[:colon]

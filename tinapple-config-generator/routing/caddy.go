@@ -11,13 +11,12 @@ import (
 
 const caddySnippetTemplate = `{{range .Routes}}
 # Route for {{.ID}}
+redir /{{.Path}} /{{.Path}}/ permanent
 handle_path /{{.Path}}/* {
 	reverse_proxy localhost:{{.Port}} {
 		header_up X-Forwarded-Prefix /{{.Path}}
+		header_down Location "http://" "https://"
 	}
-}
-handle /{{.Path}} {
-	redir /{{.Path}}/ permanent
 }
 {{end}}
 {{range .Hosts}}

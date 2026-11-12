@@ -32,111 +32,133 @@
 	}
 
 	# 3. Manga Thumbnails Immutable Fast-Path (direct kernel sendfile via Dash on 8088)
-	@manga_thumb path_regexp manga_thumb ^/api/v1/manga/([0-9]+)/thumbnail$
-	handle @manga_thumb {
+	handle /api/v1/manga/*/thumbnail {
 		header >Cache-Control "public, max-age=31536000, immutable"
 		reverse_proxy localhost:8088
 	}
 
 	# 4. Jellyfin Home Theater
+	redir /jellyfin /jellyfin/ permanent
 	handle_path /jellyfin/* {
 		reverse_proxy localhost:8097 {
 			header_up X-Forwarded-Prefix /jellyfin
+			header_down Location "http://" "https://"
 		}
-	}
-	handle /jellyfin {
-		redir /jellyfin/ permanent
 	}
 
 	# 5. Suwayomi Manga Server
+	redir /suwayomi /suwayomi/ permanent
 	handle_path /suwayomi/* {
 		reverse_proxy localhost:4567 {
 			header_up X-Forwarded-Prefix /suwayomi
+			header_down Location "http://" "https://"
 		}
-	}
-	handle /suwayomi {
-		redir /suwayomi/ permanent
 	}
 
 	# 6. qBittorrent Web UI
+	redir /qbittorrent /qbittorrent/ permanent
 	handle_path /qbittorrent/* {
 		reverse_proxy localhost:8080 {
 			header_up X-Forwarded-Prefix /qbittorrent
 			header_up Host localhost:8080
+			header_down Location "http://" "https://"
 		}
 	}
-	handle /qbittorrent {
-		redir /qbittorrent/ permanent
-	}
 
-	# 7. Media Requests (Seerr / Ombi portal on 5055)
-	handle_path /ombi/* {
-		reverse_proxy localhost:5055 {
+	# 7. Media Requests (Ombi on 5000, Seerr on 5055)
+	redir /ombi /ombi/ permanent
+	handle /ombi/* {
+		reverse_proxy localhost:5000 {
 			header_up X-Forwarded-Prefix /ombi
+			header_down Location "http://" "https://"
 		}
 	}
-	handle /ombi {
-		redir /ombi/ permanent
-	}
 
+	redir /seerr /seerr/ permanent
 	handle_path /seerr/* {
 		reverse_proxy localhost:5055 {
 			header_up X-Forwarded-Prefix /seerr
+			header_down Location "http://" "https://"
 		}
-	}
-	handle /seerr {
-		redir /seerr/ permanent
 	}
 
 	# 8. Navidrome Music Streaming
+	redir /navidrome /navidrome/ permanent
 	handle_path /navidrome/* {
 		reverse_proxy localhost:4533 {
 			header_up X-Forwarded-Prefix /navidrome
+			header_down Location "http://" "https://"
 		}
-	}
-	handle /navidrome {
-		redir /navidrome/ permanent
 	}
 
 	# 9. Syncthing Web UI
+	redir /syncthing /syncthing/ permanent
 	handle_path /syncthing/* {
 		reverse_proxy localhost:8384 {
 			header_up X-Forwarded-Prefix /syncthing
 			header_up Host localhost:8384
+			header_down Location "http://" "https://"
 		}
-	}
-	handle /syncthing {
-		redir /syncthing/ permanent
 	}
 
 	# 10. Vaultwarden Password Manager
+	redir /vault /vault/ permanent
 	handle_path /vault/* {
 		reverse_proxy localhost:8000 {
 			header_up X-Forwarded-Prefix /vault
+			header_down Location "http://" "https://"
 		}
-	}
-	handle /vault {
-		redir /vault/ permanent
 	}
 
 	# 11. AdGuard Home DNS & Ad-Blocking
+	redir /adguard /adguard/ permanent
 	handle_path /adguard/* {
 		reverse_proxy localhost:3000 {
 			header_up X-Forwarded-Prefix /adguard
+			header_down Location "http://" "https://"
+			header_down Location "^/([^/].*)$" "/adguard/$1"
 		}
-	}
-	handle /adguard {
-		redir /adguard/ permanent
 	}
 
 	# 12. Bazarr Subtitle Engine
+	redir /bazarr /bazarr/ permanent
 	handle_path /bazarr/* {
 		reverse_proxy localhost:6767 {
 			header_up X-Forwarded-Prefix /bazarr
+			header_down Location "http://" "https://"
 		}
 	}
-	handle /bazarr {
-		redir /bazarr/ permanent
+
+	# 13. Radarr Movie Automation
+	redir /radarr /radarr/ permanent
+	handle /radarr/* {
+		reverse_proxy localhost:7878 {
+			header_down Location "http://" "https://"
+		}
+	}
+
+	# 14. Sonarr TV Series Automation
+	redir /sonarr /sonarr/ permanent
+	handle /sonarr/* {
+		reverse_proxy localhost:8989 {
+			header_down Location "http://" "https://"
+		}
+	}
+
+	# 15. Prowlarr Indexer Manager
+	redir /prowlarr /prowlarr/ permanent
+	handle /prowlarr/* {
+		reverse_proxy localhost:9696 {
+			header_down Location "http://" "https://"
+		}
+	}
+
+	# 16. Pinchflat YouTube Media Manager
+	redir /pinchflat /pinchflat/ permanent
+	handle_path /pinchflat/* {
+		reverse_proxy localhost:8945 {
+			header_down Location "http://" "https://"
+		}
 	}
 
 	# 13. Matrix Client & Server Discovery
@@ -171,12 +193,10 @@
 	}
 
 	# Element Web Client
+	redir /element /element/ permanent
 	handle_path /element/* {
 		root * /usr/share/webapps/element
 		file_server
-	}
-	handle /element {
-		redir /element/ permanent
 	}
 
 	# Download Tinapple Root CA
@@ -198,11 +218,27 @@
 }
 
 # ----------------------------------------------------------------------
-# 1. Standard HTTP Ingress (Port 80) & Reverse-Proxied Tailscale HTTPS
+# 1. Standard HTTP Ingress & MagicDNS Automatic HTTPS Redirection (Port 80)
 # ----------------------------------------------------------------------
 http:// {
+	# All Tailscale MagicDNS hostnames, FQDNs, and Tailscale 100.x IPs automatically upgrade to secure HTTPS
+	@magicdns {
+		header_regexp host Host (?i)^(pineapple-server(\.taildb42a2\.ts\.net)?|tinapple-server(\.tail3dee69\.ts\.net)?|.*\.ts\.net|100\.\d+\.\d+\.\d+)(:\d+)?$
+	}
+	redir @magicdns https://pineapple-server.taildb42a2.ts.net{uri} permanent
+
 	import compression
 	import security_headers
+	import tinapple_routes
+}
+
+# ----------------------------------------------------------------------
+# 3. Tailscale Automated Let's Encrypt HTTPS (Port 443)
+# ----------------------------------------------------------------------
+pineapple-server.taildb42a2.ts.net {
+	import compression
+	import security_headers
+	tls /etc/caddy/certs/pineapple-server.crt /etc/caddy/certs/pineapple-server.key
 	import tinapple_routes
 }
 

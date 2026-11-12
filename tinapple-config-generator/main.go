@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"os"
 
 	"tinapple-config-generator/manifest"
@@ -23,9 +24,26 @@ func main() {
 		}
 
 	case "nginx-sync":
+		hasStdin := false
+		newArgs := make([]string, 0, len(os.Args[2:]))
+		for _, arg := range os.Args[2:] {
+			if arg == "--catalog-stdin" || arg == "-catalog-stdin" {
+				hasStdin = true
+			} else {
+				newArgs = append(newArgs, arg)
+			}
+		}
+		if hasStdin {
+			data, err := io.ReadAll(os.Stdin)
+			if err == nil && len(data) > 0 {
+				_ = os.MkdirAll("/var/lib/tinapple", 0755)
+				_ = os.WriteFile("/var/lib/tinapple/nginx-catalog.json", data, 0644)
+				_ = os.WriteFile("/var/lib/tinapple/caddy-catalog.json", data, 0644)
+			}
+		}
 		// Synchronize both Nginx and Caddy to ensure unified multi-proxy transition
-		_ = syncCaddy(os.Args[2:])
-		if err := syncNginx(os.Args[2:]); err != nil {
+		_ = syncCaddy(newArgs)
+		if err := syncNginx(newArgs); err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
 		}
