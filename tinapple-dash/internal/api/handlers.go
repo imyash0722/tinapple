@@ -2668,38 +2668,79 @@ func getOmbiApiKey() string {
 	return ""
 }
 
-func (h *Handler) WidgetOmbi(c *gin.Context) {
+func getSeerrApiKey() string {
+	paths := []string{
+		"/var/lib/seerr/settings.json",
+		"/etc/seerr/settings.json",
+	}
+	for _, p := range paths {
+		if data, err := os.ReadFile(p); err == nil {
+			var s struct {
+				Main struct {
+					ApiKey string `json:"apiKey"`
+				} `json:"main"`
+			}
+			if err := json.Unmarshal(data, &s); err == nil && s.Main.ApiKey != "" {
+				return s.Main.ApiKey
+			}
+		}
+	}
+	return ""
+}
+
+func (h *Handler) WidgetSeerr(c *gin.Context) {
 	client := http.Client{Timeout: 3 * time.Second}
-	apiKey := getOmbiApiKey()
+	apiKey := getSeerrApiKey()
 
 	// 1. Get request counts
-	var counts map[string]interface{}
-	reqCount, err := http.NewRequestWithContext(c.Request.Context(), "GET", "http://127.0.0.1:5000/api/v1/Request/count", nil)
+	counts := gin.H{
+		"total":     0,
+		"available": 0,
+		"approved":  0,
+		"pending":   0,
+		"denied":    0,
+	}
+	reqCount, err := http.NewRequestWithContext(c.Request.Context(), "GET", "http://127.0.0.1:5055/api/v1/request/count", nil)
 	if err == nil {
 		if apiKey != "" {
-			reqCount.Header.Set("ApiKey", apiKey)
+			reqCount.Header.Set("X-Api-Key", apiKey)
 		}
 		if resp, err := client.Do(reqCount); err == nil && resp.StatusCode == http.StatusOK {
-			_ = json.NewDecoder(resp.Body).Decode(&counts)
+			var cData struct {
+				Total      int `json:"total"`
+				Pending    int `json:"pending"`
+				Approved   int `json:"approved"`
+				Declined   int `json:"declined"`
+				Processing int `json:"processing"`
+				Available  int `json:"available"`
+				Completed  int `json:"completed"`
+			}
+			if err := json.NewDecoder(resp.Body).Decode(&cData); err == nil {
+				counts["total"] = cData.Total
+				counts["pending"] = cData.Pending
+				counts["approved"] = cData.Approved + cData.Processing
+				counts["available"] = cData.Available + cData.Completed
+				counts["denied"] = cData.Declined
+			}
 			resp.Body.Close()
 		}
 	}
 
-	// 2. Get recently requested items
-	reqRecent, err := http.NewRequestWithContext(c.Request.Context(), "GET", "http://127.0.0.1:5000/api/v2/Requests/recentlyRequested", nil)
+	// 2. Get recent requests
+	reqRecent, err := http.NewRequestWithContext(c.Request.Context(), "GET", "http://127.0.0.1:5055/api/v1/request?take=10&sort=added", nil)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{"online": false, "requests": []interface{}{}, "counts": counts})
 		return
 	}
 	if apiKey != "" {
-		reqRecent.Header.Set("ApiKey", apiKey)
+		reqRecent.Header.Set("X-Api-Key", apiKey)
 	}
 
 	resp, err := client.Do(reqRecent)
-	if err != nil || (resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent) {
-		// Fallback check if Ombi is online via status endpoint
-		statusResp, statusErr := client.Get("http://127.0.0.1:5000/api/v1/Status")
-		online := statusErr == nil && statusResp.StatusCode == http.StatusOK
+	if err != nil || resp.StatusCode != http.StatusOK {
+		// Fallback check if Seerr is online via status endpoint
+		statusResp, statusErr := client.Get("http://127.0.0.1:5055/api/v1/status")
+		online := statusErr == nil && (statusResp.StatusCode == http.StatusOK || statusResp.StatusCode == http.StatusUnauthorized)
 		if statusResp != nil {
 			statusResp.Body.Close()
 		}
@@ -2708,74 +2749,75 @@ func (h *Handler) WidgetOmbi(c *gin.Context) {
 	}
 	defer resp.Body.Close()
 
-	var ombiItems []struct {
-		RequestID            int     `json:"requestId"`
-		Type                 int     `json:"type"`
-		UserID               *string `json:"userId"`
-		Username             *string `json:"username"`
-		Available            bool    `json:"available"`
-		TvPartiallyAvailable bool    `json:"tvPartiallyAvailable"`
-		RequestDate          *string `json:"requestDate"`
-		Title                *string `json:"title"`
-		Overview             *string `json:"overview"`
-		ReleaseDate          *string `json:"releaseDate"`
-		Approved             bool    `json:"approved"`
-		Denied               bool    `json:"denied"`
-		MediaID              *string `json:"mediaId"`
-		PosterPath           *string `json:"posterPath"`
-		Background           *string `json:"background"`
+	var seerrResult struct {
+		Results []struct {
+			ID          int    `json:"id"`
+			Status      int    `json:"status"`
+			Type        string `json:"type"`
+			CreatedAt   string `json:"createdAt"`
+			Media       struct {
+				MediaType           string `json:"mediaType"`
+				TmdbId              int    `json:"tmdbId"`
+				ExternalServiceSlug string `json:"externalServiceSlug"`
+				Status              int    `json:"status"`
+			} `json:"media"`
+			RequestedBy struct {
+				DisplayName string `json:"displayName"`
+				Username    string `json:"username"`
+			} `json:"requestedBy"`
+		} `json:"results"`
 	}
-	_ = json.NewDecoder(resp.Body).Decode(&ombiItems)
+	_ = json.NewDecoder(resp.Body).Decode(&seerrResult)
 
-	requests := make([]gin.H, 0, len(ombiItems))
-	for _, item := range ombiItems {
-		title := "Untitled Request"
-		if item.Title != nil && *item.Title != "" {
-			title = *item.Title
+	requests := make([]gin.H, 0, len(seerrResult.Results))
+	for _, item := range seerrResult.Results {
+		title := "Media Request"
+		if item.Media.ExternalServiceSlug != "" {
+			slug := strings.ReplaceAll(item.Media.ExternalServiceSlug, "-", " ")
+			title = strings.Title(slug)
+		} else if item.Media.TmdbId > 0 {
+			title = fmt.Sprintf("%s (TMDB #%d)", strings.ToUpper(item.Type), item.Media.TmdbId)
 		}
+
 		username := "User"
-		if item.Username != nil && *item.Username != "" {
-			username = *item.Username
+		if item.RequestedBy.DisplayName != "" {
+			username = item.RequestedBy.DisplayName
+		} else if item.RequestedBy.Username != "" {
+			username = item.RequestedBy.Username
 		}
+
 		mediaType := "Movie"
-		if item.Type == 1 {
+		if strings.ToLower(item.Type) == "tv" || strings.ToLower(item.Media.MediaType) == "tv" {
 			mediaType = "Series"
-		} else if item.Type == 2 {
-			mediaType = "Music"
 		}
 
-		status := 1 // Pending
+		// Seerr Statuses: 1 = PENDING, 2 = APPROVED, 3 = PROCESSING, 4 = PARTIALLY_AVAILABLE, 5 = AVAILABLE
 		statusLabel := "Pending"
-		if item.Denied {
-			status = 3
-			statusLabel = "Declined"
-		} else if item.Available {
-			status = 4
+		isApproved := item.Status == 2 || item.Status == 3 || item.Media.Status >= 2
+		isAvailable := item.Status == 5 || item.Media.Status == 5
+		isDenied := item.Status == 6
+		if isAvailable {
 			statusLabel = "Available"
-		} else if item.Approved {
-			status = 2
+		} else if isApproved {
 			statusLabel = "Approved"
-		}
-
-		poster := ""
-		if item.PosterPath != nil {
-			poster = *item.PosterPath
+		} else if isDenied {
+			statusLabel = "Declined"
 		}
 
 		requests = append(requests, gin.H{
-			"id":          item.RequestID,
+			"id":          item.ID,
 			"title":       title,
 			"type":        mediaType,
-			"status":      status,
+			"status":      item.Status,
 			"statusLabel": statusLabel,
 			"requestedBy": gin.H{
 				"displayName": username,
 				"username":    username,
 			},
-			"posterPath": poster,
-			"available":  item.Available,
-			"approved":   item.Approved,
-			"denied":     item.Denied,
+			"posterPath": "",
+			"available":  isAvailable,
+			"approved":   isApproved,
+			"denied":     isDenied,
 		})
 	}
 
@@ -2786,8 +2828,33 @@ func (h *Handler) WidgetOmbi(c *gin.Context) {
 	})
 }
 
-func (h *Handler) WidgetSeerr(c *gin.Context) {
-	h.WidgetOmbi(c)
+func (h *Handler) WidgetOmbi(c *gin.Context) {
+	client := &http.Client{Timeout: 3 * time.Second}
+	counts := map[string]int{
+		"total":     0,
+		"approved":  0,
+		"available": 0,
+		"pending":   0,
+		"denied":    0,
+	}
+
+	// 1. Probe native Ombi daemon on port 5000
+	statusResp, err := client.Get("http://127.0.0.1:5000/api/v1/Status")
+	if err == nil && (statusResp.StatusCode == http.StatusOK || statusResp.StatusCode == http.StatusUnauthorized) {
+		statusResp.Body.Close()
+		c.JSON(http.StatusOK, gin.H{
+			"online":   true,
+			"counts":   counts,
+			"requests": []interface{}{},
+		})
+		return
+	}
+	if statusResp != nil {
+		statusResp.Body.Close()
+	}
+
+	// 2. Fallback check Seerr on port 5055 if Ombi is not running
+	h.WidgetSeerr(c)
 }
 
 func (h *Handler) BeeperStatus(c *gin.Context) {

@@ -606,10 +606,26 @@ func NewAppManager() *AppManager {
 			ConfigPath:  "/etc/playit/playit.toml",
 		},
 		{
+			ID:           "mautrix",
+			Name:         "Mautrix Matrix Unified Chat",
+			Description:  "Self-hosted Matrix communication hub powered by Synapse homeserver, Sliding Sync proxy for Element X, and Mautrix bridges for WhatsApp, Discord, Instagram, and Signal.",
+			Tagline:      "Self-hosted Synapse homeserver & Mautrix bridges",
+			Category:     "network",
+			Package:      "matrix-synapse",
+			Unit:         "synapse.service",
+			Binary:       "synapse_homeserver",
+			Port:         8008,
+			Icon:         "matrix",
+			AccentColor:  "#00D26A",
+			ConfigPath:   "/etc/synapse/homeserver.yaml",
+			WebURL:       "/element/",
+			ClientAppURL: "https://element.io/download",
+		},
+		{
 			ID:          "beeper",
 			Name:        "Beeper Matrix Chat Bridges",
-			Description: "Self-hosted Matrix chat bridges connecting WhatsApp, Telegram, Signal, Discord, and iMessage.",
-			Tagline:     "Self-hosted multi-network Matrix chat bridges",
+			Description: "Beeper CLI bridge manager (bbctl) connecting chat networks to the Beeper cloud app.",
+			Tagline:     "Beeper cloud-orchestrated multi-network chat bridges",
 			Category:    "network",
 			Package:     "bbctl",
 			Unit:        "bbctl.service",
@@ -647,6 +663,20 @@ func NewAppManager() *AppManager {
 			Icon:        "syncthing",
 			AccentColor: "#0EA5E9",
 		},
+		{
+			ID:          "seerr",
+			Name:        "Seerr Media Requests",
+			Description: "Modern media request and discovery portal connected to Jellyfin, Radarr, and Sonarr.",
+			Tagline:     "Automated 1-click requests & approvals",
+			Category:    "media",
+			Package:     "seerr",
+			Unit:        "seerr.service",
+			Binary:      "seerr",
+			Port:        5055,
+			Icon:        "seerr",
+			AccentColor: "#8B5CF6",
+			ConfigPath:  "/var/lib/seerr/settings.json",
+		},
 	}
 
 	for _, d := range definitions {
@@ -654,21 +684,14 @@ func NewAppManager() *AppManager {
 		mgr.appOrder = append(mgr.appOrder, d.ID)
 	}
 
-	// Backward compatibility alias for seerr -> ombi
-	if ombiApp, exists := mgr.apps["ombi"]; exists {
-		seerrAlias := ombiApp
-		seerrAlias.ID = "seerr"
-		mgr.apps["seerr"] = seerrAlias
-	}
-
 	packDefs := []AppliancePack{
 		{
-			ID:          "seerr-stack",
+			ID:          "ombi-stack",
 			Name:        "Ultimate Streaming & Servarr Stack",
 			Tagline:     "Zero-touch 4K/1080p streaming cloud with automated discovery",
 			Description: "Complete media automation stack featuring Jellyfin streaming server, Ombi discovery and user requests portal, Radarr & Sonarr automated indexers via Prowlarr, Bazarr subtitle synchronization, qBittorrent engine, and Pinchflat YouTube manager.",
 			Badge:       "STREAMING & MEDIA",
-			AccentColor: "#AA5CC3",
+			AccentColor: "#E37200",
 			Icon:        "ombi",
 			Apps:        []string{"jellyfin", "ombi", "radarr", "sonarr", "prowlarr", "bazarr", "qbittorrent", "pinchflat"},
 			Features: []string{
@@ -677,6 +700,24 @@ func NewAppManager() *AppManager {
 				"Prowlarr public trackers (YTS, Nyaa, TPB, LimeTorrents) linked",
 				"Bazarr multi-language subtitle automator connected",
 				"Ombi 1-click requests linked to Jellyfin & Servarrs (:5000)",
+				"Pinchflat automated YouTube manager with Jellyfin NFO tags (:8945)",
+			},
+		},
+		{
+			ID:          "seerr-stack",
+			Name:        "Ultimate Streaming Stack (Seerr Edition)",
+			Tagline:     "Alternate complete media stack featuring modern Seerr discovery portal",
+			Description: "Complete media automation stack featuring Jellyfin streaming server, Seerr (Jellyseerr) discovery and user requests portal, Radarr & Sonarr automated indexers via Prowlarr, Bazarr subtitle synchronization, qBittorrent engine, and Pinchflat YouTube manager.",
+			Badge:       "SEERR ALTERNATE",
+			AccentColor: "#8B5CF6",
+			Icon:        "seerr",
+			Apps:        []string{"jellyfin", "seerr", "radarr", "sonarr", "prowlarr", "bazarr", "qbittorrent", "pinchflat"},
+			Features: []string{
+				"Automated root libraries in /srv/media/{movies,shows,youtube}",
+				"qBittorrent client authenticated and synced (:8080)",
+				"Prowlarr public trackers (YTS, Nyaa, TPB, LimeTorrents) linked",
+				"Bazarr multi-language subtitle automator connected",
+				"Seerr 1-click requests linked to Jellyfin & Servarrs (:5055)",
 				"Pinchflat automated YouTube manager with Jellyfin NFO tags (:8945)",
 			},
 		},
@@ -809,6 +850,39 @@ func NewAppManager() *AppManager {
 				"Dedicated storage pools in /srv/storage/{shared,media,backups}",
 				"LZ4/Zstandard block compression active across LAN & Tailscale mesh",
 				"Instant client auto-pairing via curl http://<server>:8088/pair.sh | bash",
+			},
+		},
+		{
+			ID:          "mautrix-suite",
+			Name:        "Mautrix Matrix Unified Chat Stack",
+			Tagline:     "Self-hosted Synapse homeserver, Sliding Sync & Mautrix bridges",
+			Description: "Complete private communication ecosystem: Synapse Matrix homeserver, MSC3575 Sliding Sync proxy for real-time Element X mobile messaging, and native Mautrix bridges linking WhatsApp, Discord, Instagram, and Signal without third-party cloud intermediaries.",
+			Badge:       "MATRIX & CHAT",
+			AccentColor: "#00D26A",
+			Icon:        "matrix",
+			Apps:        []string{"mautrix"},
+			Features: []string{
+				"Synapse Matrix homeserver active on port :8008",
+				"Matrix Sliding Sync proxy (MSC3575) active for Element X mobile",
+				"Native Mautrix WhatsApp, Discord, Instagram, and Signal bridges",
+				"Built-in Element Web client accessible on /element/",
+				"Zero dependency on third-party cloud bridge providers",
+			},
+		},
+		{
+			ID:          "beeper-suite",
+			Name:        "Beeper Matrix Bridge Stack",
+			Tagline:     "Beeper cloud-orchestrated multi-network bridge manager",
+			Description: "Self-hosted bridge management layer using the official Beeper CLI (bbctl) to bridge WhatsApp, Telegram, Signal, Discord, and Google Messages to the Beeper cloud app.",
+			Badge:       "BEEPER & CLOUD",
+			AccentColor: "#F43F5E",
+			Icon:        "beeper",
+			Apps:        []string{"beeper"},
+			Features: []string{
+				"Official bbctl CLI bridge manager daemon",
+				"Multi-account bridge management in ~/.config/bbctl",
+				"Full compatibility with Beeper Desktop, Android, and iOS apps",
+				"Cloud push notifications and cross-device sync via Beeper network",
 			},
 		},
 	}
@@ -1939,6 +2013,15 @@ func (m *AppManager) installUnlocked(id string) error {
 	case "sonarr":
 		m.AppendLog(id, "info", "Downloading official Sonarr Linux x64 Servarr release...")
 		installErr = installSonarr(m)
+	case "mautrix":
+		cleanStalePacmanLock()
+		m.AppendLog(id, "info", "Installing Matrix Synapse homeserver...")
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+		defer cancel()
+		installErr = m.runStreamCmd(ctx, id, "pacman", "-S", "--noconfirm", "--needed", "matrix-synapse")
+		if installErr == nil {
+			_ = m.runStreamCmd(ctx, id, "systemctl", "enable", "--now", "synapse.service")
+		}
 	case "beeper":
 		m.AppendLog(id, "info", "Fetching official Beeper Bridge Manager (bbctl) release from GitHub...")
 		installErr = installBeeper(m)
@@ -2116,7 +2199,7 @@ func (m *AppManager) configurePackUnlocked(id string) error {
 	m.AppendLog(id, "command", fmt.Sprintf(">>> Running configuration engine for %s...", pack.Name))
 
 	switch id {
-	case "seerr-stack", "streaming":
+	case "ombi-stack", "seerr-stack", "streaming":
 		scriptPaths := []string{
 			"/usr/local/bin/tinapple-configure-seerr",
 			"/mnt/shared/projects/tinapple/scripts/tinapple-configure-seerr",
@@ -2265,6 +2348,23 @@ func (m *AppManager) configurePackUnlocked(id string) error {
 		m.AppendLog(id, "info", "[✓] Samba SMB shares enabled (accessible at \\\\<server>\\shared without SSH)")
 		m.AppendLog(id, "info", "[✓] Syncthing continuous peer-to-peer sync engine active (:8384)")
 		m.AppendLog(id, "info", "[✓] FileBrowser Quantum web management active (:8082)")
+
+	case "mautrix-suite":
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+		defer cancel()
+		for _, u := range []string{"synapse", "matrix-sliding-sync", "mautrix-whatsapp", "mautrix-discord", "mautrix-instagram", "mautrix-signal"} {
+			_ = exec.CommandContext(ctx, "systemctl", "restart", u).Run()
+		}
+		m.AppendLog(id, "info", "[✓] Matrix Synapse homeserver active on port 8008")
+		m.AppendLog(id, "info", "[✓] Matrix Sliding Sync proxy (MSC3575) active on port 8009")
+		m.AppendLog(id, "info", "[✓] Native Mautrix bridges (WhatsApp, Discord, Instagram, Signal) active")
+		m.AppendLog(id, "info", "[✓] Element Web client accessible on /element/")
+
+	case "beeper-suite":
+		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
+		defer cancel()
+		_ = exec.CommandContext(ctx, "systemctl", "restart", "bbctl").Run()
+		m.AppendLog(id, "info", "[✓] Beeper CLI bridge manager (bbctl) active")
 	}
 
 	m.AppendLog(id, "success", fmt.Sprintf("SUCCESS: %s is 100%% configured, synchronized, and operational!", pack.Name))
@@ -2335,24 +2435,30 @@ func (m *AppManager) Uninstall(id string) error {
 	switch id {
 	case "playit":
 		_ = os.Remove("/usr/local/bin/playit")
+		_ = os.Remove("/usr/bin/playit")
 		_ = os.Remove("/etc/systemd/system/playit.service")
 	case "filebrowser":
 		_ = os.Remove("/usr/local/bin/filebrowser")
+		_ = os.Remove("/usr/bin/filebrowser")
 		_ = os.Remove("/etc/systemd/system/filebrowser.service")
 	case "minecraft":
 		_ = os.Remove("/usr/local/bin/minecraft-server")
+		_ = os.Remove("/usr/bin/minecraft-server")
 		_ = os.Remove("/etc/systemd/system/minecraft-server.service")
 	case "prowlarr":
 		_ = os.RemoveAll("/opt/Prowlarr")
 		_ = os.Remove("/usr/local/bin/prowlarr")
+		_ = os.Remove("/usr/bin/prowlarr")
 		_ = os.Remove("/etc/systemd/system/prowlarr.service")
 	case "radarr":
 		_ = os.RemoveAll("/opt/Radarr")
 		_ = os.Remove("/usr/local/bin/radarr")
+		_ = os.Remove("/usr/bin/radarr")
 		_ = os.Remove("/etc/systemd/system/radarr.service")
 	case "sonarr":
 		_ = os.RemoveAll("/opt/Sonarr")
 		_ = os.Remove("/usr/local/bin/sonarr")
+		_ = os.Remove("/usr/bin/sonarr")
 		_ = os.Remove("/etc/systemd/system/sonarr.service")
 	case "homarr":
 		_ = exec.Command("systemctl", "disable", "--now", "homarr.service").Run()
@@ -2371,6 +2477,9 @@ func (m *AppManager) Uninstall(id string) error {
 		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 		defer cancel()
 		_ = exec.CommandContext(ctx, "pacman", "-R", "--noconfirm", "proton-vpn-cli", "proton-vpn-daemon").Run()
+	case "mautrix":
+		_ = exec.Command("systemctl", "disable", "--now", "synapse.service").Run()
+		_ = exec.Command("systemctl", "reset-failed", "synapse.service").Run()
 	case "beeper":
 		_ = exec.Command("systemctl", "disable", "--now", "bbctl.service").Run()
 		out, _ := exec.Command("systemctl", "list-units", "--type=service", "--state=running", "--no-legend", "bbctl@*").CombinedOutput()
@@ -2384,20 +2493,63 @@ func (m *AppManager) Uninstall(id string) error {
 		_ = os.Remove("/usr/local/bin/beeper")
 		_ = os.Remove("/etc/systemd/system/bbctl.service")
 		_ = os.Remove("/etc/systemd/system/bbctl@.service")
+	case "syncyomi":
+		_ = exec.Command("systemctl", "disable", "--now", "syncyomi.service").Run()
+		_ = exec.Command("systemctl", "reset-failed", "syncyomi.service").Run()
+		_ = os.Remove("/usr/local/bin/syncyomi")
+		_ = os.Remove("/usr/bin/syncyomi")
+		_ = os.Remove("/etc/systemd/system/syncyomi.service")
+		_ = os.RemoveAll("/etc/systemd/system/syncyomi.service.d")
+		cleanStalePacmanLock()
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+		defer cancel()
+		for _, pkg := range []string{"syncyomi", "syncyomi-bin"} {
+			if err := exec.Command("pacman", "-Q", pkg).Run(); err == nil {
+				_ = exec.CommandContext(ctx, "pacman", "-R", "--noconfirm", pkg).Run()
+			}
+		}
 	default:
 		if app.Package != "" {
 			cleanStalePacmanLock()
 			ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 			defer cancel()
-			cmd := exec.CommandContext(ctx, "pacman", "-R", "--noconfirm", app.Package)
-			out, err := cmd.CombinedOutput()
-			if err != nil {
-				return fmt.Errorf("pacman uninstall failed for %s: %s (%w)", app.Package, string(out), err)
+			pkgsToTry := []string{app.Package}
+			if strings.HasSuffix(app.Package, "-bin") {
+				pkgsToTry = append(pkgsToTry, strings.TrimSuffix(app.Package, "-bin"))
+			} else {
+				pkgsToTry = append(pkgsToTry, app.Package+"-bin")
+			}
+			for _, pkg := range pkgsToTry {
+				if err := exec.Command("pacman", "-Q", pkg).Run(); err == nil {
+					cmd := exec.CommandContext(ctx, "pacman", "-R", "--noconfirm", pkg)
+					if out, err := cmd.CombinedOutput(); err != nil {
+						fmt.Fprintf(os.Stderr, "[apps] Warning: pacman uninstall failed for %s: %s (%v)\n", pkg, string(out), err)
+					}
+				}
 			}
 		}
 	}
 
+	// Clean up custom unit file from /etc/systemd/system/ if present
+	if app.Unit != "" {
+		customUnit := filepath.Join("/etc/systemd/system", app.Unit)
+		if _, err := os.Stat(customUnit); err == nil {
+			_ = os.Remove(customUnit)
+			_ = os.RemoveAll(customUnit + ".d")
+		}
+		_ = exec.Command("systemctl", "reset-failed", app.Unit).Run()
+	}
+
+	// Clean up local binary from /usr/local/bin/ if present
+	if app.Binary != "" && !filepath.IsAbs(app.Binary) {
+		_ = os.Remove(filepath.Join("/usr/local/bin", app.Binary))
+	}
+
 	_ = exec.Command("systemctl", "daemon-reload").Run()
+	_ = exec.Command("systemctl", "reset-failed").Run()
+	m.cacheMu.Lock()
+	m.cachedAt = time.Time{}
+	m.cacheMu.Unlock()
 	return m.refreshProxyRoutes()
 }
 
@@ -2458,6 +2610,11 @@ func (m *AppManager) Start(id string) error {
 	if err != nil {
 		return fmt.Errorf("start failed: %s (%w)", string(out), err)
 	}
+	if id == "mautrix" {
+		for _, u := range []string{"matrix-sliding-sync", "mautrix-whatsapp", "mautrix-discord", "mautrix-instagram", "mautrix-signal"} {
+			_ = exec.CommandContext(ctx, "systemctl", "start", u).Run()
+		}
+	}
 	return m.refreshProxyRoutes()
 }
 
@@ -2477,6 +2634,11 @@ func (m *AppManager) Stop(id string) error {
 	if err != nil {
 		return fmt.Errorf("stop failed: %s (%w)", string(out), err)
 	}
+	if id == "mautrix" {
+		for _, u := range []string{"matrix-sliding-sync", "mautrix-whatsapp", "mautrix-discord", "mautrix-instagram", "mautrix-signal"} {
+			_ = exec.CommandContext(ctx, "systemctl", "stop", u).Run()
+		}
+	}
 	return m.refreshProxyRoutes()
 }
 
@@ -2495,6 +2657,11 @@ func (m *AppManager) Restart(id string) error {
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("restart failed: %s (%w)", string(out), err)
+	}
+	if id == "mautrix" {
+		for _, u := range []string{"matrix-sliding-sync", "mautrix-whatsapp", "mautrix-discord", "mautrix-instagram", "mautrix-signal"} {
+			_ = exec.CommandContext(ctx, "systemctl", "restart", u).Run()
+		}
 	}
 	return m.refreshProxyRoutes()
 }
@@ -2681,8 +2848,8 @@ func (m *AppManager) refreshProxyRoutes() error {
 	cmd.Stdin = bytes.NewReader(data)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "[apps] Warning: proxy refresh failed: %s (%v)\n", string(out), err)
-		return fmt.Errorf("proxy refresh failed: %s (%w)", string(out), err)
+		fmt.Fprintf(os.Stderr, "[apps] Warning: proxy refresh notice: %s (%v)\n", string(out), err)
+		// Non-fatal notice: proxy sync notice should not fail the lifecycle action
 	}
 	return nil
 }

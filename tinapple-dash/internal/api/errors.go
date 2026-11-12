@@ -122,6 +122,10 @@ func (h *Handler) GetSystemErrors(c *gin.Context) {
 				continue
 			}
 			parts := strings.Fields(l)
+			// Strip bullet or status symbols (●, *, ×, etc.) from systemctl output
+			for len(parts) > 0 && !strings.Contains(parts[0], ".") {
+				parts = parts[1:]
+			}
 			if len(parts) >= 4 {
 				unitName := parts[0]
 				desc := strings.Join(parts[4:], " ")
