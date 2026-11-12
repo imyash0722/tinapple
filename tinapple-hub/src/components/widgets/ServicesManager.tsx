@@ -20,6 +20,7 @@ import HoldButton from '../reactbits/HoldButton';
 import { ServiceInfo } from '../../types/api';
 import { getServiceHost, getServiceUrl } from '../../services/api';
 import { AppBrandIcon } from '../common/AppBrandIcons';
+import { getPlatformAppTarget } from '../../utils/platformAppLinks';
 
 interface ServicesManagerProps {
   services: ServiceInfo[];
@@ -298,7 +299,8 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({
 
                   {/* Service Metadata: Port & RAM with Clickable Link */}
                   {(() => {
-                    const displayPort = service.name.toLowerCase().replace(/\.service$/, '').replace(/@.*$/, '') === 'ombi' ? 5055 : service.port;
+                    const sName = service.name.toLowerCase().replace(/\.service$/, '').replace(/@.*$/, '');
+                    const displayPort = sName === 'ombi' ? 5000 : ((sName === 'seerr' || sName === 'jellyseerr') ? 5055 : service.port);
                     return (
                       <div className="flex items-center gap-3 my-3 text-[11px] font-sans tabular-nums text-tinapple-muted">
                         {displayPort ? (
@@ -344,17 +346,21 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({
                         <span>Open</span>
                       </a>
                     )}
-                    {(service.name === 'suwayomi' || service.name === 'suwayomi-server') && (
-                      <a
-                        href="/download/tsumiru"
-                        download="tsumiru-client.apk"
-                        className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium bg-surface-container-highest hover:bg-surface-container-high border border-outline-variant text-on-surface transition-colors active:scale-95"
-                        title="Download Tsumiru Android APK for your phone (Connects via :4567)"
-                      >
-                        <Smartphone className="w-3.5 h-3.5 text-primary" />
-                        <span>Phone APK</span>
-                      </a>
-                    )}
+                    {/* Smart Platform App Deep-Link (Android / iOS app launcher, e.g. Tsumiru, Navic) */}
+                    {(() => {
+                      const appTarget = getPlatformAppTarget(service.name, serviceUrl);
+                      if (!appTarget) return null;
+                      return (
+                        <a
+                          href={appTarget.appUrl}
+                          className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium bg-surface-container-highest hover:bg-surface-container-high border border-outline-variant text-on-surface transition-colors active:scale-95"
+                          title={appTarget.title}
+                        >
+                          <Smartphone className="w-3.5 h-3.5 text-primary" />
+                          <span>{appTarget.label}</span>
+                        </a>
+                      );
+                    })()}
                     {isActive ? (
                       <>
                         <button
@@ -398,6 +404,8 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({
                             suwayomi: 'syncyomi',
                             'suwayomi-server': 'syncyomi',
                             syncyomi: 'syncyomi',
+                            mautrix: 'mautrix',
+                            matrix: 'mautrix',
                             beeper: 'beeper',
                             vaultwarden: 'vaultwarden',
                             syncthing: 'syncthing',
@@ -519,7 +527,8 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({
                     <td className="px-4 py-3 capitalize text-primary">{service.category}</td>
                     <td className="px-4 py-3 text-primary font-semibold">
                       {(() => {
-                        const displayPort = service.name.toLowerCase().replace(/\.service$/, '').replace(/@.*$/, '') === 'ombi' ? 5055 : service.port;
+                        const sName = service.name.toLowerCase().replace(/\.service$/, '').replace(/@.*$/, '');
+                        const displayPort = sName === 'ombi' ? 5000 : ((sName === 'seerr' || sName === 'jellyseerr') ? 5055 : service.port);
                         return displayPort ? (
                           serviceUrl && isActive ? (
                             <a

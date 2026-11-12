@@ -211,6 +211,16 @@ h1, h2, h3, h4 { font-family: 'Roboto Flex Variable', 'Google Sans', system-ui, 
 .m3-dock { background: var(--md-sys-color-surface-container-high) !important; border-radius: 9999px; }
 .appearance-drawer { background: var(--md-sys-color-surface-container-high); border-radius: 28px 0 0 28px; }
 .appearance-drawer::backdrop { background: rgb(0 0 0 / .6); }
+
+/* Sidebar & Navigation Drawer - Opaque Surface Guarantee (Immune to theme opacity) */
+.tinapple-sidebar-drawer,
+.tinapple-sidebar-fixed {
+  background-color: var(--md-sys-color-surface-container-high, #0d131f) !important;
+  background: var(--md-sys-color-surface-container-high, #0d131f) !important;
+  --tw-bg-opacity: 1 !important;
+  opacity: 1 !important;
+  box-shadow: 4px 0 32px -4px rgba(0, 0, 0, 0.6) !important;
+}
 .m3-button { min-height: 40px; border-radius: 999px; padding: 8px 16px; font: 500 14px/20px 'Roboto Flex Variable', sans-serif; }
 .m3-button-filled { background: var(--md-sys-color-primary); color: var(--md-sys-color-on-primary); }
 .m3-button-tonal { background: var(--md-sys-color-secondary-container); color: var(--md-sys-color-on-secondary-container); }

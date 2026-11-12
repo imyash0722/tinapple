@@ -176,11 +176,11 @@ export const UpdateNotificationToast: React.FC<UpdateNotificationToastProps> = (
   return (
     <AnimatePresence>
       <motion.div
-        initial={{ opacity: 0, y: -40, scale: 0.95 }}
+        initial={{ opacity: 0, y: 30, scale: 0.95 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={{ opacity: 0, y: -30, scale: 0.95 }}
+        exit={{ opacity: 0, y: 20, scale: 0.95 }}
         transition={{ duration: 0.3, ease: 'easeOut' }}
-        className="fixed top-4 left-1/2 -translate-x-1/2 z-50 max-w-lg w-[92vw] sm:w-full font-sans select-none"
+        className="fixed bottom-6 right-6 z-50 max-w-md w-[92vw] sm:w-full font-sans select-none"
       >
         <div className="relative rounded-2xl bg-slate-900/95 border border-cyan-400/40 p-3 sm:p-4 shadow-2xl shadow-cyan-950/80 backdrop-blur-3xl overflow-hidden text-xs">
           {/* Subtle accent glow */}

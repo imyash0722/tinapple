@@ -871,7 +871,7 @@ export const AppearanceModal: React.FC<AppearanceModalProps> = ({
             <h3 id="sidebar-heading" className="text-xs font-mono uppercase tracking-wider text-zinc-400">
               Sidebar & Navigation Layout
             </h3>
-            <div className="rounded-2xl bg-white/[0.03] border border-white/10 p-4 space-y-4">
+            <div className="rounded-2xl bg-white/[0.03] border border-white/10 p-4">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <span className="block text-xs font-mono font-bold text-white">Auto-Hide Left Sidebar</span>
@@ -889,51 +889,6 @@ export const AppearanceModal: React.FC<AppearanceModalProps> = ({
                   }}
                   title="Toggle Sidebar Auto-Hide Mode"
                 />
-              </div>
-
-              {/* Mode Segmented Controls & Instant Toggle Button */}
-              <div className="pt-2 border-t border-white/[0.08] flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
-                <div className="grid grid-cols-2 gap-2 flex-1">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      update({ sidebarAutohide: false });
-                      if (onToggleSidebarPinned && !isSidebarPinned) onToggleSidebarPinned();
-                    }}
-                    className={`px-3 py-2 rounded-xl text-xs font-mono font-bold border transition-all text-center flex items-center justify-center gap-1.5 ${
-                      !settings.sidebarAutohide
-                        ? 'border-tinapple-gold/70 bg-tinapple-gold/15 text-tinapple-gold shadow-sm'
-                        : 'border-white/10 bg-white/[0.03] text-zinc-400 hover:text-white'
-                    }`}
-                  >
-                    <span>📌 Pinned (Always Open)</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      update({ sidebarAutohide: true });
-                      if (onToggleSidebarPinned && isSidebarPinned) onToggleSidebarPinned();
-                    }}
-                    className={`px-3 py-2 rounded-xl text-xs font-mono font-bold border transition-all text-center flex items-center justify-center gap-1.5 ${
-                      settings.sidebarAutohide
-                        ? 'border-tinapple-gold/70 bg-tinapple-gold/15 text-tinapple-gold shadow-sm'
-                        : 'border-white/10 bg-white/[0.03] text-zinc-400 hover:text-white'
-                    }`}
-                  >
-                    <span>⚡ Auto-Hide (Hover Edge)</span>
-                  </button>
-                </div>
-
-                {onToggleSidebarDrawer && (
-                  <button
-                    type="button"
-                    onClick={onToggleSidebarDrawer}
-                    className="px-3.5 py-2 rounded-xl bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/30 text-sky-300 font-mono text-xs font-bold transition-all shrink-0 active:scale-95"
-                    title="Instantly Show or Hide Sidebar Drawer"
-                  >
-                    Toggle Sidebar Drawer
-                  </button>
-                )}
               </div>
             </div>
           </section>

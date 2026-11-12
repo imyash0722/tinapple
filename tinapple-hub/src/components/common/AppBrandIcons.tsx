@@ -228,14 +228,14 @@ export const APP_BRAND_CONFIG: Record<string, BrandConfig> = {
     accentColor: '#E37200',
   },
   seerr: {
-    name: 'Ombi',
-    iconPath: '/icons/ombi.svg',
-    accentColor: '#E37200',
+    name: 'Seerr',
+    iconPath: '/icons/seerr.svg',
+    accentColor: '#8B5CF6',
   },
   jellyseerr: {
-    name: 'Ombi',
-    iconPath: '/icons/ombi.svg',
-    accentColor: '#E37200',
+    name: 'Jellyseerr',
+    iconPath: '/icons/seerr.svg',
+    accentColor: '#8B5CF6',
   },
   jdownloader: {
     name: 'JDownloader',

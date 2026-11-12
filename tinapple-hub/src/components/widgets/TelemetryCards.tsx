@@ -34,13 +34,28 @@ export const TelemetryCards: React.FC<TelemetryCardsProps> = ({ telemetry, syste
     return `${bytesSec.toFixed(2)} B/s`;
   };
 
-  const numCores = telemetry.cpu.cores?.length || 16;
-  // Generate simulated dynamic core loads for the 16 cores visualizer matrix
+  const numCores = typeof telemetry.cpu.cores === 'number' ? telemetry.cpu.cores : (telemetry.cpu.cores?.length || 4);
+  // Generate simulated dynamic core loads for visualizer minilets
   const coreLoads = Array.from({ length: numCores }, (_, i) => {
-    const base = telemetry.cpu.usagePercent;
+    const base = telemetry.cpu.usagePercent || 5;
     const offset = Math.sin(i * 1.5 + Date.now() * 0.002) * 12;
     return Math.max(3, Math.min(98, base + offset));
   });
+
+  const coreHistoriesRef = useRef<number[][]>([]);
+  if (coreHistoriesRef.current.length !== numCores) {
+    coreHistoriesRef.current = Array.from({ length: numCores }, () =>
+      Array.from({ length: 12 }, () => Math.max(3, telemetry.cpu.usagePercent || 5))
+    );
+  }
+  useEffect(() => {
+    coreLoads.forEach((load, idx) => {
+      const hist = coreHistoriesRef.current[idx] || [];
+      hist.push(load);
+      if (hist.length > 16) hist.shift();
+      coreHistoriesRef.current[idx] = hist;
+    });
+  }, [telemetry.cpu.usagePercent, numCores]);
 
   return (
     <div className="space-y-5">
@@ -67,11 +82,11 @@ export const TelemetryCards: React.FC<TelemetryCardsProps> = ({ telemetry, syste
                       </span>
                     </div>
                     <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-surface-container-highest text-primary border border-outline-variant font-sans">
-                      x86-64-v4 BORE
+                      {systemInfo?.kernel?.includes('aarch64') ? 'aarch64' : 'x86_64'}
                     </span>
                   </div>
                   <p className="text-xs text-on-surface-variant font-sans truncate max-w-sm mt-0.5">
-                    {telemetry.cpu.modelName || 'AMD Ryzen 7 7840HS w/ Radeon 780M'}
+                    {telemetry.cpu.modelName || 'Multi-Core Processor'}
                   </p>
                 </div>
               </div>
@@ -108,32 +123,43 @@ export const TelemetryCards: React.FC<TelemetryCardsProps> = ({ telemetry, syste
               </div>
             </div>
 
-            {/* 16-Core Activity Matrix Bars */}
+            {/* Logical Core Activity Minilets */}
             <div className="pt-4 border-t border-outline-variant">
-              <div className="flex justify-between items-center mb-2 text-[11px] font-sans text-on-surface-variant uppercase tracking-wider">
-                <span>Logical Core Utilization Matrix (C0 - C{numCores - 1})</span>
-                <span className="text-primary font-medium">amd_pstate: active</span>
+              <div className="flex justify-between items-center mb-2.5 text-[11px] font-sans text-on-surface-variant uppercase tracking-wider">
+                <span>Logical Core Minilets (C0 - C{numCores - 1})</span>
+                <span className="text-primary font-medium text-[10px]">
+                  {telemetry.cpu.modelName?.includes('Intel') ? 'intel_cpufreq: active' : 'Dynamic Scaling: Active'}
+                </span>
               </div>
-              <div className="grid grid-cols-8 sm:grid-cols-16 gap-1.5">
+              <div className={`grid gap-2 ${numCores <= 4 ? 'grid-cols-2 sm:grid-cols-4' : numCores <= 8 ? 'grid-cols-4 sm:grid-cols-8' : 'grid-cols-4 sm:grid-cols-8 lg:grid-cols-16'}`}>
                 {coreLoads.map((load, idx) => (
-                  <div key={idx} className="flex flex-col items-center gap-1">
-                    <div className="w-full h-10 rounded-[6px] bg-surface-container-highest border border-outline-variant p-0.5 flex flex-col justify-end overflow-hidden">
-                      <div
-                        className="w-full rounded-[4px] transition-all duration-300"
+                  <div
+                    key={idx}
+                    className="p-2 rounded-xl bg-surface-container-highest/60 border border-outline-variant/60 flex flex-col justify-between"
+                  >
+                    <div className="flex items-center justify-between text-[10px] font-sans mb-1">
+                      <span className="font-mono font-bold text-on-surface-variant">C{idx}</span>
+                      <span
+                        className="font-mono font-semibold"
                         style={{
-                          height: `${load}%`,
-                          backgroundColor:
+                          color:
                             load > 80
                               ? '#f87171'
                               : load > 50
                               ? accentColor
-                              : secondaryColor,
+                              : 'inherit',
                         }}
+                      >
+                        {load.toFixed(0)}%
+                      </span>
+                    </div>
+                    <div className="w-full h-[22px] flex items-end overflow-hidden">
+                      <MiniCoreSparkline
+                        data={coreHistoriesRef.current[idx] || [load, load]}
+                        strokeColor={load > 80 ? '#f87171' : accentColor}
+                        fillColor={`${load > 80 ? '#f87171' : accentColor}22`}
                       />
                     </div>
-                    <span className="text-[9px] font-sans text-on-surface-variant">
-                      {idx}
-                    </span>
                   </div>
                 ))}
               </div>
@@ -375,6 +401,65 @@ export const TelemetryCards: React.FC<TelemetryCardsProps> = ({ telemetry, syste
       </div>
     </div>
   );
+};
+
+// Mini Core Sparkline for per-core minilets
+interface MiniCoreSparklineProps {
+  data: number[];
+  strokeColor: string;
+  fillColor: string;
+}
+
+const MiniCoreSparkline: React.FC<MiniCoreSparklineProps> = ({ data, strokeColor, fillColor }) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const width = (canvas.width = canvas.parentElement?.clientWidth || 80);
+    const height = (canvas.height = 22);
+
+    ctx.clearRect(0, 0, width, height);
+    if (!data || data.length < 2) {
+      // Draw flat baseline
+      ctx.beginPath();
+      ctx.moveTo(0, height - 2);
+      ctx.lineTo(width, height - 2);
+      ctx.strokeStyle = strokeColor;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      return;
+    }
+
+    const maxVal = 100;
+    const minVal = 0;
+    const range = maxVal - minVal || 1;
+    const stepX = width / (data.length - 1);
+
+    ctx.beginPath();
+    ctx.moveTo(0, height - ((data[0] - minVal) / range) * (height - 4) - 2);
+
+    for (let i = 1; i < data.length; i++) {
+      const x = i * stepX;
+      const y = height - ((data[i] - minVal) / range) * (height - 4) - 2;
+      ctx.lineTo(x, y);
+    }
+
+    ctx.strokeStyle = strokeColor;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    ctx.lineTo(width, height);
+    ctx.lineTo(0, height);
+    ctx.closePath();
+    ctx.fillStyle = fillColor;
+    ctx.fill();
+  }, [data, strokeColor, fillColor]);
+
+  return <canvas ref={canvasRef} className="w-full block" style={{ height: 22 }} />;
 };
 
 // Canvas Sparkline component

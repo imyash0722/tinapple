@@ -765,7 +765,8 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
       {/* A. DESKTOP FIXED SIDEBAR (Hidden on all tabs by default, shown only if pinned by user) */}
       {isSidebarPinned && (
         <aside
-          className={`hidden md:flex flex-col fixed top-0 bottom-0 left-0 z-30 bg-surface-container-low border-r border-outline-variant shadow-none transition-all duration-300 ${
+          style={{ backgroundColor: 'var(--md-sys-color-surface-container-high, #0d131f)' }}
+          className={`hidden md:flex flex-col fixed top-0 bottom-0 left-0 z-30 tinapple-sidebar-fixed bg-surface-container-high border-r border-outline-variant shadow-2xl transition-all duration-300 ${
             collapsed ? 'w-20' : 'w-64'
           }`}
         >
@@ -779,7 +780,7 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
           role="button"
           tabIndex={0}
           aria-label="Close navigation drawer"
-          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200 overscroll-contain select-none cursor-pointer"
+          className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md animate-in fade-in duration-200 overscroll-contain select-none cursor-pointer"
           onClick={() => {
             AndroidBridge.performHaptic('light');
             setMobileOpen(false);
@@ -800,7 +801,8 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
         onMouseLeave={handleDrawerMouseLeave}
         onTouchStart={handleDrawerTouchStart}
         onTouchEnd={handleDrawerTouchEnd}
-        className={`fixed inset-y-0 left-0 z-[51] w-72 max-w-[85vw] bg-surface-container-low border-r border-outline-variant shadow-2xl transition-transform duration-300 ease-out transform pt-[env(safe-area-inset-top,0px)] pb-[env(safe-area-inset-bottom,0px)] touch-pan-y overscroll-contain ${
+        style={{ backgroundColor: 'var(--md-sys-color-surface-container-high, #0d131f)' }}
+        className={`fixed inset-y-0 left-0 z-[51] w-72 max-w-[85vw] tinapple-sidebar-drawer bg-surface-container-high border-r border-outline-variant shadow-2xl transition-transform duration-300 ease-out transform pt-[env(safe-area-inset-top,0px)] pb-[env(safe-area-inset-bottom,0px)] touch-pan-y overscroll-contain ${
           mobileOpen ? 'translate-x-0' : '-translate-x-full'
         } ${isSidebarPinned ? 'md:hidden' : ''}`}
       >

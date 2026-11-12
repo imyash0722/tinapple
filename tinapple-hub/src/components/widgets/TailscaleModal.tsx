@@ -279,8 +279,8 @@ export const TailscaleModal: React.FC<TailscaleModalProps> = ({ isOpen, onClose 
                 )}
 
                 {primaryIP && (() => {
-                  const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
-                  const remoteDashUrl = isHttps ? 'https://tinapple-server.tail3dee69.ts.net' : `http://${primaryIP}:8088`;
+                  const dnsHost = selfNode?.dnsName ? selfNode.dnsName.replace(/\.$/, '') : 'pineapple-server.taildb42a2.ts.net';
+                  const remoteDashUrl = `https://${dnsHost}`;
                   return (
                     <div className="sm:col-span-2 p-3 rounded-xl bg-sky-500/10 border border-sky-500/25 flex items-center justify-between">
                       <div className="flex items-center gap-2">

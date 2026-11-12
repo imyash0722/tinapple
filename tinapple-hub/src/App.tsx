@@ -801,35 +801,42 @@ export const App: React.FC = () => {
               <div className="md:hidden flex items-center gap-2 min-w-0">
                 <Layers className="w-5 h-5 text-primary shrink-0" />
                 <span className="font-sans font-bold text-sm text-on-surface capitalize truncate max-w-[140px] sm:max-w-xs">
-                  {viewingAppId ? `${viewingAppId} Guide` : activeTab === 'store' ? 'App Store' : activeTab === 'guides' ? 'Guides' : activeTab === 'terminal' ? 'Terminal' : activeTab === 'errors' ? 'Error Logger' : activeTab}
+                  {viewingAppId ? `${viewingAppId} Guide` : activeTab === 'dashboard' ? (systemInfo?.hostname || 'tinapple-server') : activeTab === 'store' ? 'App Store' : activeTab === 'guides' ? 'Guides' : activeTab === 'terminal' ? 'Terminal' : activeTab === 'errors' ? 'Error Logger' : activeTab}
                 </span>
               </div>
 
               {/* Desktop Page Title & Breadcrumb */}
               <div className="hidden md:flex items-center gap-2.5 min-w-0 shrink-0">
-                <span className="text-xs font-mono font-bold uppercase tracking-wider text-on-surface-variant shrink-0">Node</span>
-                <span className="text-xs text-outline shrink-0">/</span>
                 {viewingAppId ? (
                   <div className="flex items-center gap-2 min-w-0">
-                    <button onClick={handleCloseAppPage} className="text-sm font-sans text-on-surface-variant hover:text-on-surface transition-colors">
-                      Dashboard
+                    <button onClick={handleCloseAppPage} className="text-sm font-sans text-on-surface-variant hover:text-on-surface transition-colors font-medium">
+                      {systemInfo?.hostname || 'tinapple-server'}
                     </button>
                     <span className="text-xs text-outline">/</span>
                     <span className="text-sm font-sans font-semibold text-primary capitalize truncate">
                       {viewingAppId} App & Guide
                     </span>
                   </div>
+                ) : activeTab === 'dashboard' ? (
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <span className="text-sm font-sans font-bold text-on-surface tracking-tight">
+                      {systemInfo?.hostname || 'tinapple-server'}
+                    </span>
+                    <span className="hidden sm:inline-flex text-[10px] font-sans px-2.5 py-0.5 rounded-full bg-surface-container-highest border border-outline-variant text-primary font-medium whitespace-nowrap">
+                      {systemInfo?.sessionMode === 'headless' ? 'Headless Server' : 'Niri Desktop'}
+                    </span>
+                  </div>
                 ) : (
                   <div className="flex items-center gap-2 min-w-0">
-                    <button onClick={() => handleSelectTab('dashboard')} className="text-sm font-sans text-on-surface-variant hover:text-on-surface transition-colors">
-                      Dashboard
+                    <button onClick={() => handleSelectTab('dashboard')} className="text-sm font-sans text-on-surface-variant hover:text-on-surface transition-colors font-medium">
+                      {systemInfo?.hostname || 'tinapple-server'}
                     </button>
                     <span className="text-xs text-outline">/</span>
                     <span className="text-sm font-sans font-semibold text-on-surface capitalize truncate">
                       {activeTab === 'store' ? 'App Store & Packs' : activeTab === 'guides' ? 'Appliance Guides' : activeTab === 'terminal' ? 'Appliance Web Terminal' : activeTab === 'errors' ? 'Error Logger & AI Diagnostics' : activeTab}
                     </span>
                     <span className="hidden 2xl:inline-flex text-[10px] font-sans px-2.5 py-0.5 rounded-full bg-surface-container-highest border border-outline-variant text-primary font-medium whitespace-nowrap">
-                      {systemInfo.sessionMode === 'headless' ? 'Headless Server' : 'Niri Desktop'}
+                      {systemInfo?.sessionMode === 'headless' ? 'Headless Server' : 'Niri Desktop'}
                     </span>
                   </div>
                 )}
@@ -839,10 +846,25 @@ export const App: React.FC = () => {
             {/* Right: Live Telemetry Status & Quick Actions */}
             <div className="flex items-center justify-end gap-1.5 sm:gap-2 shrink-0">
               {/* Tailscale Port 443 SSL Status Chip */}
-              <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-container border border-outline-variant text-[11px] font-sans text-on-surface">
-                <Lock className="w-3.5 h-3.5 text-primary" />
-                <span className="hidden lg:inline">Tailscale HTTPS 443</span>
-              </div>
+              {typeof window !== 'undefined' && window.location.protocol === 'https:' ? (
+                <div
+                  className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-[11px] font-sans text-emerald-300"
+                  title="Encrypted connection verified by Let's Encrypt SSL (Port 443)"
+                >
+                  <Lock className="w-3.5 h-3.5 text-emerald-400" />
+                  <span className="hidden lg:inline">HTTPS Verified (Port 443)</span>
+                </div>
+              ) : (
+                <a
+                  href="https://pineapple-server.taildb42a2.ts.net"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-[11px] font-sans text-emerald-300 font-semibold transition-all shadow-sm active:scale-95 cursor-pointer"
+                  title="Switch from unencrypted HTTP (:8088) to trusted Let's Encrypt HTTPS (Port 443)"
+                >
+                  <Lock className="w-3.5 h-3.5 text-emerald-400" />
+                  <span className="hidden sm:inline">Switch to Secure HTTPS (443)</span>
+                  <span className="sm:hidden">HTTPS 443</span>
+                </a>
+              )}
 
               {/* Live SSE Pulse Chip */}
               <div className="hidden 2xl:flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface-container border border-outline-variant text-[11px] font-sans text-on-surface">
