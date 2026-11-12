@@ -41,12 +41,12 @@
 
 ## 3. Server Environment & Hardware Context
 
-- **Node Hostname**: `tinapple-server` (Dell Latitude 7300, i5-8265U, 7.6 GiB RAM)
+- **Node Hostname**: `pineapple-server` (Dell Latitude 7300, i5-8265U, 7.6 GiB RAM)
 - **OS**: Arch Linux x86_64 (`linux-lts` 6.18.60-1-lts)
 - **Local Network IP**: `192.168.1.103` (Wi-Fi `wlo1`, gateway `192.168.1.1`)
-- **Tailscale Tailnet IP**: `100.67.207.60` (`tinapple-server.tail3dee69.ts.net`)
-- **Public Tailscale Funnel**: `https://tinapple-server.tail3dee69.ts.net:8443` -> `http://127.0.0.1:4567` (Suwayomi, public user-managed access)
-- **Active Web Dashboard Port**: `:8088` (Reverse-proxied via Caddy under unit `tinapple-nginx.service`)
+- **Tailscale Tailnet IP**: `100.108.215.120` (`pineapple-server.taildb42a2.ts.net`)
+- **Tailscale HTTPS Domain**: `https://pineapple-server.taildb42a2.ts.net` (Trusted Let's Encrypt certificates managed by Caddy on port 443 with automated bi-monthly renewal via `caddy-tailscale-cert.timer`)
+- **Active Web Dashboard Port**: `:8088` (Reverse-proxied via Caddy on port 80/443 under unit `caddy.service`)
 - **Cloudflare WARP**: Disconnected, stopped, disabled, and masked (`warp-svc.service`)
 - **Connected ADB Target**: Google Pixel 10a at `100.111.180.87:5555`
 - **Android SDK Path**: `/opt/android-sdk` (build-tools `34.0.0`, `35.0.0`, platforms `android-35`)
@@ -81,6 +81,104 @@
 ---
 
 ## 5. Changelog & Active State Ledger
+
+### Maintenance (2026-11-12) | feat(hub/ui): polish navigation breadcrumbs, telemetry visuals, sidebar opacity, and platform app links
+- **Scope**: Polished frontend navigation breadcrumbs to dynamically display hostnames and session badges, made telemetry CPU visualizer robust against varying core counts and architectures, guaranteed 100% opaque surface backgrounds for the navigation drawer and sidebar to prevent theme opacity bleed-through, added smart deep-links for platform-specific client apps (Tsumiru Android APK / iOS), and repositioned update toasts.
+- **Key Changes**:
+  - **Breadcrumbs & Header**: Updated `App.tsx` breadcrumbs to render `systemInfo?.hostname` with active tab and session mode chips.
+  - **AppBrandIcons & Ports**: Decoupled `seerr` / `jellyseerr` icons back to independent purple `#8B5CF6` branding and aligned port definitions (Ombi `:5000`, Seerr `:5055`).
+  - **Platform App Links**: Implemented `getPlatformAppTarget` in `platformAppLinks.ts` and integrated into `ServicesManager.tsx` and `ChaddyStore.tsx` to provide platform-aware deep links for mobile clients.
+  - **Sidebar Opacity**: Added `.tinapple-sidebar-drawer` and `.tinapple-sidebar-fixed` CSS rules with `--tw-bg-opacity: 1 !important` ensuring sidebar surfaces remain fully opaque.
+  - **Telemetry Visualizer**: Made `TelemetryCards.tsx` dynamically adapt to CPU core counts and detect architecture (`aarch64` vs `x86_64`).
+
+### Maintenance (2026-11-12) | feat(proxy/ssl): enforce full HTTPS reverse proxy redirection, base URL alignment, and downstream SSL rewriting
+- **Scope**: Implemented universal reverse proxy redirection to the secure Let's Encrypt HTTPS domain (`https://pineapple-server.taildb42a2.ts.net`) across all appliance services (Jellyfin, Ombi, Radarr, Sonarr, Prowlarr, Pinchflat, qBittorrent, Suwayomi, Vaultwarden, Navidrome, Syncthing, AdGuard, Bazarr, and Element Web), preventing HTTP downgrades and eliminating raw port exposures.
+- **Root Cause & Fixes**:
+  - **Caddy Redir Syntax Bug**: In Caddy v2, `handle /service { redir /service/ permanent }` parsed the leading slash in `/service/` as an inline path matcher rather than the target URL, generating `match: /service/, Location: permanent` (302) which failed to redirect `/service` without a slash. Re-architected with top-level `redir /service /service/ permanent`.
+  - **Appliance Base URL Subpaths**:
+    - **Ombi**: Configured `--baseurl /ombi` via `/etc/systemd/system/ombi.service.d/baseurl.conf`, generating `<base href="/ombi/">` and enabling clean `/ombi/*` pass-through without root asset collisions.
+    - **Radarr, Sonarr, Prowlarr**: Set `<UrlBase>/<service></UrlBase>` in `/var/lib/{radarr,sonarr,prowlarr}/config.xml`, enabling native subpath asset routing.
+    - **Pinchflat**: Configured `-e BASE_ROUTE_PATH=/pinchflat` in `/etc/systemd/system/pinchflat.service` and switched Caddy to `handle_path /pinchflat/*`, resolving internal Phoenix router clashes and live websocket updates.
+  - **Downstream Location Rewriting**:
+    - Added `header_down Location "http://" "https://"` to all service reverse proxies, forcing any upstream backend redirects back to encrypted HTTPS.
+    - Added AdGuard regex header rewrite `header_down Location "^/([^/].*)$" "/adguard/$1"`, ensuring setup/login redirects stay bound inside `/adguard/`.
+  - **Backend Port 8088 Protection**:
+    - In `tinapple-dash/cmd/tinapple-dash/main.go`, updated `servicePortRedirects` to redirect any MagicDNS or HTTPS request with HTTP 301 to `https://pineapple-server.taildb42a2.ts.net/<prefix>/`, preventing fallback redirects to raw direct ports (`:5000`, `:7878`, `:8989`, `:8080`).
+  - **Frontend Subpath Priority**:
+    - In `serviceRegistry.ts`, restructured `getOpenUrl()` to unconditionally prioritize clean reverse proxy paths (`this.subpath`) over `directPortPreferred`, keeping client clicks on the trusted 443 SSL domain.
+    - Replaced obsolete Tailscale IP `100.67.207.60` with active `100.108.215.120` across `api.ts`, `serviceRegistry.ts`, `guidesCatalog.tsx`, `GuidesPage.tsx`, and `UnifiedAppPage.tsx`.
+
+### Maintenance (2026-11-12) | feat(routing/magicdns): route all MagicDNS and Tailscale ingress to secure Let's Encrypt HTTPS domain
+- **Scope**: Automated seamless redirection so all MagicDNS ingress paths (short name `pineapple-server`, full FQDN `pineapple-server.taildb42a2.ts.net`, legacy `tinapple-server`, and Tailscale CGNAT IPs `100.x.x.x`), across both HTTP port 80 and backend port 8088, permanently upgrade to the trusted Let's Encrypt HTTPS domain (`https://pineapple-server.taildb42a2.ts.net`).
+- **Key Changes**:
+  - **Caddy Reverse Proxy (`configs/caddy/Caddyfile`)**:
+    - Added `@magicdns` regex matcher on HTTP port 80 capturing `pineapple-server`, `tinapple-server`, `*.ts.net`, and `100.x.x.x` host requests.
+    - Configured automatic `301 Moved Permanently` redirect to `https://pineapple-server.taildb42a2.ts.net{uri}`.
+    - Preserved unredirected local LAN subnet access (`192.168.1.x`, `localhost`) for offline local access.
+  - **Backend Daemon Redirection (`tinapple-dash/cmd/tinapple-dash/main.go`)**:
+    - In `serveIndex` and `servicePortRedirects`, added `isMagicDNSHost` check. Direct browser access to `:8088` via MagicDNS or Tailscale IP now immediately redirects (HTTP 301) to `https://pineapple-server.taildb42a2.ts.net{uri}` while preserving `X-Forwarded-Proto: https` pass-through from Caddy and raw API endpoints for programmatic clients.
+
+### Maintenance (2026-11-12) | feat(chat): isolate Mautrix Matrix stack as primary, decommission Beeper from host to store catalog only
+- **Scope**: Re-architected chat messaging orchestration by decommissioning legacy Beeper CLI (`bbctl`) daemon and binary from host, validating native self-hosted Matrix Synapse homeserver and companion bridges (WhatsApp, Discord, Instagram, Signal, and Sliding Sync), and establishing two independent store packs: `mautrix-suite` (active primary, 1/1 installed & running) and `beeper-suite` (store catalog only, 0/1 installed).
+- **Key Changes**:
+  - **Host Server Decommissioning**:
+    - Stopped, disabled, and removed `bbctl.service`, `bbctl@.service`, and binary `/usr/local/bin/bbctl` from server.
+    - Verified all 6 native Matrix services active and running without errors: `synapse.service` (:8008), `matrix-sliding-sync.service` (:8009), `mautrix-whatsapp.service`, `mautrix-discord.service`, `mautrix-instagram.service`, and `mautrix-signal.service`.
+    - Executed `systemctl reset-failed` (0 failed units on host).
+  - **Backend Orchestration (`tinapple-dash/internal/services/apps.go`)**:
+    - Registered `mautrix` appliance (port 8008, unit `synapse.service`, binary `synapse_homeserver`, webUrl `/element/`, icon `matrix`, accent `#00D26A`).
+    - Added `mautrix-suite` pack ("Mautrix Matrix Unified Chat Stack") with `apps: ["mautrix"]`, icon `matrix`, accent `#00D26A`, badge `MATRIX & CHAT`.
+    - Added `beeper-suite` pack ("Beeper Matrix Bridge Stack") with `apps: ["beeper"]`, icon `beeper`, accent `#F43F5E`, badge `BEEPER & CLOUD`.
+    - Configured `configurePackUnlocked` to handle `mautrix-suite` and `beeper-suite`.
+    - Updated `Start`, `Stop`, and `Restart` methods to cascade across all 5 companion bridge units when `mautrix` is toggled.
+  - **Frontend Hub & Store Orchestration**:
+    - In `ChaddyStore.tsx`: Added `mautrix` to fallback apps, added `mautrix-suite` and `beeper-suite` to fallback packs, mapped guides in `packGuideMap` and app `guideMap`, and added direct quick-launch button for `Element Web (/element/)`.
+    - In `serviceRegistry.ts`: Registered `mautrix` (port 8008, subpath `/element/`, guide `mautrix`) and `beeper` under Network & Privacy.
+    - In `HomarrBoard.tsx`: Added `mautrix` to `CURATED_APPLIANCES` under Network & Privacy.
+    - In `api.ts`: Added `mautrix` and `matrix` port and subpath mappings (`/element/`).
+
+### Maintenance (2026-11-12) | fix(apps/uninstall): resolve package target mismatch and stdin EOF bug in app uninstallation
+- **Scope**: Diagnosed and resolved the root causes behind failed package uninstalls (specifically SyncYomi and manually installed/AUR daemons), where clicking uninstall resulted in a `FAILED` unit state instead of uninstallation.
+- **Root Cause & Fixes**:
+  - **Pacman Package Mismatch**: `syncyomi` and similar appliances are installed via script / binary releases rather than the standard Arch repo package `syncyomi`. `Uninstall` attempted `pacman -R --noconfirm syncyomi`, which errored with `target not found: syncyomi`, aborting before cleaning up `/etc/systemd/system/syncyomi.service` or `/usr/local/bin/syncyomi`. When `disable --now` ran, the daemon's exit code marked the lingering unit as `FAILED`.
+  - **Proxy Route Generator Stdin Race**: In `tinapple-config-generator/main.go`, `nginx-sync` sequentially invoked `syncCaddy` then `syncNginx` with `--catalog-stdin`. `syncCaddy` consumed `os.Stdin` entirely, causing `syncNginx` to encounter `EOF` and exit with 1, cascading a 500 error to all caller actions via `refreshProxyRoutes()`.
+  - **Comprehensive Cleanups**:
+    - Added dedicated uninstallation cleanup for `syncyomi` (removes binary from `/usr/local/bin/` & `/usr/bin/`, removes `/etc/systemd/system/syncyomi.service`, clears drop-ins, and cleans pacman packages only if `pacman -Q` reports them installed).
+    - Hardened generic app uninstallation to check `pacman -Q` before attempting removal, automatically strip custom `/etc/systemd/system/<unit>` files and local binaries, and execute `systemctl reset-failed` and `daemon-reload`.
+    - Updated `tinapple-config-generator/main.go` to buffer `--catalog-stdin` into shared catalog files so both Caddy and Nginx sync cleanly without stdin starvation.
+    - Added spinning `<Loader2 />` indicators to Store action buttons during uninstallation.
+
+### Maintenance (2026-11-12) | feat(packs): establish dual full streaming stacks (Ombi Primary 8/8 & Seerr Alternate 7/8 in App Store)
+- **Scope**: Re-architected appliance packs into two complete 8-component media automation stacks: the primary active stack featuring Ombi (active on host, 8/8 installed & running) and an optional alternate stack featuring Seerr (available in App Store, 7/8 installed, 1 remaining: Seerr).
+- **Key Changes**:
+  - **Appliance Pack Definitions (`tinapple-dash/internal/services/apps.go`)**:
+    - `ombi-stack` ("Ultimate Streaming & Servarr Stack"): Includes `jellyfin`, `ombi`, `radarr`, `sonarr`, `prowlarr`, `bazarr`, `qbittorrent`, and `pinchflat`. Features Ombi 1-click requests on port 5000. Verified active on host (8/8 installed & running).
+    - `seerr-stack` ("Ultimate Streaming Stack (Seerr Edition)"): Includes `jellyfin`, `seerr`, `radarr`, `sonarr`, `prowlarr`, `bazarr`, `qbittorrent`, and `pinchflat`. Features Seerr 1-click requests on port 5055. Displays in store as an alternative full pipeline (7/8 installed, 1 remaining: Seerr).
+    - Updated `configurePackUnlocked` switch to handle both `ombi-stack` and `seerr-stack`.
+  - **Store UI Orchestration (`tinapple-hub/src/components/widgets/ChaddyStore.tsx`)**:
+    - Updated `FALLBACK_PACKS` and pack action buttons to render both full stacks.
+    - Added dedicated service quick-action buttons for `ombi-stack` (`Ombi :5000` + `Jellyfin :8096`) and `seerr-stack` (`Seerr :5055` + `Jellyfin :8096`).
+    - Configured guide linking: `ombi-stack` maps to `ombi` guide, `seerr-stack` maps to `seerr` guide.
+
+### Maintenance (2026-11-12) | feat(services/mesh): isolate Ombi as primary stack pack, decouple Seerr to store pack, enable Tailscale SSH, and deploy trusted Caddy Tailscale SSL
+- **Scope**: Installed and started Ombi (`ombi-bin`, `ombi.service` on port 5000), removed Seerr from host to make Ombi the single active media request manager, separated Seerr into an independent optional pack in the App Store, enabled Tailscale SSH (`RunSSH: true`) with full exit-node IP forwarding, and established automated Let's Encrypt SSL via Caddy on port 443 for `pineapple-server.taildb42a2.ts.net` with automated bi-monthly renewal.
+- **Key Changes**:
+  - **Ombi Deployment & Servarr Integration**:
+    - Installed `aur/ombi-bin` (`4.53.10-1`) on server, enabled and started `ombi.service` running on `http://*:5000`.
+    - Updated Caddy reverse proxy on server (`/etc/caddy/Caddyfile`) and repo (`configs/caddy/Caddyfile`) to proxy `/ombi/*` to `localhost:5000`.
+    - Added dedicated Ombi guide in `guidesCatalog.tsx` with links to Jellyfin and mobile companion apps.
+  - **Seerr Decoupling & Host Cleanup**:
+    - Stopped, disabled, and uninstalled `seerr.service` (`seerr 3.5.0-1`) from server so it does not consume resources.
+    - Decoupled `seerr` from `ombi` alias in `apps.go`: added `seerr-portal` as an independent pack in `tinapple-dash` and `ChaddyStore.tsx` (reports `0/1 installed`), while the "Ultimate Streaming & Servarr Stack" features Ombi (reports `8/8 installed & running`).
+    - Updated Homarr board, widgets, launcher, and mobile dashboard view to feature Ombi on port 5000 (`/ombi`).
+  - **Tailscale SSH & Exit Node**:
+    - Enabled Tailscale SSH via `tailscale set --ssh` (`RunSSH: true`).
+    - Verified exit node advertisement (`0.0.0.0/0`, `::/0`) with kernel sysctl forwarding (`net.ipv4.ip_forward = 1`, `net.ipv6.conf.all.forwarding = 1`).
+  - **Caddy Tailscale Automated SSL**:
+    - Freed port 443 via `tailscale serve reset`.
+    - Generated trusted Let's Encrypt certificate for MagicDNS domain `pineapple-server.taildb42a2.ts.net` using `tailscale cert` into `/etc/caddy/certs/`.
+    - Configured Caddy with HTTPS site block on port 443 terminating TLS with standard Let's Encrypt certificate, automatically securing all reverse-proxied endpoints (`/`, `/ombi`, `/jellyfin`, `/suwayomi`, `/vault`, `/qbittorrent`, `/navidrome`, `/syncthing`, etc.) with zero browser security warnings.
+    - Installed `caddy-tailscale-cert.service` and `caddy-tailscale-cert.timer` running bi-monthly on the 1st and 15th to keep certificates renewed automatically.
 
 ### Maintenance (2026-11-11) | fix(manga): resolve Suwayomi manga source failures via Tor SOCKS5 proxy and FlareSolverr tunneling
 - **Scope**: Diagnosed root cause of recurring manga source errors in Suwayomi (`suwayomi-server.service`), configured local Tor SOCKS5 tunneling for both Suwayomi JVM and FlareSolverr Chromium containers, and verified chapter browsing and page downloads across all installed sources.
