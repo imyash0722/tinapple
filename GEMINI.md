@@ -82,6 +82,14 @@
 
 ## 5. Changelog & Active State Ledger
 
+### Maintenance (2026-11-14) | fix(music/playlists): deduplicate repeat playlists and sync missing albums in Navidrome
+- **Scope**: Diagnosed missing and duplicated playlists in Navidrome, purged 7 fragmented category playlists from `/srv/media/music/Playlists` that created overlapping repeat entries, generated missing `.m3u` playlists for completed batch downloads (`ALLLLLLLLLLLLLLL`, `BRAZILIAN PHONK 2024`, `Hip Hop Pop Rap Mix`, and `This Is Masala Coffee`), and audited Antra download queue rate limits.
+- **Key Changes**:
+  - **Deduplication**: Removed 7 redundant category sub-playlists (`Recognizable Piano Melodies`, `The Most Recognizable Melodies From The 2010s`, etc.) and consolidated them into the master `Favorite Recognizable Melodies` playlist (25 tracks).
+  - **Script Update**: Updated `tinapple-update-playlists` to prevent regenerating fragmented sub-playlists on future runs while automatically generating sorted `.m3u` files for all standalone playlist directories.
+  - **Navidrome Sync**: Scanned updated playlists into Navidrome (361 total tracks across 6 clean, non-overlapping playlists).
+  - **Queue Audit**: Confirmed all 14 Spotify / Apple Music playlists are tracked in `tinapple-music-queuer`. Documented Antra daily free-tier limits (100 tracks/day, 5 playlists/day) which caused later batches to pause on HTTP 429.
+
 ### Maintenance (2026-11-12) | feat(hub/ui): polish navigation breadcrumbs, telemetry visuals, sidebar opacity, and platform app links
 - **Scope**: Polished frontend navigation breadcrumbs to dynamically display hostnames and session badges, made telemetry CPU visualizer robust against varying core counts and architectures, guaranteed 100% opaque surface backgrounds for the navigation drawer and sidebar to prevent theme opacity bleed-through, added smart deep-links for platform-specific client apps (Tsumiru Android APK / iOS), and repositioned update toasts.
 - **Key Changes**:

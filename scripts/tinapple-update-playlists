@@ -121,24 +121,6 @@ def main():
                     f.write(f"Favorite Recognizable Melodies/{m['filename']}\n")
             print(f"✓ Generated Favorite Recognizable Melodies.m3u with {len(fav_meta)} sorted tracks.")
 
-            # Categorized Playlists
-            for cat_name, keywords in CATEGORIES.items():
-                matched = []
-                for m in fav_meta:
-                    search_str = f"{m['title']} {m['filename']}".lower()
-                    if any(kw.lower() in search_str for kw in keywords):
-                        matched.append(m)
-                # Sort matched tracks alphabetically by title
-                matched.sort(key=lambda x: x["title"].lower())
-                cat_m3u = os.path.join(BASE_DIR, f"{cat_name}.m3u")
-                with open(cat_m3u, "w", encoding="utf-8") as f:
-                    f.write("#EXTM3U\n")
-                    for m in matched:
-                        dur = m["duration"] or -1
-                        f.write(f"#EXTINF:{dur},{m['artist']} - {m['title']}\n")
-                        f.write(f"Favorite Recognizable Melodies/{m['filename']}\n")
-                print(f"✓ Generated {cat_name}.m3u with {len(matched)} sorted tracks.")
-
     # 3. Trigger Navidrome to scan updated playlists
     try:
         print("Scanning updated playlists into Navidrome...")
