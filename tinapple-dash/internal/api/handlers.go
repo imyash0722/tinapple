@@ -248,6 +248,10 @@ func SetupRoutes(r *gin.Engine, cfg *config.Manifest, svcMgr *services.SystemdMa
 		v1.GET("/system/errors", h.GetSystemErrors)
 		v1.POST("/system/errors/client", h.ReportClientError)
 		v1.POST("/system/errors/clear", h.ClearClientErrors)
+
+		// TMDb Image Caching Proxy Fast-Path
+		v1.GET("/tmdb-image/*filepath", ServeTmdbImage)
+		v1.HEAD("/tmdb-image/*filepath", ServeTmdbImage)
 		v1.GET("/ai/status", h.GetAIStatus)
 		v1.POST("/ai/test-key", h.TestAIKey)
 		v1.POST("/ai/analyze-error", h.AnalyzeErrorWithAI)

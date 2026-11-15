@@ -58,6 +58,13 @@ func main() {
 	// API routes
 	api.SetupRoutes(r, cfg, svcMgr, telemetryCollector)
 
+	// Direct TMDb Image Caching Proxy Fast-Path for Ombi Web & Native Clients
+	r.GET("/ombi-images/*filepath", api.ServeTmdbImage)
+	r.HEAD("/ombi-images/*filepath", api.ServeTmdbImage)
+
+	// Start Ombi Discover & Metadata Background Pre-Warmer
+	go api.StartOmbiWarmer(context.Background())
+
 	// Legacy reports proxy if port 8085 is running
 	tinarchyTarget, err := url.Parse("http://127.0.0.1:8085")
 	if err == nil {

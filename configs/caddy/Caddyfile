@@ -38,6 +38,12 @@
 		reverse_proxy localhost:8088
 	}
 
+	# 3b. Ombi & TMDb Image Cache Fast-Path (proxied through Privoxy/Tor and cached to disk on 8088)
+	handle /ombi-images/* {
+		header >Cache-Control "public, max-age=31536000, immutable"
+		reverse_proxy localhost:8088
+	}
+
 	# 4. Jellyfin Home Theater
 	redir /jellyfin /jellyfin/ permanent
 	handle_path /jellyfin/* {
