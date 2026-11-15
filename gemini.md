@@ -82,6 +82,14 @@
 
 ## 5. Changelog & Active State Ledger
 
+### Maintenance (2026-11-15) | fix(suwayomi/proxy): configure native webUISubpath and pass-through reverse proxy routing
+- **Scope**: Diagnosed blank dark screen (`#171923`) when accessing Suwayomi Manga Server via the HTTPS domain, resolved asset 404 collisions at domain root, configured native `server.webUISubpath = "/suwayomi"` in `server.conf`, and aligned Caddy reverse proxy routes.
+- **Root Cause & Fixes**:
+  - **Asset 404 Collisions**: Suwayomi had `server.webUISubpath = ""` (empty), causing it to emit `<base href="/">`. When accessed behind Caddy's `handle_path /suwayomi/*`, the browser attempted to load `./assets/index-*.js` and GraphQL endpoints directly from the domain root (`/assets/*` and `/api/*`), which clashed with `tinapple-dash` and returned 404s, leaving the React container empty.
+  - **Native Subpath Configuration**: Set `server.webUISubpath = "/suwayomi"` in `/var/lib/suwayomi/.local/share/Tachidesk/server.conf`. Suwayomi's `WebInterfaceManager` now dynamically injects `<base href="/suwayomi/">` and scopes all API, GraphQL, and static asset routes under `/suwayomi/*`.
+  - **Caddyfile Alignment**: In `configs/caddy/Caddyfile` and server `/etc/caddy/Caddyfile`, replaced `handle_path /suwayomi/*` with `handle /suwayomi/*` so requests preserve the `/suwayomi/` prefix when passed to Suwayomi daemon on `:4567`. Added fallback rewrite for legacy `/api/graphql*` requests.
+  - **Verification**: Verified clean HTTP/2 200 responses for WebUI HTML, JS/CSS bundles, and GraphQL API, with full browser rendering confirmed.
+
 ### Maintenance (2026-11-15) | fix(ombi/proxy): bypass campus DPI firewall via Privoxy-Tor bridge and resolve blank Angular UI
 - **Scope**: Diagnosed cause of blank dark screen (`#1e1e1e`) when accessing Ombi, resolved Sophos DPI firewall interception of external media metadata APIs (TMDb and Fanart.tv), established outbound Privoxy-Tor routing drop-in for Ombi daemon, fixed `getAppUrl` stale `selectedApp` state leak in Store UI, and synchronized updated `tinapple-dash` and `tinapple-hub` builds.
 - **Root Cause & Fixes**:

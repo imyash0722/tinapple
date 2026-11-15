@@ -28,6 +28,7 @@
 
 	# 2. Suwayomi GraphQL API (Compressed Fast-Path)
 	handle /api/graphql* {
+		rewrite * /suwayomi{uri}
 		reverse_proxy localhost:4567
 	}
 
@@ -48,7 +49,7 @@
 
 	# 5. Suwayomi Manga Server
 	redir /suwayomi /suwayomi/ permanent
-	handle_path /suwayomi/* {
+	handle /suwayomi/* {
 		reverse_proxy localhost:4567 {
 			header_up X-Forwarded-Prefix /suwayomi
 			header_down Location "http://" "https://"
