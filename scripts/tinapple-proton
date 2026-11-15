@@ -214,6 +214,7 @@ def disconnect_vpn():
     msg = []
     if is_wg_active():
         run_cmd(["iptables", "-t", "nat", "-D", "POSTROUTING", "-o", "proton", "-j", "MASQUERADE"])
+        run_cmd(["ip", "route", "del", "default", "dev", "proton", "metric", "50"])
         code, out, err = run_cmd(["wg-quick", "down", "proton"])
         run_cmd(["systemctl", "disable", "wg-quick@proton.service"])
         msg.append("WireGuard disconnected")
@@ -278,6 +279,7 @@ def sanitize_and_save_wireguard(content: str):
     # Insert resilient routing safeguards if not already explicitly present
     ts_ip = get_tailscale_ip()
     post_up_rules = (
+        "ip route add default dev %i metric 50 2>/dev/null || true; "
         "iptables -t nat -A POSTROUTING -o %i -j MASQUERADE 2>/dev/null || true; "
         "iptables -A FORWARD -i tailscale0 -o %i -j ACCEPT 2>/dev/null || true; "
         "iptables -A FORWARD -i %i -o tailscale0 -m state --state RELATED,ESTABLISHED -j ACCEPT 2>/dev/null || true; "
@@ -291,6 +293,7 @@ def sanitize_and_save_wireguard(content: str):
         "ip rule add to 100.64.0.0/10 table 52 priority 5268 2>/dev/null || true"
     )
     post_down_rules = (
+        "ip route del default dev %i metric 50 2>/dev/null || true; "
         "iptables -t nat -D POSTROUTING -o %i -j MASQUERADE 2>/dev/null || true; "
         "iptables -D FORWARD -i tailscale0 -o %i -j ACCEPT 2>/dev/null || true; "
         "iptables -D FORWARD -i %i -o tailscale0 -m state --state RELATED,ESTABLISHED -j ACCEPT 2>/dev/null || true; "
@@ -306,20 +309,30 @@ def sanitize_and_save_wireguard(content: str):
 
     final_lines = []
     in_interface = False
+    has_table = False
     for line in clean_lines:
+        if line.strip().lower().startswith("table"):
+            has_table = True
         final_lines.append(line)
         if line.strip().lower() == "[interface]":
             in_interface = True
         elif line.strip().startswith("[") and line.strip().lower() != "[interface]":
-            if in_interface and not has_post_up:
-                final_lines.insert(len(final_lines) - 1, f"PostUp = {post_up_rules}")
-                final_lines.insert(len(final_lines) - 1, f"PostDown = {post_down_rules}")
-                has_post_up = True
+            if in_interface:
+                if not has_table:
+                    final_lines.insert(len(final_lines) - 1, "Table = off")
+                    has_table = True
+                if not has_post_up:
+                    final_lines.insert(len(final_lines) - 1, f"PostUp = {post_up_rules}")
+                    final_lines.insert(len(final_lines) - 1, f"PostDown = {post_down_rules}")
+                    has_post_up = True
             in_interface = False
 
-    if in_interface and not has_post_up:
-        final_lines.append(f"PostUp = {post_up_rules}")
-        final_lines.append(f"PostDown = {post_down_rules}")
+    if in_interface:
+        if not has_table:
+            final_lines.append("Table = off")
+        if not has_post_up:
+            final_lines.append(f"PostUp = {post_up_rules}")
+            final_lines.append(f"PostDown = {post_down_rules}")
 
     os.makedirs("/etc/wireguard", exist_ok=True)
     if is_wg_active():

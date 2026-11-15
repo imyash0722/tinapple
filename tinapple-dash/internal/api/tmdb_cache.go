@@ -45,7 +45,8 @@ const fallbackPosterSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 
 var (
 	tmdbCacheDir      = "/var/cache/tinapple-dash/tmdb"
 	inFlightDownloads  sync.Map
-	tmdbHTTPClient     *http.Client
+	tmdbDirectClient   *http.Client
+	tmdbTorClient      *http.Client
 	upstreamSemaphore  = make(chan struct{}, maxConcurrentTor)
 )
 
@@ -55,18 +56,24 @@ func init() {
 	}
 	_ = os.MkdirAll(tmdbCacheDir, 0755)
 
+	// Direct client for line-rate downloads (Proton VPN / unrestricted WAN)
+	tmdbDirectClient = &http.Client{
+		Timeout: 5 * time.Second,
+	}
+
+	// Tor fallback client via Privoxy (for campus firewall evasion when VPN is inactive)
 	proxyURL, err := url.Parse(privoxyProxyURL)
-	transport := &http.Transport{
+	torTransport := &http.Transport{
 		MaxIdleConns:        50,
 		MaxIdleConnsPerHost: 20,
 		IdleConnTimeout:     90 * time.Second,
 	}
 	if err == nil {
-		transport.Proxy = http.ProxyURL(proxyURL)
+		torTransport.Proxy = http.ProxyURL(proxyURL)
 	}
 
-	tmdbHTTPClient = &http.Client{
-		Transport: transport,
+	tmdbTorClient = &http.Client{
+		Transport: torTransport,
 		Timeout:   25 * time.Second,
 	}
 }
@@ -125,34 +132,9 @@ func ServeTmdbImage(c *gin.Context) {
 
 	defer inFlightDownloads.Delete(cleanPath)
 
-	// Acquire upstream concurrency semaphore (max 4 concurrent downloads over Tor)
-	select {
-	case upstreamSemaphore <- struct{}{}:
-		defer func() { <-upstreamSemaphore }()
-	case <-c.Request.Context().Done():
-		ch <- result{err: c.Request.Context().Err()}
-		close(ch)
-		return
-	case <-time.After(35 * time.Second):
-		ch <- result{err: fmt.Errorf("timed out waiting for upstream download slot")}
-		close(ch)
-		serveFallbackImage(c)
-		return
-	}
-
-	// Re-verify if another goroutine cached it while waiting for the semaphore
-	if fi, err := os.Stat(localPath); err == nil && !fi.IsDir() && fi.Size() > 0 {
-		ch <- result{err: nil}
-		close(ch)
-		c.Header("Cache-Control", "public, max-age=31536000, immutable")
-		c.Header("X-Tinapple-Cache", "HIT")
-		c.File(localPath)
-		return
-	}
-
 	upstreamURL := fmt.Sprintf("https://image.tmdb.org/t/p/%s", cleanPath)
 
-	err := downloadAndCacheImageWithRetry(c.Request.Context(), upstreamURL, localPath)
+	err := downloadAndCacheImage(c.Request.Context(), upstreamURL, localPath)
 	if err != nil {
 		ch <- result{err: err}
 		close(ch)
@@ -176,23 +158,37 @@ func serveFallbackImage(c *gin.Context) {
 	c.String(http.StatusOK, fallbackPosterSvg)
 }
 
-func downloadAndCacheImageWithRetry(ctx context.Context, upstreamURL, localPath string) error {
-	err := downloadAndCacheImage(ctx, upstreamURL, localPath)
+func downloadAndCacheImage(ctx context.Context, upstreamURL, localPath string) error {
+	// Tier 1: Attempt direct line-rate fetch (instantaneous over Proton VPN)
+	err := fetchAndWrite(ctx, tmdbDirectClient, upstreamURL, localPath)
 	if err == nil {
 		return nil
 	}
 
-	// 1 retry after 350ms if context is still active
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	case <-time.After(350 * time.Millisecond):
+	// If client explicitly returned 404 from TMDb origin, don't retry over Tor
+	if strings.Contains(err.Error(), "HTTP 404") {
+		return err
 	}
 
-	return downloadAndCacheImage(ctx, upstreamURL, localPath)
+	// Tier 2: Fallback to Tor proxy with concurrency semaphore
+	select {
+	case upstreamSemaphore <- struct{}{}:
+		defer func() { <-upstreamSemaphore }()
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-time.After(30 * time.Second):
+		return fmt.Errorf("timeout waiting for tor semaphore slot")
+	}
+
+	// Re-check disk before downloading over Tor
+	if fi, err := os.Stat(localPath); err == nil && !fi.IsDir() && fi.Size() > 0 {
+		return nil
+	}
+
+	return fetchAndWrite(ctx, tmdbTorClient, upstreamURL, localPath)
 }
 
-func downloadAndCacheImage(ctx context.Context, upstreamURL, localPath string) error {
+func fetchAndWrite(ctx context.Context, client *http.Client, upstreamURL, localPath string) error {
 	req, err := http.NewRequestWithContext(ctx, "GET", upstreamURL, nil)
 	if err != nil {
 		return err
@@ -200,7 +196,7 @@ func downloadAndCacheImage(ctx context.Context, upstreamURL, localPath string) e
 	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Tinapple/2.0")
 	req.Header.Set("Accept", "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8")
 
-	resp, err := tmdbHTTPClient.Do(req)
+	resp, err := client.Do(req)
 	if err != nil {
 		return err
 	}
@@ -228,16 +224,6 @@ func downloadAndCacheImage(ctx context.Context, upstreamURL, localPath string) e
 	}
 
 	return os.Rename(tmpPath, localPath)
-}
-
-func downloadAndCacheImageThrottled(ctx context.Context, upstreamURL, localPath string) error {
-	select {
-	case upstreamSemaphore <- struct{}{}:
-		defer func() { <-upstreamSemaphore }()
-	case <-ctx.Done():
-		return ctx.Err()
-	}
-	return downloadAndCacheImage(ctx, upstreamURL, localPath)
 }
 
 // StartOmbiWarmer periodically pre-warms Ombi's Discover API cache and caches image assets
@@ -357,13 +343,13 @@ func prefetchImagesFromBody(ctx context.Context, body []byte) {
 			cleanPoster := strings.TrimPrefix(poster, "/")
 			p500 := filepath.Join(tmdbCacheDir, "w500", cleanPoster)
 			if _, err := os.Stat(p500); os.IsNotExist(err) {
-				_ = downloadAndCacheImageThrottled(ctx, fmt.Sprintf("https://image.tmdb.org/t/p/w500/%s", cleanPoster), p500)
-				time.Sleep(100 * time.Millisecond)
+				_ = downloadAndCacheImage(ctx, fmt.Sprintf("https://image.tmdb.org/t/p/w500/%s", cleanPoster), p500)
+				time.Sleep(80 * time.Millisecond)
 			}
 			p300 := filepath.Join(tmdbCacheDir, "w300", cleanPoster)
 			if _, err := os.Stat(p300); os.IsNotExist(err) {
-				_ = downloadAndCacheImageThrottled(ctx, fmt.Sprintf("https://image.tmdb.org/t/p/w300/%s", cleanPoster), p300)
-				time.Sleep(100 * time.Millisecond)
+				_ = downloadAndCacheImage(ctx, fmt.Sprintf("https://image.tmdb.org/t/p/w300/%s", cleanPoster), p300)
+				time.Sleep(80 * time.Millisecond)
 			}
 		}
 
@@ -371,8 +357,8 @@ func prefetchImagesFromBody(ctx context.Context, body []byte) {
 			cleanBackdrop := strings.TrimPrefix(item.BackdropPath, "/")
 			b1280 := filepath.Join(tmdbCacheDir, "w1280", cleanBackdrop)
 			if _, err := os.Stat(b1280); os.IsNotExist(err) {
-				_ = downloadAndCacheImageThrottled(ctx, fmt.Sprintf("https://image.tmdb.org/t/p/w1280/%s", cleanBackdrop), b1280)
-				time.Sleep(100 * time.Millisecond)
+				_ = downloadAndCacheImage(ctx, fmt.Sprintf("https://image.tmdb.org/t/p/w1280/%s", cleanBackdrop), b1280)
+				time.Sleep(80 * time.Millisecond)
 			}
 		}
 	}
