@@ -82,6 +82,14 @@
 
 ## 5. Changelog & Active State Ledger
 
+### Maintenance (2026-11-15) | fix(ombi/proxy): bypass campus DPI firewall via Privoxy-Tor bridge and resolve blank Angular UI
+- **Scope**: Diagnosed cause of blank dark screen (`#1e1e1e`) when accessing Ombi, resolved Sophos DPI firewall interception of external media metadata APIs (TMDb and Fanart.tv), established outbound Privoxy-Tor routing drop-in for Ombi daemon, fixed `getAppUrl` stale `selectedApp` state leak in Store UI, and synchronized updated `tinapple-dash` and `tinapple-hub` builds.
+- **Root Cause & Fixes**:
+  - **Sophos DPI Interception**: PES University campus firewall intercepted outbound HTTPS connections to `api.themoviedb.org` and `fanart.tv` with HTTP 307 redirects to block pages (`cat=17 Entertainment`). Ombi's JSON deserializer encountered HTML tags, throwing `Newtonsoft.Json.JsonReaderException: Unexpected character encountered while parsing value: <` in `TheMovieDbApi.GetGenres` and `FanartTvApi.GetMovieImages`, crashing Angular `APP_INITIALIZER` and background hydration and leaving `<app-ombi>` completely blank.
+  - **Privoxy & Tor Routing Bridge**: Configured Privoxy (`/etc/privoxy/config`) to forward traffic via local Tor SOCKS5 daemon (`forward-socks5 / 127.0.0.1:9050 .`). Created systemd drop-in `/etc/systemd/system/ombi.service.d/proxy.conf` routing Ombi outbound traffic through `http://127.0.0.1:8118` while bypassing local subnets via `NO_PROXY`. Verified clean HTTP 200 JSON responses from `/ombi/api/v1/Images/background/info` and `/ombi/api/v1/LandingPage`.
+  - **Store UI App URL Resolution**: In `ChaddyStore.tsx`, fixed `getAppUrl` to prioritize specific `appId` arguments and port lookups against `serviceRegistry`, preventing stale `selectedApp` modal state from overriding direct pack service quick-links.
+  - **Service Synchronization**: Rebuilt and staged `tinapple-hub` to `/usr/share/tinapple-dash/web/dist/`, compiled and restarted `tinapple-dash` with live MagicDNS HTTPS 301 upgrade routing, and tracked drop-ins in `configs/ombi/`.
+
 ### Maintenance (2026-11-14) | fix(music/playlists): deduplicate repeat playlists and sync missing albums in Navidrome
 - **Scope**: Diagnosed missing and duplicated playlists in Navidrome, purged 7 fragmented category playlists from `/srv/media/music/Playlists` that created overlapping repeat entries, generated missing `.m3u` playlists for completed batch downloads (`ALLLLLLLLLLLLLLL`, `BRAZILIAN PHONK 2024`, `Hip Hop Pop Rap Mix`, and `This Is Masala Coffee`), and audited Antra download queue rate limits.
 - **Key Changes**:

@@ -916,12 +916,16 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({
     }
   };
 
-  const getAppUrl = (port: number) => {
-    if (selectedApp?.id) {
-      const registered = serviceRegistry.get(selectedApp.id);
+  const getAppUrl = (port: number, appId?: string) => {
+    const targetId = appId || (selectedApp?.port === port ? selectedApp.id : undefined);
+    if (targetId) {
+      const registered = serviceRegistry.get(targetId);
       if (registered) return registered.getOpenUrl();
+      return getServiceUrl(targetId);
     }
-    return getServiceUrl(selectedApp?.id || port);
+    const service = serviceRegistry.getByPort(port);
+    if (service) return service.getOpenUrl();
+    return getServiceUrl(port);
   };
 
   const handleAction = async (id: string, action: 'install' | 'uninstall' | 'start' | 'stop' | 'restart') => {
@@ -1307,7 +1311,7 @@ export const ChaddyStore: React.FC<ChaddyStoreProps> = ({
                             )}
                             {isAppRunning && app && app.port > 0 && (
                               <a
-                                href={getAppUrl(app.port)}
+                                href={getAppUrl(app.port, appId)}
                                 target="_blank"
                                 rel="noreferrer"
                                 className="hover:text-emerald-300 transition-colors ml-0.5"
