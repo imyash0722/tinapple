@@ -21,12 +21,32 @@ const (
 	defaultOmbiApiKey = "cdcb6da2f20540b8923f53f130cddb90"
 	defaultOmbiBase   = "http://127.0.0.1:5000/ombi"
 	privoxyProxyURL   = "http://127.0.0.1:8118"
+	maxConcurrentTor  = 4
 )
 
+const fallbackPosterSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 450" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#141c26"/>
+      <stop offset="100%" stop-color="#0d141b"/>
+    </linearGradient>
+  </defs>
+  <rect width="300" height="450" fill="url(#bg)"/>
+  <rect x="8" y="8" width="284" height="434" rx="8" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1.5"/>
+  <g transform="translate(118, 175)" fill="#4a5d73">
+    <rect x="0" y="0" width="64" height="48" rx="6" fill="none" stroke="#4a5d73" stroke-width="3"/>
+    <circle cx="20" cy="24" r="8" fill="none" stroke="#4a5d73" stroke-width="2.5"/>
+    <circle cx="44" cy="24" r="8" fill="none" stroke="#4a5d73" stroke-width="2.5"/>
+    <path d="M32 0 L32 48" stroke="#4a5d73" stroke-width="2.5"/>
+  </g>
+  <text x="150" y="255" fill="#64748b" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="500" text-anchor="middle">Poster Preview</text>
+</svg>`
+
 var (
-	tmdbCacheDir     = "/var/cache/tinapple-dash/tmdb"
-	inFlightDownloads sync.Map
-	tmdbHTTPClient    *http.Client
+	tmdbCacheDir      = "/var/cache/tinapple-dash/tmdb"
+	inFlightDownloads  sync.Map
+	tmdbHTTPClient     *http.Client
+	upstreamSemaphore  = make(chan struct{}, maxConcurrentTor)
 )
 
 func init() {
@@ -47,22 +67,25 @@ func init() {
 
 	tmdbHTTPClient = &http.Client{
 		Transport: transport,
-		Timeout:   20 * time.Second,
+		Timeout:   25 * time.Second,
 	}
 }
 
 // ServeTmdbImage handles incoming /ombi-images/*filepath requests with local disk caching
 func ServeTmdbImage(c *gin.Context) {
 	rawPath := c.Param("filepath")
-	// Normalize path (handle /t/p/w500/... or /w500/...)
+
+	// Normalize path (handle /t/p/w500/... or /w500/... or double slashes)
 	cleanPath := filepath.Clean(strings.TrimPrefix(rawPath, "/"))
 	if strings.HasPrefix(cleanPath, "t/p/") {
 		cleanPath = strings.TrimPrefix(cleanPath, "t/p/")
 	}
+	cleanPath = filepath.ToSlash(filepath.Clean("/" + cleanPath))
+	cleanPath = strings.TrimPrefix(cleanPath, "/")
 
-	// Prevent directory traversal
-	if strings.Contains(cleanPath, "..") {
-		c.AbortWithStatus(http.StatusForbidden)
+	// Prevent directory traversal or empty paths
+	if strings.Contains(cleanPath, "..") || cleanPath == "" || cleanPath == "." {
+		serveFallbackImage(c)
 		return
 	}
 
@@ -76,9 +99,6 @@ func ServeTmdbImage(c *gin.Context) {
 		return
 	}
 
-	// Fetch upstream image from TMDb
-	upstreamURL := fmt.Sprintf("https://image.tmdb.org/t/p/%s", cleanPath)
-
 	// Single-flight deduplication per cleanPath
 	type result struct {
 		err error
@@ -88,25 +108,56 @@ func ServeTmdbImage(c *gin.Context) {
 	if loaded {
 		// Another goroutine is already fetching this exact image, wait for it
 		waitCh := actual.(chan result)
-		res := <-waitCh
-		if res.err == nil {
-			c.Header("Cache-Control", "public, max-age=31536000, immutable")
-			c.Header("X-Tinapple-Cache", "HIT")
-			c.File(localPath)
+		select {
+		case res := <-waitCh:
+			if res.err == nil {
+				c.Header("Cache-Control", "public, max-age=31536000, immutable")
+				c.Header("X-Tinapple-Cache", "HIT")
+				c.File(localPath)
+				return
+			}
+			serveFallbackImage(c)
+			return
+		case <-c.Request.Context().Done():
 			return
 		}
-		c.JSON(http.StatusBadGateway, gin.H{"error": "Failed downloading TMDb image", "details": res.err.Error()})
-		return
 	}
 
 	defer inFlightDownloads.Delete(cleanPath)
 
-	err := downloadAndCacheImage(upstreamURL, localPath)
+	// Acquire upstream concurrency semaphore (max 4 concurrent downloads over Tor)
+	select {
+	case upstreamSemaphore <- struct{}{}:
+		defer func() { <-upstreamSemaphore }()
+	case <-c.Request.Context().Done():
+		ch <- result{err: c.Request.Context().Err()}
+		close(ch)
+		return
+	case <-time.After(35 * time.Second):
+		ch <- result{err: fmt.Errorf("timed out waiting for upstream download slot")}
+		close(ch)
+		serveFallbackImage(c)
+		return
+	}
+
+	// Re-verify if another goroutine cached it while waiting for the semaphore
+	if fi, err := os.Stat(localPath); err == nil && !fi.IsDir() && fi.Size() > 0 {
+		ch <- result{err: nil}
+		close(ch)
+		c.Header("Cache-Control", "public, max-age=31536000, immutable")
+		c.Header("X-Tinapple-Cache", "HIT")
+		c.File(localPath)
+		return
+	}
+
+	upstreamURL := fmt.Sprintf("https://image.tmdb.org/t/p/%s", cleanPath)
+
+	err := downloadAndCacheImageWithRetry(c.Request.Context(), upstreamURL, localPath)
 	if err != nil {
 		ch <- result{err: err}
 		close(ch)
-		log.Printf("[TMDb-Cache] Error fetching %s: %v", upstreamURL, err)
-		c.JSON(http.StatusBadGateway, gin.H{"error": "Failed downloading TMDb image", "details": err.Error()})
+		log.Printf("[TMDb-Cache] Error fetching %s: %v (serving fallback image)", upstreamURL, err)
+		serveFallbackImage(c)
 		return
 	}
 
@@ -118,12 +169,36 @@ func ServeTmdbImage(c *gin.Context) {
 	c.File(localPath)
 }
 
-func downloadAndCacheImage(upstreamURL, localPath string) error {
-	req, err := http.NewRequest("GET", upstreamURL, nil)
+func serveFallbackImage(c *gin.Context) {
+	c.Header("Content-Type", "image/svg+xml")
+	c.Header("Cache-Control", "no-cache, no-store, must-revalidate")
+	c.Header("X-Tinapple-Cache", "FALLBACK")
+	c.String(http.StatusOK, fallbackPosterSvg)
+}
+
+func downloadAndCacheImageWithRetry(ctx context.Context, upstreamURL, localPath string) error {
+	err := downloadAndCacheImage(ctx, upstreamURL, localPath)
+	if err == nil {
+		return nil
+	}
+
+	// 1 retry after 350ms if context is still active
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-time.After(350 * time.Millisecond):
+	}
+
+	return downloadAndCacheImage(ctx, upstreamURL, localPath)
+}
+
+func downloadAndCacheImage(ctx context.Context, upstreamURL, localPath string) error {
+	req, err := http.NewRequestWithContext(ctx, "GET", upstreamURL, nil)
 	if err != nil {
 		return err
 	}
 	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Tinapple/2.0")
+	req.Header.Set("Accept", "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8")
 
 	resp, err := tmdbHTTPClient.Do(req)
 	if err != nil {
@@ -155,6 +230,16 @@ func downloadAndCacheImage(upstreamURL, localPath string) error {
 	return os.Rename(tmpPath, localPath)
 }
 
+func downloadAndCacheImageThrottled(ctx context.Context, upstreamURL, localPath string) error {
+	select {
+	case upstreamSemaphore <- struct{}{}:
+		defer func() { <-upstreamSemaphore }()
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+	return downloadAndCacheImage(ctx, upstreamURL, localPath)
+}
+
 // StartOmbiWarmer periodically pre-warms Ombi's Discover API cache and caches image assets
 func StartOmbiWarmer(ctx context.Context) {
 	log.Printf("[Ombi-Warmer] Discover pre-warmer service initialized")
@@ -166,7 +251,7 @@ func StartOmbiWarmer(ctx context.Context) {
 		return
 	}
 
-	runWarmCycle()
+	runWarmCycle(ctx)
 
 	ticker := time.NewTicker(20 * time.Minute)
 	defer ticker.Stop()
@@ -174,14 +259,14 @@ func StartOmbiWarmer(ctx context.Context) {
 	for {
 		select {
 		case <-ticker.C:
-			runWarmCycle()
+			runWarmCycle(ctx)
 		case <-ctx.Done():
 			return
 		}
 	}
 }
 
-func runWarmCycle() {
+func runWarmCycle(ctx context.Context) {
 	client := &http.Client{Timeout: 30 * time.Second}
 
 	// Verify Ombi is responding
@@ -190,7 +275,6 @@ func runWarmCycle() {
 		if resp != nil {
 			resp.Body.Close()
 		}
-		// If status check fails, Ombi might still be starting; try again next cycle
 		return
 	}
 	resp.Body.Close()
@@ -205,13 +289,18 @@ func runWarmCycle() {
 	}
 
 	for _, ep := range discoverEndpoints {
-		warmEndpoint(client, defaultOmbiBase+ep)
-		time.Sleep(300 * time.Millisecond) // Polite spacing
+		select {
+		case <-ctx.Done():
+			return
+		default:
+			warmEndpoint(ctx, client, defaultOmbiBase+ep)
+			time.Sleep(300 * time.Millisecond) // Polite spacing
+		}
 	}
 }
 
-func warmEndpoint(client *http.Client, targetURL string) {
-	req, err := http.NewRequest("GET", targetURL, nil)
+func warmEndpoint(ctx context.Context, client *http.Client, targetURL string) {
+	req, err := http.NewRequestWithContext(ctx, "GET", targetURL, nil)
 	if err != nil {
 		return
 	}
@@ -237,8 +326,8 @@ func warmEndpoint(client *http.Client, targetURL string) {
 	duration := time.Since(start)
 	log.Printf("[Ombi-Warmer] Warmed %s in %v (status %d, %d bytes)", targetURL, duration, resp.StatusCode, len(body))
 
-	// Asynchronously pre-fetch posters and backdrops into disk cache
-	go prefetchImagesFromBody(body)
+	// Asynchronously pre-fetch posters and backdrops into disk cache politely
+	go prefetchImagesFromBody(ctx, body)
 }
 
 type discoverItem struct {
@@ -247,13 +336,19 @@ type discoverItem struct {
 	BackdropPath string `json:"backdropPath"`
 }
 
-func prefetchImagesFromBody(body []byte) {
+func prefetchImagesFromBody(ctx context.Context, body []byte) {
 	var items []discoverItem
 	if err := json.Unmarshal(body, &items); err != nil {
 		return
 	}
 
 	for _, item := range items {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+		}
+
 		poster := item.PosterPath
 		if poster == "" {
 			poster = item.Poster
@@ -262,11 +357,13 @@ func prefetchImagesFromBody(body []byte) {
 			cleanPoster := strings.TrimPrefix(poster, "/")
 			p500 := filepath.Join(tmdbCacheDir, "w500", cleanPoster)
 			if _, err := os.Stat(p500); os.IsNotExist(err) {
-				_ = downloadAndCacheImage(fmt.Sprintf("https://image.tmdb.org/t/p/w500/%s", cleanPoster), p500)
+				_ = downloadAndCacheImageThrottled(ctx, fmt.Sprintf("https://image.tmdb.org/t/p/w500/%s", cleanPoster), p500)
+				time.Sleep(100 * time.Millisecond)
 			}
 			p300 := filepath.Join(tmdbCacheDir, "w300", cleanPoster)
 			if _, err := os.Stat(p300); os.IsNotExist(err) {
-				_ = downloadAndCacheImage(fmt.Sprintf("https://image.tmdb.org/t/p/w300/%s", cleanPoster), p300)
+				_ = downloadAndCacheImageThrottled(ctx, fmt.Sprintf("https://image.tmdb.org/t/p/w300/%s", cleanPoster), p300)
+				time.Sleep(100 * time.Millisecond)
 			}
 		}
 
@@ -274,7 +371,8 @@ func prefetchImagesFromBody(body []byte) {
 			cleanBackdrop := strings.TrimPrefix(item.BackdropPath, "/")
 			b1280 := filepath.Join(tmdbCacheDir, "w1280", cleanBackdrop)
 			if _, err := os.Stat(b1280); os.IsNotExist(err) {
-				_ = downloadAndCacheImage(fmt.Sprintf("https://image.tmdb.org/t/p/w1280/%s", cleanBackdrop), b1280)
+				_ = downloadAndCacheImageThrottled(ctx, fmt.Sprintf("https://image.tmdb.org/t/p/w1280/%s", cleanBackdrop), b1280)
+				time.Sleep(100 * time.Millisecond)
 			}
 		}
 	}

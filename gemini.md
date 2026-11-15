@@ -82,6 +82,16 @@
 
 ## 5. Changelog & Active State Ledger
 
+### Maintenance (2026-11-15) | fix(ombi/images): throttle tor concurrency and serve http 200 fallback to eliminate thumbnail flicker
+- **Scope**: Diagnosed the root causes of thumbnail loading failures and constant image flickering in Ombi search grids (`<ombi-image>` / `<discover-card>`), implemented worker concurrency throttling across upstream Tor connections, added singleflight deduplication with context cancellation, and served graceful HTTP 200 SVG fallback placeholders to eliminate Angular's `onError()` retry loops.
+- **Root Cause & Fixes**:
+  - **Tor Multi-Stream Collapse**: When Ombi returned 20 search items (e.g. "Hunter x Hunter"), the browser simultaneously requested 20 distinct `/ombi-images/t/p/w300/...` endpoints. Flooding Tor with 20 parallel streams caused socket timeouts and circuit stalls, leading `ServeTmdbImage` to return `HTTP 502 Bad Gateway` JSON.
+  - **Angular Retry Flicker Loop**: In Ombi's compiled Angular bundles (`chunk-45IOSS33.js` and `chunk-HSOBLUAH.js`), `<img (error)="onError($event)">` intercepted the 502 JSON error, displayed a grey placeholder icon, and set a random 1-7s `setTimeout` to reassign `e.target.src = originalUrl`. This created an endless loop of retries, timeouts, and visible flickering between placeholder and loading states.
+  - **Worker Semaphore Throttling**: In `tinapple-dash/internal/api/tmdb_cache.go`, introduced `upstreamSemaphore = make(chan struct{}, 4)` to limit concurrent Tor downloads to 4 streams. Background pre-fetching via `prefetchImagesFromBody` was converted to `downloadAndCacheImageThrottled` with 100ms polite spacing.
+  - **Anti-Flicker HTTP 200 SVG Fallback**: When an upstream download times out or 404s after retry, `serveFallbackImage` serves a sleek dark-themed poster preview SVG (`image/svg+xml`) with `HTTP 200 OK` and `Cache-Control: no-cache, no-store, must-revalidate`. Because the browser receives a valid 200 OK image response, the JavaScript `error` event never fires, completely eliminating the retry loop and flickering.
+  - **Path Normalization**: Added robust normalization (`filepath.ToSlash(filepath.Clean("/" + cleanPath))`) stripping duplicate slashes (`w300//*.jpg`) to ensure clean cache hits.
+- **Verification**: Verified 301 cached images on disk (30 MB). Tested synthetic missing images and verified sub-millisecond HTTP 200 SVG fallback over Tailscale HTTPS. Verified cached poster delivery at ~7ms.
+
 ### Maintenance (2026-11-15) | perf(ombi/cache): resolve discover carousel skeleton hang, optimize tor circuit lifecycle, and implement local tmdb image caching proxy
 - **Scope**: Diagnosed why Ombi's Discover page (`/ombi/discover`) carousels (Popular, Trending, Upcoming) hung on grey skeleton loaders (`p-skeleton`), resolved severe Tor circuit collapse/timeout in `torrc`, patched Ombi's compiled Angular bundles to redirect hardcoded `image.tmdb.org` requests away from campus firewall SSL interception to a local cache proxy, implemented an atomic image caching endpoint in `tinapple-dash` (`/ombi-images/*`), and established an automated background Discover carousel pre-warmer.
 - **Root Cause & Fixes**:
