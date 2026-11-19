@@ -1,4 +1,4 @@
-import { SystemInfo, TelemetrySnapshot, ServiceInfo, HardwareInfo, SessionMode, AppInfo, AppActionResult, InstallProgressState, InstallLogMessage, TailscaleStatus, AppliancePackStatus, WallpaperItem, OpenPortInfo, AppConfigDetails, MaintenanceResult, FailedUnitsResult, UserManagementData, ProtonStatus, ProtonWireGuardInfo, SystemUpdateManifest } from '../types/api';
+import { SystemInfo, TelemetrySnapshot, ServiceInfo, HardwareInfo, SessionMode, AppInfo, AppActionResult, InstallProgressState, InstallLogMessage, TailscaleStatus, DetailedTailscaleStatus, TailscaleNetcheckResult, TailscalePrefsPayload, TailscalePingResponse, AppliancePackStatus, WallpaperItem, OpenPortInfo, AppConfigDetails, MaintenanceResult, FailedUnitsResult, UserManagementData, ProtonStatus, ProtonWireGuardInfo, SystemUpdateManifest } from '../types/api';
 import { serviceRegistry, ApplianceService } from './serviceRegistry';
 import { Capacitor } from '@capacitor/core';
 
@@ -1401,6 +1401,59 @@ class ApiService {
     }
   }
 
+  async getDetailedTailscaleStatus(): Promise<DetailedTailscaleStatus | null> {
+    try {
+      const res = await fetch(`${API_BASE}/tailscale/details`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.tailscaleIPs?.[0] && typeof window !== 'undefined') {
+          try {
+            localStorage.setItem('tinapple_tailscale_ip', data.tailscaleIPs[0]);
+          } catch {}
+        }
+        return data;
+      }
+    } catch {}
+    return null;
+  }
+
+  async getTailscaleNetcheck(force: boolean = false): Promise<TailscaleNetcheckResult | null> {
+    try {
+      const res = await fetch(`${API_BASE}/tailscale/netcheck${force ? '?force=true' : ''}`);
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch {}
+    return null;
+  }
+
+  async setTailscalePrefs(prefs: TailscalePrefsPayload): Promise<boolean> {
+    try {
+      const res = await fetch(`${API_BASE}/tailscale/prefs`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(prefs),
+      });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  async pingTailscalePeer(target: string): Promise<TailscalePingResponse | null> {
+    try {
+      const res = await fetch(`${API_BASE}/tailscale/ping`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ target }),
+      });
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch {}
+    return null;
+  }
+
   // Server Tools & Port Matrix (ss -tulpn)
   async getOpenPorts(): Promise<OpenPortInfo[]> {
     try {
@@ -1566,12 +1619,14 @@ class ApiService {
     }
   }
 
-  async toggleProtonStatus(active: boolean): Promise<ProtonStatus> {
+  async toggleProtonStatus(active: boolean, autostart?: boolean): Promise<ProtonStatus> {
     try {
+      const payload: any = { active };
+      if (autostart !== undefined) payload.autostart = autostart;
       const res = await fetch(`${API_BASE}/system/proton-exit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ active }),
+        body: JSON.stringify(payload),
       });
       if (!res.ok) {
         const body = await res.json().catch(() => null);
@@ -1584,6 +1639,22 @@ class ApiService {
       return await res.json();
     } catch (e: any) {
       return { active: false, status: 'stopped', error: e?.message || 'Network request failed' };
+    }
+  }
+
+  async setProtonAutostart(enabled: boolean): Promise<{ success: boolean; autostart: boolean; message?: string }> {
+    try {
+      const res = await fetch(`${API_BASE}/system/proton/autostart`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enabled }),
+      });
+      if (!res.ok) {
+        return { success: false, autostart: enabled, message: `HTTP ${res.status}` };
+      }
+      return await res.json();
+    } catch (e: any) {
+      return { success: false, autostart: enabled, message: e?.message || 'Network request failed' };
     }
   }
 

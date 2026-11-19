@@ -1,0 +1,13 @@
+[Unit]
+Description=Tinapple Automated Download & Queue Resumer
+After=network-online.target NetworkManager.service pesu-wifi.service suwayomi-server.service qbittorrent-nox.service tinapple-proton-proxy.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/tinapple-resume-downloads
+RemainAfterExit=yes
+User=root
+
+[Install]
+WantedBy=multi-user.target

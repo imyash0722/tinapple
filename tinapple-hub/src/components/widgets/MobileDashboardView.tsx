@@ -3,7 +3,6 @@ import {
   Activity,
   Cpu,
   HardDrive,
-  Thermometer,
   Zap,
   Film,
   Music,
@@ -11,12 +10,10 @@ import {
   Download,
   ExternalLink,
   Layers,
-  Sparkles,
-  CheckCircle2,
-  Clock,
-  RefreshCw,
-  Search,
   ArrowRight,
+  Globe,
+  Radio,
+  CheckCircle2,
 } from 'lucide-react';
 import { TelemetrySnapshot, SystemInfo, ServiceInfo } from '../../types/api';
 import { getActiveServerOrigin, getServiceUrl } from '../../services/api';
@@ -29,6 +26,7 @@ interface MobileDashboardViewProps {
   services: ServiceInfo[];
   onOpenAppPage?: (appId: string) => void;
   onSwitchToFullBoard: () => void;
+  onSelectTab?: (tab: string) => void;
 }
 
 export const MobileDashboardView: React.FC<MobileDashboardViewProps> = ({
@@ -37,6 +35,7 @@ export const MobileDashboardView: React.FC<MobileDashboardViewProps> = ({
   services,
   onOpenAppPage,
   onSwitchToFullBoard,
+  onSelectTab,
 }) => {
   const [ombiOnline, setOmbiOnline] = useState<boolean>(true);
   const [ombiCounts, setOmbiCounts] = useState<{ approved?: number; available?: number; pending?: number; denied?: number }>({});
@@ -63,15 +62,17 @@ export const MobileDashboardView: React.FC<MobileDashboardViewProps> = ({
     return () => clearInterval(interval);
   }, []);
 
-  // Quick primary launchers
+  // Quick primary launchers with clean branding
   const primaryLaunchers = [
-    { id: 'jellyfin', name: 'Jellyfin', port: 8096, category: 'Cinema & TV', icon: <Film className="w-5 h-5 text-purple-400" /> },
-    { id: 'ombi', name: 'Ombi Requests', port: 5000, category: 'Media Portal', icon: <Film className="w-5 h-5 text-amber-400" /> },
-    { id: 'navidrome', name: 'Navidrome', port: 4533, category: 'Lossless Music', icon: <Music className="w-5 h-5 text-emerald-400" /> },
-    { id: 'suwayomi', name: 'Suwayomi', port: 4567, category: 'Manga & Comics', icon: <BookOpen className="w-5 h-5 text-sky-400" /> },
-    { id: 'qbittorrent', name: 'qBittorrent', port: 8080, category: 'Downloads', icon: <Download className="w-5 h-5 text-amber-400" /> },
-    { id: 'radarr', name: 'Radarr', port: 7878, category: 'Movies Automator', icon: <Film className="w-5 h-5 text-amber-500" /> },
-    { id: 'sonarr', name: 'Sonarr', port: 8989, category: 'TV Automator', icon: <Activity className="w-5 h-5 text-sky-500" /> },
+    { id: 'jellyfin', name: 'Jellyfin', port: 8096, category: 'Media' },
+    { id: 'ombi', name: 'Ombi', port: 5000, category: 'Requests' },
+    { id: 'navidrome', name: 'Navidrome', port: 4533, category: 'Music' },
+    { id: 'suwayomi', name: 'Suwayomi', port: 4567, category: 'Manga' },
+    { id: 'qbittorrent', name: 'qBittorrent', port: 8080, category: 'Torrents' },
+    { id: 'radarr', name: 'Radarr', port: 7878, category: 'Movies' },
+    { id: 'sonarr', name: 'Sonarr', port: 8989, category: 'Series' },
+    { id: 'syncthing', name: 'Syncthing', port: 8384, category: 'Sync' },
+    { id: 'adguard', name: 'AdGuard', port: 3000, category: 'DNS' },
   ];
 
   const formatUptime = (sec: number) => {
@@ -82,30 +83,30 @@ export const MobileDashboardView: React.FC<MobileDashboardViewProps> = ({
     return `${hours}h ${mins}m`;
   };
 
-  const cpuPercent = Math.round(telemetry?.cpu.usagePercent || 0);
+  const cpuPercent = Math.min(100, Math.max(0, Math.round(telemetry?.cpu.usagePercent || 0)));
   const cpuTemp = Math.round(telemetry?.thermal.cpuTemp || 45);
   const memUsedGB = ((telemetry?.memory.usedBytes || 0) / (1024 * 1024 * 1024)).toFixed(1);
   const memTotalGB = ((telemetry?.memory.totalBytes || 1) / (1024 * 1024 * 1024)).toFixed(1);
-  const memPercent = Math.round(telemetry?.memory.usagePercent || 0);
-  const diskPercent = Math.round(telemetry?.disk.usagePercent || 0);
+  const memPercent = Math.min(100, Math.max(0, Math.round(telemetry?.memory.usagePercent || 0)));
+  const diskPercent = Math.min(100, Math.max(0, Math.round(telemetry?.disk.usagePercent || 0)));
   const diskFreeGB = Math.round((telemetry?.disk.freeBytes || 0) / (1024 * 1024 * 1024));
 
   return (
-    <div className="space-y-4 pb-24 font-sans select-none animate-in fade-in duration-300">
+    <div className="space-y-3.5 sm:space-y-5 pb-20 font-sans select-none animate-in fade-in duration-300">
       {/* 1. Appliance Node Status & Health Card */}
-      <div className="p-4 sm:p-5 rounded-[24px] bg-surface-container-low border border-outline-variant shadow-none">
+      <div className="p-3.5 sm:p-5 rounded-[24px] bg-surface-container-low border border-outline-variant shadow-none">
         <div className="flex items-center justify-between gap-3 mb-3">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-10 h-10 rounded-2xl bg-primary-container border border-outline-variant flex items-center justify-center shrink-0">
-              <Layers className="w-5 h-5 text-primary" />
+            <div className="w-9 h-9 rounded-2xl bg-primary-container border border-outline-variant flex items-center justify-center shrink-0">
+              <Layers className="w-4 h-4 text-primary" />
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-1.5">
-                <h3 className="font-bold text-sm text-on-surface truncate">{systemInfo.hostname || 'tinapple-server'}</h3>
+                <h3 className="font-bold text-xs sm:text-sm text-on-surface truncate">{systemInfo.hostname || 'tinapple-server'}</h3>
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
               </div>
               <p className="text-[10px] text-on-surface-variant font-mono truncate">
-                Uptime: {formatUptime(systemInfo.uptime || 0)}
+                Up: {formatUptime(systemInfo.uptime || 0)} • {systemInfo.sessionMode === 'headless' ? 'Headless Server' : 'Niri Desktop'}
               </p>
             </div>
           </div>
@@ -116,7 +117,7 @@ export const MobileDashboardView: React.FC<MobileDashboardViewProps> = ({
               AndroidBridge.performHaptic('light');
               onSwitchToFullBoard();
             }}
-            className="px-3 py-1.5 rounded-full bg-surface-container hover:bg-surface-container-high border border-outline-variant text-[11px] font-sans font-bold text-on-surface transition-all flex items-center gap-1.5 shrink-0"
+            className="px-2.5 sm:px-3 py-1.5 rounded-full bg-surface-container hover:bg-surface-container-high border border-outline-variant text-[11px] font-sans font-bold text-on-surface transition-all flex items-center gap-1 shrink-0 active:scale-95"
             title="Switch to Full Canvas Board View"
           >
             <span>Full Board</span>
@@ -124,72 +125,118 @@ export const MobileDashboardView: React.FC<MobileDashboardViewProps> = ({
           </button>
         </div>
 
-        {/* 4 Core Health Chips */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
+        {/* 4 Core Health Chips (Mobile Safe, No Text Overflow) */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 font-mono">
           {/* CPU */}
-          <div className="p-2.5 rounded-2xl bg-surface-container border border-outline-variant/60 flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-amber-500/15 text-amber-400 shrink-0">
-              <Cpu className="w-4 h-4" />
+          <div className="p-2 sm:p-2.5 rounded-2xl bg-surface-container border border-outline-variant/60 flex flex-col justify-between gap-1.5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <div className="p-1 rounded-lg bg-amber-500/15 text-amber-400 shrink-0">
+                  <Cpu className="w-3.5 h-3.5" />
+                </div>
+                <span className="text-[10px] text-on-surface-variant uppercase font-bold">CPU</span>
+              </div>
+              <span className="text-[10px] text-on-surface-variant">{cpuTemp}°C</span>
             </div>
-            <div className="min-w-0">
-              <span className="text-[10px] text-on-surface-variant block uppercase font-mono">CPU</span>
-              <span className="text-xs font-bold text-on-surface truncate font-mono">
-                {cpuPercent}% <span className="text-[10px] text-on-surface-variant font-normal">({cpuTemp}°C)</span>
-              </span>
+            <div className="flex items-baseline justify-between">
+              <span className="text-xs sm:text-sm font-bold text-on-surface">{cpuPercent}%</span>
+              <span className="text-[9px] text-on-surface-variant">load</span>
+            </div>
+            <div className="w-full bg-surface-container-highest rounded-full h-1 overflow-hidden">
+              <div
+                className="bg-amber-400 h-1 rounded-full transition-all duration-500"
+                style={{ width: `${cpuPercent}%` }}
+              />
             </div>
           </div>
 
-          {/* RAM */}
-          <div className="p-2.5 rounded-2xl bg-surface-container border border-outline-variant/60 flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-sky-500/15 text-sky-400 shrink-0">
-              <Activity className="w-4 h-4" />
+          {/* Memory */}
+          <div className="p-2 sm:p-2.5 rounded-2xl bg-surface-container border border-outline-variant/60 flex flex-col justify-between gap-1.5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <div className="p-1 rounded-lg bg-sky-500/15 text-sky-400 shrink-0">
+                  <Activity className="w-3.5 h-3.5" />
+                </div>
+                <span className="text-[10px] text-on-surface-variant uppercase font-bold">RAM</span>
+              </div>
+              <span className="text-[10px] text-on-surface-variant">{memUsedGB}G</span>
             </div>
-            <div className="min-w-0">
-              <span className="text-[10px] text-on-surface-variant block uppercase font-mono">Memory</span>
-              <span className="text-xs font-bold text-on-surface truncate font-mono">
-                {memPercent}% <span className="text-[10px] text-on-surface-variant font-normal">({memUsedGB}G)</span>
-              </span>
+            <div className="flex items-baseline justify-between">
+              <span className="text-xs sm:text-sm font-bold text-on-surface">{memPercent}%</span>
+              <span className="text-[9px] text-on-surface-variant">of {memTotalGB}G</span>
+            </div>
+            <div className="w-full bg-surface-container-highest rounded-full h-1 overflow-hidden">
+              <div
+                className="bg-sky-400 h-1 rounded-full transition-all duration-500"
+                style={{ width: `${memPercent}%` }}
+              />
             </div>
           </div>
 
           {/* Disk */}
-          <div className="p-2.5 rounded-2xl bg-surface-container border border-outline-variant/60 flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-purple-500/15 text-purple-400 shrink-0">
-              <HardDrive className="w-4 h-4" />
+          <div className="p-2 sm:p-2.5 rounded-2xl bg-surface-container border border-outline-variant/60 flex flex-col justify-between gap-1.5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <div className="p-1 rounded-lg bg-purple-500/15 text-purple-400 shrink-0">
+                  <HardDrive className="w-3.5 h-3.5" />
+                </div>
+                <span className="text-[10px] text-on-surface-variant uppercase font-bold">Disk</span>
+              </div>
+              <span className="text-[10px] text-on-surface-variant">{diskFreeGB}G free</span>
             </div>
-            <div className="min-w-0">
-              <span className="text-[10px] text-on-surface-variant block uppercase font-mono">Disk</span>
-              <span className="text-xs font-bold text-on-surface truncate font-mono">
-                {diskPercent}% <span className="text-[10px] text-on-surface-variant font-normal">({diskFreeGB}G free)</span>
-              </span>
+            <div className="flex items-baseline justify-between">
+              <span className="text-xs sm:text-sm font-bold text-on-surface">{diskPercent}%</span>
+              <span className="text-[9px] text-on-surface-variant">used</span>
+            </div>
+            <div className="w-full bg-surface-container-highest rounded-full h-1 overflow-hidden">
+              <div
+                className="bg-purple-400 h-1 rounded-full transition-all duration-500"
+                style={{ width: `${diskPercent}%` }}
+              />
             </div>
           </div>
 
-          {/* Power / Thermal */}
-          <div className="p-2.5 rounded-2xl bg-surface-container border border-outline-variant/60 flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-emerald-500/15 text-emerald-400 shrink-0">
-              <Zap className="w-4 h-4" />
+          {/* Thermal / Profile */}
+          <div className="p-2 sm:p-2.5 rounded-2xl bg-surface-container border border-outline-variant/60 flex flex-col justify-between gap-1.5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <div className="p-1 rounded-lg bg-emerald-500/15 text-emerald-400 shrink-0">
+                  <Zap className="w-3.5 h-3.5" />
+                </div>
+                <span className="text-[10px] text-on-surface-variant uppercase font-bold">Power</span>
+              </div>
+              <span className="text-[10px] text-emerald-400 font-bold">OK</span>
             </div>
-            <div className="min-w-0">
-              <span className="text-[10px] text-on-surface-variant block uppercase font-mono">Profile</span>
-              <span className="text-xs font-bold text-on-surface truncate font-mono capitalize">
+            <div className="flex items-baseline justify-between">
+              <span className="text-xs sm:text-sm font-bold text-on-surface capitalize truncate">
                 {telemetry?.thermal.profile || 'server'}
               </span>
+              <span className="text-[9px] text-on-surface-variant">profile</span>
+            </div>
+            <div className="w-full bg-surface-container-highest rounded-full h-1 overflow-hidden">
+              <div className="bg-emerald-400 h-1 rounded-full w-full" />
             </div>
           </div>
         </div>
       </div>
 
-      {/* 2. Direct Service Portals (Quick Links) */}
-      <div className="p-4 sm:p-5 rounded-[24px] bg-surface-container-low border border-outline-variant shadow-none">
-        <div className="flex items-center justify-between mb-3">
-          <h4 className="text-xs font-mono uppercase tracking-wider text-on-surface-variant flex items-center gap-2">
+      {/* 2. Direct Service Portals (Quick 1-Tap Mobile Grid) */}
+      <div className="p-3.5 sm:p-5 rounded-[24px] bg-surface-container-low border border-outline-variant shadow-none">
+        <div className="flex items-center justify-between mb-2.5">
+          <h4 className="text-xs font-bold uppercase tracking-wider text-on-surface flex items-center gap-2">
             <span>Primary Media Appliances</span>
           </h4>
-          <span className="text-[10px] text-on-surface-variant font-mono">Direct 1-Tap Links</span>
+          {onSelectTab && (
+            <button
+              onClick={() => onSelectTab('services')}
+              className="text-[11px] text-primary hover:underline font-bold"
+            >
+              All Services ({services.length}) →
+            </button>
+          )}
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+        <div className="grid grid-cols-3 gap-2">
           {primaryLaunchers.map((app) => {
             const liveService = services.find((s) => {
               if (!s) return false;
@@ -208,21 +255,20 @@ export const MobileDashboardView: React.FC<MobileDashboardViewProps> = ({
                 target="_blank"
                 rel="noreferrer"
                 onClick={() => AndroidBridge.performHaptic('light')}
-                className="p-3 rounded-2xl bg-surface-container hover:bg-surface-container-high border border-outline-variant/70 hover:border-primary/50 transition-all flex flex-col justify-between gap-2 active:scale-98 group"
+                className="p-2.5 rounded-2xl bg-surface-container hover:bg-surface-container-high border border-outline-variant/70 hover:border-primary/50 transition-all flex flex-col justify-between gap-1.5 active:scale-95 group text-center"
               >
-                <div className="flex items-center justify-between">
-                  <div className="w-8 h-8 rounded-xl bg-surface-container-highest flex items-center justify-center shrink-0">
-                    <AppBrandIcon id={app.id} className="w-4 h-4 text-on-surface" />
-                  </div>
-                  <span className={`w-2 h-2 rounded-full ${isRunning ? 'bg-emerald-400' : 'bg-zinc-500'}`} />
+                <div className="flex items-center justify-between w-full">
+                  <span className={`w-1.5 h-1.5 rounded-full ${isRunning ? 'bg-emerald-400' : 'bg-zinc-500'}`} />
+                  <span className="text-[9px] text-on-surface-variant font-mono">:{app.port}</span>
+                </div>
+
+                <div className="w-8 h-8 mx-auto rounded-xl bg-surface-container-highest flex items-center justify-center shrink-0">
+                  <AppBrandIcon id={app.id} size={20} className="w-5 h-5 text-on-surface" />
                 </div>
 
                 <div className="min-w-0">
-                  <span className="text-xs font-bold text-on-surface block truncate group-hover:text-primary transition-colors">
+                  <span className="text-[11px] font-bold text-on-surface block truncate group-hover:text-primary transition-colors">
                     {app.name}
-                  </span>
-                  <span className="text-[10px] text-on-surface-variant font-mono truncate block">
-                    Port :{app.port}
                   </span>
                 </div>
               </a>
@@ -232,18 +278,18 @@ export const MobileDashboardView: React.FC<MobileDashboardViewProps> = ({
       </div>
 
       {/* 3. Media Requests Deck (Ombi Automated Portal) */}
-      <div className="p-4 sm:p-5 rounded-[24px] bg-surface-container-low border border-outline-variant shadow-none">
-        <div className="flex items-center justify-between mb-3 pb-2 border-b border-outline-variant/50">
+      <div className="p-3.5 sm:p-5 rounded-[24px] bg-surface-container-low border border-outline-variant shadow-none">
+        <div className="flex items-center justify-between mb-2.5 pb-2 border-b border-outline-variant/50">
           <div className="flex items-center gap-2">
-            <span className="p-1.5 rounded-xl bg-amber-500/15 text-amber-400 border border-amber-500/30">
-              <Film className="w-4 h-4" />
+            <span className="p-1 rounded-xl bg-amber-500/15 text-amber-400 border border-amber-500/30">
+              <Film className="w-3.5 h-3.5" />
             </span>
             <div>
-              <div className="flex items-center gap-2">
-                <h4 className="text-xs font-bold text-on-surface">Ombi Media Requests</h4>
-                <span className={`w-2 h-2 rounded-full ${ombiOnline ? 'bg-emerald-400' : 'bg-rose-400'} shrink-0`} />
+              <div className="flex items-center gap-1.5">
+                <h4 className="text-xs font-bold text-on-surface">Ombi Requests</h4>
+                <span className={`w-1.5 h-1.5 rounded-full ${ombiOnline ? 'bg-emerald-400' : 'bg-rose-400'} shrink-0`} />
               </div>
-              <span className="text-[10px] text-on-surface-variant font-mono">Port :5000 • Reverse Proxy /ombi</span>
+              <span className="text-[9px] text-on-surface-variant font-mono">Port :5000 • Reverse Proxy /ombi</span>
             </div>
           </div>
 
@@ -255,34 +301,34 @@ export const MobileDashboardView: React.FC<MobileDashboardViewProps> = ({
             className="p-1.5 rounded-xl bg-surface-container hover:bg-surface-container-high border border-outline-variant text-on-surface hover:text-primary transition-colors"
             title="Launch Ombi Web App"
           >
-            <ExternalLink className="w-4 h-4" />
+            <ExternalLink className="w-3.5 h-3.5" />
           </a>
         </div>
 
         {/* Live Counts Grid */}
-        <div className="grid grid-cols-4 gap-1.5 mb-3">
-          <div className="px-2 py-1.5 rounded-xl bg-surface-container border border-outline-variant/60 text-center">
-            <span className="text-[9px] text-on-surface-variant block uppercase font-mono">Available</span>
+        <div className="grid grid-cols-4 gap-1.5 mb-2.5">
+          <div className="px-1.5 py-1 rounded-xl bg-surface-container border border-outline-variant/60 text-center">
+            <span className="text-[8px] text-on-surface-variant block uppercase font-mono">Available</span>
             <span className="text-xs font-bold text-emerald-400 font-mono">{ombiCounts.available || 0}</span>
           </div>
-          <div className="px-2 py-1.5 rounded-xl bg-surface-container border border-outline-variant/60 text-center">
-            <span className="text-[9px] text-on-surface-variant block uppercase font-mono">Approved</span>
+          <div className="px-1.5 py-1 rounded-xl bg-surface-container border border-outline-variant/60 text-center">
+            <span className="text-[8px] text-on-surface-variant block uppercase font-mono">Approved</span>
             <span className="text-xs font-bold text-sky-400 font-mono">{ombiCounts.approved || 0}</span>
           </div>
-          <div className="px-2 py-1.5 rounded-xl bg-surface-container border border-outline-variant/60 text-center">
-            <span className="text-[9px] text-on-surface-variant block uppercase font-mono">Pending</span>
+          <div className="px-1.5 py-1 rounded-xl bg-surface-container border border-outline-variant/60 text-center">
+            <span className="text-[8px] text-on-surface-variant block uppercase font-mono">Pending</span>
             <span className="text-xs font-bold text-amber-400 font-mono">{ombiCounts.pending || 0}</span>
           </div>
-          <div className="px-2 py-1.5 rounded-xl bg-surface-container border border-outline-variant/60 text-center">
-            <span className="text-[9px] text-on-surface-variant block uppercase font-mono">Denied</span>
+          <div className="px-1.5 py-1 rounded-xl bg-surface-container border border-outline-variant/60 text-center">
+            <span className="text-[8px] text-on-surface-variant block uppercase font-mono">Denied</span>
             <span className="text-xs font-bold text-rose-400 font-mono">{ombiCounts.denied || 0}</span>
           </div>
         </div>
 
-        {/* Recent Requests Feed */}
-        <div className="space-y-2 max-h-56 overflow-y-auto mb-3 scrollbar-thin">
+        {/* Recent Requests Feed (with local cache proxy) */}
+        <div className="space-y-1.5 max-h-48 overflow-y-auto mb-2.5 scrollbar-thin">
           {ombiRequests.length > 0 ? (
-            ombiRequests.map((req) => {
+            ombiRequests.slice(0, 5).map((req) => {
               const label = req.statusLabel || (req.available ? 'Available' : req.approved ? 'Approved' : req.denied ? 'Declined' : 'Pending');
               const isAvail = label === 'Available' || req.available;
               const isAppr = label === 'Approved' || req.approved;
@@ -291,34 +337,31 @@ export const MobileDashboardView: React.FC<MobileDashboardViewProps> = ({
               return (
                 <div
                   key={req.id || req.title}
-                  className="flex items-center gap-2.5 p-2 rounded-xl bg-surface-container/70 border border-outline-variant/60"
+                  className="flex items-center gap-2 p-1.5 rounded-xl bg-surface-container/70 border border-outline-variant/60"
                 >
                   {req.posterPath ? (
                     <img
-                      src={`https://image.tmdb.org/t/p/w200${req.posterPath}`}
+                      src={`/ombi-images/t/p/w200${req.posterPath}`}
                       alt={req.title}
-                      className="w-8 h-12 object-cover rounded shrink-0 bg-surface-container-high"
+                      className="w-7 h-10 object-cover rounded shrink-0 bg-surface-container-high"
                       loading="lazy"
                       onError={(e: any) => { e.target.style.display = 'none'; }}
                     />
                   ) : (
-                    <div className="w-8 h-12 rounded bg-surface-container-highest flex items-center justify-center shrink-0 text-xs">
+                    <div className="w-7 h-10 rounded bg-surface-container-highest flex items-center justify-center shrink-0 text-xs">
                       {req.type === 'Movie' ? '🎬' : '📺'}
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1">
                       <span className="text-xs font-bold text-on-surface truncate">{req.title}</span>
-                      <span className="text-[9px] uppercase px-1.5 py-0.2 rounded font-mono font-bold bg-surface-container-highest text-on-surface-variant shrink-0">
-                        {req.type || 'Media'}
-                      </span>
                     </div>
-                    <span className="text-[10px] text-on-surface-variant font-mono block mt-0.5">
+                    <span className="text-[9px] text-on-surface-variant font-mono block">
                       by {req.requestedBy?.displayName || req.requestedBy?.username || 'User'}
                     </span>
                   </div>
                   <div className="shrink-0">
-                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold font-mono ${
+                    <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold font-mono ${
                       isAvail ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' :
                       isAppr ? 'bg-sky-500/20 text-sky-300 border border-sky-500/30' :
                       isDen ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' :
@@ -331,27 +374,28 @@ export const MobileDashboardView: React.FC<MobileDashboardViewProps> = ({
               );
             })
           ) : isLoadingOmbi ? (
-            <div className="py-6 text-center text-xs text-on-surface-variant font-mono">Loading requests...</div>
+            <div className="py-4 text-center text-xs text-on-surface-variant font-mono">Loading requests...</div>
           ) : (
-            <div className="py-6 text-center text-xs text-on-surface-variant space-y-1">
-              <span>🍿</span>
-              <p>No active media requests in Seerr.</p>
+            <div className="py-4 text-center text-xs text-on-surface-variant space-y-1">
+              <p>No active media requests in Ombi.</p>
             </div>
           )}
         </div>
 
         {/* 1-Tap Launch Button */}
         <a
-          href={getServiceUrl('seerr') || getServiceUrl('ombi')}
+          href={getServiceUrl('ombi')}
           target="_blank"
           rel="noreferrer"
           onClick={() => AndroidBridge.performHaptic('medium')}
-          className="w-full py-2.5 px-4 rounded-xl bg-primary text-on-primary font-bold text-xs flex items-center justify-center gap-2 hover:bg-primary/90 active:scale-98 transition-all shadow-sm"
+          className="w-full py-2 px-3 rounded-xl bg-primary text-on-primary font-bold text-xs flex items-center justify-center gap-1.5 hover:bg-primary/90 active:scale-95 transition-all shadow-none"
         >
-          <span>Open Seerr Request Portal</span>
-          <ArrowRight className="w-4 h-4" />
+          <span>Open Ombi Media Portal</span>
+          <ArrowRight className="w-3.5 h-3.5" />
         </a>
       </div>
     </div>
   );
 };
+
+export default MobileDashboardView;

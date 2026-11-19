@@ -197,16 +197,21 @@ func SetupRoutes(r *gin.Engine, cfg *config.Manifest, svcMgr *services.SystemdMa
 
 		// Tailscale Mesh VPN
 		v1.GET("/tailscale/status", h.GetTailscaleStatus)
+		v1.GET("/tailscale/details", h.GetTailscaleDetails)
+		v1.GET("/tailscale/netcheck", h.GetTailscaleNetcheck)
 		v1.POST("/tailscale/login", h.LoginTailscale)
 		v1.POST("/tailscale/logout", h.LogoutTailscale)
 		v1.POST("/tailscale/up", h.UpTailscale)
 		v1.POST("/tailscale/down", h.DownTailscale)
+		v1.POST("/tailscale/prefs", h.SetTailscalePrefs)
+		v1.POST("/tailscale/ping", h.PingTailscalePeer)
 
 		// Tor & Proton Anonymity & Privacy Exit
 		v1.GET("/system/tor-exit", h.GetTorStatus)
 		v1.POST("/system/tor-exit", h.ToggleTorStatus)
 		v1.GET("/system/proton-exit", h.GetProtonStatus)
 		v1.POST("/system/proton-exit", h.ToggleProtonStatus)
+		v1.POST("/system/proton/autostart", h.ProtonSetAutostart)
 		v1.GET("/system/proton/config", h.GetProtonStatus)
 		v1.POST("/system/proton/signin", h.ProtonSignIn)
 		v1.POST("/system/proton/signout", h.ProtonSignOut)
@@ -302,6 +307,7 @@ func SetupRoutes(r *gin.Engine, cfg *config.Manifest, svcMgr *services.SystemdMa
 	r.POST("/api/system/tor-exit", h.ToggleTorStatus)
 	r.GET("/api/system/proton-exit", h.GetProtonStatus)
 	r.POST("/api/system/proton-exit", h.ToggleProtonStatus)
+	r.POST("/api/system/proton/autostart", h.ProtonSetAutostart)
 	r.GET("/api/system/proton/config", h.GetProtonStatus)
 	r.POST("/api/system/proton/signin", h.ProtonSignIn)
 	r.POST("/api/system/proton/signout", h.ProtonSignOut)
@@ -1063,11 +1069,24 @@ func (h *Handler) GetProtonStatus(c *gin.Context) {
 // ToggleProtonStatus connects or disconnects Proton VPN
 func (h *Handler) ToggleProtonStatus(c *gin.Context) {
 	var req struct {
-		Active bool `json:"active"`
+		Active    bool  `json:"active"`
+		Autostart *bool `json:"autostart,omitempty"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
+	}
+
+	if req.Autostart != nil {
+		arg := "disable"
+		if *req.Autostart {
+			arg = "enable"
+		}
+		if _, err := os.Stat("/usr/local/bin/tinapple-proton"); err == nil {
+			_, _ = exec.Command("/usr/local/bin/tinapple-proton", "set-autostart", arg).CombinedOutput()
+		} else {
+			_ = exec.Command("systemctl", arg, "wg-quick@proton.service").Run()
+		}
 	}
 
 	if _, err := os.Stat("/usr/local/bin/tinapple-proton"); err == nil {
@@ -1107,16 +1126,56 @@ func (h *Handler) ToggleProtonStatus(c *gin.Context) {
 		active = exec.Command("systemctl", "is-active", "--quiet", "wg-quick@proton.service").Run() == nil
 	}
 
+	autostart := exec.Command("systemctl", "is-enabled", "--quiet", "wg-quick@proton.service").Run() == nil
+
 	status := "stopped"
 	if active {
 		status = "running"
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"active": active,
-		"status": status,
-		"output": output,
+		"active":    active,
+		"status":    status,
+		"autostart": autostart,
+		"output":    output,
 	})
+}
+
+// ProtonSetAutostart configures whether Proton WireGuard starts automatically on system boot
+func (h *Handler) ProtonSetAutostart(c *gin.Context) {
+	var req struct {
+		Enabled bool `json:"enabled"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid autostart payload"})
+		return
+	}
+
+	arg := "disable"
+	if req.Enabled {
+		arg = "enable"
+	}
+
+	if _, err := os.Stat("/usr/local/bin/tinapple-proton"); err == nil {
+		out, err := exec.Command("/usr/local/bin/tinapple-proton", "set-autostart", arg).CombinedOutput()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": string(out)})
+			return
+		}
+		var res map[string]interface{}
+		if json.Unmarshal(out, &res) == nil {
+			c.JSON(http.StatusOK, res)
+			return
+		}
+	} else {
+		cmd := "disable"
+		if req.Enabled {
+			cmd = "enable"
+		}
+		_ = exec.Command("systemctl", cmd, "wg-quick@proton.service").Run()
+	}
+
+	c.JSON(http.StatusOK, gin.H{"success": true, "autostart": req.Enabled})
 }
 
 // ProtonSignIn authenticates to Proton VPN using username and password (plus optional TOTP)
@@ -2915,6 +2974,66 @@ func (h *Handler) DownTailscale(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"status": "ok", "message": "Tailscale stopped"})
+}
+
+func (h *Handler) GetTailscaleDetails(c *gin.Context) {
+	status, err := h.tailscaleMgr.GetDetailedStatus(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, status)
+}
+
+func (h *Handler) GetTailscaleNetcheck(c *gin.Context) {
+	force := c.Query("force") == "true"
+	report, err := h.tailscaleMgr.Netcheck(c.Request.Context(), force)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, report)
+}
+
+func (h *Handler) SetTailscalePrefs(c *gin.Context) {
+	isOwner, _ := h.getClientRole(c)
+	if !isOwner {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Forbidden: Only appliance owner can modify Tailscale network configuration"})
+		return
+	}
+
+	var req services.TailscalePrefsReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := h.tailscaleMgr.SetPrefs(c.Request.Context(), req); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"status": "ok", "message": "Tailscale settings updated"})
+}
+
+type PingPeerReq struct {
+	Target string `json:"target"`
+}
+
+func (h *Handler) PingTailscalePeer(c *gin.Context) {
+	var req PingPeerReq
+	if err := c.ShouldBindJSON(&req); err != nil || strings.TrimSpace(req.Target) == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Target IP or hostname required"})
+		return
+	}
+
+	res, err := h.tailscaleMgr.PingPeer(c.Request.Context(), req.Target)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, res)
 }
 
 // TerminalWebSocket handles live interactive in-browser PTY sessions

@@ -1,0 +1,196 @@
+#!/usr/bin/env python3
+"""
+Tinapple Download & Process Auto-Resumer
+Resumes all pending downloads and queues automatically on boot or network reconnection:
+  1. qBittorrent: Resumes all active torrents (POST /api/v2/torrents/start).
+  2. Suwayomi: Resumes manga downloader and re-enqueues any chapters that failed during reboot.
+  3. Tinapple Music Queuer: Resets interrupted batches and resumes lossless Antra downloads.
+  4. Watcherr: Executes a single inspection cycle to heal stalled torrents.
+"""
+
+import sys
+import os
+import time
+import json
+import logging
+import urllib.request
+import urllib.error
+import urllib.parse
+import subprocess
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [tinapple-resume-downloads] [%(levelname)s] %(message)s"
+)
+logger = logging.getLogger("tinapple-resume-downloads")
+
+def wait_for_wan(max_wait=60):
+    logger.info("Waiting for active WAN and Internet connectivity...")
+    t0 = time.time()
+    while time.time() - t0 < max_wait:
+        try:
+            req = urllib.request.Request("https://1.1.1.1", headers={"User-Agent": "tinapple/resumer"})
+            with urllib.request.urlopen(req, timeout=3) as resp:
+                if resp.status in (200, 301, 302):
+                    logger.info("WAN connectivity confirmed active.")
+                    return True
+        except Exception:
+            pass
+        time.sleep(2)
+    logger.warning("WAN probe timed out after %ds; proceeding with best-effort resume.", max_wait)
+    return False
+
+def resume_qbittorrent():
+    logger.info("Resuming qBittorrent torrent downloads...")
+    qbit_url = "http://127.0.0.1:8080"
+    for _ in range(10):
+        try:
+            # Check version
+            with urllib.request.urlopen(f"{qbit_url}/api/v2/app/version", timeout=3) as r:
+                ver = r.read().decode("utf-8").strip()
+                logger.info("qBittorrent is ready (version %s).", ver)
+                break
+        except Exception:
+            time.sleep(1)
+    else:
+        logger.warning("qBittorrent Web API not accessible on port 8080.")
+        return
+
+    # Trigger start/resume on all torrents
+    try:
+        data = urllib.parse.urlencode({"hashes": "all"}).encode("utf-8")
+        req = urllib.request.Request(f"{qbit_url}/api/v2/torrents/start", data=data, method="POST")
+        with urllib.request.urlopen(req, timeout=5) as r:
+            logger.info("qBittorrent: all active torrents resumed successfully.")
+    except Exception as e:
+        logger.warning("qBittorrent resume call failed: %s", e)
+
+def resume_suwayomi():
+    logger.info("Resuming Suwayomi manga downloader...")
+    graphql_url = "http://127.0.0.1:4567/suwayomi/api/graphql"
+
+    def gql(query, variables=None):
+        req = urllib.request.Request(
+            graphql_url,
+            data=json.dumps({"query": query, "variables": variables or {}}).encode("utf-8"),
+            headers={"Content-Type": "application/json"}
+        )
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            return json.loads(resp.read().decode("utf-8"))
+
+    for _ in range(15):
+        try:
+            res = gql("query { aboutServer { version } }")
+            if "data" in res:
+                break
+        except Exception:
+            time.sleep(1)
+    else:
+        logger.warning("Suwayomi GraphQL endpoint not accessible on port 4567.")
+        return
+
+    # 1. Start downloader engine
+    try:
+        gql("mutation { startDownloader(input: {}) { clientMutationId } }")
+        logger.info("Suwayomi: downloader engine activated.")
+    except Exception as e:
+        logger.warning("Suwayomi startDownloader failed: %s", e)
+
+    # 2. Inspect queue and re-enqueue any error chapters
+    try:
+        status_res = gql("""
+        query {
+          downloadStatus {
+            state
+            queue {
+              state
+              chapter {
+                id
+                name
+              }
+            }
+          }
+        }
+        """)
+        queue = status_res.get("data", {}).get("downloadStatus", {}).get("queue", [])
+        errors = [item for item in queue if item.get("state") == "ERROR"]
+        if errors:
+            logger.info("Suwayomi: found %d chapters in ERROR state. Re-enqueuing...", len(errors))
+            requeued = 0
+            for item in errors:
+                cid = item["chapter"]["id"]
+                r = gql("mutation Requeue($id: Int!) { enqueueChapterDownload(input: {id: $id}) { clientMutationId } }", {"id": cid})
+                if "data" in r:
+                    requeued += 1
+            logger.info("Suwayomi: successfully re-enqueued %d failed chapters.", requeued)
+        else:
+            logger.info("Suwayomi: %d chapters currently in download queue (0 errors).", len(queue))
+    except Exception as e:
+        logger.warning("Suwayomi queue inspection/requeue failed: %s", e)
+
+def resume_music_queuer():
+    logger.info("Resuming Tinapple Music Queuer (Antra FLAC)...")
+    queue_file = "/home/pineapple/.config/tinapple/music_queue.json"
+    if not os.path.exists(queue_file):
+        logger.info("No music queue file found; nothing to resume.")
+        return
+
+    try:
+        with open(queue_file, "r", encoding="utf-8") as f:
+            q = json.load(f)
+        
+        has_pending = False
+        changed = False
+        for item in q.get("items", []):
+            if item.get("status") in ("pending", "in_progress", "partial"):
+                for b in item.get("batches", []):
+                    if b.get("status") in ("pending", "in_progress"):
+                        has_pending = True
+                    if b.get("status") == "in_progress":
+                        b["status"] = "pending"
+                        changed = True
+                if item.get("status") == "in_progress":
+                    item["status"] = "pending"
+                    changed = True
+
+        if changed:
+            with open(queue_file, "w", encoding="utf-8") as f:
+                json.dump(q, f, indent=2)
+            logger.info("Music Queuer: reset interrupted batches back to pending.")
+
+        if has_pending:
+            logger.info("Music Queuer: launching queue processor daemon...")
+            # Trigger user systemd service if available
+            res = subprocess.run(
+                ["systemctl", "--user", "-M", "pineapple@", "start", "tinapple-music-queuer.service"],
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+            )
+            if res.returncode != 0:
+                # Direct subprocess fallback as user pineapple
+                subprocess.Popen(
+                    ["su", "-", "pineapple", "-c", "/usr/local/bin/tinapple-music-queuer run >/dev/null 2>&1 &"]
+                )
+    except Exception as e:
+        logger.warning("Music Queuer resume check failed: %s", e)
+
+def resume_torrent_healer():
+    healer_bin = "/usr/local/bin/tinapple-torrent-healer"
+    if os.path.isfile(healer_bin) and os.access(healer_bin, os.X_OK):
+        logger.info("Running Watcherr torrent healer cycle (--once)...")
+        try:
+            subprocess.run([healer_bin, "--once"], timeout=20, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            logger.info("Watcherr cycle finished.")
+        except Exception as e:
+            logger.warning("Watcherr execution failed: %s", e)
+
+def main():
+    logger.info("Starting Tinapple Download & Queue Auto-Resumer...")
+    wait_for_wan(max_wait=45)
+    resume_qbittorrent()
+    resume_suwayomi()
+    resume_music_queuer()
+    resume_torrent_healer()
+    logger.info("All downloads and pending background queues verified and resumed.")
+
+if __name__ == "__main__":
+    main()

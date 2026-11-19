@@ -101,5 +101,13 @@ while true; do
     fi
   fi
 
+  # Autonomous PESU WiFi Watchdog: Ensure pesu-wifi.service daemon is active
+  if systemctl is-enabled pesu-wifi >/dev/null 2>&1; then
+    if ! systemctl is-active --quiet pesu-wifi; then
+      log "PESU WiFi alert: pesu-wifi.service daemon not active. Resurrecting pesu-wifi.service..."
+      systemctl restart pesu-wifi >/dev/null 2>&1 || true
+    fi
+  fi
+
   sleep "${CHECK_INTERVAL}"
 done

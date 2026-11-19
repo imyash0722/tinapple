@@ -6,26 +6,93 @@ import './index.css';
 import { api } from './services/api';
 
 // Global uncaught error listener to forward browser & website crashes to Error Logger
+const CLIENT_ERRORS_KEY = 'tinapple_client_errors';
+
+function persistClientError(err: { message: string; stack?: string; source: string; url?: string }) {
+  try {
+    const raw = localStorage.getItem(CLIENT_ERRORS_KEY);
+    const existing = raw ? JSON.parse(raw) : [];
+    const item = {
+      ...err,
+      id: `client-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+      timestamp: new Date().toISOString(),
+    };
+    // Deduplicate within 5 seconds and keep last 50 items
+    const updated = [
+      item,
+      ...existing.filter(
+        (e: any) => e.message !== err.message || Date.now() - new Date(e.timestamp).getTime() > 5000
+      ),
+    ].slice(0, 50);
+    localStorage.setItem(CLIENT_ERRORS_KEY, JSON.stringify(updated));
+  } catch {}
+}
+
 if (typeof window !== 'undefined') {
   window.addEventListener('error', (event) => {
-    api.reportClientError({
+    const errObj = {
       message: event.message || 'Unknown browser window error',
       stack: event.error?.stack || `${event.filename}:${event.lineno}:${event.colno}`,
       source: 'window.onerror',
       url: window.location.href,
-    });
+    };
+    persistClientError(errObj);
+    api.reportClientError(errObj).catch(() => {});
   });
 
   window.addEventListener('unhandledrejection', (event) => {
     const reason = event.reason;
     const msg = typeof reason === 'string' ? reason : reason?.message || 'Unhandled Promise Rejection';
-    api.reportClientError({
+    const errObj = {
       message: msg,
       stack: reason?.stack || String(reason),
       source: 'unhandledrejection',
       url: window.location.href,
-    });
+    };
+    persistClientError(errObj);
+    api.reportClientError(errObj).catch(() => {});
   });
+
+  // Intercept console.error to capture runtime frontend anomalies and warnings
+  const originalConsoleError = console.error;
+  let isInterceptingConsoleError = false;
+
+  console.error = function (...args: any[]) {
+    originalConsoleError.apply(console, args);
+    if (isInterceptingConsoleError) return;
+
+    try {
+      isInterceptingConsoleError = true;
+      const msg = args
+        .map((a) => (typeof a === 'object' ? a?.message || JSON.stringify(a) : String(a)))
+        .join(' ');
+
+      // Filter out internal reporting loops, React ErrorBoundary re-logs, and harmless network polling noise
+      if (
+        !msg ||
+        msg.startsWith('Tinapple Hub Uncaught Error:') ||
+        msg.includes('tinapple_client_errors') ||
+        msg.includes('/api/v1/system/errors/client') ||
+        msg.includes('Failed to load resource')
+      ) {
+        return;
+      }
+
+      const stack = args.find((a) => a instanceof Error)?.stack || new Error().stack;
+      const errObj = {
+        message: msg.slice(0, 500),
+        stack: stack?.slice(0, 1000),
+        source: 'console.error',
+        url: window.location.href,
+      };
+      persistClientError(errObj);
+      api.reportClientError(errObj).catch(() => {});
+    } catch {
+      // Ignore errors inside console.error handler
+    } finally {
+      isInterceptingConsoleError = false;
+    }
+  };
 
   // Register Service Worker for offline PWA cache stack
   if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
@@ -63,12 +130,14 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('Tinapple Hub Uncaught Error:', error, errorInfo);
-    api.reportClientError({
+    const errObj = {
       message: error.message || 'React ErrorBoundary Exception',
       stack: `${error.stack || ''}\nComponentStack: ${errorInfo.componentStack || ''}`,
       source: 'React ErrorBoundary',
       url: typeof window !== 'undefined' ? window.location.href : '',
-    });
+    };
+    persistClientError(errObj);
+    api.reportClientError(errObj).catch(() => {});
   }
 
   render() {

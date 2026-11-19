@@ -21,7 +21,9 @@ import {
   Monitor,
   Timer,
   Network,
+  Globe,
   ShieldAlert,
+  FileText,
   Pin,
   PinOff,
   Menu,
@@ -193,6 +195,14 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
       icon: <Activity className="w-5 h-5 shrink-0" />,
     },
     {
+      id: 'tailscale',
+      label: 'Tailscale',
+      desc: 'Mesh VPN & Exit Nodes',
+      icon: <Globe className="w-5 h-5 shrink-0" />,
+      badge: 'Mesh',
+      badgeColor: 'bg-primary/20 text-primary border-primary/30',
+    },
+    {
       id: 'services',
       label: 'Services',
       desc: 'Appliance Daemons',
@@ -231,11 +241,11 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
       badgeColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
     },
     {
-      id: 'errors',
-      label: 'Error Logger',
-      desc: 'Machine & Web Faults',
-      icon: <ShieldAlert className="w-5 h-5 shrink-0" />,
-      badge: 'AI Logs',
+      id: 'logs',
+      label: 'System Logs',
+      desc: 'Service Journals & Diagnostics',
+      icon: <FileText className="w-5 h-5 shrink-0" />,
+      badge: 'Diagnostics',
       badgeColor: 'bg-red-500/20 text-red-300 border-red-500/30',
     },
     {
@@ -402,7 +412,10 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
             </div>
 
             {navItems.map((item) => {
-              const isActive = activeTab === item.id;
+              const isActive =
+                activeTab === item.id ||
+                (item.id === 'logs' && activeTab === 'errors') ||
+                (item.id === 'errors' && activeTab === 'logs');
 
               if (isCollapsed) {
                 return (
@@ -523,10 +536,9 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
             {/* Tailscale Mesh */}
             <button
               onClick={() => {
-                onOpenTailscale();
-                setMobileOpen(false);
+                handleSelectTab('tailscale');
               }}
-              title="Tailscale VPN Mesh"
+              title="Tailscale VPN Mesh & Exit Nodes"
               className={`transition-all group ${
                 isCollapsed
                   ? 'w-12 h-12 mx-auto flex items-center justify-center rounded-2xl text-on-surface-variant hover:text-sky-300 hover:bg-sky-500/10 border border-transparent p-0'
@@ -812,14 +824,14 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
       {/* D. MOBILE BOTTOM NAVIGATION DOCK (Thumb Friendly with Safe-Area support) */}
       <nav
         aria-label="Mobile Navigation"
-        className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-surface-container-high/90 backdrop-blur-2xl border-t border-outline-variant/60 px-2 py-1.5 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))] flex items-center justify-around shadow-lg"
+        className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-surface-container-high/95 backdrop-blur-2xl border-t border-outline-variant/60 px-1 py-1 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))] flex items-center justify-around shadow-lg"
       >
         <button
           onClick={() => {
             AndroidBridge.performHaptic('light');
             handleSelectTab('dashboard');
           }}
-          className={`flex-1 flex flex-col items-center justify-center py-1 px-1 rounded-xl transition-all active:scale-95 ${
+          className={`flex-1 flex flex-col items-center justify-center py-1 px-0.5 rounded-xl transition-all active:scale-95 ${
             activeTab === 'dashboard'
               ? 'text-primary font-bold'
               : 'text-on-surface-variant hover:text-on-surface'
@@ -834,9 +846,26 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
         <button
           onClick={() => {
             AndroidBridge.performHaptic('light');
+            handleSelectTab('tailscale');
+          }}
+          className={`flex-1 flex flex-col items-center justify-center py-1 px-0.5 rounded-xl transition-all active:scale-95 ${
+            activeTab === 'tailscale'
+              ? 'text-primary font-bold'
+              : 'text-on-surface-variant hover:text-on-surface'
+          }`}
+        >
+          <div className={`p-1.5 rounded-xl transition-all ${activeTab === 'tailscale' ? 'bg-primary/20 text-primary border border-primary/30' : ''}`}>
+            <Globe className="w-4 h-4" />
+          </div>
+          <span className="text-[10px] font-sans mt-0.5 font-medium">Tailscale</span>
+        </button>
+
+        <button
+          onClick={() => {
+            AndroidBridge.performHaptic('light');
             handleSelectTab('services');
           }}
-          className={`flex-1 relative flex flex-col items-center justify-center py-1 px-1 rounded-xl transition-all active:scale-95 ${
+          className={`flex-1 relative flex flex-col items-center justify-center py-1 px-0.5 rounded-xl transition-all active:scale-95 ${
             activeTab === 'services'
               ? 'text-primary font-bold'
               : 'text-on-surface-variant hover:text-on-surface'
@@ -858,7 +887,7 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
             AndroidBridge.performHaptic('light');
             handleSelectTab('store');
           }}
-          className={`flex-1 flex flex-col items-center justify-center py-1 px-1 rounded-xl transition-all active:scale-95 ${
+          className={`flex-1 flex flex-col items-center justify-center py-1 px-0.5 rounded-xl transition-all active:scale-95 ${
             activeTab === 'store'
               ? 'text-primary font-bold'
               : 'text-on-surface-variant hover:text-on-surface'
@@ -872,27 +901,10 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
 
         <button
           onClick={() => {
-            AndroidBridge.performHaptic('light');
-            handleSelectTab('hardware');
-          }}
-          className={`flex-1 flex flex-col items-center justify-center py-1 px-1 rounded-xl transition-all active:scale-95 ${
-            activeTab === 'hardware'
-              ? 'text-primary font-bold'
-              : 'text-on-surface-variant hover:text-on-surface'
-          }`}
-        >
-          <div className={`p-1.5 rounded-xl transition-all ${activeTab === 'hardware' ? 'bg-primary/20 text-primary border border-primary/30' : ''}`}>
-            <Cpu className="w-4 h-4" />
-          </div>
-          <span className="text-[10px] font-sans mt-0.5 font-medium">Hardware</span>
-        </button>
-
-        <button
-          onClick={() => {
             AndroidBridge.performHaptic('medium');
             setMobileOpen(!mobileOpen);
           }}
-          className={`flex-1 flex flex-col items-center justify-center py-1 px-1 rounded-xl transition-all active:scale-95 ${
+          className={`flex-1 flex flex-col items-center justify-center py-1 px-0.5 rounded-xl transition-all active:scale-95 ${
             mobileOpen ? 'text-primary font-bold' : 'text-on-surface-variant hover:text-on-surface'
           }`}
         >

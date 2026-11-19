@@ -39,7 +39,7 @@ export const TailscaleUserManager: React.FC = () => {
 
       // Initialize selected permissions for each user
       const perms: Record<string, string[]> = {};
-      res.tailscale_users.forEach((u) => {
+      (res?.tailscale_users || []).forEach((u) => {
         perms[u.login_name] = u.allowed_services || [];
       });
       setSelectedPerms(perms);
@@ -314,12 +314,12 @@ export const TailscaleUserManager: React.FC = () => {
       <div className="space-y-3">
         <div className="flex items-center justify-between px-1">
           <h4 className="text-xs font-mono uppercase font-bold text-zinc-400 tracking-wider">
-            Connected Tailnet Accounts ({data?.tailscale_users.length || 0})
+            Connected Tailnet Accounts ({data?.tailscale_users?.length || 0})
           </h4>
           <span className="text-[11px] font-mono text-zinc-500">Auto-synced with tailscaled</span>
         </div>
 
-        {data?.tailscale_users.map((user: TailscaleUserItem) => {
+        {(data?.tailscale_users || []).map((user: TailscaleUserItem) => {
           const isUserExpanded = expandedUser === user.login_name;
           const userPerms = selectedPerms[user.login_name] || [];
 

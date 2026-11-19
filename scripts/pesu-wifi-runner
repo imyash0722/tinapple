@@ -14,17 +14,24 @@ if [ -x /usr/local/bin/tinapple-proton ]; then
     /usr/local/bin/tinapple-proton setup-routing >/dev/null 2>&1 || true
 fi
 
-# 2. Wait up to 15 seconds for campus network route
-for i in {1..15}; do
-    if ip route get 192.168.254.1 2>/dev/null | grep -q "dev"; then
+# 2. Wait up to 30 seconds for campus network route or default gateway
+for i in {1..30}; do
+    if ip route get 192.168.254.1 2>/dev/null | grep -q "dev" || ip route show default dev wlp3s0 2>/dev/null | grep -q "via"; then
         break
     fi
     sleep 1
 done
 
-# 3. Explicit initial login
+# 3. Explicit initial login with retry loop
 echo "➜ [pesu-wifi] Performing initial campus portal login..."
-/usr/local/bin/pesu-wifi login || true
+for attempt in 1 2 3; do
+    if /usr/local/bin/pesu-wifi login; then
+        echo "✔ [pesu-wifi] Authenticated successfully on attempt ${attempt}."
+        break
+    fi
+    echo "⚠ [pesu-wifi] Login attempt ${attempt} failed, retrying in 2s..."
+    sleep 2
+done
 
 # 4. Query and print live connection status card
 echo "➜ [pesu-wifi] Live connection status:"

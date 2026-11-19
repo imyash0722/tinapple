@@ -55,6 +55,38 @@ var (
 )
 
 const maxClientErrors = 100
+const clientErrorsDiskPath = "/var/cache/tinapple-dash/client_errors.json"
+const clientErrorsFallbackPath = "/tmp/tinapple_client_errors.json"
+
+func getClientErrorsPath() string {
+	if _, err := os.Stat("/var/cache/tinapple-dash"); err == nil {
+		return clientErrorsDiskPath
+	}
+	return clientErrorsFallbackPath
+}
+
+func saveClientErrorsToDisk(items []SystemErrorItem) {
+	path := getClientErrorsPath()
+	data, err := json.Marshal(items)
+	if err == nil {
+		_ = os.WriteFile(path, data, 0644)
+	}
+}
+
+func loadClientErrorsFromDisk() []SystemErrorItem {
+	path := getClientErrorsPath()
+	data, err := os.ReadFile(path)
+	if err != nil {
+		data, err = os.ReadFile(clientErrorsFallbackPath)
+	}
+	if err == nil {
+		var items []SystemErrorItem
+		if json.Unmarshal(data, &items) == nil {
+			return items
+		}
+	}
+	return nil
+}
 
 // ReportClientError logs an uncaught frontend exception or React ErrorBoundary crash
 func (h *Handler) ReportClientError(c *gin.Context) {
@@ -88,6 +120,8 @@ func (h *Handler) ReportClientError(c *gin.Context) {
 		clientErrors = clientErrors[:maxClientErrors]
 	}
 
+	saveClientErrorsToDisk(clientErrors)
+
 	c.JSON(http.StatusOK, gin.H{"success": true, "id": errItem.ID})
 }
 
@@ -96,6 +130,9 @@ func (h *Handler) ClearClientErrors(c *gin.Context) {
 	clientErrorsMu.Lock()
 	clientErrors = make([]SystemErrorItem, 0)
 	clientErrorsMu.Unlock()
+
+	_ = os.Remove(clientErrorsDiskPath)
+	_ = os.Remove(clientErrorsFallbackPath)
 
 	c.JSON(http.StatusOK, gin.H{"success": true, "message": "Client errors buffer cleared"})
 }
@@ -106,11 +143,16 @@ func (h *Handler) GetSystemErrors(c *gin.Context) {
 	seen := make(map[string]bool)
 
 	// 1. Client frontend errors
-	clientErrorsMu.RLock()
+	clientErrorsMu.Lock()
+	if len(clientErrors) == 0 {
+		if diskItems := loadClientErrorsFromDisk(); len(diskItems) > 0 {
+			clientErrors = diskItems
+		}
+	}
 	for _, item := range clientErrors {
 		allErrors = append(allErrors, item)
 	}
-	clientErrorsMu.RUnlock()
+	clientErrorsMu.Unlock()
 
 	// 2. Failed Systemd Units
 	failedCmd := exec.Command("systemctl", "list-units", "--state=failed", "--no-legend", "--no-pager")
@@ -201,6 +243,63 @@ func (h *Handler) GetSystemErrors(c *gin.Context) {
 		}
 	}
 
+	// 4b. Server Application Services Log Scanner (captures stdout/stderr application exceptions at priority 6/info)
+	svcUnits := []string{
+		"-u", "ombi",
+		"-u", "suwayomi-server",
+		"-u", "jellyfin",
+		"-u", "caddy",
+		"-u", "qbittorrent-nox",
+		"-u", "radarr",
+		"-u", "sonarr",
+		"-u", "prowlarr",
+		"-u", "bazarr",
+		"-u", "pinchflat",
+		"-u", "navidrome",
+		"-u", "tinapple-dash",
+		"-u", "wg-quick@proton",
+	}
+	svcArgs := append(svcUnits, "-b", "-n", "300", "--no-pager", "-o", "short-iso")
+	svcCmd := exec.Command("journalctl", svcArgs...)
+	if svcOut, err := svcCmd.Output(); err == nil {
+		lines := strings.Split(strings.TrimSpace(string(svcOut)), "\n")
+		errPatterns := []string{
+			"ERROR", "fail:", "Exception", "FATAL", "panic:", "Traceback",
+			"Error while", "Forbidden", "Bad Gateway", "signature mismatch",
+			"Failed to start", "failed with result", "Connection refused",
+			"level=error", "level=warn", "Unexpected character encountered",
+		}
+		for i := len(lines) - 1; i >= 0 && len(allErrors) < 260; i-- {
+			line := strings.TrimSpace(lines[i])
+			if line == "" || seen[line] {
+				continue
+			}
+			hasErr := false
+			for _, pat := range errPatterns {
+				if strings.Contains(line, pat) {
+					hasErr = true
+					break
+				}
+			}
+			if !hasErr {
+				continue
+			}
+			seen[line] = true
+
+			item := parseJournalLine(line, i)
+			item.Source = "service"
+			lower := strings.ToLower(line)
+			if strings.Contains(lower, "fatal") || strings.Contains(lower, "panic") || strings.Contains(lower, "critical") {
+				item.Severity = "critical"
+			} else if strings.Contains(lower, "warn") && !strings.Contains(lower, "error") && !strings.Contains(lower, "fail") {
+				item.Severity = "warning"
+			} else {
+				item.Severity = "error"
+			}
+			allErrors = append(allErrors, item)
+		}
+	}
+
 	// 5. WiFi & Network specific journals (check for disconnections or dhcp failures)
 	netCmd := exec.Command("journalctl", "-u", "NetworkManager", "-u", "iwd", "-u", "wpa_supplicant", "-p", "0..4", "-n", "30", "--no-pager", "-o", "short-iso")
 	if netOut, err := netCmd.Output(); err == nil {
@@ -228,33 +327,92 @@ func (h *Handler) GetSystemErrors(c *gin.Context) {
 	})
 }
 
+var isoTimestampRe = regexp.MustCompile(`^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}`)
+var unitNameRe = regexp.MustCompile(`(?i)(?:unit\s+|for\s+unit\s+|unit=)([a-zA-Z0-9@_.-]+?)(?:\.service)?(?:\s|░|$)`)
+var procNameRe = regexp.MustCompile(`^([^:\[]+)`)
+
 func parseJournalLine(line string, idx int) SystemErrorItem {
-	parts := strings.SplitN(line, " ", 4)
+	cleanLine := strings.TrimSpace(line)
+	cleanLine = strings.TrimLeft(cleanLine, "░ \t")
+
 	ts := time.Now().UTC().Format(time.RFC3339)
 	service := "system"
-	msg := line
+	msg := cleanLine
 
-	if len(parts) >= 4 {
+	// Check if line begins with ISO timestamp: "2026-11-18T16:19:17+00:00 hostname proc[123]: message"
+	parts := strings.SplitN(cleanLine, " ", 4)
+	if len(parts) >= 4 && isoTimestampRe.MatchString(parts[0]) {
 		ts = parts[0]
 		rawProc := parts[2]
 		msg = parts[3]
 
-		// Extract clean service name e.g. "jellyfin[123]:" -> "jellyfin"
-		procRe := regexp.MustCompile(`^([^:\[]+)`)
-		if m := procRe.FindStringSubmatch(rawProc); len(m) > 1 {
-			service = m[1]
+		if m := procNameRe.FindStringSubmatch(rawProc); len(m) > 1 {
+			service = strings.ToLower(m[1])
+		}
+	} else if len(parts) >= 1 && isoTimestampRe.MatchString(parts[0]) {
+		ts = parts[0]
+	}
+
+	// Only if service is generic, check if message explicitly mentions a unit name
+	if service == "system" || service == "systemd" {
+		if m := unitNameRe.FindStringSubmatch(cleanLine); len(m) > 1 {
+			matchedUnit := strings.ToLower(m[1])
+			skipWords := map[string]bool{
+				"the": true, "a": true, "an": true, "is": true, "was": true,
+				"job": true, "unit": true, "failed": true, "not": true, "to": true,
+			}
+			if !skipWords[matchedUnit] {
+				service = matchedUnit
+			}
 		}
 	}
 
+	// Canonical normalization for homelab services
+	lowerLine := strings.ToLower(cleanLine)
+	lowerService := strings.ToLower(service)
+
+	switch {
+	case strings.Contains(lowerLine, "suwayomi") || strings.Contains(lowerLine, "tachidesk") || lowerService == "java":
+		service = "suwayomi"
+	case strings.Contains(lowerService, "wg-quick") || strings.Contains(lowerLine, "wireguard") || strings.Contains(lowerLine, "proton"):
+		service = "wireguard-proton"
+	case strings.Contains(lowerService, "ombi"):
+		service = "ombi"
+	case strings.Contains(lowerService, "jellyfin"):
+		service = "jellyfin"
+	case strings.Contains(lowerService, "caddy"):
+		service = "caddy"
+	case strings.Contains(lowerService, "qbittorrent"):
+		service = "qbittorrent"
+	case strings.Contains(lowerService, "radarr"):
+		service = "radarr"
+	case strings.Contains(lowerService, "sonarr"):
+		service = "sonarr"
+	case strings.Contains(lowerService, "prowlarr"):
+		service = "prowlarr"
+	case strings.Contains(lowerService, "bazarr"):
+		service = "bazarr"
+	case strings.Contains(lowerService, "pinchflat"):
+		service = "pinchflat"
+	case strings.Contains(lowerService, "navidrome"):
+		service = "navidrome"
+	case strings.Contains(lowerService, "wpa_supplicant") || strings.Contains(lowerService, "networkmanager") || strings.Contains(lowerService, "iwd") || strings.Contains(lowerService, "wifi"):
+		service = "network"
+	case strings.Contains(lowerService, "tinapple-dash") || strings.Contains(lowerService, "tinapple"):
+		service = "tinapple-dash"
+	case lowerService == "job" || lowerService == "start" || lowerService == "a" || lowerService == "system" || len(lowerService) > 24:
+		service = "systemd"
+	}
+
 	source := "service"
-	lower := strings.ToLower(msg + " " + service)
+	lowerMsg := strings.ToLower(msg + " " + service)
 	severity := "error"
 
-	if strings.Contains(lower, "kernel") {
+	if strings.Contains(lowerMsg, "kernel") || service == "kernel" {
 		source = "kernel"
-	} else if strings.Contains(lower, "wifi") || strings.Contains(lower, "wlan") || strings.Contains(lower, "networkmanager") || strings.Contains(lower, "wpa_supplicant") || strings.Contains(lower, "iwd") {
+	} else if strings.Contains(lowerMsg, "wifi") || strings.Contains(lowerMsg, "wlan") || service == "network" {
 		source = "wifi"
-	} else if strings.Contains(lower, "mce") || strings.Contains(lower, "edac") || strings.Contains(lower, "hardware") || strings.Contains(lower, "ata") || strings.Contains(lower, "nvme") {
+	} else if strings.Contains(lowerMsg, "mce") || strings.Contains(lowerMsg, "edac") || strings.Contains(lowerMsg, "hardware") || strings.Contains(lowerMsg, "ata") || strings.Contains(lowerMsg, "nvme") {
 		source = "hardware"
 		severity = "critical"
 	}
@@ -280,10 +438,15 @@ func extractTimestampFromLog(line string) string {
 }
 
 func cleanLogMessage(msg string) string {
+	msg = strings.TrimLeft(msg, "░ \t")
 	// Remove timestamp prefix if present
 	re := regexp.MustCompile(`^(\[[^\]]+\]\s*|[0-9T:+-]+\s+[^\s]+\s+[^\s]+:\s*)`)
 	cleaned := re.ReplaceAllString(msg, "")
-	return strings.TrimSpace(cleaned)
+	cleaned = strings.TrimSpace(cleaned)
+	if cleaned == "" || cleaned == "░░" {
+		return msg
+	}
+	return cleaned
 }
 
 var aiHttpClient = &http.Client{

@@ -155,6 +155,9 @@ func main() {
 		}
 		wpDir := api.FindWallpapersDir(distDir)
 		r.Static("/wallpapers", wpDir)
+		if _, err := os.Stat(filepath.Join(distDir, "tsumiru")); err == nil {
+			r.Static("/tsumiru", filepath.Join(distDir, "tsumiru"))
+		}
 		r.StaticFile("/favicon.ico", filepath.Join(distDir, "favicon.ico"))
 		r.StaticFile("/sw.js", filepath.Join(distDir, "sw.js"))
 		r.StaticFile("/manifest.json", filepath.Join(distDir, "manifest.json"))
@@ -235,7 +238,6 @@ func main() {
 				"/pinchflat":   8945,
 				"/youtube":     8945,
 				"/suwayomi":    4567,
-				"/tsumiru":     4567,
 				"/homarr":      7575,
 			}
 

@@ -13,8 +13,9 @@ set -u
 
 CHECK_INTERVAL=30
 BOOT_GRACE_PERIOD=180
-SOFT_RECOVERY_SECONDS=120
-MAX_FAIL_SECONDS=300
+SOFT_RECOVERY_SECONDS=180
+MID_RECOVERY_SECONDS=900
+MAX_FAIL_SECONDS=3600
 MAX_CONSECUTIVE_REBOOTS=3
 
 STATE_DIR="/run/tinapple-tailscale-watchdog"
@@ -114,12 +115,33 @@ while true; do
 
   # 2. Second check: Is upstream WAN / Internet reachable?
   if ! is_wan_reachable; then
-    if [[ -f "${FAIL_FILE}" ]]; then
-      log "INFO" "[WAN_DOWN] Wi-Fi connected but upstream Internet is unreachable. Pausing restart timer to avoid rebooting during ISP outage."
-      rm -f "${FAIL_FILE}" "${RESTART_FLAG}"
+    # Self-healing probe for WireGuard VPN routing deadlock:
+    if ip link show proton >/dev/null 2>&1; then
+      log "WARN" "[VPN_PROBE] WAN unreachable while Proton VPN interface is up. Attempting dynamic endpoint route re-pinning..."
+      EP=$(grep -m1 '^Endpoint' /etc/wireguard/proton.conf 2>/dev/null | cut -d= -f2 | cut -d: -f1 | tr -d ' ')
+      GW=$(ip route show default 2>/dev/null | grep -v 'dev proton' | awk '/via/ {print $3}' | head -n1)
+      DEV=$(ip route show default 2>/dev/null | grep -v 'dev proton' | awk '/dev/ {print $5}' | head -n1)
+      if [[ -n "${EP}" && -n "${GW}" && -n "${DEV}" ]]; then
+        ip route replace "${EP}" via "${GW}" dev "${DEV}" metric 10 2>/dev/null || true
+        sleep 2
+      fi
+      if ! is_wan_reachable; then
+        log "WARN" "[VPN_FAILSAFE] WAN still unreachable through Proton VPN. Temporarily withdrawing default dev proton metric 50 route to safeguard Tailscale and management connectivity."
+        ip route del default dev proton metric 50 2>/dev/null || true
+        sleep 2
+      fi
     fi
-    sleep "${CHECK_INTERVAL}"
-    continue
+
+    if ! is_wan_reachable; then
+      if [[ -f "${FAIL_FILE}" ]]; then
+        log "INFO" "[WAN_DOWN] Wi-Fi connected but upstream Internet is unreachable. Pausing restart timer to avoid rebooting during ISP outage."
+        rm -f "${FAIL_FILE}" "${RESTART_FLAG}"
+      fi
+      sleep "${CHECK_INTERVAL}"
+      continue
+    else
+      log "INFO" "[VPN_RECOVERED] Connectivity restored via WAN failover / endpoint re-pin."
+    fi
   fi
 
   # 3. Third check: Wi-Fi and WAN are healthy. Check Tailscale!
@@ -128,7 +150,7 @@ while true; do
   if is_tailscale_healthy; then
     if [[ -f "${FAIL_FILE}" ]]; then
       log "INFO" "[RECOVERED] Tailscale connectivity restored. Watchdog timer reset."
-      rm -f "${FAIL_FILE}" "${RESTART_FLAG}"
+      rm -f "${FAIL_FILE}" "${RESTART_FLAG}" "${STATE_DIR}/mid_recovery_flag"
     fi
 
     # Reset consecutive watchdog reboots if previously set
@@ -136,6 +158,15 @@ while true; do
     if [[ "${REBOOT_COUNT}" -gt 0 ]]; then
       log "INFO" "Tailscale verified healthy. Resetting consecutive watchdog reboot counter from ${REBOOT_COUNT} to 0."
       set_reboot_count 0
+    fi
+
+    # Enforce Always-On Exit Node advertisement if enabled
+    ALWAYS_ON=$(jq -r '.always_on_exit_node // true' /var/lib/tinapple/tailscale_prefs.json 2>/dev/null || echo "true")
+    if [[ "${ALWAYS_ON}" == "true" ]]; then
+      if ! tailscale debug prefs 2>/dev/null | grep -q '"0.0.0.0/0"'; then
+        log "INFO" "[ALWAYS_ON_EXIT] Re-asserting exit node advertisement (0.0.0.0/0, ::/0)..."
+        tailscale set --advertise-exit-node >/dev/null 2>&1 || true
+      fi
     fi
   else
     # Tailscale is failing EVEN THOUGH Wi-Fi and Internet are functional!
@@ -148,21 +179,29 @@ while true; do
 
       log "WARN" "Tailscale down for ${ELAPSED}s / ${MAX_FAIL_SECONDS}s (Wi-Fi/WAN active)."
 
-      # Level 1: Soft recovery at 2 minutes
+      # Level 1: Soft recovery at 3 minutes
       if (( ELAPSED >= SOFT_RECOVERY_SECONDS )) && [[ ! -f "${RESTART_FLAG}" ]]; then
-        log "WARN" "[ACTION] Soft recovery triggered: restarting NetworkManager and tailscaled..."
+        log "WARN" "[ACTION] Soft recovery triggered: restarting tailscaled daemon..."
         touch "${RESTART_FLAG}"
-        systemctl restart NetworkManager tailscaled >/dev/null 2>&1 || true
+        systemctl restart tailscaled >/dev/null 2>&1 || true
       fi
 
-      # Level 2: Hard recovery (system reboot) at 5 minutes
+      # Level 1.5: Mid recovery at 15 minutes
+      if (( ELAPSED >= MID_RECOVERY_SECONDS )) && [[ ! -f "${STATE_DIR}/mid_recovery_flag" ]]; then
+        log "WARN" "[ACTION] Mid recovery triggered: cycling NetworkManager, tailscaled, and verifying campus Wi-Fi..."
+        touch "${STATE_DIR}/mid_recovery_flag"
+        systemctl restart NetworkManager tailscaled >/dev/null 2>&1 || true
+        systemctl is-active --quiet pesu-wifi.service || systemctl start pesu-wifi.service >/dev/null 2>&1 || true
+      fi
+
+      # Level 2: Hard recovery (system reboot) at 1 hour (3600 seconds)
       if (( ELAPSED >= MAX_FAIL_SECONDS )); then
         REBOOT_COUNT=$(get_reboot_count)
 
         if (( REBOOT_COUNT < MAX_CONSECUTIVE_REBOOTS )); then
           NEXT_COUNT=$(( REBOOT_COUNT + 1 ))
           set_reboot_count "${NEXT_COUNT}"
-          log "CRIT" "[CRITICAL] Tailscale down for ${ELAPSED}s while Internet is active (exceeded ${MAX_FAIL_SECONDS}s). Triggering auto-reboot (attempt ${NEXT_COUNT}/${MAX_CONSECUTIVE_REBOOTS})..."
+          log "CRIT" "[CRITICAL] Tailscale unable to connect for ${ELAPSED}s (exceeded 1 hour timeout). Triggering automated system reboot (attempt ${NEXT_COUNT}/${MAX_CONSECUTIVE_REBOOTS})..."
           sync
           systemctl reboot
           exit 0

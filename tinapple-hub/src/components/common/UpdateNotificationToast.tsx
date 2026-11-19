@@ -180,7 +180,7 @@ export const UpdateNotificationToast: React.FC<UpdateNotificationToastProps> = (
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 20, scale: 0.95 }}
         transition={{ duration: 0.3, ease: 'easeOut' }}
-        className="fixed bottom-6 right-6 z-50 max-w-md w-[92vw] sm:w-full font-sans select-none"
+        className="fixed bottom-20 left-3 right-3 sm:bottom-6 sm:right-6 sm:left-auto sm:max-w-md sm:w-full z-50 font-sans select-none"
       >
         <div className="relative rounded-2xl bg-slate-900/95 border border-cyan-400/40 p-3 sm:p-4 shadow-2xl shadow-cyan-950/80 backdrop-blur-3xl overflow-hidden text-xs">
           {/* Subtle accent glow */}

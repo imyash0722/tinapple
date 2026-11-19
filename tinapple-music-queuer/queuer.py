@@ -331,6 +331,21 @@ def process_queue():
     cfg = load_config()
     client = AntraSession(cfg)
     
+    # Auto-resume: reset interrupted in_progress batches back to pending
+    init_q = load_queue()
+    healed = False
+    for item in init_q.get("items", []):
+        for b in item.get("batches", []):
+            if b.get("status") == "in_progress":
+                b["status"] = "pending"
+                healed = True
+        if item.get("status") == "in_progress":
+            item["status"] = "pending"
+            healed = True
+    if healed:
+        save_queue(init_q)
+        logger.info("Resumed interrupted batches: reset in_progress to pending.")
+
     while True:
         q = load_queue()
         target_item = None

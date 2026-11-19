@@ -108,9 +108,21 @@
 		}
 	}
 
-	# 10. Vaultwarden Password Manager
+	# 10. Vaultwarden Password Manager & Bitwarden Multi-Client Compatibility
 	redir /vault /vault/ permanent
-	handle_path /vault/* {
+	handle /vault/* {
+		reverse_proxy localhost:8000 {
+			header_up X-Forwarded-Prefix /vault
+			header_down Location "http://" "https://"
+		}
+	}
+
+	# Bitwarden root endpoints (for clients configured with server root without /vault)
+	@bitwarden_root {
+		path /identity/* /notifications/* /icons/*/icon.png /api/sync* /api/accounts/* /api/ciphers/* /api/folders/* /api/collections/* /api/devices/* /api/config*
+	}
+	handle @bitwarden_root {
+		rewrite * /vault{uri}
 		reverse_proxy localhost:8000 {
 			header_up X-Forwarded-Prefix /vault
 			header_down Location "http://" "https://"
@@ -203,6 +215,13 @@
 	redir /element /element/ permanent
 	handle_path /element/* {
 		root * /usr/share/webapps/element
+		file_server
+	}
+
+	# Tsumiru Web Manga Reader
+	redir /tsumiru /tsumiru/ permanent
+	handle_path /tsumiru/* {
+		root * /usr/share/tinapple-dash/web/dist/tsumiru
 		file_server
 	}
 

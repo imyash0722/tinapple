@@ -1,18 +1,28 @@
 [Unit]
 Description=Tinapple Lossless Music Queuer (Antra to Navidrome)
 Documentation=https://github.com/imyash0722/tinapple-music-queuer
-After=network-online.target navidrome.service
+After=network-online.target navidrome.service tinapple-proton-proxy.service
 Wants=network-online.target
 
 [Service]
 Type=simple
 User=pineapple
 Group=media
-ExecStart=/usr/bin/tinapple-music-queuer run
+Environment="HTTP_PROXY=http://127.0.0.1:1088"
+Environment="HTTPS_PROXY=http://127.0.0.1:1088"
+Environment="ALL_PROXY=socks5://127.0.0.1:1088"
+Environment="NO_PROXY=localhost,127.0.0.1,::1,192.168.0.0/16,10.0.0.0/8,100.64.0.0/10"
+ExecStart=/usr/local/bin/tinapple-music-queuer run
 Restart=on-failure
 RestartSec=15
+TimeoutStopSec=30
 StandardOutput=journal
 StandardError=journal
+
+# Sandboxing & Hardening
+ProtectSystem=strict
+ReadWritePaths=/srv/media/music /home/pineapple/.config/tinapple /tmp
+PrivateTmp=true
 
 [Install]
 WantedBy=multi-user.target

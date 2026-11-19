@@ -75,10 +75,10 @@ def ensure_routing_safeguards():
         add_iptables_rule_if_missing(None, "FORWARD", ["-i", iface, "-o", "tailscale0", "-m", "state", "--state", "RELATED,ESTABLISHED", "-j", "ACCEPT"])
         add_iptables_rule_if_missing("nat", "POSTROUTING", ["-o", iface, "-j", "MASQUERADE"])
 
-    # 2. Forward between Tailscale client devices and campus Wi-Fi WAN (fallback when VPN is off)
-    add_iptables_rule_if_missing(None, "FORWARD", ["-i", "tailscale0", "-o", "wlp3s0", "-j", "ACCEPT"])
-    add_iptables_rule_if_missing(None, "FORWARD", ["-i", "wlp3s0", "-o", "tailscale0", "-m", "state", "--state", "RELATED,ESTABLISHED", "-j", "ACCEPT"])
-    add_iptables_rule_if_missing("nat", "POSTROUTING", ["-o", "wlp3s0", "-j", "MASQUERADE"])
+    # If proton interface is up, ensure exit node policy routing rule and route exist
+    if is_wg_active():
+        run_cmd(["ip", "route", "replace", "default", "dev", "proton", "table", "51820"])
+        run_cmd(["ip", "rule", "add", "iif", "tailscale0", "table", "51820", "priority", "5275"])
 
 def get_public_ip():
     try:
@@ -106,8 +106,103 @@ def is_proton_cli_active():
     code, out, _ = run_cmd(["protonvpn", "status"])
     return "Status: Connected" in out or "Connected to" in out
 
+def is_autostart_enabled():
+    code, out, _ = run_cmd(["systemctl", "is-enabled", "wg-quick@proton.service"])
+    return code == 0 and out.strip() == "enabled"
+
+def set_autostart(enable: bool):
+    ensure_systemd_override()
+    ensure_networkmanager_dispatcher()
+    cmd = ["systemctl", "enable" if enable else "disable", "wg-quick@proton.service"]
+    code, out, err = run_cmd(cmd)
+    return code == 0, f"Proton WireGuard autostart on boot {'enabled' if enable else 'disabled'}"
+
+def ensure_systemd_override():
+    """Ensure wg-quick@proton has ExecStartPre to run resolvconf -u, pin endpoint to WAN gateway, and wait for network-online."""
+    override_dir = "/etc/systemd/system/wg-quick@proton.service.d"
+    override_file = os.path.join(override_dir, "override.conf")
+    content = (
+        "[Unit]\n"
+        "After=network-online.target NetworkManager.service\n"
+        "Wants=network-online.target\n\n"
+        "[Service]\n"
+        "ExecStartPre=/usr/bin/resolvconf -u\n"
+        "ExecStartPre=/bin/bash -c 'EP=$(grep -m1 \"^Endpoint\" /etc/wireguard/proton.conf 2>/dev/null | cut -d= -f2 | cut -d: -f1 | tr -d \" \"); GW=$(ip route show default 2>/dev/null | grep -v \"dev proton\" | awk \"/via/ {print \\$3}\" | head -n1); DEV=$(ip route show default 2>/dev/null | grep -v \"dev proton\" | awk \"/dev/ {print \\$5}\" | head -n1); [ -n \"$EP\" ] && [ -n \"$GW\" ] && [ -n \"$DEV\" ] && ip route replace \"$EP\" via \"$GW\" dev \"$DEV\" metric 10 2>/dev/null || true'\n"
+    )
+    try:
+        if not os.path.isdir(override_dir):
+            os.makedirs(override_dir, exist_ok=True)
+        if not os.path.isfile(override_file) or open(override_file).read() != content:
+            with open(override_file, "w") as f:
+                f.write(content)
+            run_cmd(["systemctl", "daemon-reload"])
+    except Exception:
+        pass
+
+def ensure_networkmanager_dispatcher():
+    """Ensure NetworkManager dispatcher script re-asserts the WireGuard endpoint route on interface reconnect/DHCP renew."""
+    dispatcher_dir = "/etc/NetworkManager/dispatcher.d"
+    dispatcher_file = os.path.join(dispatcher_dir, "99-wireguard-proton.sh")
+    script_content = (
+        "#!/bin/bash\n"
+        "# Re-add WireGuard endpoint route whenever physical WAN reconnects or renews DHCP\n"
+        "INTERFACE=\"$1\"\n"
+        "ACTION=\"$2\"\n"
+        "if [ \"$ACTION\" = \"up\" ] || [ \"$ACTION\" = \"dhcp4-change\" ]; then\n"
+        "    if ip link show proton >/dev/null 2>&1; then\n"
+        "        if [ -f /etc/wireguard/proton.conf ]; then\n"
+        "            EP=$(grep -m1 '^Endpoint' /etc/wireguard/proton.conf 2>/dev/null | cut -d= -f2 | cut -d: -f1 | tr -d ' ')\n"
+        "            GW=$(ip route show default dev \"$INTERFACE\" 2>/dev/null | awk '/via/ {print $3}' | head -n1)\n"
+        "            if [ -n \"$EP\" ] && [ -n \"$GW\" ]; then\n"
+        "                ip route replace \"$EP\" via \"$GW\" dev \"$INTERFACE\" metric 10 2>/dev/null || true\n"
+        "            fi\n"
+        "        fi\n"
+        "    fi\n"
+        "fi\n"
+    )
+    try:
+        if os.path.isdir(dispatcher_dir):
+            if not os.path.isfile(dispatcher_file) or open(dispatcher_file).read() != script_content:
+                with open(dispatcher_file, "w") as f:
+                    f.write(script_content)
+                os.chmod(dispatcher_file, 0o755)
+    except Exception:
+        pass
+
+def pin_wireguard_endpoint():
+    """Pin the WireGuard server endpoint IP to physical default gateway to prevent UDP routing loop."""
+    if not os.path.isfile(WG_CONF):
+        return
+    endpoint_ip = None
+    try:
+        with open(WG_CONF, "r") as f:
+            for line in f:
+                if line.strip().lower().startswith("endpoint"):
+                    parts = line.split("=", 1)
+                    if len(parts) > 1:
+                        val = parts[1].strip().split(":")[0].strip()
+                        if re.match(r"^\d+\.\d+\.\d+\.\d+$", val):
+                            endpoint_ip = val
+                            break
+    except Exception:
+        pass
+    if not endpoint_ip:
+        return
+
+    code, out, _ = run_cmd(["ip", "route", "show", "default"])
+    for line in out.splitlines():
+        if "via" in line and "dev" in line:
+            parts = line.split()
+            gw = parts[parts.index("via") + 1]
+            iface = parts[parts.index("dev") + 1]
+            if iface != "proton":
+                run_cmd(["ip", "route", "replace", endpoint_ip, "via", gw, "dev", iface, "metric", "10"])
+                break
+
 def get_status():
     ensure_routing_safeguards()
+    ensure_systemd_override()
+    ensure_networkmanager_dispatcher()
     wg_active = is_wg_active()
     cli_active = is_proton_cli_active()
     active = wg_active or cli_active
@@ -154,6 +249,7 @@ def get_status():
     return {
         "active": active,
         "status": "running" if active else ("stopped" if configured else "unconfigured"),
+        "autostart": is_autostart_enabled(),
         "configured": configured,
         "tunnel_type": tunnel_type,
         "wireguard_config_exists": wg_exists,
@@ -172,27 +268,26 @@ def get_status():
         "routed_services": [
             "jellyfin",
             "suwayomi",
-            "qbittorrent",
-            "radarr",
-            "sonarr",
-            "prowlarr",
-            "bazarr",
-            "pinchflat",
-            "navidrome"
+            "tailscale_exit_node"
         ]
     }
 
 def connect_vpn():
     ensure_routing_safeguards()
+    ensure_systemd_override()
+    ensure_networkmanager_dispatcher()
 
     # 1. Prefer WireGuard if config exists
     if os.path.isfile(WG_CONF) and os.path.getsize(WG_CONF) > 20:
         if is_wg_active():
             return True, "WireGuard tunnel is already active"
-        run_cmd(["systemctl", "enable", "wg-quick@proton.service"])
+        run_cmd(["resolvconf", "-u"])
+        pin_wireguard_endpoint()
         code, out, err = run_cmd(["wg-quick", "up", "proton"], timeout=15)
-        # Add NAT forwarding for proton so any forwarded client also benefits
+        # Add NAT forwarding and policy routing for proton so exit node and selective clients route cleanly
         run_cmd(["iptables", "-t", "nat", "-A", "POSTROUTING", "-o", "proton", "-j", "MASQUERADE"])
+        run_cmd(["ip", "route", "replace", "default", "dev", "proton", "table", "51820"])
+        run_cmd(["ip", "rule", "add", "iif", "tailscale0", "table", "51820", "priority", "5275"])
         if code == 0 or is_wg_active():
             return True, "WireGuard connected successfully. All services routed into Proton."
         return False, f"WireGuard connect failed: {err or out}"
@@ -214,9 +309,10 @@ def disconnect_vpn():
     msg = []
     if is_wg_active():
         run_cmd(["iptables", "-t", "nat", "-D", "POSTROUTING", "-o", "proton", "-j", "MASQUERADE"])
+        run_cmd(["ip", "route", "del", "default", "dev", "proton", "table", "51820"])
+        run_cmd(["ip", "rule", "del", "iif", "tailscale0", "table", "51820", "priority", "5275"])
         run_cmd(["ip", "route", "del", "default", "dev", "proton", "metric", "50"])
         code, out, err = run_cmd(["wg-quick", "down", "proton"])
-        run_cmd(["systemctl", "disable", "wg-quick@proton.service"])
         msg.append("WireGuard disconnected")
     if is_proton_cli_active():
         code, out, err = run_cmd(["protonvpn", "disconnect"])
@@ -279,7 +375,12 @@ def sanitize_and_save_wireguard(content: str):
     # Insert resilient routing safeguards if not already explicitly present
     ts_ip = get_tailscale_ip()
     post_up_rules = (
-        "ip route add default dev %i metric 50 2>/dev/null || true; "
+        "ENDPOINT_IP=$(grep -m1 '^Endpoint' /etc/wireguard/%i.conf 2>/dev/null | cut -d= -f2 | cut -d: -f1 | tr -d ' '); "
+        "GW=$(ip route show default 2>/dev/null | grep -v 'dev %i' | awk '/via/ {print $3}' | head -n1); "
+        "DEV=$(ip route show default 2>/dev/null | grep -v 'dev %i' | awk '/dev/ {print $5}' | head -n1); "
+        "[ -n \"$ENDPOINT_IP\" ] && [ -n \"$GW\" ] && [ -n \"$DEV\" ] && ip route replace \"$ENDPOINT_IP\" via \"$GW\" dev \"$DEV\" metric 10 2>/dev/null || true; "
+        "ip route replace default dev %i table 51820 2>/dev/null || true; "
+        "ip rule add iif tailscale0 table 51820 priority 5275 2>/dev/null || true; "
         "iptables -t nat -A POSTROUTING -o %i -j MASQUERADE 2>/dev/null || true; "
         "iptables -A FORWARD -i tailscale0 -o %i -j ACCEPT 2>/dev/null || true; "
         "iptables -A FORWARD -i %i -o tailscale0 -m state --state RELATED,ESTABLISHED -j ACCEPT 2>/dev/null || true; "
@@ -293,6 +394,10 @@ def sanitize_and_save_wireguard(content: str):
         "ip rule add to 100.64.0.0/10 table 52 priority 5268 2>/dev/null || true"
     )
     post_down_rules = (
+        "ENDPOINT_IP=$(grep -m1 '^Endpoint' /etc/wireguard/%i.conf 2>/dev/null | cut -d= -f2 | cut -d: -f1 | tr -d ' '); "
+        "[ -n \"$ENDPOINT_IP\" ] && ip route del \"$ENDPOINT_IP\" 2>/dev/null || true; "
+        "ip route del default dev %i table 51820 2>/dev/null || true; "
+        "ip rule del iif tailscale0 table 51820 priority 5275 2>/dev/null || true; "
         "ip route del default dev %i metric 50 2>/dev/null || true; "
         "iptables -t nat -D POSTROUTING -o %i -j MASQUERADE 2>/dev/null || true; "
         "iptables -D FORWARD -i tailscale0 -o %i -j ACCEPT 2>/dev/null || true; "
@@ -408,13 +513,28 @@ def main():
     if cmd == "status":
         print(json.dumps(get_status(), indent=2))
 
+    elif cmd == "autostart":
+        print(json.dumps({"autostart": is_autostart_enabled()}))
+
+    elif cmd == "set-autostart":
+        enable = True
+        if len(sys.argv) > 2:
+            arg = sys.argv[2].lower()
+            enable = arg in ("true", "1", "on", "yes", "enable")
+        ok, msg = set_autostart(enable)
+        print(json.dumps({"success": ok, "message": msg, "autostart": is_autostart_enabled()}))
+        sys.exit(0 if ok else 1)
+
     elif cmd == "setup-exit-node":
         res = setup_exit_node()
         print(json.dumps(res, indent=2))
 
     elif cmd == "setup-routing":
         ensure_routing_safeguards()
-        print(json.dumps({"success": True, "message": "Routing safeguards and exit node forwarding verified."}))
+        ensure_systemd_override()
+        ensure_networkmanager_dispatcher()
+        pin_wireguard_endpoint()
+        print(json.dumps({"success": True, "message": "Routing safeguards, systemd overrides, and NetworkManager dispatchers verified."}))
 
     elif cmd == "connect":
         ok, msg = connect_vpn()

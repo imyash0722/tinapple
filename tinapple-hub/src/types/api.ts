@@ -181,6 +181,76 @@ export interface TailscaleStatus {
   version?: string;
 }
 
+export interface DetailedTailscalePeer {
+  id: string;
+  hostName: string;
+  dnsName: string;
+  os: string;
+  userId: number;
+  tailscaleIPs: string[];
+  online: boolean;
+  shareeNode?: boolean;
+  exitNode?: boolean;
+  exitNodeOption?: boolean;
+  relay?: string;
+  rxBytes: number;
+  txBytes: number;
+  lastSeen?: string;
+  active?: boolean;
+  userLogin?: string;
+  userName?: string;
+  isSelf?: boolean;
+  pingMs?: number;
+  pingLoading?: boolean;
+}
+
+export interface DetailedTailscaleStatus extends TailscaleStatus {
+  self: DetailedTailscalePeer;
+  peers: DetailedTailscalePeer[];
+  exitNode: string;
+  exitNodeAllowLan: boolean;
+  advertiseExitNode: boolean;
+  exitNodeApproved?: boolean;
+  alwaysOnExitNode?: boolean;
+  ssh: boolean;
+  shieldsUp: boolean;
+  acceptRoutes: boolean;
+  preferredDerp: number;
+  preferredDerpRegion?: string;
+  healthWarnings?: string[];
+}
+
+export interface TailscaleNetcheckResult {
+  now: string;
+  udp: boolean;
+  ipv4: boolean;
+  ipv6: boolean;
+  preferredDerp: number;
+  preferredDerpName?: string;
+  captivePortal: boolean;
+  globalV4?: string;
+  globalV6?: string;
+  regionLatency: Record<string, number>;
+}
+
+export interface TailscalePrefsPayload {
+  exitNode?: string;
+  exitNodeAllowLan?: boolean;
+  advertiseExitNode?: boolean;
+  alwaysOnExitNode?: boolean;
+  ssh?: boolean;
+  shieldsUp?: boolean;
+  acceptRoutes?: boolean;
+}
+
+export interface TailscalePingResponse {
+  target: string;
+  success: boolean;
+  latency: string;
+  ms: number;
+  output: string;
+}
+
 export interface AppliancePack {
   id: string;
   name: string;
@@ -309,6 +379,7 @@ export interface UserManagementData {
 export interface ProtonStatus {
   active: boolean;
   status: 'running' | 'stopped' | 'unconfigured';
+  autostart?: boolean;
   configured?: boolean;
   tunnel_type?: 'wireguard' | 'proton_cli' | 'none';
   wireguard_config_exists?: boolean;

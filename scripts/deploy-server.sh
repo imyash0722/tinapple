@@ -54,7 +54,7 @@ ssh "${TARGET_USER}@${TARGET_HOST}" "sudo cp /tmp/tinapple-dash /usr/bin/tinappl
 tar -C "${REPO_DIR}/tinapple-dash/web/dist" -cf - . | ssh "${TARGET_USER}@${TARGET_HOST}" "sudo tar -C /usr/share/tinapple-dash/web/dist -xf -"
 
 # Deploy installer suite scripts
-for script in tinapple-master-install tinapple-install-app tinapple-install-pack tinapple-install-syncyomi tinapple-configure-seerr beeper-ctl tinapple-update tinapple-display-sleep tinapple-proton tinapple-torrent-healer pesu-wifi-runner; do
+for script in tinapple-master-install tinapple-install-app tinapple-install-pack tinapple-install-syncyomi tinapple-configure-seerr beeper-ctl tinapple-update tinapple-display-sleep tinapple-proton tinapple-proton-proxy tinapple-resume-downloads tinapple-torrent-healer pesu-wifi-runner; do
   if [[ -f "${REPO_DIR}/scripts/${script}" ]]; then
     scp -q "${REPO_DIR}/scripts/${script}" "${TARGET_USER}@${TARGET_HOST}:/tmp/${script}"
     ssh "${TARGET_USER}@${TARGET_HOST}" "sudo install -Dm755 /tmp/${script} /usr/local/bin/${script} && rm -f /tmp/${script}"
@@ -62,6 +62,11 @@ for script in tinapple-master-install tinapple-install-app tinapple-install-pack
 done
 # Ensure /usr/local/bin/beeper symlink
 ssh "${TARGET_USER}@${TARGET_HOST}" "sudo ln -sf /usr/local/bin/beeper-ctl /usr/local/bin/beeper 2>/dev/null || true"
+
+if [[ -f "${REPO_DIR}/scripts/tinapple-resume-downloads.service" ]]; then
+  scp -q "${REPO_DIR}/scripts/tinapple-resume-downloads.service" "${TARGET_USER}@${TARGET_HOST}:/tmp/tinapple-resume-downloads.service"
+  ssh "${TARGET_USER}@${TARGET_HOST}" "sudo install -Dm644 /tmp/tinapple-resume-downloads.service /etc/systemd/system/tinapple-resume-downloads.service && rm -f /tmp/tinapple-resume-downloads.service && sudo systemctl daemon-reload && sudo systemctl enable tinapple-resume-downloads.service >/dev/null 2>&1 || true"
+fi
 
 if [[ -f "${REPO_DIR}/scripts/tinapple-wifi-watchdog" && -f "${REPO_DIR}/scripts/tinapple-wifi-watchdog.service" ]]; then
   scp -q "${REPO_DIR}/scripts/tinapple-wifi-watchdog" "${TARGET_USER}@${TARGET_HOST}:/tmp/tinapple-wifi-watchdog"
@@ -92,6 +97,14 @@ fi
 if [[ -f "${REPO_DIR}/tinapple-service-network/configs/80-hotspot-unmanaged.conf" ]]; then
   scp -q "${REPO_DIR}/tinapple-service-network/configs/80-hotspot-unmanaged.conf" "${TARGET_USER}@${TARGET_HOST}:/tmp/80-hotspot-unmanaged.conf"
   ssh "${TARGET_USER}@${TARGET_HOST}" "sudo install -Dm644 /tmp/80-hotspot-unmanaged.conf /etc/NetworkManager/conf.d/80-hotspot-unmanaged.conf && rm -f /tmp/80-hotspot-unmanaged.conf && sudo nmcli general reload 2>/dev/null || true"
+fi
+if [[ -f "${REPO_DIR}/scripts/50-pesu-wifi.sh" ]]; then
+  scp -q "${REPO_DIR}/scripts/50-pesu-wifi.sh" "${TARGET_USER}@${TARGET_HOST}:/tmp/50-pesu-wifi.sh"
+  ssh "${TARGET_USER}@${TARGET_HOST}" "sudo install -Dm755 /tmp/50-pesu-wifi.sh /etc/NetworkManager/dispatcher.d/50-pesu-wifi.sh && rm -f /tmp/50-pesu-wifi.sh"
+fi
+if [[ -f "${REPO_DIR}/tinapple-service-network/systemd/pesu-wifi.service" ]]; then
+  scp -q "${REPO_DIR}/tinapple-service-network/systemd/pesu-wifi.service" "${TARGET_USER}@${TARGET_HOST}:/tmp/pesu-wifi.service"
+  ssh "${TARGET_USER}@${TARGET_HOST}" "sudo install -Dm644 /tmp/pesu-wifi.service /etc/systemd/system/pesu-wifi.service && rm -f /tmp/pesu-wifi.service && sudo systemctl daemon-reload && sudo systemctl enable pesu-wifi.service >/dev/null 2>&1 || true"
 fi
 if [[ -f "${REPO_DIR}/tinapple-service-network/configs/8188eu.conf" ]]; then
   scp -q "${REPO_DIR}/tinapple-service-network/configs/8188eu.conf" "${TARGET_USER}@${TARGET_HOST}:/tmp/8188eu.conf"

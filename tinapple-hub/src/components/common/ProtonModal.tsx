@@ -16,6 +16,7 @@ import {
   LogIn,
   LogOut,
   RefreshCw,
+  Power,
 } from 'lucide-react';
 import { api } from '../../services/api';
 import { ProtonStatus, ProtonWireGuardInfo } from '../../types/api';
@@ -32,6 +33,7 @@ export const ProtonModal: React.FC<ProtonModalProps> = ({ isOpen, onClose, onSta
   const [status, setStatus] = useState<ProtonStatus | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [connecting, setConnecting] = useState<boolean>(false);
+  const [autostartLoading, setAutostartLoading] = useState<boolean>(false);
   const [wgInfo, setWgInfo] = useState<ProtonWireGuardInfo | null>(null);
 
   // WireGuard tab state
@@ -90,6 +92,20 @@ export const ProtonModal: React.FC<ProtonModalProps> = ({ isOpen, onClose, onSta
       }
     } finally {
       setConnecting(false);
+    }
+  };
+
+  const handleToggleAutostart = async (enable: boolean) => {
+    setAutostartLoading(true);
+    setWgMessage(null);
+    try {
+      const res = await api.setProtonAutostart(enable);
+      setStatus((prev) => (prev ? { ...prev, autostart: res.autostart } : null));
+      await fetchState();
+    } catch (err: any) {
+      setWgMessage({ type: 'error', text: err?.message || 'Failed to update boot autostart setting' });
+    } finally {
+      setAutostartLoading(false);
     }
   };
 
@@ -220,8 +236,9 @@ export const ProtonModal: React.FC<ProtonModalProps> = ({ isOpen, onClose, onSta
           </button>
         </div>
 
-        {/* Live Tunnel Status Card */}
-        <div className="p-4 bg-surface-container-low border-b border-white/[0.06] shrink-0">
+        {/* Live Tunnel & Boot Autostart Controls */}
+        <div className="p-4 bg-surface-container-low border-b border-white/[0.06] shrink-0 space-y-3">
+          {/* 1. Live Tunnel Status Card */}
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <div className="relative">
@@ -277,6 +294,52 @@ export const ProtonModal: React.FC<ProtonModalProps> = ({ isOpen, onClose, onSta
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
               </button>
+            </div>
+          </div>
+
+          {/* 2. Start on System Boot Toggle Card */}
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-white/[0.06]">
+            <div className="flex items-center gap-3">
+              <div
+                className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                  status?.autostart
+                    ? 'bg-purple-500/20 text-[#a48eff] border border-purple-500/30'
+                    : 'bg-white/[0.04] text-on-surface-variant border border-white/[0.06]'
+                }`}
+              >
+                <Power className="w-4 h-4" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-on-surface text-xs">
+                    START ON SYSTEM BOOT
+                  </span>
+                  <span
+                    className={`text-[10px] uppercase font-bold px-1.5 py-0.5 rounded ${
+                      status?.autostart
+                        ? 'bg-purple-500/20 text-[#a48eff] border border-purple-500/30'
+                        : 'bg-white/[0.06] text-on-surface-variant'
+                    }`}
+                  >
+                    {status?.autostart ? 'ENABLED' : 'DISABLED'}
+                  </span>
+                </div>
+                <p className="text-[11px] text-on-surface-variant mt-0.5">
+                  {status?.autostart
+                    ? 'WireGuard daemon automatically engages at cold boot with network route-pinning.'
+                    : 'Tunnel remains OFF after reboot until manually toggled here.'}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <SquishSwitch
+                checked={!!status?.autostart}
+                onChange={handleToggleAutostart}
+                disabled={autostartLoading || loading || !isConfigured}
+                variant="purple"
+                size="md"
+              />
             </div>
           </div>
         </div>

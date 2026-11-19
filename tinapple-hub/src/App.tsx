@@ -69,6 +69,7 @@ const AppSettingsModal = lazy(() => import('./components/widgets/AppSettingsModa
 const ServerToolsModal = lazy(() => import('./components/widgets/ServerToolsModal').then((m) => ({ default: m.ServerToolsModal })));
 const WelcomeInstaller = lazy(() => import('./components/installer/WelcomeInstaller').then((m) => ({ default: m.WelcomeInstaller })));
 const ProtonModal = lazy(() => import('./components/common/ProtonModal').then((m) => ({ default: m.ProtonModal })));
+const TailscalePage = lazy(() => import('./components/widgets/TailscalePage').then((m) => ({ default: m.TailscalePage })));
 
 import { api, MOCK_SYSTEM_INFO, MOCK_TELEMETRY, MOCK_SERVICES, MOCK_HARDWARE } from './services/api';
 import { SystemInfo, TelemetrySnapshot, ServiceInfo, HardwareInfo, SessionMode } from './types/api';
@@ -98,8 +99,12 @@ export const App: React.FC = () => {
     if (typeof window === 'undefined') return null;
     const path = window.location.pathname.toLowerCase();
     if (path === '/guides' || path.startsWith('/guides/')) return 'guides';
+    if (path === '/tailscale' || path === '/tailscale/') return 'tailscale';
+    if (path === '/logs' || path === '/logs/' || path === '/errors' || path === '/errors/') return 'logs';
     const params = new URLSearchParams(window.location.search);
-    return params.get('tab');
+    const tabParam = params.get('tab');
+    if (tabParam === 'errors' || tabParam === 'logs') return 'logs';
+    return tabParam;
   });
   const [requestedGuide] = useState(() => {
     if (typeof window === 'undefined') return null;
@@ -128,6 +133,9 @@ export const App: React.FC = () => {
           if (path.startsWith('/guides/') && path.length > 8) {
             setSelectedGuideId(path.slice(8).replace(/\/$/, ''));
           }
+        } else if (path === '/tailscale' || path === '/tailscale/') {
+          setSelectedTab('tailscale');
+          setViewingAppId(null);
         }
         const params = new URLSearchParams(window.location.search);
         const tab = params.get('tab');
@@ -352,7 +360,11 @@ export const App: React.FC = () => {
   const [serviceLogs, setServiceLogs] = useState<string[]>([]);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [tailscaleOpen, setTailscaleOpen] = useState<boolean>(false);
-  const [protonModalOpen, setProtonModalOpen] = useState<boolean>(false);
+  const [protonModalOpen, setProtonModalOpen] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    const params = new URLSearchParams(window.location.search);
+    return params.get('modal') === 'proton' || params.get('proton') === 'true';
+  });
   const [guidesOpen, setGuidesOpen] = useState<boolean>(false);
   const [webTerminalOpen, setWebTerminalOpen] = useState<boolean>(false);
   const [serverToolsOpen, setServerToolsOpen] = useState<boolean>(false);
@@ -798,10 +810,26 @@ export const App: React.FC = () => {
               </button>
 
               {/* Mobile Brand Icon & Tab Title */}
-              <div className="md:hidden flex items-center gap-2 min-w-0">
+              <div className="md:hidden flex items-center gap-1.5 min-w-0 flex-1">
                 <Layers className="w-5 h-5 text-primary shrink-0" />
-                <span className="font-sans font-bold text-sm text-on-surface capitalize truncate max-w-[140px] sm:max-w-xs">
-                  {viewingAppId ? `${viewingAppId} Guide` : activeTab === 'dashboard' ? (systemInfo?.hostname || 'tinapple-server') : activeTab === 'store' ? 'App Store' : activeTab === 'guides' ? 'Guides' : activeTab === 'terminal' ? 'Terminal' : activeTab === 'errors' ? 'Error Logger' : activeTab}
+                <span className="font-sans font-bold text-sm text-on-surface capitalize truncate">
+                  {viewingAppId
+                    ? `${viewingAppId}`
+                    : activeTab === 'dashboard'
+                    ? (systemInfo?.hostname || 'Tinapple')
+                    : activeTab === 'tailscale'
+                    ? 'Tailscale'
+                    : activeTab === 'store'
+                    ? 'Store'
+                    : activeTab === 'services'
+                    ? 'Services'
+                    : activeTab === 'guides'
+                    ? 'Guides'
+                    : activeTab === 'terminal'
+                    ? 'Terminal'
+                    : activeTab === 'errors' || activeTab === 'logs'
+                    ? 'Logs'
+                    : activeTab}
                 </span>
               </div>
 
@@ -833,7 +861,7 @@ export const App: React.FC = () => {
                     </button>
                     <span className="text-xs text-outline">/</span>
                     <span className="text-sm font-sans font-semibold text-on-surface capitalize truncate">
-                      {activeTab === 'store' ? 'App Store & Packs' : activeTab === 'guides' ? 'Appliance Guides' : activeTab === 'terminal' ? 'Appliance Web Terminal' : activeTab === 'errors' ? 'Error Logger & AI Diagnostics' : activeTab}
+                      {activeTab === 'tailscale' ? 'Tailscale Mesh & Exit Nodes' : activeTab === 'store' ? 'App Store & Packs' : activeTab === 'guides' ? 'Appliance Guides' : activeTab === 'terminal' ? 'Appliance Web Terminal' : (activeTab === 'errors' || activeTab === 'logs') ? 'System Logs & Diagnostics' : activeTab}
                     </span>
                     <span className="hidden 2xl:inline-flex text-[10px] font-sans px-2.5 py-0.5 rounded-full bg-surface-container-highest border border-outline-variant text-primary font-medium whitespace-nowrap">
                       {systemInfo?.sessionMode === 'headless' ? 'Headless Server' : 'Niri Desktop'}
@@ -857,12 +885,12 @@ export const App: React.FC = () => {
               ) : (
                 <a
                   href="https://pineapple-server.taildb42a2.ts.net"
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-[11px] font-sans text-emerald-300 font-semibold transition-all shadow-sm active:scale-95 cursor-pointer"
+                  className="flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-[10px] sm:text-[11px] font-sans text-emerald-300 font-semibold transition-all shadow-sm active:scale-95 cursor-pointer shrink-0"
                   title="Switch from unencrypted HTTP (:8088) to trusted Let's Encrypt HTTPS (Port 443)"
                 >
-                  <Lock className="w-3.5 h-3.5 text-emerald-400" />
+                  <Lock className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-emerald-400 shrink-0" />
                   <span className="hidden sm:inline">Switch to Secure HTTPS (443)</span>
-                  <span className="sm:hidden">HTTPS 443</span>
+                  <span className="sm:hidden">HTTPS</span>
                 </a>
               )}
 
@@ -886,7 +914,7 @@ export const App: React.FC = () => {
               <button
                 onClick={handleRunSystemUpdate}
                 disabled={isUpdatingSystem}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary text-on-primary hover:bg-primary/90 font-sans text-xs font-medium transition-all shadow-none active:scale-95 disabled:opacity-50"
+                className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary text-on-primary hover:bg-primary/90 font-sans text-xs font-medium transition-all shadow-none active:scale-95 disabled:opacity-50"
                 title="Full System & Appliance Update (paru/pacman -Syu)"
               >
                 <ArrowUpCircle className={`w-4 h-4 text-on-primary ${isUpdatingSystem ? 'animate-spin' : ''}`} />
@@ -906,7 +934,7 @@ export const App: React.FC = () => {
               {/* Interactive Web Terminal */}
               <button
                 onClick={() => setSelectedTab('terminal')}
-                className={actionButtonClass}
+                className={`hidden sm:flex ${actionButtonClass}`}
                 title="Interactive Web Terminal (PTY)"
                 aria-label="Interactive Web Terminal (PTY)"
               >
@@ -916,7 +944,7 @@ export const App: React.FC = () => {
               {/* Server Operations & Port Matrix */}
               <button
                 onClick={() => setServerToolsOpen(true)}
-                className={actionButtonClass}
+                className={`hidden sm:flex ${actionButtonClass}`}
                 title="Port Matrix & Maintenance Tools"
                 aria-label="Port Matrix & Maintenance Tools"
               >
@@ -1011,6 +1039,7 @@ export const App: React.FC = () => {
                   systemInfo={systemInfo}
                   services={displayServices}
                   onOpenAppPage={handleOpenAppPage}
+                  onSelectTab={handleSelectTab}
                   onSwitchToFullBoard={() => {
                     setPreferFullBoard(true);
                     try {
@@ -1058,6 +1087,27 @@ export const App: React.FC = () => {
                   />
                 </>
               )}
+            </motion.div>
+          )}
+
+          {activeTab === 'tailscale' && (
+            <motion.div
+              key="tailscale"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+              className="space-y-4"
+            >
+              <Suspense
+                fallback={
+                  <div className="h-96 rounded-[28px] bg-surface-container-low border border-outline-variant flex items-center justify-center font-sans text-xs text-on-surface-variant">
+                    Loading Tailscale Mesh & Exit Nodes...
+                  </div>
+                }
+              >
+                <TailscalePage />
+              </Suspense>
             </motion.div>
           )}
 
@@ -1190,9 +1240,9 @@ export const App: React.FC = () => {
             </motion.div>
           )}
 
-          {activeTab === 'errors' && (
+          {(activeTab === 'errors' || activeTab === 'logs') && (
             <motion.div
-              key="errors"
+              key="logs"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}

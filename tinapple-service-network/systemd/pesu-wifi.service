@@ -1,6 +1,6 @@
 [Unit]
 Description=PESU WiFi Continuous Keepalive & Auto-Login Daemon
-After=network-online.target NetworkManager.service
+After=network.target network-online.target NetworkManager.service
 Wants=network-online.target NetworkManager.service
 
 [Service]

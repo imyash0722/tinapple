@@ -8,6 +8,7 @@ import (
 	"net"
 	"os"
 	"os/exec"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -726,5 +727,486 @@ func (m *TailscaleManager) GetUserManagementData(ctx context.Context, rolesMgr *
 
 	return payload, nil
 }
+
+type DetailedTailscalePeer struct {
+	ID             string   `json:"id"`
+	HostName       string   `json:"hostName"`
+	DNSName        string   `json:"dnsName"`
+	OS             string   `json:"os"`
+	UserID         int64    `json:"userId"`
+	TailscaleIPs   []string `json:"tailscaleIPs"`
+	Online         bool     `json:"online"`
+	ShareeNode     bool     `json:"shareeNode"`
+	ExitNode       bool     `json:"exitNode"`
+	ExitNodeOption bool     `json:"exitNodeOption"`
+	Relay          string   `json:"relay,omitempty"`
+	RxBytes        int64    `json:"rxBytes"`
+	TxBytes        int64    `json:"txBytes"`
+	LastSeen       string   `json:"lastSeen,omitempty"`
+	Active         bool     `json:"active"`
+	UserLogin      string   `json:"userLogin,omitempty"`
+	UserName       string   `json:"userName,omitempty"`
+	IsSelf         bool     `json:"isSelf"`
+}
+
+type DetailedTailscaleStatus struct {
+	TailscaleStatus
+	Self                DetailedTailscalePeer   `json:"self"`
+	Peers               []DetailedTailscalePeer `json:"peers"`
+	ExitNode            string                  `json:"exitNode"`
+	ExitNodeAllowLAN    bool                    `json:"exitNodeAllowLan"`
+	AdvertiseExitNode   bool                    `json:"advertiseExitNode"`
+	ExitNodeApproved    bool                    `json:"exitNodeApproved"`
+	AlwaysOnExitNode    bool                    `json:"alwaysOnExitNode"`
+	SSH                 bool                    `json:"ssh"`
+	ShieldsUp           bool                    `json:"shieldsUp"`
+	AcceptRoutes        bool                    `json:"acceptRoutes"`
+	PreferredDERP       int                     `json:"preferredDerp"`
+	PreferredDERPRegion string                  `json:"preferredDerpRegion,omitempty"`
+	HealthWarnings      []string                `json:"healthWarnings"`
+}
+
+type TailscaleNetcheckResult struct {
+	Now               string             `json:"now"`
+	UDP               bool               `json:"udp"`
+	IPv4              bool               `json:"ipv4"`
+	IPv6              bool               `json:"ipv6"`
+	PreferredDERP     int                `json:"preferredDerp"`
+	PreferredDERPName string             `json:"preferredDerpName,omitempty"`
+	CaptivePortal     bool               `json:"captivePortal"`
+	GlobalV4          string             `json:"globalV4,omitempty"`
+	GlobalV6          string             `json:"globalV6,omitempty"`
+	RegionLatency     map[string]float64 `json:"regionLatency"` // in ms
+}
+
+type TailscalePrefsReq struct {
+	ExitNode          *string `json:"exitNode,omitempty"`
+	ExitNodeAllowLAN  *bool   `json:"exitNodeAllowLan,omitempty"`
+	AdvertiseExitNode *bool   `json:"advertiseExitNode,omitempty"`
+	AlwaysOnExitNode  *bool   `json:"alwaysOnExitNode,omitempty"`
+	SSH               *bool   `json:"ssh,omitempty"`
+	ShieldsUp         *bool   `json:"shieldsUp,omitempty"`
+	AcceptRoutes      *bool   `json:"acceptRoutes,omitempty"`
+}
+
+const tailscalePrefsFile = "/var/lib/tinapple/tailscale_prefs.json"
+
+type persistentTailscalePrefs struct {
+	AlwaysOnExitNode bool `json:"always_on_exit_node"`
+}
+
+func readPersistentPrefs() persistentTailscalePrefs {
+	data, err := os.ReadFile(tailscalePrefsFile)
+	if err != nil {
+		return persistentTailscalePrefs{AlwaysOnExitNode: true}
+	}
+	var p persistentTailscalePrefs
+	if err := json.Unmarshal(data, &p); err != nil {
+		return persistentTailscalePrefs{AlwaysOnExitNode: true}
+	}
+	return p
+}
+
+func savePersistentPrefs(p persistentTailscalePrefs) error {
+	_ = os.MkdirAll("/var/lib/tinapple", 0755)
+	data, err := json.MarshalIndent(p, "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(tailscalePrefsFile, data, 0644)
+}
+
+type TailscalePingResult struct {
+	Target  string  `json:"target"`
+	Success bool    `json:"success"`
+	Latency string  `json:"latency"`
+	Ms      float64 `json:"ms"`
+	Output  string  `json:"output"`
+}
+
+var derpRegions = map[int]string{
+	1:  "New York City (US)",
+	2:  "San Francisco (US)",
+	3:  "Singapore (SG)",
+	4:  "Frankfurt (DE)",
+	5:  "Sydney (AU)",
+	6:  "Bangalore (IN)",
+	7:  "Tokyo (JP)",
+	8:  "London (UK)",
+	9:  "Dallas (US)",
+	10: "Seattle (US)",
+	11: "Sao Paulo (BR)",
+	12: "Paris (FR)",
+	13: "Toronto (CA)",
+	14: "Warsaw (PL)",
+	15: "Nairobi (KE)",
+	16: "Johannesburg (ZA)",
+	17: "Dubai (AE)",
+	18: "Tel Aviv (IL)",
+	19: "Madrid (ES)",
+	20: "Mumbai (IN)",
+	21: "Chicago (US)",
+	22: "Amsterdam (NL)",
+	23: "Hong Kong (HK)",
+	24: "Miami (US)",
+	25: "Los Angeles (US)",
+	26: "Denver (US)",
+	27: "Zurich (CH)",
+	28: "Osaka (JP)",
+}
+
+func GetDERPRegionName(id int) string {
+	if name, ok := derpRegions[id]; ok {
+		return name
+	}
+	return fmt.Sprintf("Region %d", id)
+}
+
+func (m *TailscaleManager) GetDetailedStatus(ctx context.Context) (*DetailedTailscaleStatus, error) {
+	bin := m.findTailscaleBin()
+
+	cmdCtx, cancel := context.WithTimeout(ctx, 4*time.Second)
+	defer cancel()
+
+	cmd := exec.CommandContext(cmdCtx, bin, "status", "--json")
+	out, err := cmd.Output()
+	if err != nil {
+		return nil, err
+	}
+
+	type rawDetailedStatus struct {
+		Version      string   `json:"Version"`
+		BackendState string   `json:"BackendState"`
+		AuthURL      string   `json:"AuthURL"`
+		TailscaleIPs []string `json:"TailscaleIPs"`
+		Self         struct {
+			ID             string   `json:"ID"`
+			HostName       string   `json:"HostName"`
+			DNSName        string   `json:"DNSName"`
+			OS             string   `json:"OS"`
+			UserID         int64    `json:"UserID"`
+			TailscaleIPs   []string `json:"TailscaleIPs"`
+			AllowedIPs     []string `json:"AllowedIPs"`
+			Online         bool     `json:"Online"`
+			ExitNode       bool     `json:"ExitNode"`
+			ExitNodeOption bool     `json:"ExitNodeOption"`
+			Relay          string   `json:"Relay"`
+			RxBytes        int64    `json:"RxBytes"`
+			TxBytes        int64    `json:"TxBytes"`
+		} `json:"Self"`
+		Peer map[string]struct {
+			ID             string   `json:"ID"`
+			HostName       string   `json:"HostName"`
+			DNSName        string   `json:"DNSName"`
+			OS             string   `json:"OS"`
+			UserID         int64    `json:"UserID"`
+			TailscaleIPs   []string `json:"TailscaleIPs"`
+			Online         bool     `json:"Online"`
+			ShareeNode     bool     `json:"ShareeNode"`
+			ExitNode       bool     `json:"ExitNode"`
+			ExitNodeOption bool     `json:"ExitNodeOption"`
+			Relay          string   `json:"Relay"`
+			RxBytes        int64    `json:"RxBytes"`
+			TxBytes        int64    `json:"TxBytes"`
+			LastSeen       string   `json:"LastSeen"`
+			Active         bool     `json:"Active"`
+		} `json:"Peer"`
+		User           map[string]tsStatusUserItem `json:"User"`
+		CurrentTailnet *struct {
+			Name string `json:"Name"`
+		} `json:"CurrentTailnet"`
+		Health []string `json:"Health"`
+	}
+
+	var raw rawDetailedStatus
+	if err := json.Unmarshal(out, &raw); err != nil {
+		return nil, err
+	}
+
+	res := &DetailedTailscaleStatus{
+		TailscaleStatus: TailscaleStatus{
+			Installed:    true,
+			Running:      raw.BackendState == "Running",
+			BackendState: raw.BackendState,
+			AuthURL:      raw.AuthURL,
+			TailscaleIPs: raw.TailscaleIPs,
+			DNSName:      strings.TrimSuffix(raw.Self.DNSName, "."),
+			HostName:     raw.Self.HostName,
+			Online:       raw.Self.Online,
+			Version:      raw.Version,
+		},
+		HealthWarnings: raw.Health,
+		Peers:          make([]DetailedTailscalePeer, 0),
+	}
+	if raw.CurrentTailnet != nil {
+		res.Tailnet = raw.CurrentTailnet.Name
+	}
+
+	res.Self = DetailedTailscalePeer{
+		ID:             raw.Self.ID,
+		HostName:       raw.Self.HostName,
+		DNSName:        strings.TrimSuffix(raw.Self.DNSName, "."),
+		OS:             raw.Self.OS,
+		UserID:         raw.Self.UserID,
+		TailscaleIPs:   raw.Self.TailscaleIPs,
+		Online:         raw.Self.Online,
+		ExitNode:       raw.Self.ExitNode,
+		ExitNodeOption: raw.Self.ExitNodeOption,
+		Relay:          raw.Self.Relay,
+		RxBytes:        raw.Self.RxBytes,
+		TxBytes:        raw.Self.TxBytes,
+		IsSelf:         true,
+	}
+	if u, ok := raw.User[fmt.Sprintf("%d", raw.Self.UserID)]; ok {
+		res.Self.UserLogin = u.LoginName
+		res.Self.UserName = u.DisplayName
+	}
+
+	for _, p := range raw.Peer {
+		peer := DetailedTailscalePeer{
+			ID:             p.ID,
+			HostName:       p.HostName,
+			DNSName:        strings.TrimSuffix(p.DNSName, "."),
+			OS:             p.OS,
+			UserID:         p.UserID,
+			TailscaleIPs:   p.TailscaleIPs,
+			Online:         p.Online,
+			ShareeNode:     p.ShareeNode,
+			ExitNode:       p.ExitNode,
+			ExitNodeOption: p.ExitNodeOption,
+			Relay:          p.Relay,
+			RxBytes:        p.RxBytes,
+			TxBytes:        p.TxBytes,
+			LastSeen:       p.LastSeen,
+			Active:         p.Active,
+			IsSelf:         false,
+		}
+		if u, ok := raw.User[fmt.Sprintf("%d", p.UserID)]; ok {
+			peer.UserLogin = u.LoginName
+			peer.UserName = u.DisplayName
+		}
+		res.Peers = append(res.Peers, peer)
+	}
+
+	// Read preferences via tailscale debug prefs
+	prefsCmd := exec.CommandContext(cmdCtx, bin, "debug", "prefs")
+	if prefsOut, err := prefsCmd.Output(); err == nil {
+		type rawPrefs struct {
+			ExitNodeIP             string   `json:"ExitNodeIP"`
+			ExitNodeAllowLANAccess bool     `json:"ExitNodeAllowLANAccess"`
+			RunSSH                 bool     `json:"RunSSH"`
+			ShieldsUp              bool     `json:"ShieldsUp"`
+			RouteAll               bool     `json:"RouteAll"`
+			AdvertiseRoutes        []string `json:"AdvertiseRoutes"`
+		}
+		var p rawPrefs
+		if json.Unmarshal(prefsOut, &p) == nil {
+			res.ExitNode = p.ExitNodeIP
+			res.ExitNodeAllowLAN = p.ExitNodeAllowLANAccess
+			res.SSH = p.RunSSH
+			res.ShieldsUp = p.ShieldsUp
+			res.AcceptRoutes = p.RouteAll
+			for _, r := range p.AdvertiseRoutes {
+				if r == "0.0.0.0/0" || r == "::/0" {
+					res.AdvertiseExitNode = true
+					break
+				}
+			}
+		}
+	}
+
+	pPrefs := readPersistentPrefs()
+	res.AlwaysOnExitNode = pPrefs.AlwaysOnExitNode
+	if res.AdvertiseExitNode {
+		for _, ip := range raw.Self.AllowedIPs {
+			if ip == "0.0.0.0/0" || ip == "::/0" {
+				res.ExitNodeApproved = true
+				break
+			}
+		}
+		if raw.Self.ExitNodeOption {
+			res.ExitNodeApproved = true
+		}
+	}
+
+	return res, nil
+}
+
+var (
+	netcheckCacheMu sync.RWMutex
+	cachedNetcheck  *TailscaleNetcheckResult
+	cachedNetcheckAt time.Time
+)
+
+func (m *TailscaleManager) Netcheck(ctx context.Context, force bool) (*TailscaleNetcheckResult, error) {
+	netcheckCacheMu.RLock()
+	if !force && cachedNetcheck != nil && time.Since(cachedNetcheckAt) < 15*time.Second {
+		cpy := *cachedNetcheck
+		netcheckCacheMu.RUnlock()
+		return &cpy, nil
+	}
+	netcheckCacheMu.RUnlock()
+
+	bin := m.findTailscaleBin()
+	cmdCtx, cancel := context.WithTimeout(ctx, 12*time.Second)
+	defer cancel()
+
+	cmd := exec.CommandContext(cmdCtx, bin, "netcheck", "--format", "json")
+	out, err := cmd.CombinedOutput()
+	if err != nil && len(out) == 0 {
+		return nil, fmt.Errorf("tailscale netcheck failed: %v", err)
+	}
+
+	// Extract JSON block (skip leading warning/log lines)
+	strOut := string(out)
+	braceIdx := strings.Index(strOut, "{")
+	if braceIdx == -1 {
+		return nil, fmt.Errorf("invalid netcheck json output: %s", strOut)
+	}
+	jsonStr := strOut[braceIdx:]
+
+	type rawNetcheck struct {
+		Now           string            `json:"Now"`
+		UDP           bool              `json:"UDP"`
+		IPv4          bool              `json:"IPv4"`
+		IPv6          bool              `json:"IPv6"`
+		PreferredDERP int               `json:"PreferredDERP"`
+		CaptivePortal bool              `json:"CaptivePortal"`
+		GlobalV4      string            `json:"GlobalV4"`
+		GlobalV6      string            `json:"GlobalV6"`
+		RegionLatency map[string]int64  `json:"RegionLatency"`
+	}
+
+	var raw rawNetcheck
+	if err := json.Unmarshal([]byte(jsonStr), &raw); err != nil {
+		return nil, fmt.Errorf("failed to parse netcheck json: %v", err)
+	}
+
+	latencies := make(map[string]float64)
+	for reg, ns := range raw.RegionLatency {
+		latencies[reg] = float64(ns) / 1000000.0 // convert to milliseconds
+	}
+
+	report := &TailscaleNetcheckResult{
+		Now:               raw.Now,
+		UDP:               raw.UDP,
+		IPv4:              raw.IPv4,
+		IPv6:              raw.IPv6,
+		PreferredDERP:     raw.PreferredDERP,
+		PreferredDERPName: GetDERPRegionName(raw.PreferredDERP),
+		CaptivePortal:     raw.CaptivePortal,
+		GlobalV4:          raw.GlobalV4,
+		GlobalV6:          raw.GlobalV6,
+		RegionLatency:     latencies,
+	}
+
+	netcheckCacheMu.Lock()
+	cachedNetcheck = report
+	cachedNetcheckAt = time.Now()
+	netcheckCacheMu.Unlock()
+
+	return report, nil
+}
+
+func (m *TailscaleManager) SetPrefs(ctx context.Context, prefs TailscalePrefsReq) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	bin := m.findTailscaleBin()
+	var args []string
+	args = append(args, "set")
+
+	if prefs.AlwaysOnExitNode != nil {
+		p := readPersistentPrefs()
+		p.AlwaysOnExitNode = *prefs.AlwaysOnExitNode
+		_ = savePersistentPrefs(p)
+		if *prefs.AlwaysOnExitNode {
+			adv := true
+			prefs.AdvertiseExitNode = &adv
+		}
+	} else if prefs.AdvertiseExitNode != nil && !*prefs.AdvertiseExitNode {
+		p := readPersistentPrefs()
+		p.AlwaysOnExitNode = false
+		_ = savePersistentPrefs(p)
+	}
+
+	if prefs.ExitNode != nil {
+		args = append(args, fmt.Sprintf("--exit-node=%s", *prefs.ExitNode))
+	}
+	if prefs.ExitNodeAllowLAN != nil {
+		args = append(args, fmt.Sprintf("--exit-node-allow-lan-access=%t", *prefs.ExitNodeAllowLAN))
+	}
+	if prefs.AdvertiseExitNode != nil {
+		args = append(args, fmt.Sprintf("--advertise-exit-node=%t", *prefs.AdvertiseExitNode))
+	}
+	if prefs.SSH != nil {
+		args = append(args, fmt.Sprintf("--ssh=%t", *prefs.SSH))
+	}
+	if prefs.ShieldsUp != nil {
+		args = append(args, fmt.Sprintf("--shields-up=%t", *prefs.ShieldsUp))
+	}
+	if prefs.AcceptRoutes != nil {
+		args = append(args, fmt.Sprintf("--accept-routes=%t", *prefs.AcceptRoutes))
+	}
+
+	if len(args) == 1 {
+		return nil
+	}
+
+	cmd := exec.CommandContext(ctx, bin, args...)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("failed to apply tailscale settings: %s (%v)", strings.TrimSpace(string(out)), err)
+	}
+	return nil
+}
+
+var pingMsRegex = regexp.MustCompile(`in\s+([0-9.]+)(ms|µs|s)`)
+
+func (m *TailscaleManager) PingPeer(ctx context.Context, target string) (*TailscalePingResult, error) {
+	bin := m.findTailscaleBin()
+	target = strings.TrimSpace(target)
+	if target == "" {
+		return nil, fmt.Errorf("empty ping target")
+	}
+
+	cmdCtx, cancel := context.WithTimeout(ctx, 4*time.Second)
+	defer cancel()
+
+	cmd := exec.CommandContext(cmdCtx, bin, "ping", "--timeout=3s", "-c", "2", target)
+	out, err := cmd.CombinedOutput()
+	strOut := string(out)
+
+	res := &TailscalePingResult{
+		Target: target,
+		Output: strings.TrimSpace(strOut),
+	}
+
+	if err != nil && !strings.Contains(strOut, "pong from") {
+		res.Success = false
+		res.Latency = "unreachable"
+		return res, nil
+	}
+
+	res.Success = true
+	match := pingMsRegex.FindStringSubmatch(strOut)
+	if len(match) >= 3 {
+		res.Latency = match[1] + match[2]
+		var val float64
+		_, _ = fmt.Sscanf(match[1], "%f", &val)
+		if match[2] == "s" {
+			res.Ms = val * 1000
+		} else if match[2] == "µs" {
+			res.Ms = val / 1000
+		} else {
+			res.Ms = val
+		}
+	} else {
+		res.Latency = "connected"
+	}
+
+	return res, nil
+}
+
 
 
