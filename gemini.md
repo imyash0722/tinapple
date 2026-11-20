@@ -82,6 +82,31 @@
 
 ## 5. Changelog & Active State Ledger
 
+### Maintenance (2026-11-20) | feat(server/agy): install agy cli, mirror all 7 mcps and 13 skills, and configure runtime environments on pineapple-server
+- **Scope**: Deployed standalone Antigravity CLI binary (`agy` v1.5.12) to `pineapple-server`, installed portable user-space toolchains (`uv`, `npm`, `npx`), mirrored and verified all 7 MCP servers, copied all 13 custom and plugin skills, and cloned the `tinapple` repository with complete `graphify-out/` AST graph onto the server.
+- **Implementation & Configurations**:
+  - **AGY CLI & Shell Environment**:
+    - Streamed and deployed binary to `/home/pineapple/.local/bin/agy` (v1.5.12).
+    - Configured persistent `$PATH` and `$NODE_PATH` in `~/.bashrc`, `~/.profile`, `~/.zshrc`, `~/.zprofile`, and `~/.zshenv`, ensuring seamless accessibility in interactive, non-interactive, and login shells.
+  - **Toolchains & Runtimes**:
+    - Installed standalone `uv` (v0.13.9 upstream generic x86_64) and provisioned `graphifyy[mcp]` (`graphify` and `graphify-mcp`).
+    - Provisioned `npm` and `npx` (v12.2.2) in `~/.local/bin/` with `NODE_PATH` wrappers pointing to `~/.local/lib/node_modules/`.
+    - Configured Python MCP environment for `firefox-mcp-server` with `mcp` and `requests`.
+  - **All 7 MCP Servers Verified**:
+    - `shadcn` (`npx -y shadcn@latest mcp`): Initialized and responding via stdio.
+    - `firefox-devtools` (`npx -y @mozilla/firefox-devtools-mcp --autoProfile`): Initialized v0.11.0.
+    - `chrome-devtools` (`npx -y chrome-devtools-mcp@latest`): Initialized v1.13.0.
+    - `graphify` (`/home/pineapple/.local/bin/graphify-mcp --transport stdio`): Verified.
+    - `context7` (`npx -y @upstash/context7-mcp`): Initialized v4.7.3.
+    - `ui-ux-pro` (`npx -y ui-ux-pro-mcp`): Initialized v1.0.0 with 103 styles and 170 UX guidelines.
+    - `firefox-browser` (`/home/pineapple/.local/bin/firefox-mcp-server`): Tested stdio JSON-RPC initialization.
+  - **All 13 Skills Mirrored**:
+    - Deployed to `~/.gemini/skills/`, `~/.gemini/config/skills/`, and `~/.gemini/config/plugins/`: `design-taste-frontend`, `frontend-design`, `make-interfaces-feel-better`, `ponytail`, `ponytail-audit`, `ponytail-debt`, `ponytail-gain`, `ponytail-help`, `ponytail-review`, `refactoring-ui`, `swiss-design`, `unslop`, and `web-design-guidelines`.
+    - Mirrored builtins, schemas (`~/.gemini/antigravity-cli/mcp/`), rules (`~/.gemini/GEMINI.md`), and server workspace paths in `settings.json`.
+  - **Repository & Graphify Knowledge Graph**:
+    - Cloned `https://github.com/imyash0722/tinapple.git` into `/home/pineapple/tinapple` on `pineapple-server`.
+    - Synced `graphify-out/` knowledge graph (4,072 nodes) and verified live `graphify query "architecture"` execution.
+
 ### Maintenance (2026-11-20) | feat(downloads/resumer): comprehensive homelab health audit, auto-resuming downloads & queue pipeline
 - **Scope**: Executed full system health and port verification across all active services, endpoints, and reverse proxy routes on `pineapple-server`, fixed socket routing mark `SO_MARK = 0x5182` in `tinapple-proton-proxy`, and developed an automated download & process resumer pipeline ([`scripts/tinapple-resume-downloads`](file:///mnt/shared/projects/tinapple/scripts/tinapple-resume-downloads)) hooked into boot (`tinapple-resume-downloads.service`) and network reconnects (`50-pesu-wifi.sh`).
 - **Implementation & Verifications**:
