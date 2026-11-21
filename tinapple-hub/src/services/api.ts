@@ -257,7 +257,7 @@ export const SERVICE_NAME_PATH_MAP: Record<string, string> = {
   'suwayomi-server': '/suwayomi/',
   pinemusic: '/pinemusic/',
   syncyomi: '/suwayomi/',
-  tsumiru: '/tsumiru/',
+  tsumiru: '/suwayomi/',
   radarr: '/radarr/',
   sonarr: '/sonarr/',
   prowlarr: '/prowlarr/',

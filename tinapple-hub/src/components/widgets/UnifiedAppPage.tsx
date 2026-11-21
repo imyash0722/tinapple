@@ -172,10 +172,10 @@ const APP_METADATA_MAP: Record<
   },
   tsumiru: {
     unit: 'suwayomi-server.service',
-    path: '/tsumiru/',
+    path: '/suwayomi/',
     port: 4567,
     categoryName: 'Manga & Comics',
-    description: 'Modern offline-first manga reader progressive web app and client.',
+    description: 'Suwayomi manga streaming server and built-in web reader.',
   },
   radarr: {
     unit: 'radarr.service',

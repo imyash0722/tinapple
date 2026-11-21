@@ -155,9 +155,13 @@ func main() {
 		}
 		wpDir := api.FindWallpapersDir(distDir)
 		r.Static("/wallpapers", wpDir)
-		if _, err := os.Stat(filepath.Join(distDir, "tsumiru")); err == nil {
-			r.Static("/tsumiru", filepath.Join(distDir, "tsumiru"))
-		}
+		// Tsumiru Web Reader deprecated -> redirect seamlessly to Suwayomi WebUI
+		r.GET("/tsumiru", func(c *gin.Context) {
+			c.Redirect(http.StatusMovedPermanently, "/suwayomi/")
+		})
+		r.GET("/tsumiru/*filepath", func(c *gin.Context) {
+			c.Redirect(http.StatusMovedPermanently, "/suwayomi/")
+		})
 		r.StaticFile("/favicon.ico", filepath.Join(distDir, "favicon.ico"))
 		r.StaticFile("/sw.js", filepath.Join(distDir, "sw.js"))
 		r.StaticFile("/manifest.json", filepath.Join(distDir, "manifest.json"))

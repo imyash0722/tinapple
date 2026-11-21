@@ -218,12 +218,9 @@
 		file_server
 	}
 
-	# Tsumiru Web Manga Reader
-	redir /tsumiru /tsumiru/ permanent
-	handle_path /tsumiru/* {
-		root * /usr/share/tinapple-dash/web/dist/tsumiru
-		file_server
-	}
+	# Tsumiru Web Manga Reader (Deprecated: redirecting to Suwayomi WebUI)
+	redir /tsumiru /suwayomi/ permanent
+	redir /tsumiru/* /suwayomi/ permanent
 
 	# Download Tinapple Root CA
 	handle /tinapple-ca.crt {

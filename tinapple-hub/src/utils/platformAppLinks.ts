@@ -35,7 +35,7 @@ export function getPlatformAppTarget(
   const platform = detectClientPlatform();
   const origin = typeof window !== 'undefined' ? window.location.origin : '';
 
-  // 1. Tsumiru / Suwayomi Manga
+  // 1. Suwayomi / Tsumiru Manga
   if (norm.includes('suwayomi') || norm.includes('tsumiru') || norm.includes('tachidesk') || norm.includes('manga')) {
     if (platform === 'android') {
       return {
@@ -43,29 +43,29 @@ export function getPlatformAppTarget(
         name: 'Tsumiru',
         label: 'Open Tsumiru',
         title: 'Launch Tsumiru native manga app on your phone',
-        appUrl: 'intent://open#Intent;scheme=tsumiru;package=org.tinapple.tsumiru;S.browser_fallback_url=' + encodeURIComponent(origin + '/tsumiru/') + ';end',
-        fallbackUrl: origin + '/tsumiru/',
+        appUrl: 'intent://open#Intent;scheme=tsumiru;package=org.tinapple.tsumiru;S.browser_fallback_url=' + encodeURIComponent(origin + '/suwayomi/') + ';end',
+        fallbackUrl: origin + '/suwayomi/',
         downloadUrl: '/download/tsumiru',
         platform,
       };
     }
     if (platform === 'ios') {
       return {
-        serviceId: 'tsumiru',
-        name: 'Tsumiru',
-        label: 'Open Tsumiru',
-        title: 'Launch Tsumiru Web Reader on iOS',
-        appUrl: origin + '/tsumiru/',
-        fallbackUrl: origin + '/tsumiru/',
+        serviceId: 'suwayomi',
+        name: 'Suwayomi',
+        label: 'Open Suwayomi',
+        title: 'Launch Suwayomi Web Reader on iOS',
+        appUrl: origin + '/suwayomi/',
+        fallbackUrl: origin + '/suwayomi/',
         platform,
       };
     }
     return {
-      serviceId: 'tsumiru',
-      name: 'Tsumiru Reader',
-      label: 'Tsumiru Reader',
-      title: 'Open Tsumiru offline-first web canvas manga reader',
-      appUrl: origin + '/tsumiru/',
+      serviceId: 'suwayomi',
+      name: 'Suwayomi Web',
+      label: 'Suwayomi Web',
+      title: 'Open Suwayomi Manga Web Reader in browser',
+      appUrl: origin + '/suwayomi/',
       downloadUrl: '/download/tsumiru',
       platform,
     };

@@ -315,18 +315,6 @@ export class ApplianceServiceRegistry {
         directPortPreferred: true,
         unit: 'suwayomi-server.service',
       },
-      {
-        id: 'tsumiru',
-        name: 'Tsumiru Reader',
-        displayName: 'Tsumiru Reader',
-        tagline: 'Offline Manga Reader & Desktop CanvasKit',
-        category: 'media',
-        icon: '📚',
-        port: 4567,
-        subpath: '/tsumiru',
-        guideId: 'suwayomi',
-        directPortPreferred: true,
-      },
 
       // Downloads & Servarr Automation
       {

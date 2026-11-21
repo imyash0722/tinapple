@@ -84,6 +84,17 @@
 
 ## 5. Changelog & Active State Ledger
 
+### Maintenance (2026-11-21) | feat(suwayomi/tsumiru): remove tsumiru web client from server, redirect web traffic to suwayomi, preserve native client apps
+- **Scope**: Removed redundant Tsumiru static Flutter Web assets (65MB) from `tinapple-hub` and server web distribution, updated Caddy and `tinapple-dash` to permanently redirect `/tsumiru` and `/tsumiru/*` to `/suwayomi/`, removed duplicate `tsumiru` service card in `serviceRegistry.ts` while retaining Suwayomi as the canonical manga server, and preserved native Android client APK deep linking and download routes (`/download/tsumiru`).
+- **Implementation & Verifications**:
+  - **Static Web Assets Purged**: Removed `tinapple-hub/public/tsumiru/` and `tinapple-dash/web/dist/tsumiru/`, shrinking web bundle by ~65MB and speeding up Vite builds.
+  - **Caddy Ingress & Dashboard Redirect**:
+    - Updated [`configs/caddy/Caddyfile`](file:///mnt/shared/projects/tinapple/configs/caddy/Caddyfile) to replace `file_server` on `/tsumiru/*` with `redir /tsumiru /suwayomi/ permanent` and `redir /tsumiru/* /suwayomi/ permanent`.
+    - Updated [`tinapple-dash/cmd/tinapple-dash/main.go`](file:///mnt/shared/projects/tinapple/tinapple-dash/cmd/tinapple-dash/main.go) to issue HTTP 301 redirects to `/suwayomi/`.
+  - **Service Taxonomy & App Links**:
+    - Updated [`tinapple-hub/src/services/serviceRegistry.ts`](file:///mnt/shared/projects/tinapple/tinapple-hub/src/services/serviceRegistry.ts) to remove the duplicate `tsumiru` entry.
+    - Updated [`tinapple-hub/src/utils/platformAppLinks.ts`](file:///mnt/shared/projects/tinapple/tinapple-hub/src/utils/platformAppLinks.ts) and [`tinapple-hub/src/services/api.ts`](file:///mnt/shared/projects/tinapple/tinapple-hub/src/services/api.ts): on desktop/browser, manga links open `/suwayomi/` (Suwayomi WebUI); on Android, native Tsumiru APK app intent and `/download/tsumiru` remain available with `/suwayomi/` web fallback.
+
 ### Maintenance (2026-11-21) | feat(pinemusic/ui): simplify logo vector icon, drop redundant settings tab, update readmes and sync repos
 - **Scope**: Re-engineered the PineMusic logo into a clean, minimalist geometric vector icon legible at small navbar scales (32px/24px), dropped the redundant Settings tab from PineMusic (removing `SettingsTab.tsx` and trimming navbar/app state), distributed `pinemusic.svg` to Tinapple Hub and Android companion icon directories, integrated PineMusic into `AppBrandIcons.tsx` and `serviceRegistry.ts`, updated READMEs across both repositories with clean architecture diagrams, and synchronized all changes across local and remote git repositories.
 - **Implementation & Verifications**:
