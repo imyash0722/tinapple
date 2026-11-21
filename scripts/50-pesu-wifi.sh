@@ -26,12 +26,15 @@ case "$ACTION" in
             (
                 sleep 1
                 /usr/local/bin/pesu-wifi login >/dev/null 2>&1 || true
-                sleep 3
+                tailscale netcheck >/dev/null 2>&1 || true
+                sleep 2
                 /usr/local/bin/tinapple-resume-downloads >/dev/null 2>&1 || true
             ) &
         else
             (
-                sleep 3
+                sleep 1
+                tailscale netcheck >/dev/null 2>&1 || true
+                sleep 2
                 /usr/local/bin/tinapple-resume-downloads >/dev/null 2>&1 || true
             ) &
         fi

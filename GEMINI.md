@@ -42,11 +42,12 @@
 
 ## 3. Server Environment & Hardware Context
 
-- **Node Hostname**: `pineapple-server` (Dell Latitude 7300, i5-8265U, 7.6 GiB RAM)
-- **OS**: Arch Linux x86_64 (`linux-lts` 6.18.60-1-lts)
-- **Local Network IP**: `192.168.1.103` (Wi-Fi `wlo1`, gateway `192.168.1.1`)
+- **Node Hostname**: `pineapple-server` (Acer Aspire V3-571, serial `NXRYFSI012228003C43400`, 7.6 GiB RAM)
+- **OS**: Arch Linux x86_64 (`linux-lts` 6.18.63-3-lts)
+- **Local Network IP**: `10.3.2.105` (Wi-Fi `wlp3s0`, gateway `10.3.0.1`, connected to 5 GHz on `PESU-EC-Campus-5G` at 5580 MHz)
 - **Tailscale Tailnet IP**: `100.108.215.120` (`pineapple-server.taildb42a2.ts.net`)
 - **Tailscale HTTPS Domain**: `https://pineapple-server.taildb42a2.ts.net` (Trusted Let's Encrypt certificates managed by Caddy on port 443 with automated bi-monthly renewal via `caddy-tailscale-cert.timer`)
+- **Cloudflare Tunnel Ingress**: `tinapple-cloudflared.service` (Direct outbound edge tunnel on port 80/Caddy, completely immune to symmetric NAT/DERP stalls)
 - **Active Web Dashboard Port**: `:8088` (Reverse-proxied via Caddy on port 80/443 under unit `caddy.service`)
 - **Cloudflare WARP**: Disconnected, stopped, disabled, and masked (`warp-svc.service`)
 - **Connected ADB Target**: Google Pixel 10a at `100.111.180.87:5555`
@@ -83,7 +84,21 @@
 
 ## 5. Changelog & Active State Ledger
 
-### Maintenance (2026-11-21) | feat(pinemusic): zero-auth spotify and apple music resolvers, single-track ingest, matte theme, and abstract pineapple guitar logo
+### Maintenance (2026-11-21) | fix(infra/network): hardware identity correction to Acer Aspire V3-571, tier 1 5ghz band steering, and tier 2 cloudflare tunnel deployment
+- **Scope**: Formally corrected hardware identity across all ledgers to Acer Aspire V3-571, resolved network slowdown/timeouts under campus Wi-Fi via Tier 1 fixes (disabled Wi-Fi power-save, established high-priority 5 GHz band steering, and hooked `tailscale netcheck` STUN refresh into NetworkManager dispatcher), and deployed Tier 2 high-availability Cloudflare Tunnel (`tinapple-cloudflared.service`) providing instant, symmetric-NAT-immune public and homelab ingress to Caddy.
+- **Implementation & Verifications**:
+  - **Hardware Profile Verified**:
+    - Hostname `pineapple-server`, Model `Acer Aspire V3-571`, Serial `NXRYFSI012228003C43400`, running Arch Linux on kernel `Linux 6.18.63-3-lts`.
+  - **Tier 1 (5 GHz Band Steering & Tailscale STUN Refresh)**:
+    - Disabled power saving permanently via `/etc/NetworkManager/conf.d/broadcom-wifi-fix.conf` (`wifi.powersave = 2`).
+    - Configured `PESU-EC-Campus-5G` connection profile with `802-11-wireless.band a` and `connection.autoconnect-priority 120`. Server latched to BSSID `b4:79:c8:2f:80:dc` on channel 116 (5580 MHz, 5 GHz), cutting packet loss and transmit errors from the crowded 2.4 GHz band.
+    - Updated `/etc/NetworkManager/dispatcher.d/50-pesu-wifi.sh` to trigger asynchronous `tailscale netcheck` on `up` and `dhcp4-change`, eliminating the ~45s DERP stall upon DHCP re-key.
+  - **Tier 2 (Cloudflare Zero-Trust Tunnel / Quick Tunnel Ingress)**:
+    - Built [`scripts/tinapple-cloudflared-runner`](file:///mnt/shared/projects/tinapple/scripts/tinapple-cloudflared-runner) supporting either pre-configured `TUNNEL_TOKEN` from `/etc/tinapple/cloudflared.env` or zero-config Quick Tunnel mode.
+    - Created and enabled systemd unit [`scripts/tinapple-cloudflared.service`](file:///mnt/shared/projects/tinapple/scripts/tinapple-cloudflared.service) routing directly to Caddy on `http://127.0.0.1:80`.
+    - Live tunnel established and verified: `https://appreciation-informative-gras-formats.trycloudflare.com/pinemusic/` tested with HTTP/2 and 200 OK responses.
+  - **PineMusic Request Only Clarification**:
+    - Documented distinction between "Add to Active Queue" (immediate bitstream download and Navidrome ingest) and "Request Only" (adds item to Requests tab wishlist for deferred admin/user approval).
 - **Scope**: Upgraded PineMusic with zero-auth public resolvers for Spotify (playlists, albums, tracks via embed extraction) and Apple Music (via official iTunes Lookup API and meta scrapers), single-track ingest modal support, filesystem vault scanner for existing music library (510+ physical tracks indexed), resolved reverse-proxy API subpath prefixing, removed presets, redesigned logo to an abstract art pineapple playing guitar, and converted UI from neon to a refined matte charcoal and sage aesthetic.
 - **Implementation & Verifications**:
   - **Zero-Auth Spotify & Apple Music Resolvers**:

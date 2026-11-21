@@ -17,7 +17,8 @@ async def exec_remote(cmd: str):
 
         # Send command followed by echo of marker
         marker = "___REMOTE_EXEC_DONE___"
-        await ws.send(f"{cmd}\necho {marker}:$?\n")
+        full_cmd = f"export PAGER=cat; export SYSTEMD_PAGER=cat; {cmd}"
+        await ws.send(f"{full_cmd}\necho {marker}:$?\n")
 
         chunks = []
         seen_marker = 0
@@ -47,18 +48,19 @@ async def exec_remote(cmd: str):
 
         for line in lines:
             line_str = line.strip()
-            if line_str == cmd.strip():
-                capture = True
-                continue
-            if marker in line:
-                if f"{marker}:" in line:
-                    parts = line.strip().split(f"{marker}:")
-                    if len(parts) >= 2 and parts[-1].isdigit():
-                        exit_code = int(parts[-1])
-                capture = False
-                break
-            if capture and not line_str.startswith("[root@"):
-                result_lines.append(line)
+            if not capture:
+                if "export PAGER=cat" in line_str or (cmd.strip() and cmd.strip()[:20] in line_str):
+                    capture = True
+                    continue
+            else:
+                if marker in line:
+                    if f"{marker}:" in line:
+                        parts = line.strip().split(f"{marker}:")
+                        if len(parts) >= 2 and parts[-1].isdigit():
+                            exit_code = int(parts[-1])
+                    break
+                if not line_str.startswith("[root@"):
+                    result_lines.append(line)
 
         output = "\n".join(result_lines).strip()
         if output:
