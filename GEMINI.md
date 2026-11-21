@@ -83,6 +83,23 @@
 
 ## 5. Changelog & Active State Ledger
 
+### Maintenance (2026-11-21) | feat(pinemusic): zero-auth spotify and apple music resolvers, single-track ingest, matte theme, and abstract pineapple guitar logo
+- **Scope**: Upgraded PineMusic with zero-auth public resolvers for Spotify (playlists, albums, tracks via embed extraction) and Apple Music (via official iTunes Lookup API and meta scrapers), single-track ingest modal support, filesystem vault scanner for existing music library (510+ physical tracks indexed), resolved reverse-proxy API subpath prefixing, removed presets, redesigned logo to an abstract art pineapple playing guitar, and converted UI from neon to a refined matte charcoal and sage aesthetic.
+- **Implementation & Verifications**:
+  - **Zero-Auth Spotify & Apple Music Resolvers**:
+    - Built `SpotifyResolver` (`spotify_resolver.py`): Parses public embed endpoints for `playlist`, `album`, and `track` URLs, extracting full metadata, hi-res artwork, tracklists, and 30s previews without user tokens or authentication.
+    - Built `AppleMusicResolver` (`applemusic_resolver.py`): Zero-auth collection and song lookup via Apple iTunes API and HTML metadata scraping.
+    - Updated `MusicAggregator` (`aggregator.py`), `DeezerResolver` (`get_track`, `get_playlist`), and `YtDlpResolver` (single video resolution as 1-track collection).
+    - Verified live resolution on `pineapple-server` for Spotify playlist ("Hindi", 21 tracks), Spotify single track ("Key", C418), Apple Music album ("Nevermind", Nirvana), Apple Music song ("Smells Like Teen Spirit"), and YouTube videos.
+  - **Matte UI Theme & Abstract Pineapple Guitar Icon**:
+    - Created `PineappleGuitarLogo.tsx`: Custom cubist abstract art icon featuring a faceted pineapple silhouette with crown fronds playing an angled guitar with frets, soundhole, and rhythm waves.
+    - Matte Styling: Swapped glowing radial background gradients and neon emerald accents for matte charcoal (`#0b0d10`, `#12151b`), subdued borders, and muted forest sage (`#4a7558`, `#5c8d6d`).
+    - Removed presets toolbar from `DiscoverTab.tsx` per user direction.
+  - **Vault Filesystem Scanner & Storage Display**:
+    - Added `scan_vault_tracks` in `library.py` to index physical files in `/srv/media/music`, merging 510+ existing files into Device Library view.
+    - Corrected storage readout in `SettingsTab.tsx` to handle loading states gracefully without defaulting to 0 GB; verified available space at 37.07 GB Free.
+  - **TheFatRat Discography Completion**: 91 of 92 tracks completed at `flac-24` (24-bit 48kHz Studio Master FLAC), 1 active. Verified in Navidrome Subsonic API.
+
 ### Maintenance (2026-11-21) | feat(music/pinemusic): build standalone PineMusic appliance, publish repo, integrate into navidrome pack, and ingest TheFatRat discography
 - **Scope**: Designed and deployed PineMusic, a standalone high-fidelity music requester, download queue orchestrator, and automated library manager for Navidrome running on dedicated port `:8090`, inspired by Ombi for request tracking and Psysonic for dark-glass UI. Published standalone public GitHub repository `https://github.com/imyash0722/pinemusic`, integrated PineMusic into the `audiophile-cloud` pack in Tinapple Hub's store catalog, deployed Caddy reverse proxy ingress `/pinemusic/*`, and ingested TheFatRat complete discography in lossless FLAC into `/srv/media/music` and Navidrome.
 - **Implementation & Verifications**:
