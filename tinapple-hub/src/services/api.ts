@@ -213,6 +213,7 @@ export const SERVICE_PORT_MAP: Record<string, number> = {
   radarr: 7878,
   sonarr: 8989,
   prowlarr: 9696,
+  pinemusic: 8090,
 };
 
 export const SERVICE_PATH_MAP: Record<number, string> = {
@@ -231,6 +232,7 @@ export const SERVICE_PATH_MAP: Record<number, string> = {
   7878: '/radarr/',
   8989: '/sonarr/',
   9696: '/prowlarr/',
+  8090: '/pinemusic/',
 };
 
 export const SERVICE_NAME_PATH_MAP: Record<string, string> = {
@@ -253,6 +255,7 @@ export const SERVICE_NAME_PATH_MAP: Record<string, string> = {
   matrix: '/element/',
   suwayomi: '/suwayomi/',
   'suwayomi-server': '/suwayomi/',
+  pinemusic: '/pinemusic/',
   syncyomi: '/suwayomi/',
   tsumiru: '/tsumiru/',
   radarr: '/radarr/',

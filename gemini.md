@@ -33,6 +33,7 @@
 | [`tinapple-android/`](file:///home/tinapple/tinapple/tinapple-android/) | **Kotlin 2.0.21, Jetpack Compose, Material 3, OkHttp, Coil, AGP 8.7.2** | **Pure Native Android Companion App** (`org.tinapple.hub`, v2.0.1, versionCode 5). Built from the ground up to replace the legacy Capacitor hybrid app. Contains direct service cards (links + toggles), Proton VPN exit node gateway switch, and a dedicated Appearance Page. |
 | [`tinapple-hub/`](file:///home/tinapple/tinapple/tinapple-hub/) | **React 18 (`^18.3.1`), Vite 5 (`^5.4.11`), TypeScript, Tailwind CSS, Lucide, Framer Motion** | Main web frontend and desktop UI bundle. Features infinite draggable Homarr 2D canvas, settings manifest, full PTY web terminal, and guide docs. Deployed to `/usr/share/tinapple-dash/web/dist/`. |
 | [`tinapple-dash/`](file:///home/tinapple/tinapple/tinapple-dash/) | **Go (Gin), systemd integration, polkit, SSE streams** | Core appliance backend daemon listening on port `:8088`. Serves REST APIs (`/api/v1/services`, `/api/v1/system/proton-exit`, `/api/v1/wallpapers`), static dashboard files, and `/download/apk` releases. |
+| [imyash0722/pinemusic](https://github.com/imyash0722/pinemusic) | **Python 3.12, FastAPI, Uvicorn, aiosqlite, Mutagen, React 18, Vite 5, Tailwind** | **PineMusic Appliance** (:8090). Standalone zero-auth high-fidelity music requester, interactive queue manager, and bitstream ingest engine for Navidrome. Integrated into `audiophile-cloud` pack. |
 | [`tinapple-service-*/`](file:///home/tinapple/tinapple/) | **Systemd units, Arch Linux PKGBUILDs, Bash/Python daemons** | Modular service orchestration: `tinapple-service-media` (Jellyfin, Sonarr, Radarr, qBittorrent), `tinapple-service-downloads`, `tinapple-service-infrastructure`, and `tinapple-service-backups`. |
 | [`scripts/`](file:///home/tinapple/tinapple/scripts/) | **Bash, Python 3** | Automation scripts including [`build-desktop-releases.sh`](file:///home/tinapple/tinapple/scripts/build-desktop-releases.sh) (multiplatform packager), [`stage-live-artifacts.sh`](file:///home/tinapple/tinapple/scripts/stage-live-artifacts.sh), and [`tinapple-torrent-healer`](file:///home/tinapple/tinapple/scripts/tinapple-torrent-healer). |
 | [`out/releases/`](file:///home/tinapple/tinapple/out/releases/) | **APK, AppImage, DMG, EXE, ZIP, IPA, SHA256SUMS** | Packaged client release artifacts and checksums; validate each platform's binaries independently. |
@@ -81,6 +82,22 @@
 ---
 
 ## 5. Changelog & Active State Ledger
+
+### Maintenance (2026-11-21) | feat(music/pinemusic): build standalone PineMusic appliance, publish repo, integrate into navidrome pack, and ingest TheFatRat discography
+- **Scope**: Designed and deployed PineMusic, a standalone high-fidelity music requester, download queue orchestrator, and automated library manager for Navidrome running on dedicated port `:8090`, inspired by Ombi for request tracking and Psysonic for dark-glass UI. Published standalone public GitHub repository `https://github.com/imyash0722/pinemusic`, integrated PineMusic into the `audiophile-cloud` pack in Tinapple Hub's store catalog, deployed Caddy reverse proxy ingress `/pinemusic/*`, and ingested TheFatRat complete discography in lossless FLAC into `/srv/media/music` and Navidrome.
+- **Implementation & Verifications**:
+  - **Standalone PineMusic Architecture**:
+    - **Backend Daemon** (`/opt/pinemusic/backend`): Python 3.12, FastAPI, Uvicorn, Async SQLite (`aiosqlite`), Mutagen, YT-DLP, and WebSockets. Bound to port `:8090`. Configured systemd unit `pinemusic.service` on `pineapple-server`.
+    - **Zero-Auth Universal Bitstream Ingest**: Supports Spotify, Deezer, YouTube, and Apple Music without requiring user credentials or paid subscriptions. Configured mobile player client extractor args to bypass YouTube bot challenge hurdles with automatic `ytsearch1` fallback.
+    - **Frontend Client** (`/opt/pinemusic/frontend`): React 18, Vite 5, TypeScript, Tailwind CSS, Lucide icons, Framer Motion. Obsidian glass styling, live WebSocket queue monitoring with ETA/speed meters, reordering controls, Ombi-style request tracking, 30s audio preview player, and single-click device file deletion.
+  - **Homelab Ingress & Tinapple Hub Integration**:
+    - Registered Caddy reverse proxy rule in `/etc/caddy/conf.d/pinemusic.caddy` with `handle_path /pinemusic/* -> localhost:8090`.
+    - Integrated `pinemusic` into `ChaddyStore.tsx` under the `audiophile-cloud` (Navidrome) pack, updating service mappings in `api.ts`, `serviceRegistry.ts`, `UnifiedAppPage.tsx`, and `ServicesManager.tsx`.
+    - Rebuilt `tinapple-hub` frontend and staged dist bundle to `/usr/share/tinapple-dash/web/dist/`.
+  - **TheFatRat Discography Ingest & Navidrome Verification**:
+    - Downloaded and processed high-fidelity FLAC tracks into `/srv/media/music/Playlists/TheFatRat - Complete Discography/`.
+    - Generated relative `.m3u8` playlist in `/srv/media/music/Playlists/TheFatRat - Complete Discography.m3u8`.
+    - Automated Subsonic `/rest/startScan.view` notification; verified Navidrome Subsonic API (`/rest/search3.view` and `/rest/getPlaylists.view`) indexing 24-bit 48kHz FLAC tracks for TheFatRat.
 
 ### Maintenance (2026-11-20) | feat(server/agy): install agy cli, mirror all 7 mcps and 13 skills, and configure runtime environments on pineapple-server
 - **Scope**: Deployed standalone Antigravity CLI binary (`agy` v1.5.12) to `pineapple-server`, installed portable user-space toolchains (`uv`, `npm`, `npx`), mirrored and verified all 7 MCP servers, copied all 13 custom and plugin skills, and cloned the `tinapple` repository with complete `graphify-out/` AST graph onto the server.

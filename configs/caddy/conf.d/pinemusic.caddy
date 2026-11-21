@@ -1,0 +1,8 @@
+# PineMusic - Lossless Music Requester & Ingest Web UI
+redir /pinemusic /pinemusic/ permanent
+handle_path /pinemusic/* {
+	reverse_proxy localhost:8090 {
+		header_up X-Forwarded-Prefix /pinemusic
+		header_down Location "http://" "https://"
+	}
+}

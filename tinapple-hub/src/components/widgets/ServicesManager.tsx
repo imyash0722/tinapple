@@ -419,6 +419,7 @@ export const ServicesManager: React.FC<ServicesManagerProps> = ({
                             qbittorrent: 'qbittorrent',
                             homarr: 'homarr',
                             pinchflat: 'pinchflat',
+                            pinemusic: 'pinemusic',
                             navidrome: 'navidrome',
                             adguardhome: 'adguard',
                             adguard: 'adguard',

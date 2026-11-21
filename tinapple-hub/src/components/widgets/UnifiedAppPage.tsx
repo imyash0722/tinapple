@@ -107,6 +107,13 @@ const APP_METADATA_MAP: Record<
     categoryName: 'Media & Video Downloader',
     description: 'Automated YouTube channel & playlist archiver directly integrated with your Jellyfin library.',
   },
+  pinemusic: {
+    unit: 'pinemusic.service',
+    path: '/pinemusic/',
+    port: 8090,
+    categoryName: 'Media & Audio Downloader',
+    description: 'High-fidelity zero-auth music requester & queue orchestrator for Navidrome.',
+  },
   youtube: {
     unit: 'pinchflat.service',
     path: '/pinchflat/',
