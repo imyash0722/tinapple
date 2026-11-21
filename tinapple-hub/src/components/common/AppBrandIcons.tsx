@@ -66,6 +66,11 @@ export const APP_BRAND_CONFIG: Record<string, BrandConfig> = {
     accentColor: '#0086D6',
     isRaster: true,
   },
+  pinemusic: {
+    name: 'PineMusic',
+    iconPath: '/icons/pinemusic.svg',
+    accentColor: '#4A7558',
+  },
   tailscale: {
     name: 'Tailscale',
     iconPath: '/icons/tailscale.svg',

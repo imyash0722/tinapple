@@ -84,6 +84,22 @@
 
 ## 5. Changelog & Active State Ledger
 
+### Maintenance (2026-11-21) | feat(pinemusic/ui): simplify logo vector icon, drop redundant settings tab, update readmes and sync repos
+- **Scope**: Re-engineered the PineMusic logo into a clean, minimalist geometric vector icon legible at small navbar scales (32px/24px), dropped the redundant Settings tab from PineMusic (removing `SettingsTab.tsx` and trimming navbar/app state), distributed `pinemusic.svg` to Tinapple Hub and Android companion icon directories, integrated PineMusic into `AppBrandIcons.tsx` and `serviceRegistry.ts`, updated READMEs across both repositories with clean architecture diagrams, and synchronized all changes across local and remote git repositories.
+- **Implementation & Verifications**:
+  - **Minimalist Vector Logo**:
+    - Replaced the 143-line complex polygonal SVG with a crisp 32x32 geometric design: 3 crown leaves in forest sage (`#5c8d6d`, `#4a7558`), a solid rounded obsidian body (`#141a16`), and a high-contrast angled guitar neck with soundhole and tuning peg in amber (`#d1a054`).
+    - Distributed `pinemusic.svg` across `tinapple-hub/public/icons/`, `tinapple-dash/web/dist/icons/`, and `tinapple-android/app/src/main/assets/icons/`.
+  - **Removed PineMusic Settings Tab**:
+    - Dropped `SettingsTab.tsx` and removed all references from `App.tsx` and `Navbar.tsx`. The remaining 4 focused tabs (`discover`, `queue`, `requests`, `library`) provide an uncluttered workflow, while storage and Navidrome status remain displayed in the persistent navbar badges.
+  - **Production Builds & Live Verification**:
+    - Compiled `pinemusic-web` (`npm run build` in 1.51s). Pushed commit `28f35dc` to `https://github.com/imyash0722/pinemusic.git`.
+    - Deployed and verified on `pineapple-server`: `systemctl is-active pinemusic.service: active`, live bundle `index-DdRFKFLe.js` served via Cloudflare Tunnel.
+    - Compiled `tinapple-hub` (`npm run build` in 3.93s) with `pinemusic` registered in `AppBrandIcons` and `serviceRegistry`.
+  - **Comprehensive READMEs**:
+    - Updated [PineMusic README](file:///mnt/shared/projects/pinemusic/README.md) with ASCII and Mermaid pipeline diagrams, detailed resolver docs (Spotify, Apple Music, Deezer, YouTube), and environment options.
+    - Updated [Tinapple README](file:///mnt/shared/projects/tinapple/README.md) Port Matrix and Audiophile Music Cloud pack to document PineMusic (:8090).
+
 ### Maintenance (2026-11-21) | fix(infra/network): hardware identity correction to Acer Aspire V3-571, tier 1 5ghz band steering, and tier 2 cloudflare tunnel deployment
 - **Scope**: Formally corrected hardware identity across all ledgers to Acer Aspire V3-571, resolved network slowdown/timeouts under campus Wi-Fi via Tier 1 fixes (disabled Wi-Fi power-save, established high-priority 5 GHz band steering, and hooked `tailscale netcheck` STUN refresh into NetworkManager dispatcher), and deployed Tier 2 high-availability Cloudflare Tunnel (`tinapple-cloudflared.service`) providing instant, symmetric-NAT-immune public and homelab ingress to Caddy.
 - **Implementation & Verifications**:

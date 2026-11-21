@@ -295,7 +295,7 @@ export class ApplianceServiceRegistry {
         displayName: 'PineMusic',
         tagline: 'Lossless Music Requester & Queue for Navidrome',
         category: 'media',
-        icon: '🎵',
+        icon: 'pinemusic',
         port: 8090,
         subpath: '/pinemusic',
         guideId: 'pinemusic',
