@@ -7,7 +7,12 @@
     <!-- Queries declared for Android 11+ package visibility checks -->
     <queries>
         <!-- Manga / Suwayomi clients -->
+        <package android:name="io.github.aaronbamblett.tsumiru" />
+        <package android:name="io.github.aaronbamblett.tsumiru.dev" />
         <package android:name="app.tsumiru.Tsumiru" />
+        <package android:name="app.tsumiru" />
+        <package android:name="org.suwayomi.tsumiru" />
+        <package android:name="io.github.suwayomi.tsumiru" />
         <package android:name="org.keiyoushi.tachiyomi" />
         <package android:name="eu.kanade.tachiyomi" />
         <package android:name="tachiyomi.mihon" />

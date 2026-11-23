@@ -307,9 +307,14 @@ fun LoadColumn(
     val cs = MaterialTheme.colorScheme
     Column(modifier, verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Row(Modifier.height(36.dp), verticalAlignment = Alignment.Bottom) {
+            val digitSize = when {
+                value.length > 5 -> 17.sp
+                value.length > 3 -> 20.sp
+                else -> 26.sp
+            }
             Text(
                 value,
-                style = Expressive.digits(26.sp),
+                style = Expressive.digits(digitSize),
                 maxLines = 1,
                 softWrap = false,
                 modifier = Modifier.weight(1f, fill = false),

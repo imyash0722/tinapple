@@ -32,13 +32,13 @@ class ServiceItemTest {
         assertEquals("http://192.168.1.103:5055/", lanPortalUrl)
 
         val clientHttps = TinappleApiClient { "https://pineapple-server.taildb42a2.ts.net" }
-        assertEquals("http://pineapple-server:5055/", clientHttps.getServicePortalUrl(ombiItem))
+        assertEquals("http://${org.tinapple.hub.network.DiscoveryEngine.DEFAULT_TAILSCALE_HOST}:5055/", clientHttps.getServicePortalUrl(ombiItem))
 
         val clientHostname = TinappleApiClient { "http://pineapple-server:8088" }
         assertEquals("http://pineapple-server:5055/", clientHostname.getServicePortalUrl(ombiItem))
 
         val clientDirectIp = TinappleApiClient { "http://100.108.215.120:8088" }
-        assertEquals("http://pineapple-server:5055/", clientDirectIp.getServicePortalUrl(ombiItem))
+        assertEquals("http://${org.tinapple.hub.network.DiscoveryEngine.DEFAULT_TAILSCALE_HOST}:5055/", clientDirectIp.getServicePortalUrl(ombiItem))
     }
 
     @Test

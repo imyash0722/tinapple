@@ -59,10 +59,11 @@ export default {
           muted: 'rgb(var(--md-sys-color-on-surface-variant-rgb, 193 200 212) / <alpha-value>)',      // Subdued metadata
         }
       },
-      borderRadius: { 'm3-card': '28px', 'm3-inner': '12px' },
+      borderRadius: { 'm3-card': '28px', 'm3-inner': '12px', 'expressive': '24px' },
       fontFamily: {
         mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
-        sans: ['Roboto Flex Variable', 'Google Sans', 'system-ui', '-apple-system', 'sans-serif'],
+        display: ['"Readex Pro"', '"Plus Jakarta Sans"', 'Google Sans', 'sans-serif'],
+        sans: ['"Plus Jakarta Sans"', 'Roboto Flex Variable', 'Google Sans', 'system-ui', '-apple-system', 'sans-serif'],
       },
       keyframes: {
         'shiny-text': {

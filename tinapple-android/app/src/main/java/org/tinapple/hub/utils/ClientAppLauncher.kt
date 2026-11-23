@@ -23,14 +23,24 @@ object ClientAppLauncher {
     // Candidate package list for each homelab service, ordered by preference
     private val SERVICE_PACKAGE_CANDIDATES: Map<String, List<String>> = mapOf(
         "suwayomi" to listOf(
+            "io.github.aaronbamblett.tsumiru",
+            "io.github.aaronbamblett.tsumiru.dev",
             "app.tsumiru.Tsumiru",
+            "app.tsumiru",
+            "org.suwayomi.tsumiru",
+            "io.github.suwayomi.tsumiru",
             "org.keiyoushi.tachiyomi",
             "eu.kanade.tachiyomi",
             "tachiyomi.mihon",
             "app.suwayomi.tachidesk"
         ),
         "tsumiru" to listOf(
+            "io.github.aaronbamblett.tsumiru",
+            "io.github.aaronbamblett.tsumiru.dev",
             "app.tsumiru.Tsumiru",
+            "app.tsumiru",
+            "org.suwayomi.tsumiru",
+            "io.github.suwayomi.tsumiru",
             "org.keiyoushi.tachiyomi",
             "eu.kanade.tachiyomi",
             "tachiyomi.mihon"
@@ -197,7 +207,7 @@ object ClientAppLauncher {
 
         // For app-first homelab clients (Tsumiru is an APP, not web; Vibrdrome; Plezy; Bitwarden; Syncthing)
         val appReleaseUrl = when (serviceKey) {
-            "tsumiru", "suwayomi" -> "https://github.com/Suwayomi/Tsumiru/releases"
+            "tsumiru", "suwayomi" -> "https://github.com/Suwayomi/Suwayomi-Tsumiru/releases"
             "vibrdrome" -> "https://github.com/ddmoney420/vibrdrome-android/releases"
             "plezy" -> "https://github.com/edde746/plezy/releases"
             "syncthing" -> "https://github.com/Catfriend1/syncthing-android/releases"

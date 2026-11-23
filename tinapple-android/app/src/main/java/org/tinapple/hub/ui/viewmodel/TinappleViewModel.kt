@@ -18,6 +18,7 @@ import kotlinx.coroutines.launch
 import org.tinapple.hub.data.AppearanceSettings
 import org.tinapple.hub.data.BUNDLED_WALLPAPERS
 import org.tinapple.hub.data.DEFAULT_PALETTES
+import org.tinapple.hub.data.DEFAULT_PINNED_APPS
 import org.tinapple.hub.data.MusicNowPlayingState
 import org.tinapple.hub.data.ProtonStatus
 import org.tinapple.hub.data.ServiceItem
@@ -105,6 +106,7 @@ data class MainUiState(
     val telemetry: SystemTelemetry = SystemTelemetry(),
     val nowPlaying: MusicNowPlayingState = MusicNowPlayingState(),
     val enabledWidgets: Set<String> = setOf("hero", "now_playing", "telemetry", "client_apps", "controls", "services"),
+    val pinnedClientApps: List<String> = DEFAULT_PINNED_APPS,
     val wallpapers: List<WallpaperItem> = BUNDLED_WALLPAPERS,
     val selectedPalette: ThemePalette = DEFAULT_PALETTES.first(),
     val selectedWallpaper: WallpaperItem = BUNDLED_WALLPAPERS.first(),
@@ -142,6 +144,7 @@ class TinappleViewModel(application: Application) : AndroidViewModel(application
                 selectedWallpaper = initialWallpaper,
                 localWallpaperFilePath = initialLocalPath,
                 enabledWidgets = loadSavedWidgets(),
+                pinnedClientApps = loadSavedPinnedApps(),
                 matugenCombos = initialCombos,
                 appearanceSettings = loadSavedAppearanceSettings(),
                 activeServerOrigin = DiscoveryEngine.getCachedServerOrigin(application)
@@ -170,6 +173,26 @@ class TinappleViewModel(application: Application) : AndroidViewModel(application
         if (enabled) current.add(widgetId) else current.remove(widgetId)
         prefs.edit().putStringSet("enabled_widgets", current).apply()
         _uiState.update { it.copy(enabledWidgets = current) }
+    }
+
+    private fun loadSavedPinnedApps(): List<String> {
+        val saved = prefs.getString("pinned_client_apps", null)
+        return if (saved != null) {
+            saved.split(",").filter { it.isNotBlank() }
+        } else {
+            DEFAULT_PINNED_APPS
+        }
+    }
+
+    fun togglePinnedApp(appKey: String, pinned: Boolean) {
+        val current = _uiState.value.pinnedClientApps.toMutableList()
+        if (pinned && !current.contains(appKey)) {
+            current.add(appKey)
+        } else if (!pinned) {
+            current.remove(appKey)
+        }
+        prefs.edit().putString("pinned_client_apps", current.joinToString(",")).apply()
+        _uiState.update { it.copy(pinnedClientApps = current) }
     }
 
     private fun loadSavedPalette(): ThemePalette {
@@ -240,63 +263,66 @@ class TinappleViewModel(application: Application) : AndroidViewModel(application
             prefs.edit().putString("selected_palette_name", matchingPalette.name).apply()
         }
 
+        val cachedFile = File(getApplication<Application>().filesDir, "wp_${wallpaper.id}.jpg")
+        val isAlreadyCached = cachedFile.exists() && cachedFile.length() > 0
+
         _uiState.update {
             it.copy(
                 selectedWallpaper = wallpaper,
                 selectedPalette = matchingPalette,
                 matugenCombos = combos,
-                isDownloadingWallpaper = true
+                localWallpaperFilePath = if (isAlreadyCached) cachedFile.absolutePath else null,
+                isDownloadingWallpaper = !isAlreadyCached
             )
         }
 
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                val fullUrl = wallpaper.fullDownloadUrl(_uiState.value.activeServerOrigin)
-                val targetFile = File(getApplication<Application>().filesDir, "active_wallpaper.jpg")
+        if (isAlreadyCached) {
+            prefs.edit().putString("selected_wallpaper_local_path", cachedFile.absolutePath).apply()
+        } else {
+            viewModelScope.launch(Dispatchers.IO) {
+                try {
+                    val fullUrl = wallpaper.fullDownloadUrl(_uiState.value.activeServerOrigin)
+                    val okHttpClient = OkHttpClient.Builder()
+                        .connectTimeout(12, TimeUnit.SECONDS)
+                        .readTimeout(30, TimeUnit.SECONDS)
+                        .build()
 
-                val okHttpClient = OkHttpClient.Builder()
-                    .connectTimeout(10, TimeUnit.SECONDS)
-                    .readTimeout(25, TimeUnit.SECONDS)
-                    .build()
-
-                val request = Request.Builder().url(fullUrl).build()
-                okHttpClient.newCall(request).execute().use { response ->
-                    if (response.isSuccessful) {
-                        response.body?.byteStream()?.use { input ->
-                            targetFile.outputStream().use { output ->
-                                input.copyTo(output)
+                    val request = Request.Builder().url(fullUrl).build()
+                    okHttpClient.newCall(request).execute().use { response ->
+                        if (response.isSuccessful) {
+                            response.body?.byteStream()?.use { input ->
+                                cachedFile.outputStream().use { output ->
+                                    input.copyTo(output)
+                                }
                             }
                         }
                     }
-                }
 
-                val bitmap = if (targetFile.exists() && targetFile.length() > 0) {
-                    android.graphics.BitmapFactory.decodeFile(targetFile.absolutePath)
-                } else null
+                    val bitmap = if (cachedFile.exists() && cachedFile.length() > 0) {
+                        android.graphics.BitmapFactory.decodeFile(cachedFile.absolutePath)
+                    } else null
 
-                val refinedCombos = MatugenEngine.generatePaletteCombos(wallpaper, bitmap)
-                val updatedPalette = if (_uiState.value.appearanceSettings.useMatugen) {
-                    refinedCombos.first().palette
-                } else _uiState.value.selectedPalette
+                    val refinedCombos = MatugenEngine.generatePaletteCombos(wallpaper, bitmap)
+                    val updatedPalette = if (_uiState.value.appearanceSettings.useMatugen) {
+                        refinedCombos.first().palette
+                    } else _uiState.value.selectedPalette
 
-                if (targetFile.exists() && targetFile.length() > 0) {
-                    prefs.edit().putString("selected_wallpaper_local_path", targetFile.absolutePath).apply()
-                }
-                if (_uiState.value.appearanceSettings.useMatugen) {
-                    prefs.edit().putString("selected_palette_name", updatedPalette.name).apply()
-                }
+                    if (cachedFile.exists() && cachedFile.length() > 0) {
+                        prefs.edit().putString("selected_wallpaper_local_path", cachedFile.absolutePath).apply()
+                    }
 
-                _uiState.update { current ->
-                    current.copy(
-                        selectedWallpaper = wallpaper,
-                        localWallpaperFilePath = if (targetFile.exists()) targetFile.absolutePath else null,
-                        matugenCombos = refinedCombos,
-                        selectedPalette = updatedPalette,
-                        isDownloadingWallpaper = false
-                    )
+                    _uiState.update { current ->
+                        current.copy(
+                            selectedWallpaper = wallpaper,
+                            localWallpaperFilePath = if (cachedFile.exists() && cachedFile.length() > 0) cachedFile.absolutePath else null,
+                            matugenCombos = refinedCombos,
+                            selectedPalette = updatedPalette,
+                            isDownloadingWallpaper = false
+                        )
+                    }
+                } catch (e: Exception) {
+                    _uiState.update { it.copy(isDownloadingWallpaper = false) }
                 }
-            } catch (e: Exception) {
-                _uiState.update { it.copy(isDownloadingWallpaper = false) }
             }
         }
     }

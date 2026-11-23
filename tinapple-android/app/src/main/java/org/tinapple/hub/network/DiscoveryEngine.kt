@@ -11,14 +11,14 @@ import okhttp3.Request
 import java.util.concurrent.TimeUnit
 
 object DiscoveryEngine {
-    const val DEFAULT_TAILSCALE_HOST = "pineapple-server"
+    const val DEFAULT_TAILSCALE_HOST = "pineapple-server.taildb42a2.ts.net"
     private const val PREFS_NAME = "tinapple_network_prefs"
     private const val KEY_SERVER_ORIGIN = "cached_server_origin"
 
     val DEFAULT_CANDIDATES = listOf(
-        "http://pineapple-server:8088",                  // Tailscale MagicDNS short name
         "http://pineapple-server.taildb42a2.ts.net:8088", // Tailscale MagicDNS FQDN
         "https://pineapple-server.taildb42a2.ts.net",    // Tailscale HTTPS Domain
+        "http://pineapple-server:8088",                  // Tailscale MagicDNS short name
         "http://192.168.4.1:8088",                       // AP Hotspot Gateway
         "http://192.168.1.103:8088",                     // Local Wi-Fi LAN IP
         "http://100.108.215.120:8088"                    // Direct Tailscale IP Fallback

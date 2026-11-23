@@ -403,15 +403,16 @@ fun AppearancePage(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     listOf(
-                        0 to "Off (0px)",
-                        8 to "Subtle (8px)",
-                        16 to "Medium (16px)",
-                        24 to "Heavy (24px)"
-                    ).forEach { (dpValue, label) ->
+                        Triple(0, "Off", "0px"),
+                        Triple(8, "Subtle", "8px"),
+                        Triple(16, "Medium", "16px"),
+                        Triple(24, "Heavy", "24px")
+                    ).forEach { (dpValue, title, subtitle) ->
                         val isSelected = settings.blurDp == dpValue
                         Box(
                             modifier = Modifier
                                 .weight(1f)
+                                .height(46.dp)
                                 .clip(RoundedCornerShape(10.dp))
                                 .background(
                                     if (isSelected) MaterialTheme.colorScheme.primaryContainer
@@ -422,16 +423,28 @@ fun AppearancePage(
                                     if (isSelected) MaterialTheme.colorScheme.primary else TinappleBorderSubtle,
                                     RoundedCornerShape(10.dp)
                                 )
-                                .clickable { onUpdateBlur(dpValue) }
-                                .padding(vertical = 8.dp),
+                                .clickable { onUpdateBlur(dpValue) },
                             contentAlignment = Alignment.Center
                         ) {
-                            Text(
-                                text = label,
-                                color = if (isSelected) MaterialTheme.colorScheme.primary else TextSecondary,
-                                fontSize = 11.sp,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
-                            )
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Text(
+                                    text = title,
+                                    color = if (isSelected) MaterialTheme.colorScheme.primary else TextSecondary,
+                                    fontSize = 11.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                    maxLines = 1
+                                )
+                                Text(
+                                    text = subtitle,
+                                    color = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.8f) else TextMuted,
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Normal,
+                                    maxLines = 1
+                                )
+                            }
                         }
                     }
                 }
@@ -463,14 +476,15 @@ fun AppearancePage(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     listOf(
-                        0.35f to "Light (35%)",
-                        0.52f to "Balanced (52%)",
-                        0.72f to "Deep (72%)"
-                    ).forEach { (alphaVal, label) ->
+                        Triple(0.35f, "Light", "35%"),
+                        Triple(0.52f, "Balanced", "52%"),
+                        Triple(0.72f, "Deep", "72%")
+                    ).forEach { (alphaVal, title, subtitle) ->
                         val isSelected = (settings.dimAlpha - alphaVal) in -0.05f..0.05f
                         Box(
                             modifier = Modifier
                                 .weight(1f)
+                                .height(46.dp)
                                 .clip(RoundedCornerShape(10.dp))
                                 .background(
                                     if (isSelected) MaterialTheme.colorScheme.primaryContainer
@@ -481,16 +495,28 @@ fun AppearancePage(
                                     if (isSelected) MaterialTheme.colorScheme.primary else TinappleBorderSubtle,
                                     RoundedCornerShape(10.dp)
                                 )
-                                .clickable { onUpdateDim(alphaVal) }
-                                .padding(vertical = 8.dp),
+                                .clickable { onUpdateDim(alphaVal) },
                             contentAlignment = Alignment.Center
                         ) {
-                            Text(
-                                text = label,
-                                color = if (isSelected) MaterialTheme.colorScheme.primary else TextSecondary,
-                                fontSize = 11.sp,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
-                            )
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Text(
+                                    text = title,
+                                    color = if (isSelected) MaterialTheme.colorScheme.primary else TextSecondary,
+                                    fontSize = 11.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                    maxLines = 1
+                                )
+                                Text(
+                                    text = subtitle,
+                                    color = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.8f) else TextMuted,
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Normal,
+                                    maxLines = 1
+                                )
+                            }
                         }
                     }
                 }
@@ -534,15 +560,16 @@ fun AppearancePage(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     listOf(
-                        1.0f to "Solid (100%)",
-                        0.82f to "Frosted (82%)",
-                        0.65f to "Liquid (65%)",
-                        0.48f to "Crystal (48%)"
-                    ).forEach { (transVal, label) ->
+                        Triple(1.0f, "Solid", "100%"),
+                        Triple(0.82f, "Frosted", "82%"),
+                        Triple(0.65f, "Liquid", "65%"),
+                        Triple(0.48f, "Crystal", "48%")
+                    ).forEach { (transVal, title, subtitle) ->
                         val isSelected = (settings.glassTranslucency - transVal) in -0.05f..0.05f
                         Box(
                             modifier = Modifier
                                 .weight(1f)
+                                .height(46.dp)
                                 .clip(RoundedCornerShape(10.dp))
                                 .background(
                                     if (isSelected) MaterialTheme.colorScheme.primaryContainer
@@ -553,16 +580,28 @@ fun AppearancePage(
                                     if (isSelected) MaterialTheme.colorScheme.primary else TinappleBorderSubtle,
                                     RoundedCornerShape(10.dp)
                                 )
-                                .clickable { onUpdateGlass(transVal) }
-                                .padding(vertical = 8.dp),
+                                .clickable { onUpdateGlass(transVal) },
                             contentAlignment = Alignment.Center
                         ) {
-                            Text(
-                                text = label,
-                                color = if (isSelected) MaterialTheme.colorScheme.primary else TextSecondary,
-                                fontSize = 11.sp,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
-                            )
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Text(
+                                    text = title,
+                                    color = if (isSelected) MaterialTheme.colorScheme.primary else TextSecondary,
+                                    fontSize = 11.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                    maxLines = 1
+                                )
+                                Text(
+                                    text = subtitle,
+                                    color = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.8f) else TextMuted,
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Normal,
+                                    maxLines = 1
+                                )
+                            }
                         }
                     }
                 }

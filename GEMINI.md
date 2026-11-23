@@ -84,6 +84,36 @@
 
 ## 5. Changelog & Active State Ledger
 
+### Maintenance (2026-11-23) | feat(companion/desktop): fix disk metrics, appearance button box sizing, wallpaper desync, hyprland remote screen, and agy
+- **Scope**: Resolved disk gauge metric clarity (`Free/Total GB`), eliminated Appearance page button wrapping with uniform 46dp 2-line presets, fixed wallpaper gallery 404 delays and background desync by enforcing raw GitHub delivery with local per-ID cache, redesigned Tinapple logo badge to remove crossed "X" lines, added top spacer for comfortable notch breathing room while retaining edge-to-edge scroll, expanded Tsumiru package detection and fixed release URL, replaced niri with Hyprland & wayvnc headless remote screen, installed `agy` on the server, and brought Expressive styling to `tinapple-hub`.
+- **Implementation & Verifications**:
+  - **Disk Metric Gauge ([`ServerHomeScreen.kt`](file:///mnt/shared/projects/tinapple/tinapple-android/app/src/main/java/org/tinapple/hub/ui/ServerHomeScreen.kt), [`Design.kt`](file:///mnt/shared/projects/tinapple/tinapple-android/app/src/main/java/org/tinapple/hub/ui/Design.kt))**:
+    - Replaced ambiguous single "26 GB" gauge with formatted `26/118 GB` (`Free / Total`) in `LoadColumn`.
+    - Added adaptive digit sizing in `LoadColumn` (`17.sp` for >5 chars, `20.sp` for >3 chars, `26.sp` default) to guarantee zero text truncation.
+  - **Appearance Page Uniform Box Sizing ([`AppearancePage.kt`](file:///mnt/shared/projects/tinapple/tinapple-android/app/src/main/java/org/tinapple/hub/ui/components/AppearancePage.kt))**:
+    - Replaced wrapping 1-line text in Blur, Scrim, and Translucency presets with fixed `height(46.dp)` 2-line stacked columns (e.g. `Medium` / `16px`, `Frosted` / `82%`, `Balanced` / `52%`).
+    - Fixed all uneven heights, clipping, and selection borders.
+  - **Wallpaper Cache & Desync Fix ([`Models.kt`](file:///mnt/shared/projects/tinapple/tinapple-android/app/src/main/java/org/tinapple/hub/data/Models.kt), [`TinappleViewModel.kt`](file:///mnt/shared/projects/tinapple/tinapple-android/app/src/main/java/org/tinapple/hub/ui/viewmodel/TinappleViewModel.kt))**:
+    - Identified that `safeUrl()` was erroneously appending GitHub wallpaper filenames to the server endpoint `/api/v1/wallpapers/file/`, causing 404 errors and 5-minute loading freezes.
+    - Updated `safeUrl()` and `fullDownloadUrl()` to route all remote wallpapers directly to `https://raw.githubusercontent.com/imyash0722/Wallpapers/master/` with Coil disk caching.
+    - Immediate background and hero card sync via per-ID cache (`wp_${id}.jpg`).
+  - **Tinapple Logo & Notch Breathing Room ([`ServerHomeScreen.kt`](file:///mnt/shared/projects/tinapple/tinapple-android/app/src/main/java/org/tinapple/hub/ui/ServerHomeScreen.kt))**:
+    - Removed crossing diagonal lines (the "X") on `TinappleLogoBadge`. Substituted with sleek specular highlight arc and white sparkle glint.
+    - Added 34dp top spacer at the head of `LazyColumn` for punch-hole spacing that scrolls away smoothly under the camera cutout.
+    - Scaled hero hostname typography to `Expressive.wide(16.sp)` to prevent `tinapple-serv...` text truncation.
+  - **Tsumiru App Detection & Service Icons**:
+    - Added `io.github.aaronbamblett.tsumiru` (stable and dev) and variations to `<queries>` in `AndroidManifest.xml` and `ClientAppLauncher.kt`.
+    - Fixed Tsumiru fallback release redirect to `https://github.com/Suwayomi/Suwayomi-Tsumiru/releases`.
+    - Enforced official brand icons (`ServiceBrandIconResolver`) for all Homelab Daemons, preventing client app icons from replacing daemon brand logos.
+    - Configured Tailscale MagicDNS row to display and copy `pineapple-server.taildb42a2.ts.net`.
+  - **Hyprland Headless & Remote Screen Setup (`pineapple-server`)**:
+    - Installed `hyprland 0.57.2-1`, `wayvnc 0.10.2-1`, and `xdg-desktop-portal-hyprland 1.5.0-1`, and cleanly uninstalled `niri`.
+    - Configured `/home/pineapple/.config/hypr/hyprland.conf` with `HEADLESS-1` 1080p display and `exec-once = wayvnc --render-cursor 0.0.0.0 5900` for remote screen access.
+  - **Antigravity CLI (`agy`) & `uv`**:
+    - Verified `agy` v1.5.15 at `/usr/local/bin/agy` on `pineapple-server`.
+  - **Web Dashboard Expressive Styling (`tinapple-hub`)**:
+    - Added Readex Pro & Plus Jakarta Sans typography, expressive `rounded-expressive` tokens, and M3 Matugen CSS variable bindings.
+
 ### Maintenance (2026-11-23) | feat(android): camera punch hole cutout fix, tinapple dual-facet logo, navidrome music stream player, customizable widgets, and minimal UI
 - **Scope**: Fixed display cutout padding allowing seamless scroll under camera punch hole, added official Tinapple black squircle logo with dynamic Matugen facets, added Navidrome music stream player card with Vibrdrome launcher, restricted client apps strip strictly to 5 primary apps (Syncthing, Bitwarden, Tsumiru, Plezy, Vibrdrome), eliminated text truncations with compact LoadColumn labels, simplified Homelab refresh to a circular Material button, removed auto-resumer banner, simplified Tailscale tile with copy button, integrated 42 wallpapers from `imyash0722/Wallpapers` with 144p thumbnails and local storage caching, and added widget customization sheet.
 - **Implementation & Verifications**:

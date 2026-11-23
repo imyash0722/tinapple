@@ -159,9 +159,31 @@ val DEFAULT_HOME_WIDGETS = listOf(
     SectionWidgetConfig("now_playing", "Navidrome Music Player", "Live playback from server with Vibrdrome quick launch", org.tinapple.hub.R.drawable.rounded_music_note, true),
     SectionWidgetConfig("telemetry", "System Load Gauges", "4-column CPU, RAM, Disk, and Thermal gauges", org.tinapple.hub.R.drawable.rounded_speed, true),
     SectionWidgetConfig("client_apps", "Client Apps Deck", "Syncthing, Bitwarden, Tsumiru, Plezy, and Vibrdrome", org.tinapple.hub.R.drawable.rounded_apps, true),
-    SectionWidgetConfig("controls", "Server Quick Controls", "Proton VPN Exit Node, MagicDNS peer, and Resumer", org.tinapple.hub.R.drawable.rounded_vpn_lock, true),
+    SectionWidgetConfig("controls", "Server Quick Controls", "Proton VPN Exit Node and MagicDNS peer", org.tinapple.hub.R.drawable.rounded_vpn_lock, true),
     SectionWidgetConfig("services", "Homelab Daemons List", "Service cards with brand icons and systemd toggles", org.tinapple.hub.R.drawable.rounded_terminal, true)
 )
+
+data class PinnedClientAppConfig(
+    val key: String,
+    val name: String,
+    val iconRes: Int,
+    val description: String
+)
+
+val AVAILABLE_CLIENT_APPS = listOf(
+    PinnedClientAppConfig("syncthing", "Syncthing", org.tinapple.hub.R.drawable.rounded_sync, "P2P continuous folder sync"),
+    PinnedClientAppConfig("vaultwarden", "Bitwarden", org.tinapple.hub.R.drawable.rounded_lock, "Secure password vault"),
+    PinnedClientAppConfig("suwayomi", "Tsumiru", org.tinapple.hub.R.drawable.rounded_photo_library, "Manga & comic stream client"),
+    PinnedClientAppConfig("jellyfin", "Plezy", org.tinapple.hub.R.drawable.rounded_theaters, "Native Jellyfin media player"),
+    PinnedClientAppConfig("navidrome", "Vibrdrome", org.tinapple.hub.R.drawable.rounded_music_note, "Subsonic music stream player"),
+    PinnedClientAppConfig("findroid", "Findroid", org.tinapple.hub.R.drawable.rounded_theaters, "Alternative Jellyfin Android client"),
+    PinnedClientAppConfig("symfonium", "Symfonium", org.tinapple.hub.R.drawable.rounded_music_note, "Audiophile Subsonic player"),
+    PinnedClientAppConfig("pinemusic", "PineMusic", org.tinapple.hub.R.drawable.rounded_equalizer, "High-fidelity lossless requester"),
+    PinnedClientAppConfig("qbittorrent", "qBittorrent", org.tinapple.hub.R.drawable.rounded_download, "BitTorrent download remote"),
+    PinnedClientAppConfig("tailscale", "Tailscale", org.tinapple.hub.R.drawable.rounded_lan, "Mesh VPN coordinator")
+)
+
+val DEFAULT_PINNED_APPS = listOf("syncthing", "vaultwarden", "suwayomi", "jellyfin", "navidrome")
 
 data class WallpaperItem(
     @SerializedName("id") val id: String = "",
@@ -175,11 +197,12 @@ data class WallpaperItem(
 ) {
     fun rawGithubUrl(): String {
         val cleanFile = file.ifBlank { url.substringAfterLast("/") }
-        return "https://raw.githubusercontent.com/imyash0722/wallpapers/master/${Uri.encode(cleanFile)}"
+        return "https://raw.githubusercontent.com/imyash0722/Wallpapers/master/${Uri.encode(cleanFile)}"
     }
 
     fun fullDownloadUrl(serverOrigin: String): String {
-        return if (serverOrigin.isNotBlank() && !serverOrigin.contains("localhost")) {
+        val cleanFile = file.ifBlank { url.substringAfterLast("/") }
+        return if (cleanFile.startsWith("tinapple-") || cleanFile.startsWith("Aesthetic-")) {
             safeUrl(serverOrigin)
         } else {
             rawGithubUrl()
@@ -190,16 +213,20 @@ data class WallpaperItem(
         if (url.startsWith("http://") || url.startsWith("https://")) {
             return url
         }
-        val cleanOrigin = serverOrigin.trimEnd('/')
-        val rawPath = when {
-            url.isNotBlank() -> if (url.startsWith("/")) url else "/$url"
-            file.isNotBlank() -> "/wallpapers/$file"
-            else -> "/wallpapers/blue-night-fishbowl-room.jpg"
+        val cleanFile = file.ifBlank { url.substringAfterLast("/") }
+        if (cleanFile.startsWith("tinapple-") || cleanFile.startsWith("Aesthetic-")) {
+            val cleanOrigin = serverOrigin.trimEnd('/')
+            if (cleanOrigin.isNotBlank()) {
+                val rawPath = if (url.isNotBlank()) {
+                    if (url.startsWith("/")) url else "/$url"
+                } else "/wallpapers/$cleanFile"
+                val encodedPath = rawPath.split("/").joinToString("/") { segment ->
+                    Uri.encode(segment)
+                }
+                return "$cleanOrigin$encodedPath"
+            }
         }
-        val encodedPath = rawPath.split("/").joinToString("/") { segment ->
-            Uri.encode(segment)
-        }
-        return if (cleanOrigin.isNotBlank()) "$cleanOrigin$encodedPath" else rawGithubUrl()
+        return rawGithubUrl()
     }
 }
 

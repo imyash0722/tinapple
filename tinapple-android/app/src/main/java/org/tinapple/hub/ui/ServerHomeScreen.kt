@@ -68,6 +68,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import org.tinapple.hub.R
+import org.tinapple.hub.data.AVAILABLE_CLIENT_APPS
 import org.tinapple.hub.data.MusicNowPlayingState
 import org.tinapple.hub.data.ServiceItem
 import org.tinapple.hub.data.SystemTelemetry
@@ -97,7 +98,9 @@ fun ServerHomeScreen(
     if (isShowingCustomizer) {
         CustomizeWidgetsSheet(
             enabledWidgets = uiState.enabledWidgets,
+            pinnedClientApps = uiState.pinnedClientApps,
             onToggleWidget = { id, enabled -> viewModel.toggleWidget(id, enabled) },
+            onTogglePinnedApp = { appKey, pinned -> viewModel.togglePinnedApp(appKey, pinned) },
             onDismiss = { isShowingCustomizer = false }
         )
     }
@@ -108,6 +111,11 @@ fun ServerHomeScreen(
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
+        // Top spacing so the topmost section sits comfortably below the camera cutout/punch hole
+        item(key = "top_cutout_spacer") {
+            Spacer(modifier = Modifier.height(34.dp))
+        }
+
         // 1. Server Hero Card
         if (uiState.enabledWidgets.contains("hero")) {
             item(key = "server_hero") {
@@ -155,11 +163,12 @@ fun ServerHomeScreen(
             }
         }
 
-        // 4. Quick Client App Launcher Strip (Syncthing, Bitwarden, Tsumiru, Plezy, Vibrdrome)
+        // 4. Quick Client App Launcher Strip (Customizable / User-Editable)
         if (uiState.enabledWidgets.contains("client_apps")) {
             item(key = "client_apps_strip") {
                 ClientToolsStrip(
                     services = uiState.services,
+                    pinnedApps = uiState.pinnedClientApps,
                     getPortalUrl = { svc -> viewModel.apiClient.getServicePortalUrl(svc) },
                     onOpenPortal = onOpenPortal
                 )
@@ -231,11 +240,15 @@ private fun ServerHeroCard(
         label = "pulseScale"
     )
 
-    val cleanHost = serverOrigin
-        .removePrefix("http://")
-        .removePrefix("https://")
-        .removeSuffix(":8088")
-        .ifEmpty { DiscoveryEngine.DEFAULT_TAILSCALE_HOST }
+    val cleanHost = if (serverOrigin.contains("taildb42a2.ts.net")) {
+        DiscoveryEngine.DEFAULT_TAILSCALE_HOST
+    } else {
+        serverOrigin
+            .removePrefix("http://")
+            .removePrefix("https://")
+            .removeSuffix(":8088")
+            .ifEmpty { DiscoveryEngine.DEFAULT_TAILSCALE_HOST }
+    }
 
     val uptimeText = if (uptimeSeconds > 0) {
         val days = uptimeSeconds / 86400
@@ -401,7 +414,7 @@ private fun ServerHeroCard(
             ) {
                 Text(
                     text = hostname,
-                    style = Expressive.xwide(20.sp),
+                    style = Expressive.wide(16.sp),
                     color = cs.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
@@ -470,18 +483,18 @@ fun TinappleLogoBadge(
             }
             drawPath(bodyPath, color = primaryColor)
 
-            // 3. Facet accents in tertiaryColor
-            drawLine(
-                color = tertiaryColor.copy(alpha = 0.60f),
-                start = androidx.compose.ui.geometry.Offset(w * 0.32f, h * 0.52f),
-                end = androidx.compose.ui.geometry.Offset(w * 0.68f, h * 0.82f),
-                strokeWidth = 1.8f.dp.toPx()
-            )
-            drawLine(
-                color = tertiaryColor.copy(alpha = 0.60f),
-                start = androidx.compose.ui.geometry.Offset(w * 0.68f, h * 0.52f),
-                end = androidx.compose.ui.geometry.Offset(w * 0.32f, h * 0.82f),
-                strokeWidth = 1.8f.dp.toPx()
+            // 3. Subtle curved specular highlight arc along left shoulder (No X lines)
+            val highlightPath = Path().apply {
+                moveTo(w * 0.32f, h * 0.50f)
+                cubicTo(w * 0.26f, h * 0.60f, w * 0.28f, h * 0.72f, w * 0.36f, h * 0.78f)
+            }
+            drawPath(
+                path = highlightPath,
+                color = Color.White.copy(alpha = 0.25f),
+                style = androidx.compose.ui.graphics.drawscope.Stroke(
+                    width = 2.dp.toPx(),
+                    cap = androidx.compose.ui.graphics.StrokeCap.Round
+                )
             )
 
             // 4. White glint sparkle
@@ -692,11 +705,15 @@ private fun ServerPerfCard(
                     activeColor = cs.secondary
                 )
 
-                // DISK
+                // DISK: Free / Total GB
+                val freeGb = t?.disk?.let { (it.freeBytes / 1_073_741_824L) }
+                val totalGb = t?.disk?.let { (it.totalBytes / 1_073_741_824L) }
+                val diskValue = if (freeGb != null && totalGb != null && totalGb > 0) "$freeGb/$totalGb" else (freeGb?.toString() ?: "—")
+
                 LoadColumn(
-                    value = t?.disk?.let { "${(it.freeBytes / 1_073_741_824L)}" } ?: "—",
+                    value = diskValue,
                     unit = "GB",
-                    label = "Disk",
+                    label = "Free / Tot",
                     fraction = t?.disk?.let { (it.usedPercent / 100.0).toFloat() },
                     modifier = Modifier.weight(1f),
                     activeColor = cs.tertiary
@@ -716,23 +733,20 @@ private fun ServerPerfCard(
     }
 }
 
-/** Client App Launcher Strip strictly with the 5 primary companion apps */
+/** Client App Launcher Strip dynamically rendering user-pinned apps */
 @Composable
 private fun ClientToolsStrip(
     services: List<ServiceItem>,
+    pinnedApps: List<String>,
     getPortalUrl: (ServiceItem) -> String?,
     onOpenPortal: (String) -> Unit
 ) {
     val cs = MaterialTheme.colorScheme
     val context = LocalContext.current
 
-    val primaryApps = listOf(
-        Triple("syncthing", "Syncthing", R.drawable.rounded_sync),
-        Triple("vaultwarden", "Bitwarden", R.drawable.rounded_lock),
-        Triple("suwayomi", "Tsumiru", R.drawable.rounded_photo_library),
-        Triple("jellyfin", "Plezy", R.drawable.rounded_theaters),
-        Triple("navidrome", "Vibrdrome", R.drawable.rounded_music_note)
-    )
+    val activeApps = pinnedApps.mapNotNull { key ->
+        AVAILABLE_CLIENT_APPS.firstOrNull { it.key == key }
+    }
 
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         SectionHeader(
@@ -746,7 +760,10 @@ private fun ClientToolsStrip(
                 .horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            for ((serviceKey, label, fallbackIconRes) in primaryApps) {
+            for (app in activeApps) {
+                val serviceKey = app.key
+                val label = app.name
+                val fallbackIconRes = app.iconRes
                 val matchingService = services.firstOrNull {
                     ClientAppLauncher.getServiceKey(it.name, it.displayName) == serviceKey
                 }
@@ -895,25 +912,21 @@ private fun ServerServicesGroup(
                 icon = R.drawable.rounded_terminal,
                 tint = if (service.running) Tint.PRIMARY else Tint.SECONDARY,
                 leading = {
-                    if (installedPkg != null) {
-                        AppIcon(pkg = installedPkg.packageName, size = 40.dp)
+                    val iconAsset = ServiceBrandIconResolver.getIconAssetPath(service.name, service.displayName)
+                    if (iconAsset != null) {
+                        AsyncImage(
+                            model = ImageRequest.Builder(context)
+                                .data("file:///android_asset/$iconAsset")
+                                .build(),
+                            contentDescription = service.displayName,
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(cs.surfaceContainerHigh)
+                                .padding(6.dp)
+                        )
                     } else {
-                        val iconAsset = ServiceBrandIconResolver.getIconAssetPath(service.name, service.displayName)
-                        if (iconAsset != null) {
-                            AsyncImage(
-                                model = ImageRequest.Builder(context)
-                                    .data("file:///android_asset/$iconAsset")
-                                    .build(),
-                                contentDescription = service.displayName,
-                                modifier = Modifier
-                                    .size(40.dp)
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .background(cs.surfaceContainerHigh)
-                                    .padding(6.dp)
-                            )
-                        } else {
-                            IconBadge(R.drawable.rounded_dns, if (service.running) Tint.PRIMARY else Tint.SECONDARY)
-                        }
+                        IconBadge(R.drawable.rounded_dns, if (service.running) Tint.PRIMARY else Tint.SECONDARY)
                     }
                 },
                 trailing = {
@@ -946,7 +959,9 @@ private fun ServerServicesGroup(
 @Composable
 private fun CustomizeWidgetsSheet(
     enabledWidgets: Set<String>,
+    pinnedClientApps: List<String>,
     onToggleWidget: (String, Boolean) -> Unit,
+    onTogglePinnedApp: (String, Boolean) -> Unit,
     onDismiss: () -> Unit
 ) {
     val cs = MaterialTheme.colorScheme
@@ -979,7 +994,7 @@ private fun CustomizeWidgetsSheet(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Customize Widgets",
+                    text = "Customize Companion UI",
                     style = Expressive.wide(20.sp),
                     modifier = Modifier.weight(1f)
                 )
@@ -1017,6 +1032,44 @@ private fun CustomizeWidgetsSheet(
                             Switch(
                                 checked = isChecked,
                                 onCheckedChange = { onToggleWidget(id, it) },
+                                colors = SwitchDefaults.colors(
+                                    checkedThumbColor = cs.primary,
+                                    checkedTrackColor = cs.primaryContainer
+                                )
+                            )
+                        }
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = "Pinned Client Apps",
+                style = Expressive.wide(18.sp),
+                color = cs.onSurface
+            )
+
+            Text(
+                text = "Choose which apps appear in your quick client apps strip.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = cs.onSurfaceVariant
+            )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            CardGroup {
+                for (app in AVAILABLE_CLIENT_APPS) {
+                    val isPinned = pinnedClientApps.contains(app.key)
+                    ToolRow(
+                        title = app.name,
+                        summary = app.description,
+                        icon = app.iconRes,
+                        tint = if (isPinned) Tint.PRIMARY else Tint.SECONDARY,
+                        trailing = {
+                            Switch(
+                                checked = isPinned,
+                                onCheckedChange = { onTogglePinnedApp(app.key, it) },
                                 colors = SwitchDefaults.colors(
                                     checkedThumbColor = cs.primary,
                                     checkedTrackColor = cs.primaryContainer
