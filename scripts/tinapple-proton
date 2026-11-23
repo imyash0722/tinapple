@@ -478,7 +478,7 @@ def get_wireguard_info():
 def setup_exit_node():
     """Configures the machine to advertise as a Tailscale exit node with Proton VPN forwarding."""
     ensure_routing_safeguards()
-    run_cmd(["tailscale", "set", "--advertise-exit-node"])
+    run_cmd(["tailscale", "set", "--advertise-exit-node", "--advertise-routes=192.168.4.0/24,192.168.1.0/24"])
     run_cmd(["tailscale", "set", "--operator=pineapple"])
 
     # Ensure sysctl configuration file is persisted

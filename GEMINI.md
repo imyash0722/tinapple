@@ -85,16 +85,19 @@
 ## 5. Changelog & Active State Ledger
 
 ### Maintenance (2026-11-23) | fix(suwayomi/hotspot): diagnose download stalls, fix hotspot dns routing, and optimize local ip bitstream delivery
-- **Scope**: Diagnosed Tsumiru client download freeze and slow transfer issues on `pineapple-server`, identified Suwayomi server-side download queue backlog (250+ chapters from Rolia Scan) and intermittent Cloudflare/SSL drops over Proton VPN SOCKS proxy, resolved Android hotspot DNS hijacking by updating `tinapple-hotspot.conf` to advertise exclusively `192.168.4.1` with upstream resolvers, added local FQDN mappings to `/etc/hosts`, and verified direct high-speed local IP connectivity (`192.168.4.1:4567/suwayomi`).
+- **Scope**: Diagnosed Tsumiru client download freeze and slow transfer issues on `pineapple-server`, identified Suwayomi server-side download queue backlog (250+ chapters from Rolia Scan) and intermittent Cloudflare/SSL drops over Proton VPN SOCKS proxy, resolved Android hotspot DNS hijacking by updating `tinapple-hotspot.conf` to advertise exclusively `192.168.4.1` with upstream resolvers, added local FQDN mappings to `/etc/hosts`, advertised subnets `192.168.4.0/24` and `192.168.1.0/24` in Tailscale alongside exit node for transparent LAN routing, and verified direct high-speed local IP peer-to-peer connectivity (`active; direct 192.168.4.101:57119`).
 - **Implementation & Verifications**:
   - **Suwayomi Log & Pipeline Diagnosis**:
     - Discovered 226+ chapters queued synchronously in Suwayomi (`server.maxSourcesInParallel = 6`, grouped by source). At ~1.5 min per chapter, a 250-chapter batch requires 5-6 hours of sequential processing.
-    - Verified download worker active and progressing steadily (Chapter 136 -> 137 -> 138 -> 139).
+    - Verified download worker active and progressing steadily (Chapter 136 -> 137 -> 138 -> 139 -> 140 -> 141).
     - Identified intermittent `SSLHandshakeException: Remote host terminated the handshake` and `EOFException: SSL peer shut down incorrectly` in OkHttp caused by Cloudflare rate-limiting/handshake drops against Proton VPN datacenter egress (`89.187.164.251`).
   - **Hotspot DNS & Permanent Local IP Fix**:
     - Updated [`tinapple-service-network/configs/dnsmasq/tinapple-hotspot.conf`](file:///mnt/shared/projects/tinapple/tinapple-service-network/configs/dnsmasq/tinapple-hotspot.conf) and server `/etc/dnsmasq.d/tinapple-hotspot.conf` to remove secondary `1.1.1.1` from `dhcp-option=option:dns-server` and add upstream `server=1.1.1.1` and `server=8.8.8.8`.
     - Added local hostnames (`pineapple-server.taildb42a2.ts.net`, `pineapple-server`, `tinapple.local`) to `/etc/hosts` on server.
-    - Verified phone (`192.168.4.101`) ping round-trip at ~46ms and verified HTTP 200 OK responses on `http://192.168.4.1:4567/suwayomi/` and `http://192.168.4.1/suwayomi/`.
+    - Restarted `tinapple-hotspot.service` with both `hostapd` and `dnsmasq` active in its cgroup.
+  - **Tailscale Auto-Routing & Advertised Subnets**:
+    - Configured `tailscale set --advertise-exit-node --advertise-routes=192.168.4.0/24,192.168.1.0/24` on server, updating [`scripts/tinapple-proton`](file:///mnt/shared/projects/tinapple/scripts/tinapple-proton) and [`scripts/tinapple-tailscale-watchdog`](file:///mnt/shared/projects/tinapple/scripts/tinapple-tailscale-watchdog).
+    - Confirmed Tailscale automatically establishes direct local Wi-Fi peer socket (`active; direct 192.168.4.101:57119` in 29ms) when on hotspot, and seamlessly falls back to remote relay when off-network without requiring per-app reconfiguration.
 
 ### Maintenance (2026-11-21) | feat(suwayomi/tsumiru): remove tsumiru web client from server, redirect web traffic to suwayomi, preserve native client apps
 - **Scope**: Removed redundant Tsumiru static Flutter Web assets (65MB) from `tinapple-hub` and server web distribution, updated Caddy and `tinapple-dash` to permanently redirect `/tsumiru` and `/tsumiru/*` to `/suwayomi/`, removed duplicate `tsumiru` service card in `serviceRegistry.ts` while retaining Suwayomi as the canonical manga server, and preserved native Android client APK deep linking and download routes (`/download/tsumiru`).

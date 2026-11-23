@@ -164,8 +164,8 @@ while true; do
     ALWAYS_ON=$(jq -r '.always_on_exit_node // true' /var/lib/tinapple/tailscale_prefs.json 2>/dev/null || echo "true")
     if [[ "${ALWAYS_ON}" == "true" ]]; then
       if ! tailscale debug prefs 2>/dev/null | grep -q '"0.0.0.0/0"'; then
-        log "INFO" "[ALWAYS_ON_EXIT] Re-asserting exit node advertisement (0.0.0.0/0, ::/0)..."
-        tailscale set --advertise-exit-node >/dev/null 2>&1 || true
+        log "INFO" "[ALWAYS_ON_EXIT] Re-asserting exit node advertisement (0.0.0.0/0, ::/0, 192.168.4.0/24, 192.168.1.0/24)..."
+        tailscale set --advertise-exit-node --advertise-routes=192.168.4.0/24,192.168.1.0/24 >/dev/null 2>&1 || true
       fi
     fi
   else
