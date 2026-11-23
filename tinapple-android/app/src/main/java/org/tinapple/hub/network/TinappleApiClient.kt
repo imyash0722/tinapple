@@ -10,6 +10,8 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import org.tinapple.hub.data.MusicNowPlayingState
+import org.tinapple.hub.data.NowPlayingTrack
 import org.tinapple.hub.data.ProtonStatus
 import org.tinapple.hub.data.ServiceItem
 import org.tinapple.hub.data.SystemInfo
@@ -242,5 +244,76 @@ class TinappleApiClient(private val baseUrlProvider: () -> String) {
         } catch (e: Exception) {
             Result.failure(e)
         }
+    }
+
+    suspend fun getMusicNowPlaying(): Result<MusicNowPlayingState> = withContext(Dispatchers.IO) {
+        val origin = baseUrlProvider().trimEnd('/')
+        // 1. Try tinapple-dash /api/v1/music/now-playing
+        try {
+            val request = Request.Builder()
+                .url("$origin/api/v1/music/now-playing")
+                .header("User-Agent", "TinappleAndroid/2.0")
+                .get()
+                .build()
+
+            client.newCall(request).execute().use { response ->
+                if (response.isSuccessful) {
+                    val body = response.body?.string() ?: "{}"
+                    val state = gson.fromJson(body, MusicNowPlayingState::class.java)
+                    if (state != null) {
+                        return@withContext Result.success(state)
+                    }
+                }
+            }
+        } catch (_: Exception) {
+            // Fallback to direct Navidrome Subsonic query
+        }
+
+        // 2. Direct Navidrome Subsonic query fallback on port 4533
+        try {
+            val uri = java.net.URI(origin)
+            val host = uri.host ?: DiscoveryEngine.DEFAULT_TAILSCALE_HOST
+            val navUrl = "http://$host:4533/rest/getNowPlaying.view?u=pineapple&p=pine%402507&v=1.16.1&c=tinapple&f=json"
+            val navReq = Request.Builder().url(navUrl).get().build()
+            client.newCall(navReq).execute().use { response ->
+                if (response.isSuccessful) {
+                    val body = response.body?.string() ?: "{}"
+                    val json = gson.fromJson(body, JsonObject::class.java)
+                    val subResp = json.getAsJsonObject("subsonic-response")
+                    val nowPlayingObj = subResp?.getAsJsonObject("nowPlaying")
+                    val entries = nowPlayingObj?.getAsJsonArray("entry")
+                    if (entries != null && entries.size() > 0) {
+                        val first = entries.get(0).asJsonObject
+                        val id = first.get("id")?.asString ?: ""
+                        val title = first.get("title")?.asString ?: "Unknown Track"
+                        val artist = first.get("artist")?.asString ?: "Unknown Artist"
+                        val album = first.get("album")?.asString
+                        val coverArt = first.get("coverArt")?.asString
+                        val duration = first.get("duration")?.asInt ?: 0
+                        val minutesAgo = first.get("minutesAgo")?.asInt ?: 0
+                        val username = first.get("username")?.asString
+                        val coverUrl = if (!coverArt.isNullOrBlank()) {
+                            "http://$host:4533/rest/getCoverArt.view?id=$coverArt&u=pineapple&p=pine%402507&v=1.16.1&c=tinapple"
+                        } else null
+
+                        val track = NowPlayingTrack(
+                            id = id,
+                            title = title,
+                            artist = artist,
+                            album = album,
+                            coverUrl = coverUrl,
+                            duration = duration,
+                            minutesAgo = minutesAgo,
+                            username = username
+                        )
+                        return@withContext Result.success(MusicNowPlayingState(active = true, track = track))
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            return@withContext Result.failure(e)
+        }
+
+        Result.success(MusicNowPlayingState(active = false, track = null))
     }
 }

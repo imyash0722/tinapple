@@ -84,6 +84,35 @@
 
 ## 5. Changelog & Active State Ledger
 
+### Maintenance (2026-11-23) | feat(android): camera punch hole cutout fix, tinapple dual-facet logo, navidrome music stream player, customizable widgets, and minimal UI
+- **Scope**: Fixed display cutout padding allowing seamless scroll under camera punch hole, added official Tinapple black squircle logo with dynamic Matugen facets, added Navidrome music stream player card with Vibrdrome launcher, restricted client apps strip strictly to 5 primary apps (Syncthing, Bitwarden, Tsumiru, Plezy, Vibrdrome), eliminated text truncations with compact LoadColumn labels, simplified Homelab refresh to a circular Material button, removed auto-resumer banner, simplified Tailscale tile with copy button, integrated 42 wallpapers from `imyash0722/Wallpapers` with 144p thumbnails and local storage caching, and added widget customization sheet.
+- **Implementation & Verifications**:
+  - **Camera Cutout & Fullscreen Scrolling ([`ServerHomeScreen.kt`](file:///mnt/shared/projects/tinapple/tinapple-android/app/src/main/java/org/tinapple/hub/ui/ServerHomeScreen.kt), [`MainActivity.kt`](file:///mnt/shared/projects/tinapple/tinapple-android/app/src/main/java/org/tinapple/hub/MainActivity.kt))**:
+    - Removed `.displayCutoutPadding()` and `.statusBarsPadding()` from the outer `LazyColumn` modifier, allowing edge-to-edge drawing and scroll under the notch and camera hole.
+    - Added transparent status/navigation bar colors and full immersive window flags.
+  - **Official Tinapple Logo Badge**:
+    - Built `@Composable fun TinappleLogoBadge` inside `ServerHomeScreen.kt` featuring a solid black backdrop (`Modifier.size(52.dp).clip(RoundedCornerShape(16.dp)).background(Color.Black)`) and dynamic vector Canvas drawing crown leaves (Matugen secondary), apple/pineapple body (Matugen primary), tertiary facet cuts, and specular glint.
+    - Sized hero hostname to `20.sp` alongside the logo badge, preventing text truncation.
+  - **Navidrome Music Stream Player Card & Subsonic API**:
+    - Added Go backend endpoint `/api/v1/music/now-playing` in `tinapple-dash` and direct Subsonic API fallback (:4533) in `TinappleApiClient.kt`.
+    - Implemented `NowPlayingCard` displaying live streaming status pill, album art, track title, artist/album, and direct 1-tap open in Vibrdrome.
+  - **Host System Load (Zero Truncation)**:
+    - Updated `LoadColumn` typography (`digits(26.sp)`, `digitsSoft(12.sp)`, `title(11.sp)`).
+    - Reduced column labels to `CPU`, `RAM`, `Disk`, `Temp` to guarantee clean non-truncating gauges across all device aspect ratios.
+  - **Strict 5 Client Apps Only**:
+    - Restricted `primaryApps` in `ClientToolsStrip` to Syncthing, Bitwarden, Tsumiru, Plezy, and Vibrdrome.
+    - Enforced app-first GitHub release redirects for Tsumiru (`https://github.com/Suwayomi/Tsumiru/releases`), Vibrdrome, and Plezy when not installed.
+  - **Controls Clean-up & MagicDNS Copy Button**:
+    - Removed redundant Download Queue Auto-Resumer tile.
+    - Simplified Tailscale MagicDNS row to display exclusively `pineapple-server`, accompanied by a Material Copy IconButton (`rounded_content_copy.xml`) that copies to clipboard with a toast notification.
+  - **Clean Circular Homelab Refresh**:
+    - Updated `SectionHeader` to support `actionIcon: Int? = null`. Replaced the text/arrow button with a clean circular Material IconButton (`rounded_refresh`).
+  - **Editable Section Widgets**:
+    - Implemented `CustomizeWidgetsSheet` bottom sheet with switches for all 6 home screen sections (`hero`, `now_playing`, `telemetry`, `client_apps`, `controls`, `services`), persisted in SharedPreferences.
+  - **Wallpapers Cache & Offline Storage**:
+    - Added 42 wallpapers from `imyash0722/Wallpapers` to `Models.kt`.
+    - Downscaled settings grid to 144p thumbnails (`256x144`) with Coil disk cache, and downloads full-res active wallpaper to local app storage (`active_wallpaper.jpg`).
+
 ### Maintenance (2026-11-23) | feat(android): ii-tools design system port, full kotlin companion architecture, and fullscreen cutout support
 - **Scope**: Converted `tinapple-android` into a full native Kotlin server companion app faithfully porting the design language, UI components, typography, and card hierarchy of `ii-tools` (`https://github.com/P3DROVFX/ii-tools`), implemented persistent edge-to-edge drawing under the display cutout/notch, prioritized Tailscale MagicDNS (`pineapple-server`) across network discovery and service portal resolution, and verified Tailscale admin console route approval for subnets `192.168.1.0/24` and `192.168.4.0/24`.
 - **Implementation & Verifications**:

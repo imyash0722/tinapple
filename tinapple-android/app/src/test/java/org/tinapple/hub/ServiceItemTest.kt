@@ -62,10 +62,13 @@ class ServiceItemTest {
         assertEquals("suwayomi", ClientAppLauncher.getServiceKey("suwayomi.service", "Suwayomi Manga"))
         assertEquals("tsumiru", ClientAppLauncher.getServiceKey("tsumiru.service", "Tsumiru Manga"))
         assertEquals("jellyfin", ClientAppLauncher.getServiceKey("jellyfin.service", "Jellyfin Server"))
+        assertEquals("plezy", ClientAppLauncher.getServiceKey("jellyfin.service", "Plezy Jellyfin Client"))
         assertEquals("navidrome", ClientAppLauncher.getServiceKey("navidrome.service", "Navidrome Audiophile"))
+        assertEquals("vibrdrome", ClientAppLauncher.getServiceKey("navidrome.service", "Vibrdrome Client"))
         assertEquals("pinemusic", ClientAppLauncher.getServiceKey("pinemusic.service", "PineMusic"))
         assertEquals("vaultwarden", ClientAppLauncher.getServiceKey("vaultwarden.service", "Bitwarden Vault"))
         assertEquals("qbittorrent", ClientAppLauncher.getServiceKey("qbittorrent-nox.service", "qBittorrent"))
+        assertEquals("syncthing", ClientAppLauncher.getServiceKey("syncthing.service", "Syncthing"))
         assertEquals("tailscale", ClientAppLauncher.getServiceKey("tailscaled.service", "Tailscale Mesh"))
     }
 

@@ -36,17 +36,38 @@ object ClientAppLauncher {
             "tachiyomi.mihon"
         ),
         "jellyfin" to listOf(
+            "com.edde746.plezy",
+            "app.plezy",
+            "com.plezy",
+            "dev.jdtech.jellyfin",
+            "org.jellyfin.mobile"
+        ),
+        "plezy" to listOf(
+            "com.edde746.plezy",
+            "app.plezy",
+            "com.plezy",
             "dev.jdtech.jellyfin",
             "org.jellyfin.mobile"
         ),
         "navidrome" to listOf(
+            "com.vibrdrome.app",
+            "com.vibrdrome",
+            "app.vibrdrome",
             "app.symfonium.music.player",
             "github.daneren2005.dsub",
             "com.substreamer.substreamer",
             "ch.blinkenlights.android.vanilla"
         ),
+        "vibrdrome" to listOf(
+            "com.vibrdrome.app",
+            "com.vibrdrome",
+            "app.vibrdrome",
+            "app.symfonium.music.player",
+            "github.daneren2005.dsub"
+        ),
         "pinemusic" to listOf(
             "org.tinapple.pinemusic",
+            "com.vibrdrome.app",
             "app.symfonium.music.player"
         ),
         "vaultwarden" to listOf(
@@ -87,7 +108,9 @@ object ClientAppLauncher {
         return when {
             combined.contains("tsumiru") -> "tsumiru"
             combined.contains("suwayomi") || combined.contains("manga") -> "suwayomi"
+            combined.contains("plezy") -> "plezy"
             combined.contains("jellyfin") -> "jellyfin"
+            combined.contains("vibrdrome") -> "vibrdrome"
             combined.contains("pinemusic") -> "pinemusic"
             combined.contains("navidrome") -> "navidrome"
             combined.contains("vaultwarden") || combined.contains("bitwarden") -> "vaultwarden"
@@ -169,6 +192,39 @@ object ClientAppLauncher {
                 }
                 context.startActivity(launchIntent)
                 return LaunchResult.LaunchedApp(installed.packageName, installed.appLabel)
+            }
+        }
+
+        // For app-first homelab clients (Tsumiru is an APP, not web; Vibrdrome; Plezy; Bitwarden; Syncthing)
+        val appReleaseUrl = when (serviceKey) {
+            "tsumiru", "suwayomi" -> "https://github.com/Suwayomi/Tsumiru/releases"
+            "vibrdrome" -> "https://github.com/ddmoney420/vibrdrome-android/releases"
+            "plezy" -> "https://github.com/edde746/plezy/releases"
+            "syncthing" -> "https://github.com/Catfriend1/syncthing-android/releases"
+            "vaultwarden", "bitwarden" -> "https://play.google.com/store/apps/details?id=com.x8bit.bitwarden"
+            else -> null
+        }
+
+        if (appReleaseUrl != null && (portalUrl == null || serviceKey in listOf("tsumiru", "suwayomi", "vibrdrome", "plezy"))) {
+            return try {
+                val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(appReleaseUrl)).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                if (showToast) {
+                    val appName = when (serviceKey) {
+                        "tsumiru", "suwayomi" -> "Tsumiru"
+                        "vibrdrome" -> "Vibrdrome"
+                        "plezy" -> "Plezy"
+                        "syncthing" -> "Syncthing"
+                        "vaultwarden", "bitwarden" -> "Bitwarden"
+                        else -> serviceKey
+                    }
+                    Toast.makeText(context, "$appName app not installed. Opening release download...", Toast.LENGTH_SHORT).show()
+                }
+                context.startActivity(browserIntent)
+                LaunchResult.OpenedWeb(appReleaseUrl)
+            } catch (e: Exception) {
+                LaunchResult.Failed(e.message ?: "Failed to open release page")
             }
         }
 

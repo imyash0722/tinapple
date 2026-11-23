@@ -97,6 +97,8 @@ class MainActivity : ComponentActivity() {
 
         // Enable edge-to-edge drawing under system bars
         WindowCompat.setDecorFitsSystemWindows(window, false)
+        window.statusBarColor = android.graphics.Color.TRANSPARENT
+        window.navigationBarColor = android.graphics.Color.TRANSPARENT
 
         // Persistent fullscreen immersive mode at all times
         hideSystemBars()
@@ -126,7 +128,8 @@ class MainActivity : ComponentActivity() {
                     color = TinappleDarkBackground
                 ) {
                     val context = LocalContext.current
-                    val wallpaperUrl = uiState.selectedWallpaper.safeUrl(uiState.activeServerOrigin)
+                    val wallpaperUrl = uiState.localWallpaperFilePath?.let { "file://$it" }
+                        ?: uiState.selectedWallpaper.safeUrl(uiState.activeServerOrigin)
 
                     Box(modifier = Modifier.fillMaxSize()) {
                         // Dynamic Backdrop Wallpaper with Blur & Dim

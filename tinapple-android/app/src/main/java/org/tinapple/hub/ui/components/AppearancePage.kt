@@ -684,6 +684,9 @@ fun AppearancePage(
                                         AsyncImage(
                                             model = ImageRequest.Builder(context)
                                                 .data(safeUrl)
+                                                .size(256, 144) // 144p low-res thumbnail cache for fast browsing
+                                                .diskCachePolicy(coil.request.CachePolicy.ENABLED)
+                                                .memoryCachePolicy(coil.request.CachePolicy.ENABLED)
                                                 .crossfade(true)
                                                 .build(),
                                             contentDescription = wp.name,

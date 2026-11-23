@@ -18,6 +18,7 @@ import kotlinx.coroutines.launch
 import org.tinapple.hub.data.AppearanceSettings
 import org.tinapple.hub.data.BUNDLED_WALLPAPERS
 import org.tinapple.hub.data.DEFAULT_PALETTES
+import org.tinapple.hub.data.MusicNowPlayingState
 import org.tinapple.hub.data.ProtonStatus
 import org.tinapple.hub.data.ServiceItem
 import org.tinapple.hub.data.SystemInfo
@@ -28,6 +29,10 @@ import org.tinapple.hub.network.DiscoveryEngine
 import org.tinapple.hub.network.TinappleApiClient
 import org.tinapple.hub.ui.theme.MatugenEngine
 import org.tinapple.hub.ui.theme.MatugenPaletteCombo
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import java.io.File
+import java.util.concurrent.TimeUnit
 
 private val DEFAULT_FALLBACK_SERVICES = listOf(
     ServiceItem(
@@ -98,9 +103,13 @@ data class MainUiState(
     val protonStatus: ProtonStatus = ProtonStatus(),
     val systemInfo: SystemInfo = SystemInfo(),
     val telemetry: SystemTelemetry = SystemTelemetry(),
+    val nowPlaying: MusicNowPlayingState = MusicNowPlayingState(),
+    val enabledWidgets: Set<String> = setOf("hero", "now_playing", "telemetry", "client_apps", "controls", "services"),
     val wallpapers: List<WallpaperItem> = BUNDLED_WALLPAPERS,
     val selectedPalette: ThemePalette = DEFAULT_PALETTES.first(),
     val selectedWallpaper: WallpaperItem = BUNDLED_WALLPAPERS.first(),
+    val localWallpaperFilePath: String? = null,
+    val isDownloadingWallpaper: Boolean = false,
     val matugenCombos: List<MatugenPaletteCombo> = emptyList(),
     val appearanceSettings: AppearanceSettings = AppearanceSettings(),
     val activeServerOrigin: String = "http://192.168.1.103:8088",
@@ -124,12 +133,15 @@ class TinappleViewModel(application: Application) : AndroidViewModel(application
     init {
         val initialWallpaper = loadSavedWallpaper()
         val initialPalette = loadSavedPalette()
+        val initialLocalPath = loadSavedWallpaperLocalPath()
         val initialCombos = MatugenEngine.generatePaletteCombos(initialWallpaper)
 
         _uiState = MutableStateFlow(
             MainUiState(
                 selectedPalette = initialPalette,
                 selectedWallpaper = initialWallpaper,
+                localWallpaperFilePath = initialLocalPath,
+                enabledWidgets = loadSavedWidgets(),
                 matugenCombos = initialCombos,
                 appearanceSettings = loadSavedAppearanceSettings(),
                 activeServerOrigin = DiscoveryEngine.getCachedServerOrigin(application)
@@ -141,6 +153,23 @@ class TinappleViewModel(application: Application) : AndroidViewModel(application
             discoverServerAndRefresh()
             startBackgroundPolling()
         }
+    }
+
+    private fun loadSavedWidgets(): Set<String> {
+        val saved = prefs.getStringSet("enabled_widgets", null)
+        return saved ?: setOf("hero", "now_playing", "telemetry", "client_apps", "controls", "services")
+    }
+
+    private fun loadSavedWallpaperLocalPath(): String? {
+        val path = prefs.getString("selected_wallpaper_local_path", null)
+        return if (path != null && File(path).exists()) path else null
+    }
+
+    fun toggleWidget(widgetId: String, enabled: Boolean) {
+        val current = _uiState.value.enabledWidgets.toMutableSet()
+        if (enabled) current.add(widgetId) else current.remove(widgetId)
+        prefs.edit().putStringSet("enabled_widgets", current).apply()
+        _uiState.update { it.copy(enabledWidgets = current) }
     }
 
     private fun loadSavedPalette(): ThemePalette {
@@ -215,40 +244,60 @@ class TinappleViewModel(application: Application) : AndroidViewModel(application
             it.copy(
                 selectedWallpaper = wallpaper,
                 selectedPalette = matchingPalette,
-                matugenCombos = combos
+                matugenCombos = combos,
+                isDownloadingWallpaper = true
             )
         }
 
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                val fullUrl = wallpaper.safeUrl(_uiState.value.activeServerOrigin)
-                val loader = ImageLoader(getApplication())
-                val request = ImageRequest.Builder(getApplication())
-                    .data(fullUrl)
-                    .allowHardware(false)
-                    .size(64, 64)
+                val fullUrl = wallpaper.fullDownloadUrl(_uiState.value.activeServerOrigin)
+                val targetFile = File(getApplication<Application>().filesDir, "active_wallpaper.jpg")
+
+                val okHttpClient = OkHttpClient.Builder()
+                    .connectTimeout(10, TimeUnit.SECONDS)
+                    .readTimeout(25, TimeUnit.SECONDS)
                     .build()
 
-                val result = loader.execute(request)
-                if (result is SuccessResult) {
-                    val bitmap = (result.drawable as? android.graphics.drawable.BitmapDrawable)?.bitmap
-                    if (bitmap != null) {
-                        val refinedCombos = MatugenEngine.generatePaletteCombos(wallpaper, bitmap)
-                        _uiState.update { current ->
-                            val updatedPalette = if (current.appearanceSettings.useMatugen) {
-                                refinedCombos.first().palette
-                            } else current.selectedPalette
-                            current.copy(
-                                matugenCombos = refinedCombos,
-                                selectedPalette = updatedPalette
-                            )
-                        }
-                        if (_uiState.value.appearanceSettings.useMatugen) {
-                            prefs.edit().putString("selected_palette_name", refinedCombos.first().palette.name).apply()
+                val request = Request.Builder().url(fullUrl).build()
+                okHttpClient.newCall(request).execute().use { response ->
+                    if (response.isSuccessful) {
+                        response.body?.byteStream()?.use { input ->
+                            targetFile.outputStream().use { output ->
+                                input.copyTo(output)
+                            }
                         }
                     }
                 }
-            } catch (_: Exception) {}
+
+                val bitmap = if (targetFile.exists() && targetFile.length() > 0) {
+                    android.graphics.BitmapFactory.decodeFile(targetFile.absolutePath)
+                } else null
+
+                val refinedCombos = MatugenEngine.generatePaletteCombos(wallpaper, bitmap)
+                val updatedPalette = if (_uiState.value.appearanceSettings.useMatugen) {
+                    refinedCombos.first().palette
+                } else _uiState.value.selectedPalette
+
+                if (targetFile.exists() && targetFile.length() > 0) {
+                    prefs.edit().putString("selected_wallpaper_local_path", targetFile.absolutePath).apply()
+                }
+                if (_uiState.value.appearanceSettings.useMatugen) {
+                    prefs.edit().putString("selected_palette_name", updatedPalette.name).apply()
+                }
+
+                _uiState.update { current ->
+                    current.copy(
+                        selectedWallpaper = wallpaper,
+                        localWallpaperFilePath = if (targetFile.exists()) targetFile.absolutePath else null,
+                        matugenCombos = refinedCombos,
+                        selectedPalette = updatedPalette,
+                        isDownloadingWallpaper = false
+                    )
+                }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(isDownloadingWallpaper = false) }
+            }
         }
     }
 
@@ -308,6 +357,13 @@ class TinappleViewModel(application: Application) : AndroidViewModel(application
             }
         }
 
+        val musicRes = apiClient.getMusicNowPlaying()
+        if (musicRes.isSuccess) {
+            musicRes.getOrNull()?.let { music ->
+                _uiState.update { it.copy(nowPlaying = music) }
+            }
+        }
+
         val wallRes = apiClient.getWallpapers()
         if (wallRes.isSuccess) {
             val remoteWalls = wallRes.getOrNull()
@@ -333,7 +389,7 @@ class TinappleViewModel(application: Application) : AndroidViewModel(application
 
     private suspend fun startBackgroundPolling() {
         while (viewModelScope.isActive) {
-            delay(12_000)
+            delay(6_000)
             if (!_uiState.value.isRefreshing && !_uiState.value.isDiscovering) {
                 val servicesRes = apiClient.getServices()
                 if (servicesRes.isSuccess) {
@@ -355,6 +411,13 @@ class TinappleViewModel(application: Application) : AndroidViewModel(application
                 if (telRes.isSuccess) {
                     telRes.getOrNull()?.let { tel ->
                         _uiState.update { it.copy(telemetry = tel) }
+                    }
+                }
+
+                val musicRes = apiClient.getMusicNowPlaying()
+                if (musicRes.isSuccess) {
+                    musicRes.getOrNull()?.let { music ->
+                        _uiState.update { it.copy(nowPlaying = music) }
                     }
                 }
             }

@@ -224,6 +224,10 @@ func SetupRoutes(r *gin.Engine, cfg *config.Manifest, svcMgr *services.SystemdMa
 		v1.POST("/wallpapers/upload", h.UploadWallpaper)
 		v1.POST("/wallpapers/select", h.SelectWallpaper)
 
+		// Music & Navidrome Now Playing
+		v1.GET("/music/now-playing", h.GetMusicNowPlaying)
+		v1.GET("/music/cover", h.GetMusicCover)
+
 		// Server Operations & Network Toolkit
 		v1.GET("/tools/open-ports", h.GetOpenPorts)
 		v1.GET("/tools/ports", h.GetOpenPorts)

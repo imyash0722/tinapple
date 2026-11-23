@@ -27,6 +27,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.LocalContentColor
@@ -119,9 +120,14 @@ fun Caption(text: String, modifier: Modifier = Modifier, color: Color = LocalCon
     )
 }
 
-/** A section title with its action button on the right. */
+/** A section title with its action button or icon on the right. */
 @Composable
-fun SectionHeader(title: String, action: String? = null, onAction: (() -> Unit)? = null) {
+fun SectionHeader(
+    title: String,
+    action: String? = null,
+    @DrawableRes actionIcon: Int? = null,
+    onAction: (() -> Unit)? = null
+) {
     Row(
         Modifier
             .fillMaxWidth()
@@ -129,7 +135,22 @@ fun SectionHeader(title: String, action: String? = null, onAction: (() -> Unit)?
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(title, style = Expressive.wide(22.sp), modifier = Modifier.weight(1f))
-        if (action != null && onAction != null) {
+        if (actionIcon != null && onAction != null) {
+            IconButton(
+                onClick = onAction,
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(CircleShape)
+                    .background(Layer.pane)
+            ) {
+                Icon(
+                    painter = painterResource(actionIcon),
+                    contentDescription = action ?: title,
+                    tint = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+        } else if (action != null && onAction != null) {
             TonalPill(
                 action,
                 onClick = onAction,
@@ -284,29 +305,29 @@ fun LoadColumn(
     activeColor: Color = MaterialTheme.colorScheme.primary
 ) {
     val cs = MaterialTheme.colorScheme
-    Column(modifier, verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Row(Modifier.height(44.dp), verticalAlignment = Alignment.Bottom) {
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Row(Modifier.height(36.dp), verticalAlignment = Alignment.Bottom) {
             Text(
                 value,
-                style = Expressive.digits(38.sp),
+                style = Expressive.digits(26.sp),
                 maxLines = 1,
                 softWrap = false,
                 modifier = Modifier.weight(1f, fill = false),
             )
             Text(
                 unit,
-                style = Expressive.digitsSoft(15.sp),
+                style = Expressive.digitsSoft(12.sp),
                 color = cs.onSurfaceVariant,
                 maxLines = 1,
                 softWrap = false,
-                modifier = Modifier.padding(bottom = 5.dp, start = 2.dp)
+                modifier = Modifier.padding(bottom = 3.dp, start = 2.dp)
             )
         }
-        Text(label, style = Expressive.title(13.sp), color = cs.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(label, style = Expressive.title(11.sp), color = cs.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
         Box(
             Modifier
                 .fillMaxWidth()
-                .height(8.dp)
+                .height(6.dp)
                 .clip(CircleShape)
                 .background(cs.secondaryContainer.copy(alpha = 0.5f))
         ) {

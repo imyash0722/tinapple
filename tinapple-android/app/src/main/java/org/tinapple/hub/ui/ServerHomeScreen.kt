@@ -1,14 +1,15 @@
 package org.tinapple.hub.ui
 
+import android.widget.Toast
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -18,7 +19,6 @@ import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.displayCutoutPadding
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -26,25 +26,28 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
@@ -52,24 +55,26 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import org.tinapple.hub.R
+import org.tinapple.hub.data.MusicNowPlayingState
 import org.tinapple.hub.data.ServiceItem
 import org.tinapple.hub.data.SystemTelemetry
 import org.tinapple.hub.network.DiscoveryEngine
 import org.tinapple.hub.ui.components.ServiceBrandIconResolver
 import org.tinapple.hub.ui.theme.Expressive
 import org.tinapple.hub.ui.theme.StatusRunning
-import org.tinapple.hub.ui.theme.TinappleDarkBackground
 import org.tinapple.hub.ui.viewmodel.TinappleViewModel
 import org.tinapple.hub.utils.ClientAppLauncher
 import org.tinapple.hub.utils.LaunchResult
@@ -84,76 +89,113 @@ fun ServerHomeScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
-    val wallpaperUrl = uiState.selectedWallpaper.safeUrl(uiState.activeServerOrigin)
+    val wallpaperUrl = uiState.localWallpaperFilePath?.let { "file://$it" }
+        ?: uiState.selectedWallpaper.safeUrl(uiState.activeServerOrigin)
 
+    var isShowingCustomizer by remember { mutableStateOf(false) }
+
+    if (isShowingCustomizer) {
+        CustomizeWidgetsSheet(
+            enabledWidgets = uiState.enabledWidgets,
+            onToggleWidget = { id, enabled -> viewModel.toggleWidget(id, enabled) },
+            onDismiss = { isShowingCustomizer = false }
+        )
+    }
+
+    // LazyColumn draws directly edge-to-edge under camera cutout and status bar
     LazyColumn(
-        modifier = modifier
-            .fillMaxSize()
-            .displayCutoutPadding()
-            .statusBarsPadding()
-            .navigationBarsPadding(),
+        modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        // 1. Server Hero Card (ii-tools inspired)
-        item(key = "server_hero") {
-            ServerHeroCard(
-                hostname = uiState.systemInfo.hostname.ifEmpty { "pineapple-server" },
-                serverOrigin = uiState.activeServerOrigin,
-                wallpaperUrl = wallpaperUrl,
-                uptimeSeconds = uiState.systemInfo.totalUptimeSeconds,
-                blurDp = uiState.appearanceSettings.blurDp,
-                dimAlpha = uiState.appearanceSettings.dimAlpha,
-                isRefreshing = uiState.isRefreshing || uiState.isDiscovering,
-                onRefresh = { viewModel.refreshAll(forceDiscovery = true) },
-                onOpenAppearance = onOpenAppearance
-            )
+        // 1. Server Hero Card
+        if (uiState.enabledWidgets.contains("hero")) {
+            item(key = "server_hero") {
+                ServerHeroCard(
+                    hostname = uiState.systemInfo.hostname.ifEmpty { "pineapple-server" },
+                    serverOrigin = uiState.activeServerOrigin,
+                    wallpaperUrl = wallpaperUrl,
+                    uptimeSeconds = uiState.systemInfo.totalUptimeSeconds,
+                    blurDp = uiState.appearanceSettings.blurDp,
+                    dimAlpha = uiState.appearanceSettings.dimAlpha,
+                    isRefreshing = uiState.isRefreshing || uiState.isDiscovering,
+                    onRefresh = { viewModel.refreshAll(forceDiscovery = true) },
+                    onOpenAppearance = onOpenAppearance,
+                    onOpenCustomize = { isShowingCustomizer = true }
+                )
+            }
         }
 
-        // 2. System Telemetry Card (ii-tools LoadColumn 4-metric gauge)
-        item(key = "server_perf") {
-            ServerPerfCard(
-                telemetry = uiState.telemetry,
-                onRefresh = { viewModel.refreshAll(forceDiscovery = false) }
-            )
+        // 2. Navidrome Now Playing & Music Controls Card
+        if (uiState.enabledWidgets.contains("now_playing")) {
+            item(key = "now_playing") {
+                NowPlayingCard(
+                    nowPlaying = uiState.nowPlaying,
+                    onLaunchVibrdrome = {
+                        val navService = uiState.services.firstOrNull {
+                            ClientAppLauncher.getServiceKey(it.name, it.displayName) == "navidrome"
+                        }
+                        val portalUrl = navService?.let { viewModel.apiClient.getServicePortalUrl(it) }
+                        val res = ClientAppLauncher.launchByServiceKey(context, "vibrdrome", portalUrl)
+                        if (res is LaunchResult.OpenedWeb) {
+                            onOpenPortal(res.url)
+                        }
+                    }
+                )
+            }
         }
 
-        // 3. Quick Client App Launcher Strip (ii-tools ToolsStrip)
-        item(key = "client_apps_strip") {
-            ClientToolsStrip(
-                services = uiState.services,
-                getPortalUrl = { svc -> viewModel.apiClient.getServicePortalUrl(svc) },
-                onOpenPortal = onOpenPortal
-            )
+        // 3. System Telemetry Card (Host System Load)
+        if (uiState.enabledWidgets.contains("telemetry")) {
+            item(key = "server_perf") {
+                ServerPerfCard(
+                    telemetry = uiState.telemetry,
+                    onRefresh = { viewModel.refreshAll(forceDiscovery = false) }
+                )
+            }
         }
 
-        // 4. Quick Server Controls & Network
-        item(key = "server_controls") {
-            ServerControlsCard(
-                protonStatus = uiState.protonStatus,
-                isTogglingProton = uiState.isTogglingProton,
-                onToggleProton = { active -> viewModel.toggleProton(active) },
-                onHealTorrents = { viewModel.refreshAll(forceDiscovery = false) }
-            )
+        // 4. Quick Client App Launcher Strip (Syncthing, Bitwarden, Tsumiru, Plezy, Vibrdrome)
+        if (uiState.enabledWidgets.contains("client_apps")) {
+            item(key = "client_apps_strip") {
+                ClientToolsStrip(
+                    services = uiState.services,
+                    getPortalUrl = { svc -> viewModel.apiClient.getServicePortalUrl(svc) },
+                    onOpenPortal = onOpenPortal
+                )
+            }
         }
 
-        // 5. Homelab Services Group (ii-tools CardGroup & ToolRow)
-        item(key = "services_header") {
-            SectionHeader(
-                title = "Homelab Daemons",
-                action = "Refresh",
-                onAction = { viewModel.refreshAll(forceDiscovery = false) }
-            )
+        // 5. Quick Server Controls & Network
+        if (uiState.enabledWidgets.contains("controls")) {
+            item(key = "server_controls") {
+                ServerControlsCard(
+                    protonStatus = uiState.protonStatus,
+                    isTogglingProton = uiState.isTogglingProton,
+                    onToggleProton = { active -> viewModel.toggleProton(active) }
+                )
+            }
         }
 
-        item(key = "services_list") {
-            ServerServicesGroup(
-                services = uiState.services,
-                togglingServiceMap = uiState.togglingServiceMap,
-                getPortalUrl = { svc -> viewModel.apiClient.getServicePortalUrl(svc) },
-                onToggleService = { svc, start -> viewModel.toggleService(svc, start) },
-                onOpenPortal = onOpenPortal
-            )
+        // 6. Homelab Services Group
+        if (uiState.enabledWidgets.contains("services")) {
+            item(key = "services_header") {
+                SectionHeader(
+                    title = "Homelab Daemons",
+                    actionIcon = R.drawable.rounded_refresh,
+                    onAction = { viewModel.refreshAll(forceDiscovery = false) }
+                )
+            }
+
+            item(key = "services_list") {
+                ServerServicesGroup(
+                    services = uiState.services,
+                    togglingServiceMap = uiState.togglingServiceMap,
+                    getPortalUrl = { svc -> viewModel.apiClient.getServicePortalUrl(svc) },
+                    onToggleService = { svc, start -> viewModel.toggleService(svc, start) },
+                    onOpenPortal = onOpenPortal
+                )
+            }
         }
 
         item(key = "bottom_spacer") {
@@ -162,7 +204,7 @@ fun ServerHomeScreen(
     }
 }
 
-/** Expressive Server Hero Card matching ii-tools PcHero */
+/** Expressive Server Hero Card matching ii-tools PcHero with Tinapple dual-facet logo */
 @Composable
 private fun ServerHeroCard(
     hostname: String,
@@ -173,7 +215,8 @@ private fun ServerHeroCard(
     dimAlpha: Float,
     isRefreshing: Boolean,
     onRefresh: () -> Unit,
-    onOpenAppearance: () -> Unit
+    onOpenAppearance: () -> Unit,
+    onOpenCustomize: () -> Unit
 ) {
     val cs = MaterialTheme.colorScheme
     val context = LocalContext.current
@@ -237,7 +280,7 @@ private fun ServerHeroCard(
             )
         }
 
-        // Top Status Bar inside Hero Card
+        // Top Action & Status Bar inside Hero Card
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -297,6 +340,23 @@ private fun ServerHeroCard(
                     }
                 }
 
+                // Customize Widgets Action
+                IconButton(
+                    onClick = onOpenCustomize,
+                    colors = IconButtonDefaults.iconButtonColors(
+                        containerColor = cs.surfaceContainerHigh.copy(alpha = 0.85f),
+                        contentColor = cs.onSurface
+                    ),
+                    modifier = Modifier.size(36.dp)
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.rounded_dashboard_customize),
+                        contentDescription = "Customize Widgets",
+                        tint = cs.onSurface,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+
                 // Themes & Preferences Action using clean Material Symbols palette
                 IconButton(
                     onClick = onOpenAppearance,
@@ -316,25 +376,32 @@ private fun ServerHeroCard(
             }
         }
 
-        // Bottom Info Row inside Hero Card
+        // Bottom Info Row inside Hero Card with Black Backdrop Matugen-Coloured Tinapple Logo
         Row(
             modifier = Modifier
                 .align(Alignment.BottomStart)
                 .fillMaxWidth()
-                .padding(14.dp)
-                .height(IntrinsicSize.Min),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                .padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
+            // Official Tinapple Logo: solid black backdrop squircle with Matugen colored facets inside
+            TinappleLogoBadge(
+                primaryColor = cs.primary,
+                secondaryColor = cs.secondary,
+                tertiaryColor = cs.tertiary
+            )
+
             Column(
                 modifier = Modifier
                     .weight(1f)
-                    .clip(RoundedCornerShape(24.dp))
+                    .clip(RoundedCornerShape(22.dp))
                     .background(cs.surfaceContainerHigh.copy(alpha = 0.90f))
-                    .padding(horizontal = 18.dp, vertical = 12.dp),
+                    .padding(horizontal = 16.dp, vertical = 10.dp),
             ) {
                 Text(
                     text = hostname,
-                    style = Expressive.xwide(26.sp),
+                    style = Expressive.xwide(20.sp),
                     color = cs.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
@@ -351,7 +418,232 @@ private fun ServerHeroCard(
     }
 }
 
-/** Expressive 4-metric system telemetry gauge inspired by ii-tools PerfCard */
+/** Official Tinapple geometric emblem on solid obsidian black squircle with dynamic Matugen colors */
+@Composable
+fun TinappleLogoBadge(
+    primaryColor: Color,
+    secondaryColor: Color,
+    tertiaryColor: Color,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .size(52.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .background(Color.Black),
+        contentAlignment = Alignment.Center
+    ) {
+        Canvas(modifier = Modifier.size(32.dp)) {
+            val w = size.width
+            val h = size.height
+
+            // 1. Crown Leaves in secondaryColor (Matugen secondary)
+            val crownPath = Path().apply {
+                // Center crown leaf
+                moveTo(w * 0.5f, h * 0.06f)
+                cubicTo(w * 0.44f, h * 0.16f, w * 0.46f, h * 0.28f, w * 0.5f, h * 0.34f)
+                cubicTo(w * 0.54f, h * 0.28f, w * 0.56f, h * 0.16f, w * 0.5f, h * 0.06f)
+                close()
+
+                // Left leaf
+                moveTo(w * 0.5f, h * 0.34f)
+                cubicTo(w * 0.36f, h * 0.28f, w * 0.20f, h * 0.16f, w * 0.22f, h * 0.10f)
+                cubicTo(w * 0.18f, h * 0.24f, w * 0.32f, h * 0.33f, w * 0.5f, h * 0.34f)
+                close()
+
+                // Right leaf
+                moveTo(w * 0.5f, h * 0.34f)
+                cubicTo(w * 0.64f, h * 0.28f, w * 0.80f, h * 0.16f, w * 0.78f, h * 0.10f)
+                cubicTo(w * 0.82f, h * 0.24f, w * 0.68f, h * 0.33f, w * 0.5f, h * 0.34f)
+                close()
+            }
+            drawPath(crownPath, color = secondaryColor)
+
+            // 2. Main Apple / Pineapple Body in primaryColor (Matugen primary)
+            val bodyPath = Path().apply {
+                moveTo(w * 0.5f, h * 0.36f)
+                cubicTo(w * 0.76f, h * 0.34f, w * 0.90f, h * 0.54f, w * 0.84f, h * 0.76f)
+                cubicTo(w * 0.78f, h * 0.94f, w * 0.58f, h * 0.96f, w * 0.5f, h * 0.92f)
+                cubicTo(w * 0.42f, h * 0.96f, w * 0.22f, h * 0.94f, w * 0.16f, h * 0.76f)
+                cubicTo(w * 0.10f, h * 0.54f, w * 0.24f, h * 0.34f, w * 0.5f, h * 0.36f)
+                close()
+            }
+            drawPath(bodyPath, color = primaryColor)
+
+            // 3. Facet accents in tertiaryColor
+            drawLine(
+                color = tertiaryColor.copy(alpha = 0.60f),
+                start = androidx.compose.ui.geometry.Offset(w * 0.32f, h * 0.52f),
+                end = androidx.compose.ui.geometry.Offset(w * 0.68f, h * 0.82f),
+                strokeWidth = 1.8f.dp.toPx()
+            )
+            drawLine(
+                color = tertiaryColor.copy(alpha = 0.60f),
+                start = androidx.compose.ui.geometry.Offset(w * 0.68f, h * 0.52f),
+                end = androidx.compose.ui.geometry.Offset(w * 0.32f, h * 0.82f),
+                strokeWidth = 1.8f.dp.toPx()
+            )
+
+            // 4. White glint sparkle
+            drawCircle(
+                color = Color.White.copy(alpha = 0.85f),
+                radius = 1.8f.dp.toPx(),
+                center = androidx.compose.ui.geometry.Offset(w * 0.38f, h * 0.48f)
+            )
+        }
+    }
+}
+
+/** Navidrome Now Playing & Music Remote Player Card */
+@Composable
+private fun NowPlayingCard(
+    nowPlaying: MusicNowPlayingState,
+    onLaunchVibrdrome: () -> Unit
+) {
+    val cs = MaterialTheme.colorScheme
+    val context = LocalContext.current
+    val track = nowPlaying.track
+
+    ExpressiveCard(
+        color = Layer.pane,
+        contentColor = cs.onSurface,
+        radius = Radius.card,
+        onClick = onLaunchVibrdrome
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Caption("NAVIDROME MUSIC STREAM", color = cs.onSurfaceVariant, modifier = Modifier.weight(1f))
+                Pill(
+                    text = if (nowPlaying.active) "Streaming" else "Idle",
+                    container = if (nowPlaying.active) Color(0xFF10B981).copy(alpha = 0.2f) else Layer.field,
+                    content = if (nowPlaying.active) Color(0xFF10B981) else cs.onSurfaceVariant
+                )
+            }
+
+            if (track != null) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    // Album Cover
+                    Box(
+                        modifier = Modifier
+                            .size(56.dp)
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(cs.surfaceContainerHigh),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (!track.coverUrl.isNullOrBlank()) {
+                            AsyncImage(
+                                model = ImageRequest.Builder(context)
+                                    .data(track.coverUrl)
+                                    .crossfade(200)
+                                    .build(),
+                                contentDescription = track.album ?: track.title,
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop
+                            )
+                        } else {
+                            Icon(
+                                painter = painterResource(R.drawable.rounded_album),
+                                contentDescription = null,
+                                tint = cs.onSurfaceVariant,
+                                modifier = Modifier.size(30.dp)
+                            )
+                        }
+                    }
+
+                    // Track & Artist Info
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
+                        Text(
+                            text = track.title,
+                            style = Expressive.title(15.sp),
+                            color = cs.onSurface,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Text(
+                            text = "${track.artist}${track.album?.let { " · $it" } ?: ""}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = cs.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+
+                    // Player Control Button: Open Vibrdrome
+                    IconButton(
+                        onClick = onLaunchVibrdrome,
+                        modifier = Modifier
+                            .size(38.dp)
+                            .clip(CircleShape)
+                            .background(cs.secondaryContainer)
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.rounded_play_arrow),
+                            contentDescription = "Open Vibrdrome",
+                            tint = cs.onSecondaryContainer,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(44.dp)
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(cs.secondaryContainer),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.rounded_music_note),
+                            contentDescription = null,
+                            tint = cs.onSecondaryContainer,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
+                        Text(
+                            text = "Music Stream Idle",
+                            style = Expressive.title(14.sp),
+                            color = cs.onSurface
+                        )
+                        Text(
+                            text = "Tap to open Vibrdrome client",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = cs.onSurfaceVariant
+                        )
+                    }
+                    TonalPill(
+                        text = "Vibrdrome",
+                        onClick = onLaunchVibrdrome,
+                        height = 36.dp
+                    )
+                }
+            }
+        }
+    }
+}
+
+/** Expressive 4-metric system telemetry gauge inspired by ii-tools PerfCard with non-truncating labels */
 @Composable
 private fun ServerPerfCard(
     telemetry: SystemTelemetry?,
@@ -379,12 +671,12 @@ private fun ServerPerfCard(
                 )
             }
 
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 // CPU
                 LoadColumn(
                     value = t?.cpu?.usagePercent?.roundToInt()?.toString() ?: "—",
                     unit = "%",
-                    label = "CPU · ${t?.thermal?.maxTempC?.roundToInt() ?: 45}°",
+                    label = "CPU",
                     fraction = t?.let { (it.cpu.usagePercent / 100.0).toFloat() },
                     modifier = Modifier.weight(1f),
                     activeColor = cs.primary
@@ -394,7 +686,7 @@ private fun ServerPerfCard(
                 LoadColumn(
                     value = t?.memory?.let { "%.1f".format(it.usedBytes / 1_073_741_824.0) } ?: "—",
                     unit = "GB",
-                    label = t?.memory?.let { "RAM of %.0fG".format(it.totalBytes / 1_073_741_824.0) } ?: "RAM",
+                    label = "RAM",
                     fraction = t?.memory?.let { (it.usedPercent / 100.0).toFloat() },
                     modifier = Modifier.weight(1f),
                     activeColor = cs.secondary
@@ -404,7 +696,7 @@ private fun ServerPerfCard(
                 LoadColumn(
                     value = t?.disk?.let { "${(it.freeBytes / 1_073_741_824L)}" } ?: "—",
                     unit = "GB",
-                    label = "DISK FREE",
+                    label = "Disk",
                     fraction = t?.disk?.let { (it.usedPercent / 100.0).toFloat() },
                     modifier = Modifier.weight(1f),
                     activeColor = cs.tertiary
@@ -414,7 +706,7 @@ private fun ServerPerfCard(
                 LoadColumn(
                     value = t?.thermal?.maxTempC?.roundToInt()?.toString() ?: "44",
                     unit = "°C",
-                    label = t?.thermal?.powerProfile?.uppercase() ?: "BALANCED",
+                    label = "Temp",
                     fraction = t?.thermal?.let { (it.maxTempC / 100.0).toFloat() } ?: 0.44f,
                     modifier = Modifier.weight(1f),
                     activeColor = if ((t?.thermal?.maxTempC ?: 0.0) > 75) cs.error else cs.primary
@@ -424,7 +716,7 @@ private fun ServerPerfCard(
     }
 }
 
-/** Client App Launcher Strip (Manga, Video, Music, Passwords, Torrents) */
+/** Client App Launcher Strip strictly with the 5 primary companion apps */
 @Composable
 private fun ClientToolsStrip(
     services: List<ServiceItem>,
@@ -435,13 +727,11 @@ private fun ClientToolsStrip(
     val context = LocalContext.current
 
     val primaryApps = listOf(
-        Triple("suwayomi", "Tsumiru", R.drawable.rounded_photo_library),
-        Triple("jellyfin", "Findroid", R.drawable.rounded_theaters),
-        Triple("navidrome", "Symfonium", R.drawable.rounded_music_note),
-        Triple("pinemusic", "PineMusic", R.drawable.rounded_equalizer),
+        Triple("syncthing", "Syncthing", R.drawable.rounded_sync),
         Triple("vaultwarden", "Bitwarden", R.drawable.rounded_lock),
-        Triple("qbittorrent", "qBittorrent", R.drawable.rounded_download),
-        Triple("syncthing", "Syncthing", R.drawable.rounded_sync)
+        Triple("suwayomi", "Tsumiru", R.drawable.rounded_photo_library),
+        Triple("jellyfin", "Plezy", R.drawable.rounded_theaters),
+        Triple("navidrome", "Vibrdrome", R.drawable.rounded_music_note)
     )
 
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -479,7 +769,6 @@ private fun ClientToolsStrip(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    // App icon: loads installed package icon or brand SVG/drawable
                     if (installedPkg != null) {
                         AppIcon(pkg = installedPkg.packageName, size = 46.dp)
                     } else {
@@ -508,9 +797,9 @@ private fun ClientToolsStrip(
                     )
 
                     Pill(
-                        text = if (isInstalled) "App" else "Web",
-                        container = if (isInstalled) Color(0xFF10B981).copy(alpha = 0.2f) else Layer.field,
-                        content = if (isInstalled) Color(0xFF10B981) else cs.onSurfaceVariant
+                        text = if (isInstalled) "App" else "Get",
+                        container = if (isInstalled) Color(0xFF10B981).copy(alpha = 0.2f) else cs.secondaryContainer.copy(alpha = 0.6f),
+                        content = if (isInstalled) Color(0xFF10B981) else cs.onSecondaryContainer
                     )
                 }
             }
@@ -518,16 +807,18 @@ private fun ClientToolsStrip(
     }
 }
 
-/** Quick Controls for Proton VPN, Tailscale MagicDNS, Hotspot, and Power */
+/** Quick Controls for Proton VPN and Tailscale MagicDNS with Copy button */
 @Composable
 private fun ServerControlsCard(
     protonStatus: org.tinapple.hub.data.ProtonStatus?,
     isTogglingProton: Boolean,
-    onToggleProton: (Boolean) -> Unit,
-    onHealTorrents: () -> Unit
+    onToggleProton: (Boolean) -> Unit
 ) {
     val cs = MaterialTheme.colorScheme
+    val context = LocalContext.current
+    val clipboardManager = LocalClipboardManager.current
     val isVpnActive = protonStatus?.active == true
+    val magicDnsHost = DiscoveryEngine.DEFAULT_TAILSCALE_HOST
 
     CardGroup {
         // Proton VPN Exit Node Row
@@ -552,21 +843,28 @@ private fun ServerControlsCard(
             }
         )
 
-        // Tailscale MagicDNS Direct Peer
+        // Tailscale MagicDNS Direct Peer with Copy Button
         ToolRow(
             title = "Tailscale MagicDNS",
-            summary = "Direct Peer · pineapple-server · 192.168.4.0/24 Subnet",
+            summary = magicDnsHost,
             icon = R.drawable.rounded_lan,
-            tint = Tint.PRIMARY
-        )
-
-        // Server Power & Heal Torrents Row
-        ToolRow(
-            title = "Download Queue Auto-Resumer",
-            summary = "Resume qBittorrent, Suwayomi queue & lossless PineMusic",
-            icon = R.drawable.rounded_restart_alt,
-            tint = Tint.SECONDARY,
-            onClick = onHealTorrents
+            tint = Tint.PRIMARY,
+            trailing = {
+                IconButton(
+                    onClick = {
+                        clipboardManager.setText(AnnotatedString(magicDnsHost))
+                        Toast.makeText(context, "Copied $magicDnsHost to clipboard", Toast.LENGTH_SHORT).show()
+                    },
+                    modifier = Modifier.size(36.dp)
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.rounded_content_copy),
+                        contentDescription = "Copy MagicDNS",
+                        tint = cs.primary,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
         )
     }
 }
@@ -639,6 +937,97 @@ private fun ServerServicesGroup(
                     }
                 }
             )
+        }
+    }
+}
+
+/** Customize Widgets Bottom Sheet */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun CustomizeWidgetsSheet(
+    enabledWidgets: Set<String>,
+    onToggleWidget: (String, Boolean) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val cs = MaterialTheme.colorScheme
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    val widgetOptions = listOf(
+        "hero" to ("Server Overview & Host Status" to "Wallpaper backdrop, hardware specs & live origin"),
+        "now_playing" to ("Navidrome Music Stream" to "Live Subsonic playback stream & Vibrdrome remote"),
+        "telemetry" to ("Host System Load" to "Compact 4-metric gauges: CPU, RAM, Disk & Temp"),
+        "client_apps" to ("Quick Client Apps Strip" to "Syncthing, Bitwarden, Tsumiru, Plezy, Vibrdrome"),
+        "controls" to ("Proton VPN & Tailscale Controls" to "Exit node gateway & MagicDNS direct peer"),
+        "services" to ("Homelab Daemons List" to "Full list of systemd homelab services & switches")
+    )
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = Layer.pane,
+        contentColor = cs.onSurface
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 8.dp)
+                .navigationBarsPadding(),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Customize Widgets",
+                    style = Expressive.wide(20.sp),
+                    modifier = Modifier.weight(1f)
+                )
+                IconButton(onClick = onDismiss) {
+                    Icon(painter = painterResource(R.drawable.rounded_close), contentDescription = "Close")
+                }
+            }
+
+            Text(
+                text = "Toggle section cards displayed on your companion home screen.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = cs.onSurfaceVariant
+            )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            CardGroup {
+                for ((id, pair) in widgetOptions) {
+                    val (title, summary) = pair
+                    val isChecked = enabledWidgets.contains(id)
+
+                    ToolRow(
+                        title = title,
+                        summary = summary,
+                        icon = when (id) {
+                            "hero" -> R.drawable.rounded_computer
+                            "now_playing" -> R.drawable.rounded_music_note
+                            "telemetry" -> R.drawable.rounded_speed
+                            "client_apps" -> R.drawable.rounded_apps
+                            "controls" -> R.drawable.rounded_vpn_lock
+                            else -> R.drawable.rounded_dns
+                        },
+                        tint = if (isChecked) Tint.PRIMARY else Tint.SECONDARY,
+                        trailing = {
+                            Switch(
+                                checked = isChecked,
+                                onCheckedChange = { onToggleWidget(id, it) },
+                                colors = SwitchDefaults.colors(
+                                    checkedThumbColor = cs.primary,
+                                    checkedTrackColor = cs.primaryContainer
+                                )
+                            )
+                        }
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }

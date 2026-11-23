@@ -13,11 +13,17 @@
         <package android:name="tachiyomi.mihon" />
         <package android:name="app.suwayomi.tachidesk" />
 
-        <!-- Media / Jellyfin clients -->
+        <!-- Media / Jellyfin & Plezy clients -->
+        <package android:name="com.edde746.plezy" />
+        <package android:name="app.plezy" />
+        <package android:name="com.plezy" />
         <package android:name="dev.jdtech.jellyfin" />
         <package android:name="org.jellyfin.mobile" />
 
-        <!-- Music / Subsonic / PineMusic clients -->
+        <!-- Music / Navidrome & Vibrdrome clients -->
+        <package android:name="com.vibrdrome.app" />
+        <package android:name="com.vibrdrome" />
+        <package android:name="app.vibrdrome" />
         <package android:name="app.symfonium.music.player" />
         <package android:name="github.daneren2005.dsub" />
         <package android:name="com.substreamer.substreamer" />
