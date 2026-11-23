@@ -14,6 +14,7 @@ import org.tinapple.hub.R
 private val families = HashMap<String, FontFamily>()
 
 /** The Google Sans Flex face at one point of its axes; each point is one Typeface, built once. */
+@OptIn(androidx.compose.ui.text.ExperimentalTextApi::class)
 fun flex(weight: Int, width: Float = 100f, round: Float = 100f, slant: Float = 0f): FontFamily =
     synchronized(families) {
         families.getOrPut("$weight/$width/$round/$slant") {

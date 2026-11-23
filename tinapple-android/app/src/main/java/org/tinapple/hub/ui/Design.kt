@@ -88,7 +88,7 @@ fun ExpressiveCard(
     if (onClick != null) {
         Surface(
             onClick = {
-                haptics.performHapticFeedback(HapticFeedbackType.VirtualKey)
+                haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                 onClick()
             },
             shape = shape,
@@ -257,7 +257,7 @@ fun ToolRow(
             trailingContent = trailingContent,
             colors = colors,
             modifier = rowModifier.clickable {
-                haptics.performHapticFeedback(HapticFeedbackType.VirtualKey)
+                haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                 onClick()
             }
         )
@@ -335,7 +335,7 @@ fun TonalPill(
     val haptics = LocalHapticFeedback.current
     Surface(
         onClick = {
-            haptics.performHapticFeedback(HapticFeedbackType.VirtualKey)
+            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
             onClick()
         },
         shape = RoundedCornerShape(height / 2),

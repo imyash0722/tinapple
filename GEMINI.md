@@ -84,6 +84,26 @@
 
 ## 5. Changelog & Active State Ledger
 
+### Maintenance (2026-11-23) | feat(android): ii-tools design system port, full kotlin companion architecture, and fullscreen cutout support
+- **Scope**: Converted `tinapple-android` into a full native Kotlin server companion app faithfully porting the design language, UI components, typography, and card hierarchy of `ii-tools` (`https://github.com/P3DROVFX/ii-tools`), implemented persistent edge-to-edge drawing under the display cutout/notch, prioritized Tailscale MagicDNS (`pineapple-server`) across network discovery and service portal resolution, and verified Tailscale admin console route approval for subnets `192.168.1.0/24` and `192.168.4.0/24`.
+- **Implementation & Verifications**:
+  - **ii-tools Design System Port ([`Design.kt`](file:///mnt/shared/projects/tinapple/tinapple-android/app/src/main/java/org/tinapple/hub/ui/Design.kt), [`Type.kt`](file:///mnt/shared/projects/tinapple/tinapple-android/app/src/main/java/org/tinapple/hub/ui/theme/Type.kt))**:
+    - Ported `Layer` (page, pane, onPane, field), `Radius` (join, row, card), `ExpressiveCard`, `SectionHeader`, `CardGroup`, `ToolRow`, `LoadColumn`, `Tint`, `IconBadge`, and `Pill`.
+    - Integrated Google Sans Flex variable font with expressive axes (`digits`, `digitsSoft`, `wide`, `title`, `live`, `caption`).
+    - Added dynamic package app icon resolution (`AppIcon`) pulling native adaptive/vector launcher icons from installed client apps.
+  - **Server Home Screen ([`ServerHomeScreen.kt`](file:///mnt/shared/projects/tinapple/tinapple-android/app/src/main/java/org/tinapple/hub/ui/ServerHomeScreen.kt))**:
+    - `ServerHeroCard`: 260dp hero card with dynamic blurred wallpaper backdrop, live MagicDNS pill (`● pineapple-server`), hardware specs (`Acer Aspire V3-571 · Arch Linux LTS`), and clean `rounded_palette.xml` theme launcher.
+    - `ServerPerfCard`: 4-column load gauge (`LoadColumn`) for CPU %, RAM GB used/total, Disk Free GB, and Host thermal / battery status.
+    - `ClientToolsStrip`: Horizontal squircle deck with dynamic app icons, label, and `[App]` / `[Web]` status chips for Tsumiru, Findroid, Symfonium, PineMusic, Bitwarden, qBittorrent, Syncthing.
+    - `ServerControlsCard`: Proton VPN Exit Node switch, Tailscale MagicDNS peer indicator, and download queue resumer.
+    - `ServerServicesGroup`: Homelab daemons in `CardGroup` and `ToolRow` with brand icons, ports, and power switches.
+  - **Tailscale MagicDNS & Route Approval**:
+    - Set `DEFAULT_TAILSCALE_HOST` to `"pineapple-server"` in `DiscoveryEngine.kt` and `TinappleApiClient.kt`.
+    - Verified Tailscale admin console approval for subnet routes `192.168.1.0/24` and `192.168.4.0/24` and exit node.
+  - **Fullscreen Immersive & Display Cutout ([`MainActivity.kt`](file:///mnt/shared/projects/tinapple/tinapple-android/app/src/main/java/org/tinapple/hub/MainActivity.kt), [`themes.xml`](file:///mnt/shared/projects/tinapple/tinapple-android/app/src/main/res/values/themes.xml))**:
+    - Configured `LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS` / `SHORT_EDGES` to render under camera notch.
+    - Enabled sticky immersive system bar hiding with window focus restore.
+
 ### Maintenance (2026-11-23) | feat(android/widgets): add ii-tools inspired system telemetry widgets, native client app launcher, and home screen widget
 - **Scope**: Integrated compact Material 3 Expressive system telemetry widgets and intelligent Android native client launcher inspired by `ii-tools` (`https://github.com/P3DROVFX/ii-tools`) into `tinapple-android`. Services now intelligently detect and launch installed Android client apps (e.g. Tsumiru/Mihon for Suwayomi, Findroid for Jellyfin, Symfonium for Navidrome/PineMusic, Bitwarden for Vaultwarden, qBittorrent Remote) with seamless automatic fallback to web portals, accompanied by live 4-metric system telemetry tiles (CPU, RAM, Disk, Thermal/Battery) and an Android Home Screen Widget (`TinappleAppWidgetProvider`).
 - **Implementation & Verifications**:

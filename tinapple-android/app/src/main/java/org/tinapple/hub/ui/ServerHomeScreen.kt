@@ -72,6 +72,7 @@ import org.tinapple.hub.ui.theme.StatusRunning
 import org.tinapple.hub.ui.theme.TinappleDarkBackground
 import org.tinapple.hub.ui.viewmodel.TinappleViewModel
 import org.tinapple.hub.utils.ClientAppLauncher
+import org.tinapple.hub.utils.LaunchResult
 import kotlin.math.roundToInt
 
 @Composable
@@ -455,7 +456,7 @@ private fun ClientToolsStrip(
                 .horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            primaryApps.forEach { (serviceKey, label, fallbackIconRes) ->
+            for ((serviceKey, label, fallbackIconRes) in primaryApps) {
                 val matchingService = services.firstOrNull {
                     ClientAppLauncher.getServiceKey(it.name, it.displayName) == serviceKey
                 }
@@ -469,8 +470,9 @@ private fun ClientToolsStrip(
                         .clip(RoundedCornerShape(20.dp))
                         .background(Layer.pane)
                         .clickable {
-                            ClientAppLauncher.launchByServiceKey(context, serviceKey, portalUrl) { url ->
-                                onOpenPortal(url)
+                            val res = ClientAppLauncher.launchByServiceKey(context, serviceKey, portalUrl)
+                            if (res is LaunchResult.OpenedWeb) {
+                                onOpenPortal(res.url)
                             }
                         }
                         .padding(horizontal = 8.dp, vertical = 14.dp),
@@ -479,7 +481,7 @@ private fun ClientToolsStrip(
                 ) {
                     // App icon: loads installed package icon or brand SVG/drawable
                     if (installedPkg != null) {
-                        AppIcon(pkg = installedPkg, size = 46.dp)
+                        AppIcon(pkg = installedPkg.packageName, size = 46.dp)
                     } else {
                         Box(
                             modifier = Modifier
@@ -531,7 +533,7 @@ private fun ServerControlsCard(
         // Proton VPN Exit Node Row
         ToolRow(
             title = "Proton VPN Exit Node",
-            summary = if (isVpnActive) "Active Egress: ${protonStatus?.exitIp ?: "Proton WG"}" else "Direct Ingress / Offline",
+            summary = if (isVpnActive) "Active Egress: ${protonStatus?.ip ?: "Proton WG"}" else "Direct Ingress / Offline",
             icon = R.drawable.rounded_vpn_lock,
             tint = if (isVpnActive) Tint.PRIMARY else Tint.SECONDARY,
             trailing = {
@@ -582,7 +584,7 @@ private fun ServerServicesGroup(
     val context = LocalContext.current
 
     CardGroup {
-        services.forEach { service ->
+        for (service in services) {
             val isToggling = togglingServiceMap[service.name] == true
             val portalUrl = getPortalUrl(service)
             val serviceKey = ClientAppLauncher.getServiceKey(service.name, service.displayName)
@@ -590,13 +592,13 @@ private fun ServerServicesGroup(
             val isInstalled = installedPkg != null
 
             ToolRow(
-                title = service.displayName,
+                title = service.displayName ?: service.name,
                 summary = "Port: ${service.displayPort ?: service.port ?: "systemd"} · ${if (isInstalled) "● Native Client Available" else if (portalUrl != null) "● Web Portal" else "● Background Service"}",
                 icon = R.drawable.rounded_terminal,
                 tint = if (service.running) Tint.PRIMARY else Tint.SECONDARY,
                 leading = {
                     if (installedPkg != null) {
-                        AppIcon(pkg = installedPkg, size = 40.dp)
+                        AppIcon(pkg = installedPkg.packageName, size = 40.dp)
                     } else {
                         val iconAsset = ServiceBrandIconResolver.getIconAssetPath(service.name, service.displayName)
                         if (iconAsset != null) {
@@ -631,8 +633,9 @@ private fun ServerServicesGroup(
                     }
                 },
                 onClick = {
-                    ClientAppLauncher.launchService(context, service.name, service.displayName, portalUrl) { url ->
-                        onOpenPortal(url)
+                    val res = ClientAppLauncher.launchService(context, service, portalUrl)
+                    if (res is LaunchResult.OpenedWeb) {
+                        onOpenPortal(res.url)
                     }
                 }
             )
