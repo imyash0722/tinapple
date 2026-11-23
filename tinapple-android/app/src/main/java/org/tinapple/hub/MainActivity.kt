@@ -64,6 +64,7 @@ import org.tinapple.hub.ui.components.AppearanceButtonCard
 import org.tinapple.hub.ui.components.AppearancePage
 import org.tinapple.hub.ui.components.ProtonVpnCard
 import org.tinapple.hub.ui.components.ServicesSection
+import org.tinapple.hub.ui.components.SystemWidgetsCard
 import org.tinapple.hub.ui.theme.StatusFailed
 import org.tinapple.hub.ui.theme.TextPrimary
 import org.tinapple.hub.ui.theme.TextSecondary
@@ -261,6 +262,17 @@ private fun MainDashboardScreen(
             activeServerOrigin = uiState.activeServerOrigin,
             isRefreshing = uiState.isRefreshing || uiState.isDiscovering,
             onRefresh = { viewModel.refreshAll(forceDiscovery = true) },
+            glassTranslucency = uiState.appearanceSettings.glassTranslucency
+        )
+
+        Spacer(modifier = Modifier.height(14.dp))
+
+        // System Monitor & Quick Launch Deck (ii-tools inspired)
+        SystemWidgetsCard(
+            telemetry = uiState.telemetry,
+            services = uiState.services,
+            getPortalUrl = { svc -> viewModel.apiClient.getServicePortalUrl(svc) },
+            onOpenPortal = onOpenPortal,
             glassTranslucency = uiState.appearanceSettings.glassTranslucency
         )
 

@@ -63,6 +63,65 @@ data class SystemInfo(
         get() = uptimeSeconds ?: uptime
 }
 
+data class TelemetryCpu(
+    @SerializedName("cores") val cores: Int = 1,
+    @SerializedName("usage_percent") val usagePercent: Double = 0.0,
+    @SerializedName("model_name") val modelName: String? = null
+) {
+    val usageFormatted: String
+        get() = "%.1f%%".format(usagePercent)
+}
+
+data class TelemetryMemory(
+    @SerializedName("total_bytes") val totalBytes: Long = 0,
+    @SerializedName("used_bytes") val usedBytes: Long = 0,
+    @SerializedName("used_percent") val usedPercent: Double = 0.0,
+    @SerializedName("available_bytes") val availableBytes: Long = 0
+) {
+    val usedGb: Double
+        get() = usedBytes.toDouble() / (1024.0 * 1024.0 * 1024.0)
+    val totalGb: Double
+        get() = totalBytes.toDouble() / (1024.0 * 1024.0 * 1024.0)
+    val memoryFormatted: String
+        get() = "%.1f / %.1f GB".format(usedGb, totalGb)
+}
+
+data class TelemetryDisk(
+    @SerializedName("total_bytes") val totalBytes: Long = 0,
+    @SerializedName("free_bytes") val freeBytes: Long = 0,
+    @SerializedName("used_percent") val usedPercent: Double = 0.0
+) {
+    val freeGb: Double
+        get() = freeBytes.toDouble() / (1024.0 * 1024.0 * 1024.0)
+    val totalGb: Double
+        get() = totalBytes.toDouble() / (1024.0 * 1024.0 * 1024.0)
+    val freeFormatted: String
+        get() = "%.1f GB".format(freeGb)
+}
+
+data class TelemetryThermal(
+    @SerializedName("max_temp_c") val maxTempC: Double = 0.0,
+    @SerializedName("power_profile") val powerProfile: String? = null
+) {
+    val tempFormatted: String
+        get() = "${maxTempC.toInt()}°C"
+}
+
+data class TelemetryBattery(
+    @SerializedName("percent") val percent: Int = 0,
+    @SerializedName("charging") val charging: Boolean = false,
+    @SerializedName("present") val present: Boolean = false
+)
+
+data class SystemTelemetry(
+    @SerializedName("cpu") val cpu: TelemetryCpu = TelemetryCpu(),
+    @SerializedName("memory") val memory: TelemetryMemory = TelemetryMemory(),
+    @SerializedName("disk") val disk: TelemetryDisk = TelemetryDisk(),
+    @SerializedName("thermal") val thermal: TelemetryThermal = TelemetryThermal(),
+    @SerializedName("battery") val battery: TelemetryBattery = TelemetryBattery(),
+    @SerializedName("timestamp") val timestamp: Long = 0
+)
+
 data class WallpaperItem(
     @SerializedName("id") val id: String = "",
     @SerializedName("name") val name: String = "",

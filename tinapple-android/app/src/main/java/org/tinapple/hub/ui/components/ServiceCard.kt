@@ -66,6 +66,7 @@ import org.tinapple.hub.ui.theme.TinappleSurfaceHigh
 import org.tinapple.hub.ui.theme.TinappleSurfaceHighest
 import org.tinapple.hub.ui.theme.getGlassSurfaceColor
 import org.tinapple.hub.ui.theme.getLiquidGlassBorder
+import org.tinapple.hub.utils.ClientAppLauncher
 
 @Composable
 fun ServiceCard(
@@ -80,6 +81,15 @@ fun ServiceCard(
     val isRunning = service.isRunning
     val isFailed = service.isFailed
     val context = LocalContext.current
+
+    val isAppInstalled = remember(service) {
+        ClientAppLauncher.isAppInstalled(context, service)
+    }
+    val canLaunch = isAppInstalled || portalUrl != null
+
+    val onLaunch = {
+        ClientAppLauncher.launchService(context, service, portalUrl)
+    }
 
     val statusColor = when {
         isRunning -> StatusRunning
@@ -125,7 +135,7 @@ fun ServiceCard(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Category / Brand Icon squircle (clickable if portalUrl exists)
+                // Category / Brand Icon squircle (clickable if app or portalUrl exists)
                 val brandIconPath = ServiceBrandIconResolver.getIconAssetPath(service.name, service.displayName)
 
                 Box(
@@ -139,8 +149,8 @@ fun ServiceCard(
                             RoundedCornerShape(12.dp)
                         )
                         .then(
-                            if (portalUrl != null) {
-                                Modifier.clickable { onOpenPortal(portalUrl) }
+                            if (canLaunch) {
+                                Modifier.clickable { onLaunch() }
                             } else Modifier
                         ),
                     contentAlignment = Alignment.Center
@@ -178,15 +188,15 @@ fun ServiceCard(
 
                 Spacer(modifier = Modifier.width(14.dp))
 
-                // Title Area: CLICKABLE SERVICE NAME
+                // Title Area: CLICKABLE SERVICE NAME (Launches App or Web)
                 Column(
                     modifier = Modifier
                         .weight(1f)
                         .then(
-                            if (portalUrl != null) {
+                            if (canLaunch) {
                                 Modifier
                                     .clip(RoundedCornerShape(8.dp))
-                                    .clickable { onOpenPortal(portalUrl) }
+                                    .clickable { onLaunch() }
                                     .padding(vertical = 2.dp)
                             } else Modifier
                         )
@@ -197,13 +207,29 @@ fun ServiceCard(
                     ) {
                         Text(
                             text = service.effectiveDisplayName,
-                            color = if (portalUrl != null) MaterialTheme.colorScheme.primary else TextPrimary,
+                            color = if (canLaunch) MaterialTheme.colorScheme.primary else TextPrimary,
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
-                        if (portalUrl != null) {
+                        if (isAppInstalled) {
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(4.dp))
+                                    .background(StatusRunning.copy(alpha = 0.18f))
+                                    .padding(horizontal = 4.dp, vertical = 1.dp)
+                            ) {
+                                Text(
+                                    text = "App",
+                                    color = StatusRunning,
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = FontFamily.Monospace
+                                )
+                            }
+                        } else if (portalUrl != null) {
                             Spacer(modifier = Modifier.width(6.dp))
                             Icon(
                                 imageVector = Icons.AutoMirrored.Rounded.OpenInNew,

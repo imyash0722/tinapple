@@ -22,6 +22,7 @@ import org.tinapple.hub.data.ProtonStatus
 import org.tinapple.hub.data.ServiceItem
 import org.tinapple.hub.data.SystemInfo
 import org.tinapple.hub.data.ThemePalette
+import org.tinapple.hub.data.SystemTelemetry
 import org.tinapple.hub.data.WallpaperItem
 import org.tinapple.hub.network.DiscoveryEngine
 import org.tinapple.hub.network.TinappleApiClient
@@ -96,6 +97,7 @@ data class MainUiState(
     val services: List<ServiceItem> = DEFAULT_FALLBACK_SERVICES,
     val protonStatus: ProtonStatus = ProtonStatus(),
     val systemInfo: SystemInfo = SystemInfo(),
+    val telemetry: SystemTelemetry = SystemTelemetry(),
     val wallpapers: List<WallpaperItem> = BUNDLED_WALLPAPERS,
     val selectedPalette: ThemePalette = DEFAULT_PALETTES.first(),
     val selectedWallpaper: WallpaperItem = BUNDLED_WALLPAPERS.first(),
@@ -299,6 +301,13 @@ class TinappleViewModel(application: Application) : AndroidViewModel(application
             }
         }
 
+        val telRes = apiClient.getTelemetry()
+        if (telRes.isSuccess) {
+            telRes.getOrNull()?.let { tel ->
+                _uiState.update { it.copy(telemetry = tel) }
+            }
+        }
+
         val wallRes = apiClient.getWallpapers()
         if (wallRes.isSuccess) {
             val remoteWalls = wallRes.getOrNull()
@@ -339,6 +348,13 @@ class TinappleViewModel(application: Application) : AndroidViewModel(application
                 if (protonRes.isSuccess) {
                     protonRes.getOrNull()?.let { proton ->
                         _uiState.update { it.copy(protonStatus = proton) }
+                    }
+                }
+
+                val telRes = apiClient.getTelemetry()
+                if (telRes.isSuccess) {
+                    telRes.getOrNull()?.let { tel ->
+                        _uiState.update { it.copy(telemetry = tel) }
                     }
                 }
             }

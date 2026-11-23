@@ -13,6 +13,7 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import org.tinapple.hub.data.ProtonStatus
 import org.tinapple.hub.data.ServiceItem
 import org.tinapple.hub.data.SystemInfo
+import org.tinapple.hub.data.SystemTelemetry
 import org.tinapple.hub.data.WallpaperItem
 import java.net.URI
 import java.util.concurrent.TimeUnit
@@ -186,6 +187,28 @@ class TinappleApiClient(private val baseUrlProvider: () -> String) {
                 val body = response.body?.string() ?: "{}"
                 val info = gson.fromJson(body, SystemInfo::class.java)
                 Result.success(info)
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getTelemetry(): Result<SystemTelemetry> = withContext(Dispatchers.IO) {
+        try {
+            val origin = baseUrlProvider().trimEnd('/')
+            val request = Request.Builder()
+                .url("$origin/api/v1/system/telemetry")
+                .header("User-Agent", "TinappleAndroid/2.0")
+                .get()
+                .build()
+
+            client.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) {
+                    return@withContext Result.failure(Exception("HTTP ${response.code}"))
+                }
+                val body = response.body?.string() ?: "{}"
+                val telemetry = gson.fromJson(body, SystemTelemetry::class.java)
+                Result.success(telemetry)
             }
         } catch (e: Exception) {
             Result.failure(e)

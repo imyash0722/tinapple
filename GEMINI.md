@@ -84,6 +84,27 @@
 
 ## 5. Changelog & Active State Ledger
 
+### Maintenance (2026-11-23) | feat(android/widgets): add ii-tools inspired system telemetry widgets, native client app launcher, and home screen widget
+- **Scope**: Integrated compact Material 3 Expressive system telemetry widgets and intelligent Android native client launcher inspired by `ii-tools` (`https://github.com/P3DROVFX/ii-tools`) into `tinapple-android`. Services now intelligently detect and launch installed Android client apps (e.g. Tsumiru/Mihon for Suwayomi, Findroid for Jellyfin, Symfonium for Navidrome/PineMusic, Bitwarden for Vaultwarden, qBittorrent Remote) with seamless automatic fallback to web portals, accompanied by live 4-metric system telemetry tiles (CPU, RAM, Disk, Thermal/Battery) and an Android Home Screen Widget (`TinappleAppWidgetProvider`).
+- **Implementation & Verifications**:
+  - **Native Client App Launcher Engine ([`ClientAppLauncher.kt`](file:///mnt/shared/projects/tinapple/tinapple-android/app/src/main/java/org/tinapple/hub/utils/ClientAppLauncher.kt))**:
+    - Maps homelab service identifiers (`suwayomi`, `jellyfin`, `navidrome`, `pinemusic`, `vaultwarden`, `qbittorrent`, `syncthing`, `tailscale`, `matrix`, `ombi`, `adguard`) to prioritized candidate package lists.
+    - Probes package manager for launch intents with full Android 11+ `<queries>` package visibility compliance declared in `AndroidManifest.xml`.
+    - If native app is installed, launches Android app via `packageManager.getLaunchIntentForPackage`; if not installed, opens web portal URL in default browser with feedback toasts.
+  - **Compact System Telemetry & Quick App Deck ([`SystemWidgetsCard.kt`](file:///mnt/shared/projects/tinapple/tinapple-android/app/src/main/java/org/tinapple/hub/ui/components/SystemWidgetsCard.kt))**:
+    - Material 3 Expressive liquid glass card displaying 4 compact metric tiles: CPU load %, RAM used/total GB, Disk free space, and Host thermal / battery status.
+    - Quick Client App Launcher scrollable squircle deck featuring brand vector icons and dynamic status badges (`[App]` in emerald if installed, `[Web]` in slate if web-only).
+  - **ServiceCard Integration ([`ServiceCard.kt`](file:///mnt/shared/projects/tinapple/tinapple-android/app/src/main/java/org/tinapple/hub/ui/components/ServiceCard.kt))**:
+    - Service cards now dynamically check for installed Android client apps.
+    - Clicking service card title or brand icon triggers `ClientAppLauncher.launchService`, launching the native client app or web portal.
+    - Renders dynamic `[App]` or `[Web]` badge chips next to the service display name.
+  - **Android Home Screen AppWidget ([`TinappleAppWidgetProvider.kt`](file:///mnt/shared/projects/tinapple/tinapple-android/app/src/main/java/org/tinapple/hub/widget/TinappleAppWidgetProvider.kt))**:
+    - Created home screen widget layout ([`widget_tinapple.xml`](file:///mnt/shared/projects/tinapple/tinapple-android/app/src/main/res/layout/widget_tinapple.xml)) and provider metadata ([`tinapple_widget_info.xml`](file:///mnt/shared/projects/tinapple/tinapple-android/app/src/main/res/xml/tinapple_widget_info.xml)).
+    - Provides server node header, online indicator, and 4 quick launcher shortcuts (Tsumiru, Findroid, Symfonium, PineMusic).
+  - **API Client & Telemetry Data Models ([`Models.kt`](file:///mnt/shared/projects/tinapple/tinapple-android/app/src/main/java/org/tinapple/hub/data/Models.kt), [`TinappleApiClient.kt`](file:///mnt/shared/projects/tinapple/tinapple-android/app/src/main/java/org/tinapple/hub/network/TinappleApiClient.kt))**:
+    - Added `SystemTelemetry` model and `getTelemetry()` API method consuming `/api/v1/system/telemetry`.
+    - Polled periodically alongside service and system info in `TinappleViewModel`.
+
 ### Maintenance (2026-11-23) | fix(suwayomi/hotspot): diagnose download stalls, fix hotspot dns routing, and optimize local ip bitstream delivery
 - **Scope**: Diagnosed Tsumiru client download freeze and slow transfer issues on `pineapple-server`, identified Suwayomi server-side download queue backlog (250+ chapters from Rolia Scan) and intermittent Cloudflare/SSL drops over Proton VPN SOCKS proxy, resolved Android hotspot DNS hijacking by updating `tinapple-hotspot.conf` to advertise exclusively `192.168.4.1` with upstream resolvers, added local FQDN mappings to `/etc/hosts`, advertised subnets `192.168.4.0/24` and `192.168.1.0/24` in Tailscale alongside exit node for transparent LAN routing, and verified direct high-speed local IP peer-to-peer connectivity (`active; direct 192.168.4.101:57119`).
 - **Implementation & Verifications**:

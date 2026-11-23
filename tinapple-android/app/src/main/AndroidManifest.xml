@@ -4,6 +4,56 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
+    <!-- Queries declared for Android 11+ package visibility checks -->
+    <queries>
+        <!-- Manga / Suwayomi clients -->
+        <package android:name="app.tsumiru.Tsumiru" />
+        <package android:name="org.keiyoushi.tachiyomi" />
+        <package android:name="eu.kanade.tachiyomi" />
+        <package android:name="tachiyomi.mihon" />
+        <package android:name="app.suwayomi.tachidesk" />
+
+        <!-- Media / Jellyfin clients -->
+        <package android:name="dev.jdtech.jellyfin" />
+        <package android:name="org.jellyfin.mobile" />
+
+        <!-- Music / Subsonic / PineMusic clients -->
+        <package android:name="app.symfonium.music.player" />
+        <package android:name="github.daneren2005.dsub" />
+        <package android:name="com.substreamer.substreamer" />
+        <package android:name="ch.blinkenlights.android.vanilla" />
+        <package android:name="org.tinapple.pinemusic" />
+
+        <!-- Vault / Bitwarden -->
+        <package android:name="com.x8bit.bitwarden" />
+
+        <!-- BitTorrent remotes -->
+        <package android:name="me.kianoosh.qbittorrentremote" />
+        <package android:name="com.lgallardo.qbittorrentclient" />
+
+        <!-- Sync & Network -->
+        <package android:name="com.nutomic.syncthingandroid" />
+        <package android:name="com.github.catfriend1.syncthingandroid" />
+        <package android:name="com.tailscale.ipn" />
+
+        <!-- Chat & Utilities -->
+        <package android:name="io.element.android.x" />
+        <package android:name="im.vector.app" />
+        <package android:name="com.pietervangils.ombi" />
+        <package android:name="com.adguard.android" />
+
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:scheme="https" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:scheme="http" />
+        </intent>
+    </queries>
+
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
@@ -23,6 +73,19 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- Android Home Screen App Widget -->
+        <receiver
+            android:name=".widget.TinappleAppWidgetProvider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="org.tinapple.hub.widget.ACTION_LAUNCH_CLIENT" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/tinapple_widget_info" />
+        </receiver>
     </application>
 
 </manifest>
