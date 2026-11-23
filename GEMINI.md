@@ -108,6 +108,7 @@
     - Verified signed release APK with `apksigner verify -v` (v2 and v3 signatures valid, release key `tinapple`).
     - Staged APK to `/usr/share/tinapple-dash/tinapple-client.apk` on `pineapple-server` (served at `/download/apk`).
     - Mirrored to local repository at [`out/releases/tinapple-android-client.apk`](file:///mnt/shared/projects/tinapple/out/releases/tinapple-android-client.apk) (13.7 MB, SHA256 `2ac4bc4803937d790ee8e3e9fe6efd370c9c37926e53186116ec4e0537be5f66`) and updated [`out/releases/SHA256SUMS`](file:///mnt/shared/projects/tinapple/out/releases/SHA256SUMS).
+    - Published to GitHub Releases as [`v0.0.10`](https://github.com/imyash0722/tinapple/releases/tag/v0.0.10) (and updated on [`v0.0.9`](https://github.com/imyash0722/tinapple/releases/tag/v0.0.9)).
 
 ### Maintenance (2026-11-23) | feat(android/widgets): add ii-tools inspired system telemetry widgets, native client app launcher, and home screen widget
 - **Scope**: Integrated compact Material 3 Expressive system telemetry widgets and intelligent Android native client launcher inspired by `ii-tools` (`https://github.com/P3DROVFX/ii-tools`) into `tinapple-android`. Services now intelligently detect and launch installed Android client apps (e.g. Tsumiru/Mihon for Suwayomi, Findroid for Jellyfin, Symfonium for Navidrome/PineMusic, Bitwarden for Vaultwarden, qBittorrent Remote) with seamless automatic fallback to web portals, accompanied by live 4-metric system telemetry tiles (CPU, RAM, Disk, Thermal/Battery) and an Android Home Screen Widget (`TinappleAppWidgetProvider`).
