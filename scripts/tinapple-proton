@@ -58,6 +58,8 @@ def ensure_routing_safeguards():
     # PESU campus captive portal gateways & subnet bypass rules (split tunneling)
     for portal_ip in ["192.168.254.1", "172.16.1.1", "10.14.142.1", "192.168.1.1"]:
         run_cmd(["ip", "rule", "add", "to", portal_ip, "table", "main", "priority", "5190"])
+    for local_subnet in ["192.168.4.0/24", "192.168.1.0/24"]:
+        run_cmd(["ip", "rule", "add", "to", local_subnet, "table", "main", "priority", "5190"])
     run_cmd(["ip", "rule", "add", "to", "10.3.0.0/20", "table", "main", "priority", "5195"])
 
     ts_ip = get_tailscale_ip()
@@ -74,6 +76,12 @@ def ensure_routing_safeguards():
         add_iptables_rule_if_missing(None, "FORWARD", ["-i", "tailscale0", "-o", iface, "-j", "ACCEPT"])
         add_iptables_rule_if_missing(None, "FORWARD", ["-i", iface, "-o", "tailscale0", "-m", "state", "--state", "RELATED,ESTABLISHED", "-j", "ACCEPT"])
         add_iptables_rule_if_missing("nat", "POSTROUTING", ["-o", iface, "-j", "MASQUERADE"])
+
+    # 2. Forward between Tailscale client devices and local subnet interfaces (Hotspot & Home LAN)
+    for local_iface in ["wlp0s20u1", "wlp3s0"]:
+        add_iptables_rule_if_missing(None, "FORWARD", ["-i", "tailscale0", "-o", local_iface, "-j", "ACCEPT"])
+        add_iptables_rule_if_missing(None, "FORWARD", ["-i", local_iface, "-o", "tailscale0", "-m", "state", "--state", "RELATED,ESTABLISHED", "-j", "ACCEPT"])
+        add_iptables_rule_if_missing("nat", "POSTROUTING", ["-s", "100.64.0.0/10", "-o", local_iface, "-j", "MASQUERADE"])
 
     # If proton interface is up, ensure exit node policy routing rule and route exist
     if is_wg_active():
@@ -388,6 +396,8 @@ def sanitize_and_save_wireguard(content: str):
         "ip rule add to 172.16.1.1 table main priority 5190 2>/dev/null || true; "
         "ip rule add to 10.14.142.1 table main priority 5190 2>/dev/null || true; "
         "ip rule add to 192.168.1.1 table main priority 5190 2>/dev/null || true; "
+        "ip rule add to 192.168.4.0/24 table main priority 5190 2>/dev/null || true; "
+        "ip rule add to 192.168.1.0/24 table main priority 5190 2>/dev/null || true; "
         "ip rule add to 10.3.0.0/20 table main priority 5195 2>/dev/null || true; "
         "ip rule add from 192.168.4.1 table main priority 5260 2>/dev/null || true; "
         f"ip rule add from {ts_ip} table 52 priority 5265 2>/dev/null || true; "
@@ -406,6 +416,8 @@ def sanitize_and_save_wireguard(content: str):
         "ip rule del to 172.16.1.1 table main priority 5190 2>/dev/null || true; "
         "ip rule del to 10.14.142.1 table main priority 5190 2>/dev/null || true; "
         "ip rule del to 192.168.1.1 table main priority 5190 2>/dev/null || true; "
+        "ip rule del to 192.168.4.0/24 table main priority 5190 2>/dev/null || true; "
+        "ip rule del to 192.168.1.0/24 table main priority 5190 2>/dev/null || true; "
         "ip rule del to 10.3.0.0/20 table main priority 5195 2>/dev/null || true; "
         "ip rule del from 192.168.4.1 table main priority 5260 2>/dev/null || true; "
         f"ip rule del from {ts_ip} table 52 priority 5265 2>/dev/null || true; "
