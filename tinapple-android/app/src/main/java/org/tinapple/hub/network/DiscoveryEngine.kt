@@ -11,16 +11,17 @@ import okhttp3.Request
 import java.util.concurrent.TimeUnit
 
 object DiscoveryEngine {
-    const val DEFAULT_TAILSCALE_HOST = "100.67.207.60"
+    const val DEFAULT_TAILSCALE_HOST = "pineapple-server"
     private const val PREFS_NAME = "tinapple_network_prefs"
     private const val KEY_SERVER_ORIGIN = "cached_server_origin"
 
     val DEFAULT_CANDIDATES = listOf(
-        "http://192.168.1.103:8088",                 // Local Wi-Fi LAN IP
-        "http://100.67.207.60:8088",                  // Direct Tailscale IP
-        "https://tinapple-server.tail3dee69.ts.net",  // Tailscale HTTPS Domain
-        "http://tinapple-server:8088",                // Local Hostname
-        "http://192.168.4.1:8088"                     // AP Hotspot
+        "http://pineapple-server:8088",                  // Tailscale MagicDNS short name
+        "http://pineapple-server.taildb42a2.ts.net:8088", // Tailscale MagicDNS FQDN
+        "https://pineapple-server.taildb42a2.ts.net",    // Tailscale HTTPS Domain
+        "http://192.168.4.1:8088",                       // AP Hotspot Gateway
+        "http://192.168.1.103:8088",                     // Local Wi-Fi LAN IP
+        "http://100.108.215.120:8088"                    // Direct Tailscale IP Fallback
     )
 
     private val probeClient = OkHttpClient.Builder()
@@ -31,8 +32,13 @@ object DiscoveryEngine {
     private fun getPrefs(context: Context): SharedPreferences =
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
-    fun getCachedServerOrigin(context: Context): String =
-        getPrefs(context).getString(KEY_SERVER_ORIGIN, null) ?: DEFAULT_CANDIDATES.first()
+    fun getCachedServerOrigin(context: Context): String {
+        val cached = getPrefs(context).getString(KEY_SERVER_ORIGIN, null)
+        if (cached != null && (cached.contains("100.67.207.60") || cached.contains("tail3dee69.ts.net"))) {
+            return DEFAULT_CANDIDATES.first()
+        }
+        return cached ?: DEFAULT_CANDIDATES.first()
+    }
 
     fun setCustomServerOrigin(context: Context, origin: String) {
         val clean = origin.trim().trimEnd('/')
@@ -40,7 +46,11 @@ object DiscoveryEngine {
     }
 
     suspend fun discoverActiveServer(context: Context): String = withContext(Dispatchers.IO) {
-        val cached = getPrefs(context).getString(KEY_SERVER_ORIGIN, null)
+        val rawCached = getPrefs(context).getString(KEY_SERVER_ORIGIN, null)
+        val cached = if (rawCached != null && (rawCached.contains("100.67.207.60") || rawCached.contains("tail3dee69.ts.net"))) {
+            null
+        } else rawCached
+
         if (!cached.isNullOrBlank() && probeHealth(cached)) {
             return@withContext cached
         }

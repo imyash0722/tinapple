@@ -14,8 +14,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -26,20 +24,23 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import org.tinapple.hub.R
 import org.tinapple.hub.data.AppearanceSettings
 import org.tinapple.hub.data.ThemePalette
 import org.tinapple.hub.data.WallpaperItem
-import org.tinapple.hub.ui.theme.TextPrimary
-import org.tinapple.hub.ui.theme.TextSecondary
-import org.tinapple.hub.ui.theme.TinappleBorder
-import org.tinapple.hub.ui.theme.TinappleSurfaceHigh
-import org.tinapple.hub.ui.theme.getGlassSurfaceColor
-import org.tinapple.hub.ui.theme.getLiquidGlassBorder
+import org.tinapple.hub.ui.Caption
+import org.tinapple.hub.ui.ExpressiveCard
+import org.tinapple.hub.ui.Layer
+import org.tinapple.hub.ui.Radius
+import org.tinapple.hub.ui.TonalPill
+import org.tinapple.hub.ui.theme.Expressive
 
 @Composable
 fun AppearanceButtonCard(
@@ -51,19 +52,20 @@ fun AppearanceButtonCard(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val cs = MaterialTheme.colorScheme
     val wallpaperUrl = selectedWallpaper?.safeUrl(serverOrigin)
 
-    Box(
+    ExpressiveCard(
+        color = Layer.pane,
+        contentColor = cs.onSurface,
+        radius = Radius.card,
+        onClick = onClick,
         modifier = modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(18.dp))
-            .background(getGlassSurfaceColor(settings.glassTranslucency))
-            .border(1.dp, getLiquidGlassBorder(MaterialTheme.colorScheme.primary), RoundedCornerShape(18.dp))
-            .clickable { onClick() }
-            .padding(14.dp)
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
@@ -71,13 +73,12 @@ fun AppearanceButtonCard(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.weight(1f)
             ) {
-                // Wallpaper preview thumbnail
+                // Leading Icon: Wallpaper thumbnail or clean Material Symbols Palette
                 Box(
                     modifier = Modifier
-                        .size(44.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(TinappleSurfaceHigh)
-                        .border(1.dp, TinappleBorder, RoundedCornerShape(12.dp)),
+                        .size(48.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(cs.primaryContainer),
                     contentAlignment = Alignment.Center
                 ) {
                     if (!wallpaperUrl.isNullOrBlank()) {
@@ -88,66 +89,58 @@ fun AppearanceButtonCard(
                                 .build(),
                             contentDescription = null,
                             contentScale = ContentScale.Crop,
-                            modifier = Modifier.size(44.dp)
+                            modifier = Modifier
+                                .size(48.dp)
+                                .clip(RoundedCornerShape(16.dp))
+                        )
+                    } else {
+                        Icon(
+                            painter = painterResource(R.drawable.rounded_palette),
+                            contentDescription = "Themes",
+                            tint = cs.onPrimaryContainer,
+                            modifier = Modifier.size(26.dp)
                         )
                     }
 
                     // Floating color badge
                     Box(
                         modifier = Modifier
-                            .size(14.dp)
+                            .size(16.dp)
                             .clip(CircleShape)
                             .background(Color(currentPalette.primaryHex))
-                            .border(1.5.dp, Color.White, CircleShape)
+                            .border(2.dp, Color.White, CircleShape)
                             .align(Alignment.BottomEnd)
                     )
                 }
 
-                Spacer(modifier = Modifier.width(12.dp))
+                Spacer(modifier = Modifier.width(14.dp))
 
                 Column {
-                    Text(
-                        text = "APPEARANCE & THEMES",
-                        color = MaterialTheme.colorScheme.primary,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.sp
-                    )
+                    Caption("APPEARANCE & THEMES", color = cs.primary)
                     Text(
                         text = currentPalette.name,
-                        color = TextPrimary,
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.SemiBold
+                        style = Expressive.wide(18.sp),
+                        color = cs.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        text = "${selectedWallpaper?.name ?: "Default"} • ${if (settings.useMatugen) "Matugen" else "Preset"}",
-                        color = TextSecondary,
-                        fontSize = 12.sp
+                        text = "${selectedWallpaper?.name ?: "Default"} · ${if (settings.useMatugen) "Matugen Dynamic" else "Preset Palette"}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = cs.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
             }
 
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f))
-                    .padding(horizontal = 10.dp, vertical = 6.dp)
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = "Customize",
-                        color = MaterialTheme.colorScheme.primary,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
-                        contentDescription = "Open Appearance",
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(16.dp)
-                    )
-                }
-            }
+            TonalPill(
+                text = "Customize",
+                onClick = onClick,
+                trailingIcon = R.drawable.rounded_arrow_forward,
+                height = 38.dp,
+                color = Layer.onPane
+            )
         }
     }
 }

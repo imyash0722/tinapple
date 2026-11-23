@@ -23,19 +23,22 @@ class ServiceItemTest {
 
         assertEquals(5055, ombiItem.displayPort)
 
-        val clientTs = TinappleApiClient { "http://100.67.207.60:8088" }
+        val clientTs = TinappleApiClient { "http://pineapple-server:8088" }
         val portalUrl = clientTs.getServicePortalUrl(ombiItem)
-        assertEquals("http://100.67.207.60:5055/", portalUrl)
+        assertEquals("http://pineapple-server:5055/", portalUrl)
 
         val clientLan = TinappleApiClient { "http://192.168.1.103:8088" }
         val lanPortalUrl = clientLan.getServicePortalUrl(ombiItem)
         assertEquals("http://192.168.1.103:5055/", lanPortalUrl)
 
-        val clientHttps = TinappleApiClient { "https://tinapple-server.tail3dee69.ts.net" }
-        assertEquals("http://100.67.207.60:5055/", clientHttps.getServicePortalUrl(ombiItem))
+        val clientHttps = TinappleApiClient { "https://pineapple-server.taildb42a2.ts.net" }
+        assertEquals("http://pineapple-server:5055/", clientHttps.getServicePortalUrl(ombiItem))
 
-        val clientHostname = TinappleApiClient { "http://tinapple-server:8088" }
-        assertEquals("http://tinapple-server:5055/", clientHostname.getServicePortalUrl(ombiItem))
+        val clientHostname = TinappleApiClient { "http://pineapple-server:8088" }
+        assertEquals("http://pineapple-server:5055/", clientHostname.getServicePortalUrl(ombiItem))
+
+        val clientDirectIp = TinappleApiClient { "http://100.108.215.120:8088" }
+        assertEquals("http://pineapple-server:5055/", clientDirectIp.getServicePortalUrl(ombiItem))
     }
 
     @Test
@@ -49,9 +52,9 @@ class ServiceItemTest {
 
         assertEquals(8096, jellyfinItem.displayPort)
 
-        val client = TinappleApiClient { "http://100.67.207.60:8088" }
+        val client = TinappleApiClient { "http://pineapple-server:8088" }
         val portalUrl = client.getServicePortalUrl(jellyfinItem)
-        assertEquals("http://100.67.207.60:8096/", portalUrl)
+        assertEquals("http://pineapple-server:8096/", portalUrl)
     }
 
     @Test

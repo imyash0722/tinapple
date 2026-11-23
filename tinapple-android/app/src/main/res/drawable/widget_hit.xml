@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A tap zone: no fill, the system ripple on press. -->
+<ripple xmlns:android="http://schemas.android.com/apk/res/android"
+    android:color="?android:attr/colorControlHighlight">
+    <item android:id="@android:id/mask">
+        <shape>
+            <solid android:color="#FFFFFFFF" />
+        </shape>
+    </item>
+</ripple>

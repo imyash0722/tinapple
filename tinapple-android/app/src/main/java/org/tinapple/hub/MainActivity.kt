@@ -2,12 +2,17 @@ package org.tinapple.hub
 
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.view.WindowManager
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -19,6 +24,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.displayCutoutPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -59,8 +65,7 @@ import coil.ImageLoader
 import coil.compose.AsyncImage
 import coil.decode.SvgDecoder
 import coil.request.ImageRequest
-import org.tinapple.hub.ui.components.AppHeader
-import org.tinapple.hub.ui.components.AppearanceButtonCard
+import org.tinapple.hub.ui.ServerHomeScreen
 import org.tinapple.hub.ui.components.AppearancePage
 import org.tinapple.hub.ui.components.ProtonVpnCard
 import org.tinapple.hub.ui.components.ServicesSection
@@ -79,6 +84,22 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Extend layout into the display cutout (under the notch / punch-hole camera)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            window.attributes.layoutInDisplayCutoutMode =
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
+                } else {
+                    WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+                }
+        }
+
+        // Enable edge-to-edge drawing under system bars
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+
+        // Persistent fullscreen immersive mode at all times
+        hideSystemBars()
 
         // Register global SVG decoder factory for Coil
         val imageLoader = ImageLoader.Builder(this)
@@ -161,7 +182,7 @@ class MainActivity : ComponentActivity() {
                                 onBack = { isShowingAppearance = false }
                             )
                         } else {
-                            MainDashboardScreen(
+                            ServerHomeScreen(
                                 viewModel = viewModel,
                                 onOpenAppearance = { isShowingAppearance = true },
                                 onOpenPortal = ::openBrowserUrl
@@ -227,6 +248,20 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus) {
+            hideSystemBars()
+        }
+    }
+
+    private fun hideSystemBars() {
+        WindowCompat.getInsetsController(window, window.decorView).apply {
+            systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            hide(WindowInsetsCompat.Type.systemBars())
+        }
+    }
+
     private fun openBrowserUrl(url: String) {
         try {
             val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
@@ -236,79 +271,5 @@ class MainActivity : ComponentActivity() {
         } catch (e: Exception) {
             Toast.makeText(this, "Unable to launch browser for $url", Toast.LENGTH_SHORT).show()
         }
-    }
-}
-
-@Composable
-private fun MainDashboardScreen(
-    viewModel: TinappleViewModel,
-    onOpenAppearance: () -> Unit,
-    onOpenPortal: (String) -> Unit
-) {
-    val uiState by viewModel.uiState.collectAsState()
-    val scrollState = rememberScrollState()
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .statusBarsPadding()
-            .navigationBarsPadding()
-            .verticalScroll(scrollState)
-            .padding(horizontal = 16.dp, vertical = 12.dp)
-    ) {
-        // Server Node Header
-        AppHeader(
-            systemInfo = uiState.systemInfo,
-            activeServerOrigin = uiState.activeServerOrigin,
-            isRefreshing = uiState.isRefreshing || uiState.isDiscovering,
-            onRefresh = { viewModel.refreshAll(forceDiscovery = true) },
-            glassTranslucency = uiState.appearanceSettings.glassTranslucency
-        )
-
-        Spacer(modifier = Modifier.height(14.dp))
-
-        // System Monitor & Quick Launch Deck (ii-tools inspired)
-        SystemWidgetsCard(
-            telemetry = uiState.telemetry,
-            services = uiState.services,
-            getPortalUrl = { svc -> viewModel.apiClient.getServicePortalUrl(svc) },
-            onOpenPortal = onOpenPortal,
-            glassTranslucency = uiState.appearanceSettings.glassTranslucency
-        )
-
-        Spacer(modifier = Modifier.height(14.dp))
-
-        // Appearance button card (Compact, single-row opening dedicated Appearance page)
-        AppearanceButtonCard(
-            currentPalette = uiState.selectedPalette,
-            selectedWallpaper = uiState.selectedWallpaper,
-            settings = uiState.appearanceSettings,
-            serverOrigin = uiState.activeServerOrigin,
-            onClick = onOpenAppearance
-        )
-
-        Spacer(modifier = Modifier.height(14.dp))
-
-        // Proton VPN Exit Node Toggle
-        ProtonVpnCard(
-            status = uiState.protonStatus,
-            isToggling = uiState.isTogglingProton,
-            onToggle = { active -> viewModel.toggleProton(active) },
-            glassTranslucency = uiState.appearanceSettings.glassTranslucency
-        )
-
-        Spacer(modifier = Modifier.height(14.dp))
-
-        // Services & Daemons Section
-        ServicesSection(
-            services = uiState.services,
-            togglingServiceMap = uiState.togglingServiceMap,
-            getPortalUrl = { svc -> viewModel.apiClient.getServicePortalUrl(svc) },
-            onToggleService = { svc, start -> viewModel.toggleService(svc, start) },
-            onOpenPortal = onOpenPortal,
-            glassTranslucency = uiState.appearanceSettings.glassTranslucency
-        )
-
-        Spacer(modifier = Modifier.height(36.dp))
     }
 }
