@@ -104,6 +104,11 @@
   - **API Client & Telemetry Data Models ([`Models.kt`](file:///mnt/shared/projects/tinapple/tinapple-android/app/src/main/java/org/tinapple/hub/data/Models.kt), [`TinappleApiClient.kt`](file:///mnt/shared/projects/tinapple/tinapple-android/app/src/main/java/org/tinapple/hub/network/TinappleApiClient.kt))**:
     - Added `SystemTelemetry` model and `getTelemetry()` API method consuming `/api/v1/system/telemetry`.
     - Polled periodically alongside service and system info in `TinappleViewModel`.
+  - **Compilation & Live Staging**:
+    - Ran `./gradlew test` (5/5 unit tests passed) and `./gradlew assembleRelease` on `pineapple-server` using JDK 17 and Android SDK 35.
+    - Verified signed release APK with `apksigner verify -v` (v2 and v3 signatures valid, release key `tinapple`).
+    - Staged APK to `/usr/share/tinapple-dash/tinapple-client.apk` on `pineapple-server` (served at `/download/apk`).
+    - Mirrored to local repository at [`out/releases/tinapple-android-client.apk`](file:///mnt/shared/projects/tinapple/out/releases/tinapple-android-client.apk) (13 MB, SHA256 `8c922acff6434a319b593ccd4dd4aef9ffd255cf0bb9da214b53d1a6dff8e859`) and updated [`out/releases/SHA256SUMS`](file:///mnt/shared/projects/tinapple/out/releases/SHA256SUMS).
 
 ### Maintenance (2026-11-23) | fix(suwayomi/hotspot): diagnose download stalls, fix hotspot dns routing, and optimize local ip bitstream delivery
 - **Scope**: Diagnosed Tsumiru client download freeze and slow transfer issues on `pineapple-server`, identified Suwayomi server-side download queue backlog (250+ chapters from Rolia Scan) and intermittent Cloudflare/SSL drops over Proton VPN SOCKS proxy, resolved Android hotspot DNS hijacking by updating `tinapple-hotspot.conf` to advertise exclusively `192.168.4.1` with upstream resolvers, added local FQDN mappings to `/etc/hosts`, advertised subnets `192.168.4.0/24` and `192.168.1.0/24` in Tailscale alongside exit node for transparent LAN routing, and verified direct high-speed local IP peer-to-peer connectivity (`active; direct 192.168.4.101:57119`).
