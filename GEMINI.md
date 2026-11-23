@@ -84,6 +84,20 @@
 
 ## 5. Changelog & Active State Ledger
 
+### Maintenance (2026-11-23) | fix(manga/music): resolve suwayomi subpath library retrieval and navidrome playqueue live sync
+- **Scope**: Fixed Suwayomi Manga Shelf showing "No Manga in Library" despite library containing 1,413 items by routing GraphQL queries and thumbnail requests through Suwayomi's configured subpath (`/suwayomi`), and synchronized Navidrome live music playback to `NowPlayingCard` on both companion app and dashboard by integrating Subsonic `getPlayQueue.view` and prefixing relative album cover URLs.
+- **Implementation & Verifications**:
+  - **Suwayomi Subpath Resolution ([`handlers.go`](file:///mnt/shared/projects/tinapple/tinapple-dash/internal/api/handlers.go))**:
+    - Discovered Suwayomi configuration has `server.webUISubpath = "/suwayomi"`, causing `/api/graphql` and `/api/v1/manga/...` to return 404 on root.
+    - Updated `WidgetManga` to probe `http://127.0.0.1:4567/suwayomi/api/graphql` before fallback to root `/api/graphql`.
+    - Updated `ProxyMangaThumbnail` to probe disk caches in `/var/lib/suwayomi/.local/share/Tachidesk/downloads/thumbnails` and upstream `/suwayomi/api/v1/manga/%s/thumbnail`.
+    - Updated Suwayomi ping check to test `/suwayomi/`.
+  - **Navidrome Live PlayQueue Synchronization ([`music.go`](file:///mnt/shared/projects/tinapple/tinapple-dash/internal/api/music.go), [`TinappleApiClient.kt`](file:///mnt/shared/projects/tinapple/tinapple-android/app/src/main/java/org/tinapple/hub/network/TinappleApiClient.kt))**:
+    - Discovered that Navidrome's `getNowPlaying.view` returns empty entries when client does not send periodic scrobble broadcasts, while `getPlayQueue.view` maintains the real-time active playback queue (`current`, `position`, `changed`, `changedBy`, `entry`).
+    - Updated `GetMusicNowPlaying` in `tinapple-dash` to query `getPlayQueue.view` if `getNowPlaying.view` has no entries, match the active track, calculate recency against track duration, and proxy cover art with `url.QueryEscape`.
+    - Updated `TinappleApiClient.kt` to prepend origin host to relative `/api/v1/music/cover` URLs and added direct `getPlayQueue.view` fallback for Android.
+
+
 ### Maintenance (2026-11-23) | feat(companion/desktop): fix disk metrics, appearance button box sizing, wallpaper desync, hyprland remote screen, and agy
 - **Scope**: Resolved disk gauge metric clarity (`Free/Total GB`), eliminated Appearance page button wrapping with uniform 46dp 2-line presets, fixed wallpaper gallery 404 delays and background desync by enforcing raw GitHub delivery with local per-ID cache, redesigned Tinapple logo badge to remove crossed "X" lines, added top spacer for comfortable notch breathing room while retaining edge-to-edge scroll, expanded Tsumiru package detection and fixed release URL, replaced niri with Hyprland & wayvnc headless remote screen, installed `agy` on the server, and brought Expressive styling to `tinapple-hub`.
 - **Implementation & Verifications**:

@@ -2162,17 +2162,32 @@ func (h *Handler) WidgetManga(c *gin.Context) {
 
 	client := http.Client{Timeout: 5 * time.Second}
 
-	// Suwayomi GraphQL endpoint is at /api/graphql
+	// Suwayomi GraphQL endpoint (handles /suwayomi subpath or root)
 	// 1. Categories: user library shelves (e.g. Reading, Plan to read, Saved)
 	// 2. Mangas: all in-library mangas as universal fallback
 	// 3. History: chapters ordered by newest read (LAST_READ_AT DESC)
 	// 4. Updates: unread chapters ordered by newest upload (UPLOAD_DATE DESC)
 	query := `{"query":"{ categories { nodes { id name order isDefaultCategory mangas { totalCount nodes { id title thumbnailUrl unreadCount inLibraryAt source { id displayName } } } } } mangas(condition: { inLibrary: true }, order: [{by: IN_LIBRARY_AT, byType: DESC_NULLS_LAST}], first: 100) { totalCount nodes { id title thumbnailUrl unreadCount source { id displayName } } } history: chapters(condition: { isRead: true }, order: [{by: LAST_READ_AT, byType: DESC_NULLS_LAST}], first: 60) { nodes { id name lastReadAt manga { id title thumbnailUrl } } } updates: chapters(condition: { isRead: false }, order: [{by: UPLOAD_DATE, byType: DESC_NULLS_LAST}], first: 60) { nodes { id name uploadDate manga { id title thumbnailUrl } } } }"}`
-	req, err := http.NewRequestWithContext(c.Request.Context(), "POST", "http://127.0.0.1:4567/api/graphql", strings.NewReader(query))
-	if err == nil {
-		req.Header.Set("Content-Type", "application/json")
-		if gqlResp, err := client.Do(req); err == nil && gqlResp.StatusCode == http.StatusOK {
-			defer gqlResp.Body.Close()
+	graphqlEndpoints := []string{
+		"http://127.0.0.1:4567/suwayomi/api/graphql",
+		"http://127.0.0.1:4567/api/graphql",
+	}
+
+	var gqlResp *http.Response
+	for _, ep := range graphqlEndpoints {
+		req, err := http.NewRequestWithContext(c.Request.Context(), "POST", ep, strings.NewReader(query))
+		if err == nil {
+			req.Header.Set("Content-Type", "application/json")
+			if resp, err := client.Do(req); err == nil && resp.StatusCode == http.StatusOK {
+				gqlResp = resp
+				break
+			} else if resp != nil {
+				resp.Body.Close()
+			}
+		}
+	}
+	if gqlResp != nil {
+		defer gqlResp.Body.Close()
 			var gqlData struct {
 				Data struct {
 					Categories struct {
@@ -2436,13 +2451,18 @@ func (h *Handler) WidgetManga(c *gin.Context) {
 				return
 			}
 		}
-	}
 
 	// Ping Suwayomi directly to check if online even if empty
-	pingResp, err := client.Get("http://127.0.0.1:4567/")
-	online := err == nil && pingResp.StatusCode == http.StatusOK
-	if pingResp != nil {
-		_ = pingResp.Body.Close()
+	online := false
+	for _, pingURL := range []string{"http://127.0.0.1:4567/suwayomi/", "http://127.0.0.1:4567/"} {
+		if pingResp, err := client.Get(pingURL); err == nil {
+			if pingResp.StatusCode == http.StatusOK {
+				online = true
+				_ = pingResp.Body.Close()
+				break
+			}
+			_ = pingResp.Body.Close()
+		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -2459,7 +2479,7 @@ func (h *Handler) WidgetManga(c *gin.Context) {
 }
 
 // ProxyMangaThumbnail proxies thumbnail requests to Suwayomi and sets proper image content-type
-// Fast-path: checks /var/lib/suwayomi/downloads/thumbnails/{id}.* directly from local SSD via sendfile(2)
+// Fast-path: checks local SSD caches directly via sendfile(2)
 func (h *Handler) ProxyMangaThumbnail(c *gin.Context) {
 	isOwner, _ := h.getClientRole(c)
 	if !isOwner {
@@ -2474,39 +2494,50 @@ func (h *Handler) ProxyMangaThumbnail(c *gin.Context) {
 	}
 
 	// 1. Fast-Path: Serve directly from local disk cache if available (zero-copy sendfile)
-	cacheDir := "/var/lib/suwayomi/downloads/thumbnails"
-	for _, ext := range []string{".webp", ".jpg", ".jpeg", ".png", ".avif", ".gif"} {
-		localPath := filepath.Join(cacheDir, id+ext)
-		if fi, err := os.Stat(localPath); err == nil && !fi.IsDir() && fi.Size() > 0 {
-			c.Header("Cache-Control", "public, max-age=31536000, immutable")
-			c.File(localPath)
-			return
+	cacheDirs := []string{
+		"/var/lib/suwayomi/.local/share/Tachidesk/downloads/thumbnails",
+		"/var/lib/suwayomi/downloads/thumbnails",
+		"/var/lib/suwayomi/cache/Tachidesk/thumbnails",
+	}
+	for _, cacheDir := range cacheDirs {
+		for _, ext := range []string{".webp", ".jpg", ".jpeg", ".png", ".avif", ".gif"} {
+			localPath := filepath.Join(cacheDir, id+ext)
+			if fi, err := os.Stat(localPath); err == nil && !fi.IsDir() && fi.Size() > 0 {
+				c.Header("Cache-Control", "public, max-age=31536000, immutable")
+				c.File(localPath)
+				return
+			}
 		}
 	}
 
-	// 2. Slow-Path: Query Suwayomi directly to fetch and populate disk cache
-	targetURL := fmt.Sprintf("http://127.0.0.1:4567/api/v1/manga/%s/thumbnail", id)
+	// 2. Slow-Path: Query Suwayomi directly (tries /suwayomi subpath then root)
+	candidateURLs := []string{
+		fmt.Sprintf("http://127.0.0.1:4567/suwayomi/api/v1/manga/%s/thumbnail", id),
+		fmt.Sprintf("http://127.0.0.1:4567/api/v1/manga/%s/thumbnail", id),
+	}
 	client := &http.Client{Timeout: 10 * time.Second}
-	req, err := http.NewRequestWithContext(c.Request.Context(), "GET", targetURL, nil)
-	if err != nil {
+	var resp *http.Response
+	for _, targetURL := range candidateURLs {
+		req, err := http.NewRequestWithContext(c.Request.Context(), "GET", targetURL, nil)
+		if err != nil {
+			continue
+		}
+		if c.Request.URL.RawQuery != "" {
+			req.URL.RawQuery = c.Request.URL.RawQuery
+		}
+		r, err := client.Do(req)
+		if err == nil && r.StatusCode == http.StatusOK {
+			resp = r
+			break
+		} else if r != nil {
+			r.Body.Close()
+		}
+	}
+	if resp == nil {
 		c.Status(http.StatusNotFound)
 		return
 	}
-	if c.Request.URL.RawQuery != "" {
-		req.URL.RawQuery = c.Request.URL.RawQuery
-	}
-
-	resp, err := client.Do(req)
-	if err != nil {
-		c.Status(http.StatusBadGateway)
-		return
-	}
 	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		c.Status(resp.StatusCode)
-		return
-	}
 
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil || len(bodyBytes) == 0 {

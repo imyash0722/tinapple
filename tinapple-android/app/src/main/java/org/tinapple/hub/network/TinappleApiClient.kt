@@ -261,7 +261,13 @@ class TinappleApiClient(private val baseUrlProvider: () -> String) {
                     val body = response.body?.string() ?: "{}"
                     val state = gson.fromJson(body, MusicNowPlayingState::class.java)
                     if (state != null) {
-                        return@withContext Result.success(state)
+                        val track = state.track
+                        val fixedTrack = if (track?.coverUrl?.startsWith("/") == true) {
+                            track.copy(coverUrl = "$origin${track.coverUrl}")
+                        } else {
+                            track
+                        }
+                        return@withContext Result.success(state.copy(track = fixedTrack))
                     }
                 }
             }
@@ -305,6 +311,51 @@ class TinappleApiClient(private val baseUrlProvider: () -> String) {
                             duration = duration,
                             minutesAgo = minutesAgo,
                             username = username
+                        )
+                        return@withContext Result.success(MusicNowPlayingState(active = true, track = track))
+                    }
+                }
+            }
+
+            // 2b. Direct Navidrome PlayQueue query fallback on port 4533
+            val pqUrl = "http://$host:4533/rest/getPlayQueue.view?u=pineapple&p=pine%402507&v=1.16.1&c=tinapple&f=json"
+            val pqReq = Request.Builder().url(pqUrl).get().build()
+            client.newCall(pqReq).execute().use { response ->
+                if (response.isSuccessful) {
+                    val body = response.body?.string() ?: "{}"
+                    val json = gson.fromJson(body, JsonObject::class.java)
+                    val subResp = json.getAsJsonObject("subsonic-response")
+                    val pqObj = subResp?.getAsJsonObject("playQueue")
+                    val entries = pqObj?.getAsJsonArray("entry")
+                    if (entries != null && entries.size() > 0) {
+                        val curId = pqObj.get("current")?.asString ?: ""
+                        var matched = entries.get(0).asJsonObject
+                        for (i in 0 until entries.size()) {
+                            val item = entries.get(i).asJsonObject
+                            if (item.get("id")?.asString == curId) {
+                                matched = item
+                                break
+                            }
+                        }
+                        val id = matched.get("id")?.asString ?: ""
+                        val title = matched.get("title")?.asString ?: "Unknown Track"
+                        val artist = matched.get("artist")?.asString ?: "Unknown Artist"
+                        val album = matched.get("album")?.asString
+                        val coverArt = matched.get("coverArt")?.asString
+                        val duration = matched.get("duration")?.asInt ?: 0
+                        val coverUrl = if (!coverArt.isNullOrBlank()) {
+                            "http://$host:4533/rest/getCoverArt.view?id=$coverArt&u=pineapple&p=pine%402507&v=1.16.1&c=tinapple"
+                        } else null
+
+                        val track = NowPlayingTrack(
+                            id = id,
+                            title = title,
+                            artist = artist,
+                            album = album,
+                            coverUrl = coverUrl,
+                            duration = duration,
+                            minutesAgo = 0,
+                            username = pqObj.get("username")?.asString
                         )
                         return@withContext Result.success(MusicNowPlayingState(active = true, track = track))
                     }
