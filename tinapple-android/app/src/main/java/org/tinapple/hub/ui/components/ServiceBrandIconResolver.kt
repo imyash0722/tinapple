@@ -26,7 +26,7 @@ object ServiceBrandIconResolver {
             combined.contains("snapper") -> "icons/snapper.svg"
             combined.contains("tor") -> "icons/tor.svg"
             combined.contains("wireguard") -> "icons/wireguard.svg"
-            combined.contains("niri") -> "icons/niri.svg"
+            combined.contains("hyprland") || combined.contains("wayvnc") || combined.contains("vnc") || combined.contains("remote") || combined.contains("niri") -> "icons/niri.svg"
             combined.contains("ollama") -> "icons/ollama.svg"
             combined.contains("minecraft") -> "icons/minecraft.svg"
             combined.contains("jdownloader") -> "icons/jdownloader.svg"

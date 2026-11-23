@@ -451,18 +451,18 @@ func NewAppManager() *AppManager {
 			ConfigPath:  "/etc/tor/torrc",
 		},
 		{
-			ID:          "niri",
-			Name:        "Niri Wayland Desktop",
-			Description: "Scrollable tiling Wayland compositor with Waybar status integration and hardware acceleration.",
-			Tagline:     "Modern scrollable tiling Wayland session",
+			ID:          "hyprland",
+			Name:        "Hyprland Remote Desktop",
+			Description: "Headless Wayland compositor with WayVNC remote desktop on port 5900.",
+			Tagline:     "Headless Wayland session & remote desktop",
 			Category:    "desktop",
-			Package:     "niri",
-			Unit:        "tinapple-session.service",
-			Binary:      "niri",
-			Port:        0,
-			Icon:        "niri",
-			AccentColor: "#268BD2",
-			ConfigPath:  filepath.Join(primaryHome, ".config/niri/config.kdl"),
+			Package:     "hyprland",
+			Unit:        "tinapple-hyprland.service",
+			Binary:      "Hyprland",
+			Port:        5900,
+			Icon:        "hyprland",
+			AccentColor: "#00B4D8",
+			ConfigPath:  filepath.Join(primaryHome, ".config/hypr/hyprland.lua"),
 		},
 		{
 			ID:          "filebrowser",
@@ -1017,7 +1017,7 @@ func (m *AppManager) inspectAppFast(app AppDefinition, installedPkgs map[string]
 
 	isSystemdAvailable := loadState == "loaded" || activeState == "active" || activeState == "activating"
 
-	if !binaryFound && !isPkgInstalled && !isSystemdAvailable && app.ID != "minecraft" && app.ID != "niri" && app.ID != "playit" {
+	if !binaryFound && !isPkgInstalled && !isSystemdAvailable && app.ID != "minecraft" && app.ID != "hyprland" && app.ID != "niri" && app.ID != "playit" {
 		status.Installed = false
 		status.Status = "not_installed"
 		status.Config["port"] = strconv.Itoa(app.Port)

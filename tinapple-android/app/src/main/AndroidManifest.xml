@@ -53,6 +53,13 @@
         <package android:name="com.pietervangils.ombi" />
         <package android:name="com.adguard.android" />
 
+        <!-- Remote Desktop & VNC (AVNC, ii-tools, RealVNC) -->
+        <package android:name="org.gnu.arch.avnc" />
+        <package android:name="com.ii.tools" />
+        <package android:name="com.ii_tools" />
+        <package android:name="com.realvnc.viewer.android" />
+        <package android:name="com.undatech.opaque" />
+
         <intent>
             <action android:name="android.intent.action.VIEW" />
             <category android:name="android.intent.category.BROWSABLE" />

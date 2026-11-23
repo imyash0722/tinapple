@@ -221,25 +221,25 @@ func Validate(m *Manifest) error {
 		m.Bootloader = "grub"
 	}
 
-	// Sanitize Profiles: replace bspwm/chadwm with niri
+	// Sanitize Profiles: replace bspwm/chadwm/niri with hyprland
 	cleanProfiles := make([]string, 0, len(m.Profiles))
-	hasNiri := false
+	hasHyprland := false
 	for _, p := range m.Profiles {
 		pClean := strings.TrimSpace(p)
-		if pClean == "bspwm" || pClean == "chadwm" || pClean == "dwl" {
-			pClean = "niri"
+		if pClean == "bspwm" || pClean == "chadwm" || pClean == "dwl" || pClean == "niri" {
+			pClean = "hyprland"
 		}
-		if pClean == "niri" {
-			if !hasNiri {
+		if pClean == "hyprland" {
+			if !hasHyprland {
 				cleanProfiles = append(cleanProfiles, pClean)
-				hasNiri = true
+				hasHyprland = true
 			}
 		} else if pClean != "" {
 			cleanProfiles = append(cleanProfiles, pClean)
 		}
 	}
 	if len(cleanProfiles) == 0 {
-		cleanProfiles = []string{"base", "niri", "media", "downloads", "backups", "network", "gaming"}
+		cleanProfiles = []string{"base", "hyprland", "media", "downloads", "backups", "network", "gaming"}
 	}
 	m.Profiles = cleanProfiles
 

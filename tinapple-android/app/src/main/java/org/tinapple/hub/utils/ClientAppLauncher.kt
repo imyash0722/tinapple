@@ -110,6 +110,20 @@ object ClientAppLauncher {
         ),
         "adguard" to listOf(
             "com.adguard.android"
+        ),
+        "hyprland" to listOf(
+            "org.gnu.arch.avnc",
+            "com.ii.tools",
+            "com.ii_tools",
+            "com.realvnc.viewer.android",
+            "com.undatech.opaque"
+        ),
+        "vnc" to listOf(
+            "org.gnu.arch.avnc",
+            "com.ii.tools",
+            "com.ii_tools",
+            "com.realvnc.viewer.android",
+            "com.undatech.opaque"
         )
     )
 
@@ -130,6 +144,7 @@ object ClientAppLauncher {
             combined.contains("element") || combined.contains("matrix") -> "matrix"
             combined.contains("ombi") -> "ombi"
             combined.contains("adguard") -> "adguard"
+            combined.contains("hyprland") || combined.contains("wayvnc") || combined.contains("remote desktop") || combined.contains("vnc") -> "hyprland"
             else -> serviceName.lowercase().removeSuffix(".service").substringBefore("@")
         }
     }
@@ -205,17 +220,18 @@ object ClientAppLauncher {
             }
         }
 
-        // For app-first homelab clients (Tsumiru is an APP, not web; Vibrdrome; Plezy; Bitwarden; Syncthing)
+        // For app-first homelab clients (Tsumiru is an APP, not web; Vibrdrome; Plezy; Bitwarden; Syncthing; Hyprland/VNC)
         val appReleaseUrl = when (serviceKey) {
             "tsumiru", "suwayomi" -> "https://github.com/Suwayomi/Suwayomi-Tsumiru/releases"
             "vibrdrome" -> "https://github.com/ddmoney420/vibrdrome-android/releases"
             "plezy" -> "https://github.com/edde746/plezy/releases"
             "syncthing" -> "https://github.com/Catfriend1/syncthing-android/releases"
             "vaultwarden", "bitwarden" -> "https://play.google.com/store/apps/details?id=com.x8bit.bitwarden"
+            "hyprland", "vnc" -> "https://github.com/gstanchev/avnc/releases"
             else -> null
         }
 
-        if (appReleaseUrl != null && (portalUrl == null || serviceKey in listOf("tsumiru", "suwayomi", "vibrdrome", "plezy"))) {
+        if (appReleaseUrl != null && (portalUrl == null || serviceKey in listOf("tsumiru", "suwayomi", "vibrdrome", "plezy", "hyprland", "vnc"))) {
             return try {
                 val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(appReleaseUrl)).apply {
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -227,6 +243,7 @@ object ClientAppLauncher {
                         "plezy" -> "Plezy"
                         "syncthing" -> "Syncthing"
                         "vaultwarden", "bitwarden" -> "Bitwarden"
+                        "hyprland", "vnc" -> "AVNC (VNC Client)"
                         else -> serviceKey
                     }
                     Toast.makeText(context, "$appName app not installed. Opening release download...", Toast.LENGTH_SHORT).show()

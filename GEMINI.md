@@ -84,6 +84,18 @@
 
 ## 5. Changelog & Active State Ledger
 
+### Maintenance (2026-11-24) | fix(update/launcher): fix tinapple-update self-install error and register hyprland remote desktop in app & backend
+- **Scope**: Fixed `tinapple-update` terminating with exit code 1 during package updates caused by `install: '...' and '...' are the same file` when updating `/usr/local/bin/tinapple-torrent-healer`, replaced legacy `niri` service definition in `tinapple-dash` with `hyprland` (port 5900, `tinapple-hyprland.service`), and added Hyprland / VNC 1-tap launcher routing in `tinapple-android` with AVNC and ii-tools client package discovery.
+- **Implementation & Verifications**:
+  - **`tinapple-update` Self-Install Bug Fix ([`tinapple-update`](file:///mnt/shared/projects/tinapple/tinapple-maintenance/bin/tinapple-update))**:
+    - Discovered that when `/usr/local/bin/tinapple-update` runs via pacman's `95-tinapple-feature-sync.hook`, `$SRC` resolves to `/usr/local/bin/tinapple-torrent-healer`. Executing `install -Dm755` onto itself triggered GNU install's fatal error, causing `set -e` to abort the entire upgrade pipeline.
+    - Added guard conditions checking `$SRC != /usr/local/bin/tinapple-torrent-healer` and safe chmod/systemctl activation.
+    - Verified `tinapple-update` in full mode and post-transaction mode completes with exit status 0.
+  - **Backend & App Hyprland Remote Desktop Registration ([`apps.go`](file:///mnt/shared/projects/tinapple/tinapple-dash/internal/services/apps.go), [`ClientAppLauncher.kt`](file:///mnt/shared/projects/tinapple/tinapple-android/app/src/main/java/org/tinapple/hub/utils/ClientAppLauncher.kt), [`ServiceBrandIconResolver.kt`](file:///mnt/shared/projects/tinapple/tinapple-android/app/src/main/java/org/tinapple/hub/ui/components/ServiceBrandIconResolver.kt))**:
+    - Replaced obsolete `niri` with `hyprland` (Port 5900, `tinapple-hyprland.service`) in `apps.go` and manifest sanitization.
+    - Configured `ClientAppLauncher.kt` to route Hyprland / VNC taps to installed VNC clients (`org.gnu.arch.avnc`, `com.ii.tools`, `com.realvnc.viewer.android`) with fallback redirect to AVNC releases.
+    - Added remote desktop package queries to `AndroidManifest.xml`.
+
 ### Maintenance (2026-11-24) | feat(server/desktop): configure hyprland environment, wayvnc remote desktop, and webrtc screensharing
 - **Scope**: Replaced Niri with a fully operational Hyprland v0.57+ compositor environment on `pineapple-server`, integrated `wayvnc` remote desktop server listening on port 5900 with cursor rendering, configured automated 1080p `HEADLESS-1` virtual display generation, enabled systemd service `tinapple-hyprland.service`, and configured seamless WebRTC screensharing via `xdg-desktop-portal-hyprland` (`allow_token_by_default = true`).
 - **Implementation & Verifications**:
