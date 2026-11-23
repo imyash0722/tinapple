@@ -84,6 +84,22 @@
 
 ## 5. Changelog & Active State Ledger
 
+### Maintenance (2026-11-24) | feat(server/desktop): configure hyprland environment, wayvnc remote desktop, and webrtc screensharing
+- **Scope**: Replaced Niri with a fully operational Hyprland v0.57+ compositor environment on `pineapple-server`, integrated `wayvnc` remote desktop server listening on port 5900 with cursor rendering, configured automated 1080p `HEADLESS-1` virtual display generation, enabled systemd service `tinapple-hyprland.service`, and configured seamless WebRTC screensharing via `xdg-desktop-portal-hyprland` (`allow_token_by_default = true`).
+- **Implementation & Verifications**:
+  - **Hyprland Headless Compositor ([`deploy-server-hyprland.py`](file:///mnt/shared/projects/tinapple/scripts/deploy-server-hyprland.py))**:
+    - Configured Hyprland 0.57.2 using native Lua configuration (`hyprland.lua`) at `/home/pineapple/.config/hypr/hyprland.lua`.
+    - Configured automatic headless output generation (`hyprctl output create headless HEADLESS-1`) for 1920x1080@60 virtual desktop regardless of physical lid state.
+    - Added autostarts for `wayvnc --render-cursor 0.0.0.0 5900`, `xdg-desktop-portal-hyprland`, and `xdg-desktop-portal`.
+    - Granted screencopy permissions to wayvnc and xdph via `hl.permission`.
+  - **Systemd Service Integration (`tinapple-hyprland.service`)**:
+    - Created and enabled `/etc/systemd/system/tinapple-hyprland.service` running under user `pineapple:users` with `XDG_RUNTIME_DIR=/run/user/1000`, `AQ_NO_MODIFIERS=1`, and `WLR_LIBINPUT_NO_DEVICES=1`.
+    - Verified `systemctl is-active tinapple-hyprland.service` returns `active`.
+    - Verified RFB 3.8 handshake on TCP port 5900 (`b'RFB 003.008\n'`) accessible across Tailscale (`100.108.215.120:5900`).
+  - **Manifest & Profile Update**:
+    - Updated `/etc/tinapple/manifest.yaml` on `pineapple-server` to replace `- niri` with `- hyprland` and register the `hyprland` service definition on port 5900.
+    - Cleaned out remaining Niri references.
+
 ### Maintenance (2026-11-23) | fix(manga/music): resolve suwayomi subpath library retrieval and navidrome playqueue live sync
 - **Scope**: Fixed Suwayomi Manga Shelf showing "No Manga in Library" despite library containing 1,413 items by routing GraphQL queries and thumbnail requests through Suwayomi's configured subpath (`/suwayomi`), and synchronized Navidrome live music playback to `NowPlayingCard` on both companion app and dashboard by integrating Subsonic `getPlayQueue.view` and prefixing relative album cover URLs.
 - **Implementation & Verifications**:
