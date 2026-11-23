@@ -56,7 +56,7 @@ class TinappleApiClient(private val baseUrlProvider: () -> String) {
         return try {
             val uri = URI(currentOrigin)
             val host = uri.host ?: DiscoveryEngine.DEFAULT_TAILSCALE_HOST
-            val portalHost = if (host.matches(Regex("""^100\.\d{1,3}\.\d{1,3}\.\d{1,3}$"""))) {
+            val portalHost = if (host.matches(Regex("""^100\.\d{1,3}\.\d{1,3}\.\d{1,3}$""")) || host.endsWith(".ts.net")) {
                 DiscoveryEngine.DEFAULT_TAILSCALE_HOST
             } else host
             "http://$portalHost:$port/"
