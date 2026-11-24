@@ -19,6 +19,8 @@ import org.tinapple.hub.data.AppearanceSettings
 import org.tinapple.hub.data.BUNDLED_WALLPAPERS
 import org.tinapple.hub.data.DEFAULT_PALETTES
 import org.tinapple.hub.data.DEFAULT_PINNED_APPS
+import org.tinapple.hub.data.JellyfinMediaItem
+import org.tinapple.hub.data.MangaItem
 import org.tinapple.hub.data.MusicNowPlayingState
 import org.tinapple.hub.data.ProtonStatus
 import org.tinapple.hub.data.ServiceItem
@@ -105,7 +107,11 @@ data class MainUiState(
     val systemInfo: SystemInfo = SystemInfo(),
     val telemetry: SystemTelemetry = SystemTelemetry(),
     val nowPlaying: MusicNowPlayingState = MusicNowPlayingState(),
-    val enabledWidgets: Set<String> = setOf("hero", "now_playing", "telemetry", "client_apps", "controls", "services"),
+    val mangaItems: List<MangaItem> = emptyList(),
+    val isMangaLoading: Boolean = false,
+    val jellyfinRecent: List<JellyfinMediaItem> = emptyList(),
+    val isJellyfinLoading: Boolean = false,
+    val enabledWidgets: Set<String> = setOf("hero", "now_playing", "telemetry", "client_apps", "manga", "jellyfin", "remote_desktop", "controls", "services"),
     val pinnedClientApps: List<String> = DEFAULT_PINNED_APPS,
     val wallpapers: List<WallpaperItem> = BUNDLED_WALLPAPERS,
     val selectedPalette: ThemePalette = DEFAULT_PALETTES.first(),
@@ -160,7 +166,7 @@ class TinappleViewModel(application: Application) : AndroidViewModel(application
 
     private fun loadSavedWidgets(): Set<String> {
         val saved = prefs.getStringSet("enabled_widgets", null)
-        return saved ?: setOf("hero", "now_playing", "telemetry", "client_apps", "controls", "services")
+        return saved ?: setOf("hero", "now_playing", "telemetry", "client_apps", "manga", "jellyfin", "remote_desktop", "controls", "services")
     }
 
     private fun loadSavedWallpaperLocalPath(): String? {
@@ -387,6 +393,20 @@ class TinappleViewModel(application: Application) : AndroidViewModel(application
         if (musicRes.isSuccess) {
             musicRes.getOrNull()?.let { music ->
                 _uiState.update { it.copy(nowPlaying = music) }
+            }
+        }
+
+        val mangaRes = apiClient.getMangaWidgetData()
+        if (mangaRes.isSuccess) {
+            mangaRes.getOrNull()?.let { mangaResp ->
+                _uiState.update { it.copy(mangaItems = mangaResp.mangas) }
+            }
+        }
+
+        val jellyfinRes = apiClient.getJellyfinWidgetData()
+        if (jellyfinRes.isSuccess) {
+            jellyfinRes.getOrNull()?.let { jfResp ->
+                _uiState.update { it.copy(jellyfinRecent = jfResp.recent) }
             }
         }
 

@@ -70,6 +70,8 @@ import org.tinapple.hub.ui.components.AppearancePage
 import org.tinapple.hub.ui.components.ProtonVpnCard
 import org.tinapple.hub.ui.components.ServicesSection
 import org.tinapple.hub.ui.components.SystemWidgetsCard
+import org.tinapple.hub.ui.terminal.TerminalScreen
+import org.tinapple.hub.ui.terminal.TerminalViewModel
 import org.tinapple.hub.ui.theme.StatusFailed
 import org.tinapple.hub.ui.theme.TextPrimary
 import org.tinapple.hub.ui.theme.TextSecondary
@@ -78,9 +80,16 @@ import org.tinapple.hub.ui.theme.TinappleSurfaceLow
 import org.tinapple.hub.ui.theme.TinappleTheme
 import org.tinapple.hub.ui.viewmodel.TinappleViewModel
 
+enum class ActiveScreen {
+    HOME,
+    APPEARANCE,
+    TERMINAL
+}
+
 class MainActivity : ComponentActivity() {
 
     private val viewModel: TinappleViewModel by viewModels()
+    private val terminalViewModel: TerminalViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -113,10 +122,10 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             val uiState by viewModel.uiState.collectAsState()
-            var isShowingAppearance by remember { mutableStateOf(false) }
+            var currentScreen by remember { mutableStateOf(ActiveScreen.HOME) }
 
-            BackHandler(enabled = isShowingAppearance) {
-                isShowingAppearance = false
+            BackHandler(enabled = currentScreen != ActiveScreen.HOME) {
+                currentScreen = ActiveScreen.HOME
             }
 
             TinappleTheme(
@@ -167,29 +176,41 @@ class MainActivity : ComponentActivity() {
                             )
                         }
 
-                        // Screen Navigation: Dashboard vs Appearance Page
-                        if (isShowingAppearance) {
-                            AppearancePage(
-                                currentPalette = uiState.selectedPalette,
-                                wallpapers = uiState.wallpapers,
-                                selectedWallpaper = uiState.selectedWallpaper,
-                                matugenCombos = uiState.matugenCombos,
-                                settings = uiState.appearanceSettings,
-                                serverOrigin = uiState.activeServerOrigin,
-                                onSelectPalette = { viewModel.selectPalette(it) },
-                                onSelectWallpaper = { viewModel.selectWallpaper(it) },
-                                onToggleMatugen = { viewModel.toggleUseMatugen(it) },
-                                onUpdateBlur = { viewModel.updateBlurDp(it) },
-                                onUpdateDim = { viewModel.updateDimAlpha(it) },
-                                onUpdateGlass = { viewModel.updateGlassTranslucency(it) },
-                                onBack = { isShowingAppearance = false }
-                            )
-                        } else {
-                            ServerHomeScreen(
-                                viewModel = viewModel,
-                                onOpenAppearance = { isShowingAppearance = true },
-                                onOpenPortal = ::openBrowserUrl
-                            )
+                        // Screen Navigation: Dashboard vs Appearance Page vs Kotlin Terminal
+                        when (currentScreen) {
+                            ActiveScreen.APPEARANCE -> {
+                                AppearancePage(
+                                    currentPalette = uiState.selectedPalette,
+                                    wallpapers = uiState.wallpapers,
+                                    selectedWallpaper = uiState.selectedWallpaper,
+                                    matugenCombos = uiState.matugenCombos,
+                                    settings = uiState.appearanceSettings,
+                                    serverOrigin = uiState.activeServerOrigin,
+                                    onSelectPalette = { viewModel.selectPalette(it) },
+                                    onSelectWallpaper = { viewModel.selectWallpaper(it) },
+                                    onToggleMatugen = { viewModel.toggleUseMatugen(it) },
+                                    onUpdateBlur = { viewModel.updateBlurDp(it) },
+                                    onUpdateDim = { viewModel.updateDimAlpha(it) },
+                                    onUpdateGlass = { viewModel.updateGlassTranslucency(it) },
+                                    onBack = { currentScreen = ActiveScreen.HOME }
+                                )
+                            }
+                            ActiveScreen.TERMINAL -> {
+                                TerminalScreen(
+                                    serverOrigin = uiState.activeServerOrigin,
+                                    hostname = uiState.systemInfo.hostname,
+                                    viewModel = terminalViewModel,
+                                    onBack = { currentScreen = ActiveScreen.HOME }
+                                )
+                            }
+                            ActiveScreen.HOME -> {
+                                ServerHomeScreen(
+                                    viewModel = viewModel,
+                                    onOpenAppearance = { currentScreen = ActiveScreen.APPEARANCE },
+                                    onOpenTerminal = { currentScreen = ActiveScreen.TERMINAL },
+                                    onOpenPortal = ::openBrowserUrl
+                                )
+                            }
                         }
 
                         // Floating Error Banner

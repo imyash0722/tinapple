@@ -84,6 +84,31 @@
 
 ## 5. Changelog & Active State Ledger
 
+### Maintenance (2026-11-24) | feat(android): suwayomi manga widget, jellyfin media shelf, hyprland remote desktop widget, and kotlin ssh/pty terminal with terminus accessory bar
+- **Scope**: Implemented Suwayomi Manga Shelf widget with 1-tap Tsumiru reader launcher, Jellyfin Media widget with 1-tap Plezy player launcher, Hyprland Remote Desktop widget with 1-tap AVNC VNC connect and display telemetry, and a dedicated full-screen interactive Kotlin SSH / PTY terminal with a complete Termius/Terminus-styled accessory key bar (ESC, TAB, CTRL, ALT, ^C, ^D, ^Z, ^L, arrow keys, and shell punctuation).
+- **Implementation & Verifications**:
+  - **Suwayomi Manga Shelf Widget ([`SuwayomiShelfWidget.kt`](file:///mnt/shared/projects/tinapple/tinapple-android/app/src/main/java/org/tinapple/hub/ui/components/SuwayomiShelfWidget.kt))**:
+    - Horizontal scrolling strip of library manhwa/manga items with dynamic 3:4 cover art via Coil and server proxy endpoint `/api/v1/manga/:id/thumbnail`.
+    - Real-time unread chapter badge pill on each cover and source extension tag.
+    - Deep-intent package launcher in `ClientAppLauncher.kt` routing clicks to installed Tsumiru packages (`io.github.aaronbamblett.tsumiru`, `app.tsumiru`) with fallback redirect to Tsumiru GitHub releases.
+  - **Jellyfin Media Shelf Widget ([`JellyfinMediaWidget.kt`](file:///mnt/shared/projects/tinapple/tinapple-android/app/src/main/java/org/tinapple/hub/ui/components/JellyfinMediaWidget.kt))**:
+    - Horizontal scrolling strip of recent/continue-watching movies and episodes with 16:9 poster art via `/api/widgets/jellyfin/image/:id`.
+    - Duration minute badge and media type tag.
+    - Deep-intent launcher in `ClientAppLauncher.kt` routing clicks to installed Plezy packages (`com.edde746.plezy`, `app.plezy`) with fallback redirect to Plezy releases.
+  - **Hyprland Remote Desktop Widget ([`HyprlandRemoteDesktopWidget.kt`](file:///mnt/shared/projects/tinapple/tinapple-android/app/src/main/java/org/tinapple/hub/ui/components/HyprlandRemoteDesktopWidget.kt))**:
+    - Expressive card displaying live 1080p display specs (`HEADLESS-1 · 1920x1080 @ 60Hz · wayvnc / RFB 3.8`), active port status (`Port 5900`), and quick actions:
+      - "Connect VNC": launches AVNC (`org.gnu.arch.avnc`) or registered VNC clients with `vnc://<host>:5900`.
+      - "Terminal": launches the in-app interactive SSH / PTY terminal.
+  - **Kotlin SSH / PTY Terminal ([`TerminalScreen.kt`](file:///mnt/shared/projects/tinapple/tinapple-android/app/src/main/java/org/tinapple/hub/ui/terminal/TerminalScreen.kt), [`TerminalViewModel.kt`](file:///mnt/shared/projects/tinapple/tinapple-android/app/src/main/java/org/tinapple/hub/ui/terminal/TerminalViewModel.kt), [`AnsiParser.kt`](file:///mnt/shared/projects/tinapple/tinapple-android/app/src/main/java/org/tinapple/hub/ui/terminal/AnsiParser.kt))**:
+    - Full-screen terminal emulator connecting over WebSocket (`ws://` / `wss://`) directly to backend's `/api/v1/terminal/ws` live PTY session.
+    - SGR ANSI parser converting 16-color ANSI codes into formatted Jetpack Compose `AnnotatedString` spans with support for bold, underline, and color resets.
+    - **Terminus / Termius Accessory Bar**:
+      - Styled horizontal scrolling squircle button strip featuring: `ESC`, `TAB`, sticky `CTRL` modifier toggle, sticky `ALT` modifier toggle, `^C` (SIGINT), `^D` (EOF), `^Z` (SIGTSTP), `^L` (Clear), directional navigation arrows (`▲`, `▼`, `◄`, `►`), and essential terminal punctuation (`|`, `/`, `\`, `-`, `_`, `~`, `^`, `$`, `:`, `;`, `"`, `'`, `` ` ``, `&`).
+    - Interactive command input row with hardware keyboard `onKeyEvent` support and real-time auto-scrolling terminal output.
+  - **Release Artifacts**:
+    - Bumped `tinapple-android` to v2.0.3 (versionCode 7).
+    - Built and verified release APK (`tinapple-client.apk`, sha256 `3c1d6f84a9ea2ad7ef70f091b94955f4b47d4bf36193db5626300995d9572259`), staged to `/usr/share/tinapple-dash/tinapple-client.apk` and `out/releases/`.
+
 ### Maintenance (2026-11-24) | fix(update/launcher): fix tinapple-update self-install error and register hyprland remote desktop in app & backend
 - **Scope**: Fixed `tinapple-update` terminating with exit code 1 during package updates caused by `install: '...' and '...' are the same file` when updating `/usr/local/bin/tinapple-torrent-healer`, replaced legacy `niri` service definition in `tinapple-dash` with `hyprland` (port 5900, `tinapple-hyprland.service`), and added Hyprland / VNC 1-tap launcher routing in `tinapple-android` with AVNC and ii-tools client package discovery.
 - **Implementation & Verifications**:

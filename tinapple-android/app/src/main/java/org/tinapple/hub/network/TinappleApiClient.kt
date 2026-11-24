@@ -10,6 +10,8 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import org.tinapple.hub.data.JellyfinWidgetResponse
+import org.tinapple.hub.data.MangaWidgetResponse
 import org.tinapple.hub.data.MusicNowPlayingState
 import org.tinapple.hub.data.NowPlayingTrack
 import org.tinapple.hub.data.ProtonStatus
@@ -366,5 +368,49 @@ class TinappleApiClient(private val baseUrlProvider: () -> String) {
         }
 
         Result.success(MusicNowPlayingState(active = false, track = null))
+    }
+
+    suspend fun getMangaWidgetData(): Result<MangaWidgetResponse> = withContext(Dispatchers.IO) {
+        try {
+            val origin = baseUrlProvider().trimEnd('/')
+            val request = Request.Builder()
+                .url("$origin/api/widgets/manga")
+                .header("User-Agent", "TinappleAndroid/2.0")
+                .get()
+                .build()
+
+            client.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) {
+                    return@withContext Result.failure(Exception("HTTP ${response.code}: ${response.message}"))
+                }
+                val body = response.body?.string() ?: "{}"
+                val data = gson.fromJson(body, MangaWidgetResponse::class.java)
+                Result.success(data)
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getJellyfinWidgetData(): Result<JellyfinWidgetResponse> = withContext(Dispatchers.IO) {
+        try {
+            val origin = baseUrlProvider().trimEnd('/')
+            val request = Request.Builder()
+                .url("$origin/api/widgets/jellyfin")
+                .header("User-Agent", "TinappleAndroid/2.0")
+                .get()
+                .build()
+
+            client.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) {
+                    return@withContext Result.failure(Exception("HTTP ${response.code}: ${response.message}"))
+                }
+                val body = response.body?.string() ?: "{}"
+                val data = gson.fromJson(body, JellyfinWidgetResponse::class.java)
+                Result.success(data)
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 }

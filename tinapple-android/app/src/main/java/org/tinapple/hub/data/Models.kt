@@ -146,6 +146,62 @@ data class MusicNowPlayingState(
     @SerializedName("track") val track: NowPlayingTrack? = null
 )
 
+data class MangaSource(
+    @SerializedName("name") val name: String = ""
+)
+
+data class MangaItem(
+    @SerializedName("id") val id: Long = 0,
+    @SerializedName("title") val title: String = "",
+    @SerializedName("thumbnailUrl") val thumbnailUrl: String? = null,
+    @SerializedName("unreadCount") val unreadCount: Int = 0,
+    @SerializedName("source") val source: MangaSource? = null
+) {
+    fun fullThumbnailUrl(serverOrigin: String): String? {
+        if (thumbnailUrl.isNullOrBlank()) return null
+        if (thumbnailUrl.startsWith("http://") || thumbnailUrl.startsWith("https://")) return thumbnailUrl
+        val cleanOrigin = serverOrigin.trimEnd('/')
+        val cleanPath = if (thumbnailUrl.startsWith("/")) thumbnailUrl else "/$thumbnailUrl"
+        return "$cleanOrigin$cleanPath"
+    }
+}
+
+data class MangaWidgetResponse(
+    @SerializedName("mangas") val mangas: List<MangaItem> = emptyList(),
+    @SerializedName("history") val history: List<MangaItem> = emptyList()
+)
+
+data class JellyfinMediaItem(
+    @SerializedName("id") val id: String = "",
+    @SerializedName("name") val name: String = "",
+    @SerializedName("seriesName") val seriesName: String? = null,
+    @SerializedName("type") val type: String = "",
+    @SerializedName("imageUrl") val imageUrl: String? = null,
+    @SerializedName("duration") val duration: Long = 0
+) {
+    val displayTitle: String
+        get() = if (!seriesName.isNullOrBlank()) seriesName else name
+
+    val displaySubtitle: String?
+        get() = if (!seriesName.isNullOrBlank()) name else type.ifBlank { null }
+
+    val durationMinutes: Long
+        get() = duration / 60
+
+    fun fullImageUrl(serverOrigin: String): String? {
+        if (imageUrl.isNullOrBlank()) return null
+        if (imageUrl.startsWith("http://") || imageUrl.startsWith("https://")) return imageUrl
+        val cleanOrigin = serverOrigin.trimEnd('/')
+        val cleanPath = if (imageUrl.startsWith("/")) imageUrl else "/$imageUrl"
+        return "$cleanOrigin$cleanPath"
+    }
+}
+
+data class JellyfinWidgetResponse(
+    @SerializedName("recent") val recent: List<JellyfinMediaItem> = emptyList(),
+    @SerializedName("nowPlaying") val nowPlaying: List<JellyfinMediaItem> = emptyList()
+)
+
 data class SectionWidgetConfig(
     val id: String,
     val title: String,
@@ -159,6 +215,9 @@ val DEFAULT_HOME_WIDGETS = listOf(
     SectionWidgetConfig("now_playing", "Navidrome Music Player", "Live playback from server with Vibrdrome quick launch", org.tinapple.hub.R.drawable.rounded_music_note, true),
     SectionWidgetConfig("telemetry", "System Load Gauges", "4-column CPU, RAM, Disk, and Thermal gauges", org.tinapple.hub.R.drawable.rounded_speed, true),
     SectionWidgetConfig("client_apps", "Client Apps Deck", "Syncthing, Bitwarden, Tsumiru, Plezy, and Vibrdrome", org.tinapple.hub.R.drawable.rounded_apps, true),
+    SectionWidgetConfig("manga", "Suwayomi Manga Shelf", "Recent manhwa & comics with 1-tap open in Tsumiru", org.tinapple.hub.R.drawable.rounded_photo_library, true),
+    SectionWidgetConfig("jellyfin", "Jellyfin Media", "Continue watching & recent movies with 1-tap open in Plezy", org.tinapple.hub.R.drawable.rounded_theaters, true),
+    SectionWidgetConfig("remote_desktop", "Hyprland Remote Desktop", "Virtual 1080p display with 1-tap connect in AVNC", org.tinapple.hub.R.drawable.rounded_desktop_windows, true),
     SectionWidgetConfig("controls", "Server Quick Controls", "Proton VPN Exit Node and MagicDNS peer", org.tinapple.hub.R.drawable.rounded_vpn_lock, true),
     SectionWidgetConfig("services", "Homelab Daemons List", "Service cards with brand icons and systemd toggles", org.tinapple.hub.R.drawable.rounded_terminal, true)
 )
@@ -176,6 +235,7 @@ val AVAILABLE_CLIENT_APPS = listOf(
     PinnedClientAppConfig("suwayomi", "Tsumiru", org.tinapple.hub.R.drawable.rounded_photo_library, "Manga & comic stream client"),
     PinnedClientAppConfig("jellyfin", "Plezy", org.tinapple.hub.R.drawable.rounded_theaters, "Native Jellyfin media player"),
     PinnedClientAppConfig("navidrome", "Vibrdrome", org.tinapple.hub.R.drawable.rounded_music_note, "Subsonic music stream player"),
+    PinnedClientAppConfig("hyprland", "Remote Desktop", org.tinapple.hub.R.drawable.rounded_desktop_windows, "Hyprland 1080p remote screen"),
     PinnedClientAppConfig("findroid", "Findroid", org.tinapple.hub.R.drawable.rounded_theaters, "Alternative Jellyfin Android client"),
     PinnedClientAppConfig("symfonium", "Symfonium", org.tinapple.hub.R.drawable.rounded_music_note, "Audiophile Subsonic player"),
     PinnedClientAppConfig("pinemusic", "PineMusic", org.tinapple.hub.R.drawable.rounded_equalizer, "High-fidelity lossless requester"),

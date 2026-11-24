@@ -73,7 +73,10 @@ import org.tinapple.hub.data.MusicNowPlayingState
 import org.tinapple.hub.data.ServiceItem
 import org.tinapple.hub.data.SystemTelemetry
 import org.tinapple.hub.network.DiscoveryEngine
+import org.tinapple.hub.ui.components.HyprlandRemoteDesktopWidget
+import org.tinapple.hub.ui.components.JellyfinMediaWidget
 import org.tinapple.hub.ui.components.ServiceBrandIconResolver
+import org.tinapple.hub.ui.components.SuwayomiShelfWidget
 import org.tinapple.hub.ui.theme.Expressive
 import org.tinapple.hub.ui.theme.StatusRunning
 import org.tinapple.hub.ui.viewmodel.TinappleViewModel
@@ -85,6 +88,7 @@ import kotlin.math.roundToInt
 fun ServerHomeScreen(
     viewModel: TinappleViewModel,
     onOpenAppearance: () -> Unit,
+    onOpenTerminal: () -> Unit,
     onOpenPortal: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -128,6 +132,7 @@ fun ServerHomeScreen(
                     dimAlpha = uiState.appearanceSettings.dimAlpha,
                     isRefreshing = uiState.isRefreshing || uiState.isDiscovering,
                     onRefresh = { viewModel.refreshAll(forceDiscovery = true) },
+                    onOpenTerminal = onOpenTerminal,
                     onOpenAppearance = onOpenAppearance,
                     onOpenCustomize = { isShowingCustomizer = true }
                 )
@@ -175,7 +180,43 @@ fun ServerHomeScreen(
             }
         }
 
-        // 5. Quick Server Controls & Network
+        // 5. Suwayomi Manga Shelf (Tsumiru 1-Tap Open)
+        if (uiState.enabledWidgets.contains("manga")) {
+            item(key = "suwayomi_manga_shelf") {
+                SuwayomiShelfWidget(
+                    mangaList = uiState.mangaItems,
+                    serverOrigin = uiState.activeServerOrigin,
+                    onOpenTsumiru = {
+                        ClientAppLauncher.launchByServiceKey(context, "tsumiru")
+                    }
+                )
+            }
+        }
+
+        // 6. Jellyfin Media Shelf (Plezy 1-Tap Open)
+        if (uiState.enabledWidgets.contains("jellyfin")) {
+            item(key = "jellyfin_media_shelf") {
+                JellyfinMediaWidget(
+                    mediaList = uiState.jellyfinRecent,
+                    serverOrigin = uiState.activeServerOrigin,
+                    onOpenPlezy = {
+                        ClientAppLauncher.launchByServiceKey(context, "plezy")
+                    }
+                )
+            }
+        }
+
+        // 7. Hyprland Remote Desktop & Screen Mirroring
+        if (uiState.enabledWidgets.contains("remote_desktop")) {
+            item(key = "hyprland_remote_desktop") {
+                HyprlandRemoteDesktopWidget(
+                    serverOrigin = uiState.activeServerOrigin,
+                    onOpenTerminal = onOpenTerminal
+                )
+            }
+        }
+
+        // 8. Quick Server Controls & Network
         if (uiState.enabledWidgets.contains("controls")) {
             item(key = "server_controls") {
                 ServerControlsCard(
@@ -224,6 +265,7 @@ private fun ServerHeroCard(
     dimAlpha: Float,
     isRefreshing: Boolean,
     onRefresh: () -> Unit,
+    onOpenTerminal: () -> Unit,
     onOpenAppearance: () -> Unit,
     onOpenCustomize: () -> Unit
 ) {
@@ -367,6 +409,23 @@ private fun ServerHeroCard(
                         contentDescription = "Customize Widgets",
                         tint = cs.onSurface,
                         modifier = Modifier.size(18.dp)
+                    )
+                }
+
+                // SSH / PTY Terminal Action
+                IconButton(
+                    onClick = onOpenTerminal,
+                    colors = IconButtonDefaults.iconButtonColors(
+                        containerColor = cs.surfaceContainerHigh.copy(alpha = 0.85f),
+                        contentColor = cs.onSurface
+                    ),
+                    modifier = Modifier.size(36.dp)
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.rounded_terminal),
+                        contentDescription = "SSH Terminal",
+                        tint = cs.onSurface,
+                        modifier = Modifier.size(19.dp)
                     )
                 }
 
@@ -972,6 +1031,9 @@ private fun CustomizeWidgetsSheet(
         "now_playing" to ("Navidrome Music Stream" to "Live Subsonic playback stream & Vibrdrome remote"),
         "telemetry" to ("Host System Load" to "Compact 4-metric gauges: CPU, RAM, Disk & Temp"),
         "client_apps" to ("Quick Client Apps Strip" to "Syncthing, Bitwarden, Tsumiru, Plezy, Vibrdrome"),
+        "manga" to ("Suwayomi Manga Shelf" to "Recent manhwa & comics with 1-tap open in Tsumiru"),
+        "jellyfin" to ("Jellyfin Media Shelf" to "Continue watching & recent movies with 1-tap open in Plezy"),
+        "remote_desktop" to ("Hyprland Remote Desktop" to "Virtual 1080p display with 1-tap connect in AVNC"),
         "controls" to ("Proton VPN & Tailscale Controls" to "Exit node gateway & MagicDNS direct peer"),
         "services" to ("Homelab Daemons List" to "Full list of systemd homelab services & switches")
     )

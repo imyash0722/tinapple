@@ -4,6 +4,8 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
+import org.tinapple.hub.data.JellyfinMediaItem
+import org.tinapple.hub.data.MangaItem
 import org.tinapple.hub.data.ServiceItem
 
 sealed class LaunchResult {
@@ -278,5 +280,78 @@ object ClientAppLauncher {
             Toast.makeText(context, "No app or web portal available for $serviceKey", Toast.LENGTH_SHORT).show()
         }
         return LaunchResult.NotFound
+    }
+
+    fun launchMangaInTsumiru(context: Context, manga: MangaItem): LaunchResult {
+        val pm = context.packageManager
+        val installed = findInstalledClient(context, "tsumiru")
+        if (installed != null) {
+            val launchIntent = pm.getLaunchIntentForPackage(installed.packageName)?.apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                putExtra("manga_id", manga.id)
+                putExtra("mangaId", manga.id)
+                putExtra("id", manga.id.toString())
+                putExtra("title", manga.title)
+                putExtra("manga_title", manga.title)
+            }
+            if (launchIntent != null) {
+                Toast.makeText(context, "Opening ${manga.title} in ${installed.appLabel}", Toast.LENGTH_SHORT).show()
+                context.startActivity(launchIntent)
+                return LaunchResult.LaunchedApp(installed.packageName, installed.appLabel)
+            }
+        }
+        return launchByServiceKey(context, "tsumiru", null, "Tsumiru")
+    }
+
+    fun launchJellyfinInPlezy(context: Context, item: JellyfinMediaItem): LaunchResult {
+        val pm = context.packageManager
+        val installed = findInstalledClient(context, "plezy")
+        if (installed != null) {
+            val launchIntent = pm.getLaunchIntentForPackage(installed.packageName)?.apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                putExtra("item_id", item.id)
+                putExtra("itemId", item.id)
+                putExtra("title", item.name)
+                putExtra("series_name", item.seriesName ?: "")
+            }
+            if (launchIntent != null) {
+                Toast.makeText(context, "Opening ${item.displayTitle} in ${installed.appLabel}", Toast.LENGTH_SHORT).show()
+                context.startActivity(launchIntent)
+                return LaunchResult.LaunchedApp(installed.packageName, installed.appLabel)
+            }
+        }
+        return launchByServiceKey(context, "plezy", null, "Plezy")
+    }
+
+    fun launchHyprlandVnc(context: Context, vncHost: String): LaunchResult {
+        val pm = context.packageManager
+        val vncUri = Uri.parse("vnc://$vncHost:5900")
+        try {
+            val vncIntent = Intent(Intent.ACTION_VIEW, vncUri).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            if (vncIntent.resolveActivity(pm) != null) {
+                Toast.makeText(context, "Connecting to Hyprland at $vncHost:5900...", Toast.LENGTH_SHORT).show()
+                context.startActivity(vncIntent)
+                return LaunchResult.LaunchedApp("vnc", "VNC Client")
+            }
+        } catch (_: Exception) {}
+
+        val installed = findInstalledClient(context, "hyprland")
+        if (installed != null) {
+            val launchIntent = pm.getLaunchIntentForPackage(installed.packageName)?.apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                putExtra("host", vncHost)
+                putExtra("port", 5900)
+                data = vncUri
+            }
+            if (launchIntent != null) {
+                Toast.makeText(context, "Opening ${installed.appLabel}...", Toast.LENGTH_SHORT).show()
+                context.startActivity(launchIntent)
+                return LaunchResult.LaunchedApp(installed.packageName, installed.appLabel)
+            }
+        }
+
+        return launchByServiceKey(context, "hyprland", null, "Hyprland Remote Desktop")
     }
 }
