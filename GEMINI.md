@@ -108,6 +108,7 @@
   - **Release Artifacts**:
     - Bumped `tinapple-android` to v2.0.3 (versionCode 7).
     - Built and verified release APK (`tinapple-client.apk`, sha256 `3c1d6f84a9ea2ad7ef70f091b94955f4b47d4bf36193db5626300995d9572259`), staged to `/usr/share/tinapple-dash/tinapple-client.apk` and `out/releases/`.
+    - Published official GitHub Release [**v0.0.14**](https://github.com/imyash0722/tinapple/releases/tag/v0.0.14) with all multi-platform binaries and SHA256 checksums.
 
 ### Maintenance (2026-11-24) | fix(update/launcher): fix tinapple-update self-install error and register hyprland remote desktop in app & backend
 - **Scope**: Fixed `tinapple-update` terminating with exit code 1 during package updates caused by `install: '...' and '...' are the same file` when updating `/usr/local/bin/tinapple-torrent-healer`, replaced legacy `niri` service definition in `tinapple-dash` with `hyprland` (port 5900, `tinapple-hyprland.service`), and added Hyprland / VNC 1-tap launcher routing in `tinapple-android` with AVNC and ii-tools client package discovery.
