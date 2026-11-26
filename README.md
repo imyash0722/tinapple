@@ -1,6 +1,10 @@
 # tinapple
 
-Turnkey homelab operating system and appliance platform engineered for bare-metal home servers, repurposed hardware, mini-PCs, and laptops. Built on Arch Linux and CachyOS compiler-optimized performance packages.
+Turnkey **self-hosted homelab OS and home server appliance platform** engineered for bare-metal home servers, repurposed laptops, and mini-PCs. Built on Arch Linux and CachyOS performance packages with a Go control plane (`tinapple-dash`), React web dashboard (`tinapple-hub`), pure native Kotlin Android app (`tinapple-android` v2.0.4), and kernel WireGuard/Tor split-tunneling (`tinapple-networker`).
+
+[![Latest Release](https://img.shields.io/github/v/release/imyash0722/tinapple)](https://github.com/imyash0722/tinapple/releases/latest)
+[![Platform](https://img.shields.io/badge/OS-Arch%20Linux%20%7C%20CachyOS-1793D1)](https://github.com/imyash0722/tinapple)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 
 ---
 
@@ -8,20 +12,23 @@ Turnkey homelab operating system and appliance platform engineered for bare-meta
 
 1. [Overview](#1-overview)
 2. [Key Capabilities](#2-key-capabilities)
-3. [System Architecture and Subsystems](#3-system-architecture-and-subsystems)
+3. [System Architecture and Diagrams](#3-system-architecture-and-diagrams)
 4. [Integrated Homelab Services and Port Matrix](#4-integrated-homelab-services-and-port-matrix)
 5. [Appliance Packs & Stacks System](#5-appliance-packs--stacks-system)
 6. [Hardware Specifications and Power Abstraction](#6-hardware-specifications-and-power-abstraction)
 7. [Installation and First-Boot Provisioning](#7-installation-and-first-boot-provisioning)
-8. [Networking, Remote Access, and MagicDNS](#8-networking-remote-access-and-magicdns)
+8. [Networking, Remote Access, and Split-Tunneling](#8-networking-remote-access-and-split-tunneling)
 9. [Storage Layout and Multi-User Setup](#9-storage-layout-and-multi-user-setup)
-10. [Media Automation & Seerr Stack Orchestrator](#10-media-automation--seerr-stack-orchestrator)
-11. [System Updates, Pacman Hooks, and Hot-Deployment](#11-system-updates-pacman-hooks-and-hot-deployment)
-12. [Native Client Applications & Multi-Platform Releases (Tauri Desktop, Kotlin Android, iOS, Windows, Linux)](#12-native-client-applications--multi-platform-releases-tauri-desktop-kotlin-android-ios-windows-linux)
-13. [Service Management and Command Reference](#13-service-management-and-command-reference)
-14. [Troubleshooting and Diagnostic Runbook](#14-troubleshooting-and-diagnostic-runbook)
-15. [Repository Directory Structure](#15-repository-directory-structure)
-16. [License](#16-license)
+10. [Suwayomi Manga Server Integration](#10-suwayomi-manga-server-integration)
+11. [Media Automation & Seerr Stack Orchestrator](#11-media-automation--seerr-stack-orchestrator)
+12. [System Updates, Pacman Hooks, and Hot-Deployment](#12-system-updates-pacman-hooks-and-hot-deployment)
+13. [Native Client Applications & Multi-Platform Releases](#13-native-client-applications--multi-platform-releases)
+14. [Interactive Online Guides & Comprehensive Manual](#14-interactive-online-guides--comprehensive-manual)
+15. [Dynamic Wallpaper Gallery & Atmosphere Theming](#15-dynamic-wallpaper-gallery--atmosphere-theming)
+16. [Service Management and Command Reference](#16-service-management-and-command-reference)
+17. [Troubleshooting and Diagnostic Runbook](#17-troubleshooting-and-diagnostic-runbook)
+18. [Repository Directory Structure](#18-repository-directory-structure)
+19. [License](#19-license)
 
 ---
 
@@ -39,60 +46,119 @@ tinapple transforms standard commodity x86_64 computer hardware or retired lapto
 
 ## 2. Key Capabilities
 
-- **Kernel and Compiler Optimizations**: Uses CachyOS kernel patchsets (Bore scheduler, BBRv3 network congestion control) and packages compiled with `x86-64-v3` compiler flags.
-- **Unified Reverse Proxy**: Caddy server terminating TLS for public Tailscale domains and internal local network IP addresses with automated HTTP to HTTPS redirection.
-- **Integrated Homelab Suite**: Pre-configured services including Jellyfin (video streaming), Navidrome (music streaming), Suwayomi (manga server), Vaultwarden (password manager), qBittorrent and JDownloader 2 (remote downloads), AdGuard Home (network-wide ad-blocking), Syncthing (file synchronization), and FileBrowser.
-- **Tor Anonymity Switch**: Native one-click Tor daemon controller built into the dashboard and REST API for on-demand privacy routing.
-- **Cross-Platform Clients**: Accessible via any modern web browser and a lightweight native Android companion APK (`tinapple-client.apk`).
+- **Kernel and Compiler Optimizations**: Uses CachyOS kernel patchsets (`linux-lts` / BORE scheduler, BBRv3 congestion control) and `x86-64-v3` optimized packages.
+- **Unified Reverse Proxy & Encrypted Tunnels**: Caddy terminating Let's Encrypt HTTPS certificates over Tailscale (`:443`) paired with Cloudflare Tunnel ingress (`tinapple-cloudflared`) so the dashboard stays reachable across symmetric NAT.
+- **Kernel Split-Tunneling (`tinapple-networker`)**: Routes individual systemd services, the Wi-Fi hotspot AP (`wlp0s20u1`), or Tailscale Exit Node traffic through **ProtonVPN WireGuard** or **Tor transparent circuits** (`TransPort :9040` / `ControlPort :9051` `NEWNYM`), with strict mutual exclusion (`HTTP 409`), P2P Free-tier warnings, and automatic LAN/Tailscale bypass.
+- **Integrated Self-Hosted Suite**: Pre-configured Jellyfin (movies/shows), Navidrome + PineMusic (music streaming & lossless queue), Suwayomi (manga server on Java 27), Vaultwarden (password vault), qBittorrent + Servarr stack, AdGuard Home, Syncthing, CouchDB (Obsidian LiveSync), and headless Hyprland + wayvnc (`:5900`) remote desktop.
+- **Cross-Platform Clients**: Web dashboard (`tinapple-hub`), Tauri desktop apps (Linux, Windows, macOS), and pure native Kotlin Jetpack Compose Android companion (`tinapple-android` v2.0.4).
 
 ---
 
-## 3. System Architecture and Subsystems
+## 3. System Architecture and Diagrams
 
-The tinapple platform is structured into modular layers:
+The tinapple self-hosted platform separates edge ingress, control plane management, kernel VPN/Tor split-tunneling, hardware power management, and service daemons into distinct layers:
 
+### ASCII System Architecture
+
+```text
++-------------------------------------------------------------------------------+
+|                               Client Layer                                    |
+|  Web Browser (HTTPS)  |  Tauri Desktop Apps  |  tinapple-android (v2.0.4 APK) |
+|  - Homarr 2D Canvas   |  - Local Web Bundle  |  - Jetpack Compose + Matugen   |
+|  - Proton & Tor Page  |  - Cross-Platform    |  - Kotlin SSH/PTY & TV/VNC     |
++---------------------------------------+---------------------------------------+
+                                        |
+                                        v
++-------------------------------------------------------------------------------+
+|                      Edge Ingress & Encrypted Mesh                            |
+|  - Caddy (:443 TLS / :80 -> HTTPS)    - Tailscale Mesh (tailscale0 / :443)    |
+|  - Cloudflare Tunnel (cloudflared)    - Vaultwarden HTTPS Reverse Proxy (:8000)|
++---------------------------------------+---------------------------------------+
+                                        |
+          +-----------------------------+-----------------------------+
+          |                                                           |
+          v                                                           v
++--------------------------------------------+  +-------------------------------+
+|       Control Plane: tinapple-dash (:8088) |  | tinapple-networker (:8092)    |
+|  - Go (Gin) REST API & SSE Telemetry       |  | - WireGuard (`proton`) Tunnel |
+|  - React 18 Frontend Bundle (tinapple-hub) |  | - Tor :9040 TransPort / :9051 |
+|  - `/api/v1/networker/*` Reverse Proxy     |->| - Smart Proxy (:1088)         |
+|  - PTY WebSockets, App Store & /suwayomi   |  | - iptables-nft OUTPUT & PRE   |
++--------------------------------------------+  +---------------+---------------+
+          |                                                     |
+          +--------------------------+--------------------------+
+                                     |
+          +--------------------------+--------------------------+
+          |                                                     |
+          v                                                     v
++--------------------------------------------+  +-------------------------------+
+|     Host Reliability & Compositor Layer    |  |   Homelab Service Daemons     |
+|  - tinapple-hw (80% Battery, Clamshell)    |  |  Jellyfin :8096 | PineMusic   |
+|  - tinapple-wifi-watchdog (wl + IN regdom) |  |  Navidrome :4533| Suwayomi    |
+|  - Hyprland HEADLESS-1 + wayvnc (:5900)    |  |  Vaultwarden    | qBittorrent |
+|  - tinapple-config-generator               |  |  Sonarr/Radarr  | AdGuard/Tor |
++--------------------------------------------+  +-------------------------------+
 ```
-+-----------------------------------------------------------------------+
-|                         Client Interfaces                             |
-|  Desktop Browser (HTTPS)  |  Mobile PWA  |  Android Native (APK)      |
-+-----------------------------------------------------------------------+
-                                   |
-+-----------------------------------------------------------------------+
-|                    Edge and Reverse Proxy (Caddy)                     |
-|  - Tailscale HTTPS (:443) with Let's Encrypt                          |
-|  - Local LAN Internal TLS Fallback (:443)                             |
-|  - Vaultwarden TLS Endpoint (:8000)                                   |
-|  - HTTP to HTTPS Port 80 Automatic Redirect                           |
-+-----------------------------------------------------------------------+
-                                   |
-+-----------------------------------------------------------------------+
-|                 Control Plane: tinapple-dash (:8088)                  |
-|  - Go HTTP REST API & WebSockets (/api/v1/system, /api/v1/services)  |
-|  - Compiled React 18 Frontend Bundle (tinapple-hub)                   |
-|  - Systemd D-Bus Daemon Controller & Log Streamer                     |
-|  - Suwayomi GraphQL Proxy and WebP Thumbnail Cache                    |
-|  - Hardware Telemetry & Thermal Governor Controller                   |
-+-----------------------------------------------------------------------+
-                                   |
-+-----------------------------------------------------------------------+
-|                   Hardware and Power Abstraction                      |
-|  - tinapple-hw: ACPI Lid Inhibitor, Battery Charge Thresholds         |
-|  - Thermal Profiles: Quiet, Balanced, Performance                    |
-+-----------------------------------------------------------------------+
-                                   |
-+-----------------------------------------------------------------------+
-|                     Homelab Service Daemons                           |
-|  Jellyfin | Navidrome | Suwayomi | Vaultwarden | qBittorrent | AdGuard |
-+-----------------------------------------------------------------------+
+
+### Interactive Topology & Split-Tunneling Flow
+
+```mermaid
+flowchart TB
+    subgraph Clients["Client Devices"]
+        Web["Web Hub React 18"]
+        Android["Android App Kotlin v2.0.4"]
+        Desktop["Tauri Desktop Linux Win macOS"]
+    end
+
+    subgraph Edge["Ingress and Mesh Layer"]
+        Caddy["Caddy Reverse Proxy 443 and 80"]
+        TS["Tailscale Mesh tailscale0"]
+        CF["Cloudflare Tunnel"]
+    end
+
+    subgraph Control["Control and Routing Plane"]
+        Dash["tinapple-dash 8088 Go Gin"]
+        Net["tinapple-networker 8092 and 1088"]
+    end
+
+    subgraph Tunnels["Kernel Policy Routing OUTPUT and PREROUTING"]
+        WG["ProtonVPN WireGuard proton"]
+        Tor["Tor TransPort 9040 and Control 9051"]
+        Bypass["Direct LAN 192.168 and Tailscale Bypass"]
+    end
+
+    subgraph Services["Self-Hosted Daemons and Compositor"]
+        Media["Jellyfin Navidrome PineMusic Suwayomi"]
+        Downloads["qBittorrent Sonarr Radarr Prowlarr"]
+        Core["Vaultwarden AdGuard Syncthing Hyprland VNC"]
+    end
+
+    Web --> Caddy
+    Desktop --> Caddy
+    Android --> Caddy
+    TS --> Caddy
+    CF --> Caddy
+    Caddy --> Dash
+    Dash --> Net
+    Net --> WG
+    Net --> Tor
+    Net --> Bypass
+    Dash --> Media
+    Dash --> Downloads
+    Dash --> Core
+    Media -. "per-service cgroup or 1088" .-> Net
+    Downloads -. "P2P free-tier guarded" .-> Net
 ```
 
 ### Core Components
 
-- **`tinapple-dash`**: Written in Go using the Gin framework. It runs as `tinapple-dash.service` on port 8088. It handles system metrics, service start/stop/restart operations, real-time log tailing, package installation through the Chaddy Store, and proxying backend requests.
-- **`tinapple-hub`**: A single-page dashboard built with React 18, TypeScript, Tailwind CSS, Lucide icons, and Framer Motion. Compiled into static production assets served directly by `tinapple-dash` from `/usr/share/tinapple-dash/web/dist`.
-- **`tinapple-hw`**: Hardware abstraction daemon responsible for reading battery controller nodes in `/sys/class/power_supply/`, enforcing charge ceilings, and managing CPU energy performance preferences via `power-profiles-daemon`.
-- **`tinapple-config-generator`**: Template engine that converts the declarative `/etc/tinapple/tinapple.json` manifest into service-specific configuration files for Caddy, Navidrome, qBittorrent, and systemd units.
-- **`tinapple-hub/android`**: Capacitor Android companion package (`org.tinapple.hub`) targeting SDK 34, connecting directly to the server's HTTPS endpoint with native status bar, haptic feedback, and offline fallback.
+- **`tinapple-dash`**: Go (Gin) appliance backend (`tinapple-dash.service` on port `:8088`). Manages system telemetry, systemd lifecycles, log streams, Chaddy Store app packs, PTY WebSocket terminals, Suwayomi/Jellyfin/Navidrome widgets, `/download/apk` distribution, and proxies `/api/v1/networker/*`.
+- **`tinapple-networker`**: Standalone Go kernel split-tunneling daemon (`tinapple-networker.service`, `:8092` HTTP control API, `:1088` cgroup-aware smart proxy). Orchestrates ProtonVPN WireGuard profiles via `wg setconf` (multi-`.conf` switching without breaking host DNS), Tor transparent circuits (`NEWNYM`), Hotspot & Tailscale Exit Node routing, and mutual exclusion (`Direct` | `ProtonVPN` | `Tor`).
+- **`tinapple-hub`**: Single-page control UI built with React 18, TypeScript, Tailwind CSS, Lucide icons, and Framer Motion, compiled to `/usr/share/tinapple-dash/web/dist`. Includes the draggable 2D Homarr canvas and the dedicated **Proton & Tor** split-tunneling page.
+- **`tinapple-android`**: Pure native Android companion (`org.tinapple.hub`, v2.0.4, `versionCode 8`) written in Kotlin 2.0.21 with Jetpack Compose Material 3, Matugen wallpaper theming, interactive SSH/PTY terminal, media shelves, and a dedicated ProtonVPN & Tor split-tunneling screen.
+- **`tinapple-hw` & `tinapple-wifi-watchdog`**: Hardware power/ACPI daemon (80% battery ceiling, lid-close clamshell operation) paired with a multi-level Broadcom/iwlwifi link recovery watchdog (`IN` regdom + PCIe/module recovery).
+- **`Hyprland + wayvnc` (`tinapple-hyprland.service`)**: Headless Wayland compositor spawning a virtual `HEADLESS-1` 1080p display and `wayvnc` RFB 3.8 remote desktop server on port `:5900`.
+- **`tinapple-config-generator`**: Renders service manifests (`/etc/tinapple/tinapple.json`) into native Caddy, Navidrome, qBittorrent, and systemd configurations.
 
 ---
 
@@ -102,9 +168,11 @@ tinapple packages and manages a comprehensive suite of homelab services. Below i
 
 | Service | Binary / Package | Systemd Unit | Internal Port | Default Access Path | Function |
 |---------|------------------|--------------|---------------|---------------------|----------|
-| Tinapple Web Hub | `tinapple-dash` | `tinapple-dash.service` | 8088 | `https://<server>:443/` | Appliance control plane and widget dashboard |
+| Tinapple Web Hub | `tinapple-dash` | `tinapple-dash.service` | 8088 | `https://<server>:443/` | Appliance control plane, REST API, and widget dashboard |
+| Tinapple Networker | `tinapple-networker` | `tinapple-networker.service` | 8092 / 1088 | `/api/v1/networker/*` | Kernel split-tunneling orchestrator (WireGuard ProtonVPN & Tor proxy) |
+| Hyprland Remote Desktop | `Hyprland` + `wayvnc` | `tinapple-hyprland.service` | 5900 | `vnc://<server>:5900` | Headless 1080p Wayland desktop + RFB 3.8 VNC screenshare |
 | Vaultwarden | `vaultwarden` | `vaultwarden.service` | 8001 (proxied to 8000) | `https://<server>:8000/` | Bitwarden-compatible password vault (Web Crypto API) |
-| Suwayomi Manga | `suwayomi-server-bin` | `suwayomi-server.service` | 4567 | `http://<server>:4567/` | Tachiyomi/Mihon extension server and manga reader |
+| Suwayomi Manga | `suwayomi-server-bin` | `suwayomi-server.service` | 4567 | `http://<server>:4567/suwayomi/` | Tachiyomi/Mihon extension server and manga reader (Java 27) |
 | Jellyfin | `jellyfin-server` | `jellyfin.service` | 8096 | `http://<server>:8096/` | Media streaming for movies, shows, and audiobooks |
 | Navidrome | `navidrome` | `navidrome.service` | 4533 | `http://<server>:4533/` | Subsonic-compatible personal music streaming |
 | PineMusic | `pinemusic` | `pinemusic.service` | 8090 | `https://<server>/pinemusic/` | Lossless zero-auth music requester and queue manager for Navidrome |
@@ -113,7 +181,8 @@ tinapple packages and manages a comprehensive suite of homelab services. Below i
 | AdGuard Home | `adguardhome` | `adguardhome.service` | 3000 / 53 | `http://<server>:3000/` | Network-wide DNS sinkhole, privacy filter, and ad-blocker |
 | Syncthing | `syncthing` | `syncthing@tinapple.service` | 8384 | `http://<server>:8384/` | Continuous peer-to-peer decentralized file sync |
 | FileBrowser | `filebrowser` | `filebrowser.service` | 8081 | `http://<server>:8081/` | Web-based file manager and browser |
-| Tor Daemon | `tor` | `tor.service` | 9050 / 9051 | Local SOCKS5 Proxy | Onion router privacy network and exit proxy |
+| Tor Daemon | `tor` | `tor.service` | 9040 / 9050 / 9051 | Managed by `tinapple-networker` | Transparent onion proxy (`TransPort`), SOCKS5, and circuit control |
+| Proton VPN (WireGuard) | `tinapple-networker` (`wg`) | `tinapple-networker.service` | 51820 (WG) | `?tab=networker` | Policy-routed WireGuard exit tunnel (`proton` interface) |
 | Sonarr | `sonarr-bin` | `sonarr.service` | 8989 | `http://<server>:8989/` | TV series automation and download manager |
 | Radarr | `radarr-bin` | `radarr.service` | 7878 | `http://<server>:7878/` | Movie automation and download manager |
 | Prowlarr | `prowlarr-bin` | `prowlarr.service` | 9696 | `http://<server>:9696/` | Torrent indexer and Usenet proxy aggregator |
@@ -123,7 +192,6 @@ tinapple packages and manages a comprehensive suite of homelab services. Below i
 | SyncYomi | `syncyomi` | `syncyomi.service` | 8282 | `http://<server>:8282/` | Manga reading progress synchronization bridge |
 | Minecraft PaperMC | `minecraft` | `minecraft.service` | 25565 | `<server>:25565` | High-tickrate gaming appliance with Aikar GC |
 | Playit Anycast | `playit` | `playit.service` | Dynamic | Global Anycast Tunnel | Public domain tunnel for servers without port forwarding |
-| Proton VPN Client | `proton-vpn-cli` | `proton.VPN.service` | Dynamic | Egress VPN Tunnel | Headless Swiss WireGuard egress tunnel |
 | Beeper Matrix Bridges | `bbctl` | `bbctl.service` | Dynamic | Matrix Bridges | Self-hosted bridges for WhatsApp, Signal, Discord, etc. |
 
 ---
@@ -188,7 +256,7 @@ When deploying tinapple on repurposed laptop hardware, the hardware layer activa
 
 ---
 
-## 6. Installation and First-Boot Provisioning
+## 7. Installation and First-Boot Provisioning
 
 ### Method A: Clean Installation from ISO
 
@@ -232,7 +300,7 @@ On first system start, `tinapple-firstboot.service` executes to:
 
 ---
 
-## 7. Networking, Remote Access, and HTTPS Configuration
+## 8. Networking, Remote Access, and Split-Tunneling
 
 tinapple uses Caddy as its reverse proxy combined with Tailscale to provide automated, zero-configuration TLS certificates without opening external router ports or setting up dynamic DNS.
 
@@ -294,9 +362,18 @@ tinapple-server.tail3dee69.ts.net:8000 {
    ```
    The server will return `HTTP/2 200` with a certificate signed by Let's Encrypt.
 
+### Kernel Split-Tunneling (`tinapple-networker`)
+
+Outbound traffic routing is managed by `tinapple-networker.service` (`:8092` HTTP API, `:1088` smart outbound proxy) and controlled from the **Proton & Tor** page (`?tab=networker` on web, **ProtonVPN & Tor Routing** tile in the Android app):
+
+- **Mutually Exclusive Modes**: Every service, Hotspot AP (`wlp0s20u1`), or Tailscale Exit Node (`tailscale0`) runs in one of three states: `direct`, `protonvpn`, or `tor`. Concurrent `protonvpn` + `tor` assignments are rejected (`HTTP 409 Conflict`).
+- **ProtonVPN Multi-Config Management**: Parses WireGuard `.conf` profiles, strips conflicting IPv6/DNS resolvers via `wg setconf proton`, and supports uploading custom configs (`+ Add more`) with country and Free-tier metadata detection.
+- **Tor Transparent Proxy**: Routes marked targets to Tor `TransPort` (`:9040`) and `DNSPort` (`:5353`), resolves live exit country/city, and rotates circuits via `ControlPort` (`:9051` `SIGNAL NEWNYM`).
+- **LAN & Tailscale Bypass + P2P Warnings**: Hotspot and Exit Node chains preserve RFC1918 LAN (`192.168.0.0/16`, `10.0.0.0/8`), localhost, and Tailscale (`100.64.0.0/10`) access, while surfacing Free-tier P2P blocking warnings on torrenting/sync services and Exit Node.
+
 ---
 
-## 8. Storage Layout and Multi-User Setup
+## 9. Storage Layout and Multi-User Setup
 
 ### Directory Hierarchy
 
@@ -347,13 +424,13 @@ To configure distinct music folders for separate user accounts (for example, kee
 
 ---
 
-## 9. Suwayomi Manga Server Integration
+## 10. Suwayomi Manga Server Integration
 
 Suwayomi Server (v2.4+) runs on port 4567, acting as an independent self-hosted manga backend compatible with the Tachiyomi, Mihon, and Keiyoushi source extension ecosystems.
 
 ### Integration Architecture
 
-- **GraphQL Engine**: Communication between `tinapple-dash` and Suwayomi uses Suwayomi's native GraphQL interface at `http://127.0.0.1:4567/api/graphql`.
+- **GraphQL Engine**: Communication between `tinapple-dash` and Suwayomi uses Suwayomi's native GraphQL interface at `http://127.0.0.1:4567/suwayomi/api/graphql` (fallback `/api/graphql`), running on Java 27 OpenJDK while keeping Java 17 as system default for Minecraft.
 - **Deduplication and Recency Logic**:
   - *Library Tab (`Library (241)`)*: Queries `mangas(condition: { inLibrary: true }, order: [{by: IN_LIBRARY_AT, byType: DESC_NULLS_LAST}])` to present recently added titles with unread chapter count badges.
   - *History Tab (`History`)*: Queries read chapters ordered by `LAST_READ_AT DESC` and deduplicates by manga series ID. Each manga appears once, displaying the exact last chapter read.
@@ -374,7 +451,7 @@ To install manga source extensions in Suwayomi:
 
 ---
 
-## 10. Media Automation & Seerr Stack Orchestrator
+## 11. Media Automation & Seerr Stack Orchestrator
 
 Tinapple integrates a headless zero-touch media automation pipeline linking Jellyfin, Jellyseerr, Radarr, Sonarr, Prowlarr, Bazarr, and qBittorrent.
 
@@ -398,7 +475,7 @@ The pipeline is fully automated via `/usr/local/bin/tinapple-configure-seerr` (s
 
 ---
 
-## 11. System Updates, Pacman Hooks, and Hot-Deployment
+## 12. System Updates, Pacman Hooks, and Hot-Deployment
 
 ### The Tinapple Pacman Repository Architecture (`[tinapple]`)
 
@@ -518,36 +595,27 @@ Developer Workstation                                    tinapple Server
 
 ---
 
-## 12. Native Client Applications & Multi-Platform Releases (Tauri Desktop, Kotlin Android, iOS, Windows, Linux)
+## 13. Native Client Applications & Multi-Platform Releases
 
-Tinapple delivers a first-class, zero-latency client experience across desktop and mobile platforms with a **Full Offline Cache Stack**. Rather than downloading 1 MB+ of JavaScript, CSS, icons, and fonts over high-latency Tailscale mesh links or slow Wi-Fi connections, native clients embed the complete React 18 asset bundle locally, launching instantaneously (< 30 ms) while communicating with the appliance server exclusively via lightweight REST JSON and WebSocket protocols.
+Tinapple delivers a native client experience across desktop and mobile platforms, with offline static bundling on desktop/iOS and pure Jetpack Compose UI on Android.
 
 ### Client Architecture & Offline Cache Stack
 
-```
+```text
 +-----------------------------------------------------------------------------------------+
 |                               Tinapple Client Layer                                     |
 |                                                                                         |
 |  [ Linux AppImage ]  [ Windows EXE ]  [ macOS DMG ]  [ Android APK ]  [ iOS IPA ]      |
-|         │                  │               │                │               │           |
-|         ▼                  ▼               ▼                ▼               ▼           |
-|  ┌───────────────────────────────────────────────────────────────────────────────────┐  |
-|  │                         Embedded Offline Asset Bundle                             │  |
-|  │  • React 18, Tailwind CSS, Lucide Icons, Xterm.js PTY, Framer Motion             │  |
-|  │  • Android: WebViewClient.shouldInterceptRequest() -> android_asset/web/          │  |
-|  │  • Tauri / Desktop: Local custom asset protocol (tauri://localhost / file://)    │  |
-|  │  • 0ms UI load latency, zero bandwidth spent re-downloading static frontend files   │  |
-|  └───────────────────────────────────────────────────────────────────────────────────┘  |
 +-----------------------------------------------------------------------------------------+
-                                           │
+                                           |
                        HTTP / HTTPS REST & WebSockets
-               (/api/v1/system, /api/v1/dashboard/layout, etc.)
-                                           │
-                                           ▼
+              (/api/v1/system, /api/v1/networker/*, /api/v1/terminal/ws)
+                                           |
+                                           v
 +-----------------------------------------------------------------------------------------+
-|                        Tinapple Appliance Control Plane (:8088)                         |
-|  - Bidirectional Settings Persistence (/etc/tinapple/dashboard_layout.json)            |
-|  - Real-Time Systemd Management, Proton VPN & Tor Privacy Exits                         |
+|                 Tinapple Control Plane (:8088) & Networker (:8092)                      |
+|  - Dashboard Settings & Layout Persistence (/etc/tinapple/dashboard_layout.json)       |
+|  - Real-Time Systemd Management, ProtonVPN WireGuard & Tor Split-Tunneling             |
 +-----------------------------------------------------------------------------------------+
 ```
 
@@ -593,16 +661,16 @@ GitHub Actions workflow [`.github/workflows/client-releases.yml`](.github/workfl
 
 ---
 
-### 2. Pure Native Kotlin Android Companion Client (`tinapple-android`)
+### 2. Pure Native Kotlin Android Companion Client (`tinapple-android`, v2.0.4)
 
-The dedicated Android companion app (`org.tinapple.hub`) is a pure native application engineered with Kotlin 2.0 and Jetpack Compose Material 3:
+The Android companion app (`org.tinapple.hub`, `versionCode 8`, Kotlin 2.0.21) is built with Jetpack Compose and Material 3:
 
-- **100% Native Jetpack Compose Architecture**: Ultra-lean 12.4 MB release binary replacing previous hybrid webviews for zero-latency, buttery-smooth 120Hz scrolling.
-- **Matugen Dynamic Theming**: Extracts 4 Material 3 color combinations (Vibrant, Harmonious, Contrast, Muted) directly from current server wallpapers.
-- **Tile Liquid Glass & Frosted Aesthetics**: Live translucency controls (Solid 100%, Frosted 82%, Liquid 65%, Crystal 48%) with specular glass borders and background blur.
-- **Official Brand Vector Icons**: Bundled SVG iconography for all homelab services (Jellyfin, qBittorrent, Sonarr, Radarr, Ombi, Bazarr, Suwayomi, Tailscale, Syncthing, etc.).
-- **Resilient Discovery & Auto-Failover**: Concurrent auto-probing across LAN (`192.168.1.103:8088`), Tailscale (`100.67.207.60:8088`), and HTTPS domain.
-- **Proton VPN Control**: Instant toggle switch for the homelab Proton VPN exit node gateway.
+- **Pure Native Compose Architecture**: 14 MB signed APK (`minSdk 26`, `targetSdk 35`) built for responsive 120Hz scrolling.
+- **ProtonVPN & Tor Split-Tunneling Page (`NetworkPrivacyScreen`)**: Clickable **ProtonVPN & Tor Routing** home tile opening master ProtonVPN/Tor controls, WireGuard `.conf` dropdown with SAF file upload (`+ Add more`), live Tor exit country readout, and per-service / Hotspot / Exit Node toggles with P2P Free-tier warnings.
+- **Media, Manga & Remote Desktop Widgets**: Suwayomi manga shelf (1-tap launch in Tsumiru), Jellyfin shelf (1-tap launch in Plezy), Navidrome now-playing card, and Hyprland remote desktop card (AVNC 1-tap connect + headless 1080p telemetry).
+- **Interactive Kotlin SSH / PTY Terminal**: WebSocket PTY client (`/api/v1/terminal/ws`) with ANSI color parsing and an accessory key bar (`ESC`, `TAB`, sticky `CTRL`/`ALT`, arrows, shell symbols).
+- **Matugen Dynamic Theming & Liquid Glass**: Samples server wallpapers into 4 Material 3 color harmonies with live translucency presets.
+- **Multi-Endpoint Discovery**: Parallel `/health` probing across LAN, Tailscale mesh, and Tailscale HTTPS domains.
 
 #### Building & Packaging Android APK:
 ```bash
@@ -655,7 +723,7 @@ Tinapple ensures complete bidirectional persistence of dashboard layouts, custom
 
 ---
 
-## 13. Interactive Online Guides & Comprehensive Manual
+## 14. Interactive Online Guides & Comprehensive Manual
 
 Tinapple OS features an integrated, interactive Documentation & Client Setup portal accessible directly via the top navigation bar (`Guides` button) or at dedicated `/guide/<service>` endpoints.
 
@@ -679,7 +747,7 @@ Each guide provides zero-jargon instructions, exact connection URLs (with perman
 
 ---
 
-## 14. Dynamic Wallpaper Gallery & Atmosphere Theming (`imyash0722/Wallpapers`)
+## 15. Dynamic Wallpaper Gallery & Atmosphere Theming
 
 Tinapple OS incorporates a dynamic wallpaper switching and theming engine inspired by the Tinarchy architecture, backed by the official [`imyash0722/Wallpapers`](https://github.com/imyash0722/Wallpapers) collection.
 
@@ -706,7 +774,7 @@ Tinapple OS incorporates a dynamic wallpaper switching and theming engine inspir
 
 ---
 
-## 15. Service Management and Command Reference
+## 16. Service Management and Command Reference
 
 ### Service Control Commands
 
@@ -714,6 +782,10 @@ Tinapple OS incorporates a dynamic wallpaper switching and theming engine inspir
 |------|---------|
 | Check Dashboard Status | `sudo systemctl status tinapple-dash.service` |
 | Restart Dashboard | `sudo systemctl restart tinapple-dash.service` |
+| Check Split-Tunneling Harness | `sudo systemctl status tinapple-networker.service` |
+| Inspect WireGuard & Routes | `wg show proton && curl -s http://127.0.0.1:8092/api/v1/networker/status` |
+| Check Hyprland Remote Desktop | `sudo systemctl status tinapple-hyprland.service` |
+| Check Wi-Fi Watchdog | `sudo systemctl status tinapple-wifi-watchdog.service` |
 | Check Caddy Proxy Status | `sudo systemctl status caddy.service` |
 | Reload Caddy Configuration | `sudo systemctl reload caddy.service` |
 | Restart Suwayomi Manga Server | `sudo systemctl restart suwayomi-server.service` |
@@ -740,7 +812,7 @@ journalctl -u tinapple-hw.service -f
 
 ---
 
-## 16. Troubleshooting and Diagnostic Runbook
+## 17. Troubleshooting and Diagnostic Runbook
 
 ### Issue: Vaultwarden Displays Web Crypto API Error
 
@@ -759,9 +831,9 @@ journalctl -u tinapple-hw.service -f
      ```bash
      sudo systemctl status suwayomi-server.service
      ```
-  2. Test local connectivity to the GraphQL endpoint:
+  2. Test local connectivity to the GraphQL endpoint (requires Java 21+/27 runtime and `/suwayomi` subpath):
      ```bash
-     curl -s -X POST http://127.0.0.1:4567/api/graphql \
+     curl -s -X POST http://127.0.0.1:4567/suwayomi/api/graphql \
        -H "Content-Type: application/json" \
        -d '{"query":"{ mangas { totalCount } }"}'
      ```
@@ -772,7 +844,7 @@ journalctl -u tinapple-hw.service -f
 - **Symptom**: ADB install fails on Android 14 / 15 with:
   `INSTALL_FAILED_DEPRECATED_SDK_VERSION: App package must target at least SDK version 24, but found 0`.
 - **Root Cause**: The APK manifest was missing the `<uses-sdk>` directive or targeted a legacy API version.
-- **Resolution**: Verify [`tinapple-hub/android/app/build.gradle`](tinapple-hub/android/app/build.gradle) specifies `minSdkVersion 24` and `targetSdkVersion 34`. Recompile using `./scripts/build-desktop-releases.sh` and reinstall.
+- **Resolution**: Verify [`tinapple-android/app/build.gradle`](tinapple-android/app/build.gradle) specifies `minSdk 26` and `targetSdk 35`. Recompile on a host with the Android SDK via `./gradlew assembleRelease` (or `./scripts/build-desktop-releases.sh`) and reinstall.
 
 ### Issue: Battery Does Not Stop Charging at 80%
 
@@ -790,48 +862,44 @@ journalctl -u tinapple-hw.service -f
 
 ---
 
-## 17. Repository Directory Structure
+## 18. Repository Directory Structure
 
-```
+```text
 tinapple/
 ├── bin/                          # Standalone binary tools
-├── configs/                      # Service configuration templates
-│   ├── caddy/                    # Caddyfile and reverse proxy rules
-│   │   └── Caddyfile
-│   ├── niri/                     # Wayland compositor configs
-│   ├── terminal/                 # Ghostty, Alacritty, and tmux configs
-│   └── waybar/                   # Waybar status bar configuration
-├── out/                          # Compiled artifacts (APK, ISOs, binaries)
-├── scripts/                      # Deployment and maintenance scripts
-│   ├── deploy-server.sh          # Single-command hot-deploy tool
-│   ├── flash-sandisk.sh          # USB drive flashing utility
-│   ├── run-vm.sh                 # Local QEMU testing launcher
-│   └── tinapple-display-sleep    # Display sleep helper script
-├── tasks/                        # Implementation task plans and milestones
-├── tinapple-hub/                 # React 18 / Vite 6 Web & Mobile Dashboard
-│   ├── android/                  # Capacitor Android companion project (SDK 34)
-│   ├── src/                      # UI components, canvas engine, and widgets
-│   └── package.json              # Web & native dependencies
+├── chaddy-store/                 # Appliance marketplace & pack installer
+├── configs/                      # Caddy & service configuration templates
+├── docs/                         # Architecture specs & supplementary docs
+├── out/releases/                 # Compiled client packages (APK, AppImage, DMG, EXE, IPA, SHA256SUMS)
+├── scripts/                      # Deployment, Wi-Fi watchdog, Proton/Tor helpers & packagers
+├── tasks/                        # Implementation notes and milestones
+├── tinapple-android/             # Native Kotlin 2.0 / Jetpack Compose Android app (v2.0.4)
 ├── tinapple-base/                # Base Arch Linux filesystem overlays
 ├── tinapple-config-generator/    # Dynamic template parser for manifests
-├── tinapple-dash/                # Core appliance Go daemon
-│   ├── cmd/tinapple-dash/        # Main Go application entry point
-│   ├── internal/api/             # REST API handlers, widgets, and router
-│   ├── internal/services/        # Systemd daemon supervisor and catalog
-│   └── web/dist/                 # Hosted production frontend assets
+├── tinapple-dash/                # Core appliance Go daemon (:8088)
+│   ├── cmd/tinapple-dash/        # Daemon entry point
+│   ├── internal/api/             # REST endpoints, telemetry, widgets & networker proxy
+│   ├── internal/services/        # Systemd supervisor and service catalog
+│   └── web/dist/                 # Served production frontend assets
 ├── tinapple-firstboot/           # First-boot initial setup wizard
-├── tinapple-hub/                 # React 18 TypeScript frontend source
-│   ├── src/components/widgets/   # Dashboard widgets (Manga, Tor, Transfers)
-│   ├── src/services/             # API client services
-│   └── vite.config.ts            # Vite bundle configuration
+├── tinapple-hub/                 # React 18 / TypeScript Web & Tauri Desktop UI
+│   ├── public/icons/             # Service brand SVG/PNG icons
+│   ├── src/components/widgets/   # Dashboard & NetworkerPage widgets
+│   ├── src/services/             # API client & discovery helpers
+│   └── src-tauri/                # Tauri native desktop shell
 ├── tinapple-hw/                  # Hardware, power, and ACPI management
 ├── tinapple-installer/           # Archiso TUI installer
-├── tinapple-maintenance/         # Scheduled backup and log cleanup timers
+├── tinapple-maintenance/         # Scheduled backup timers, update runner & ALPM hooks
+├── tinapple-service-*/           # Modular service unit & PKGBUILD stacks
+├── wallpapers/                   # Local wallpaper assets
 └── README.md                     # Technical reference and documentation
+
+Companion daemon directory:
+../tinapple-networker/            # Standalone Go WireGuard/Tor split-tunneling daemon (:8092 / :1088)
 ```
 
 ---
 
-## 18. License
+## 19. License
 
 This project is licensed under the GNU General Public License v3.0 (GPLv3). See the LICENSE file for details.

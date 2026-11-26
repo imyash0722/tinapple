@@ -86,9 +86,15 @@
 
 ## 5. Changelog & Active State Ledger
 
-### Commit `fac8805` | docs: document v0.0.14 release in ledger (2026-11-24)
-- **Commit**: `fac8805`
-- **Subject**: docs: document v0.0.14 release in ledger
+### Maintenance (2026-11-26) | docs(readme/seo): refresh README architecture diagrams (ASCII + Mermaid), update v0.0.15 stack docs, and configure 20 GitHub repository topics
+- **Scope**: Updated GitHub repository metadata (`imyash0722/tinapple`) with 20 search topics (`homelab`, `self-hosted`, `self-hosting`, `home-server`, `homeserver`, `self-hosted-server`, `homelab-dashboard`, `arch-linux`, `media-server`, `jellyfin`, `wireguard`, `protonvpn`, `tor`, `split-tunneling`, `tailscale`, `caddy`, `vaultwarden`, `golang`, `react`, `jetpack-compose`), SEO description, and homepage link; synchronized `README.md` with v0.0.15 subsystems and added ASCII + Mermaid architecture/split-tunneling diagrams.
+- **Implementation & Verifications**:
+  - Updated [`README.md`](file:///mnt/shared/projects/tinapple/README.md) Table of Contents and section numbers (fixing duplicate `## 6` heading and broken anchors), replaced legacy Capacitor SDK 34 references with pure native Kotlin `tinapple-android` v2.0.4, documented `tinapple-networker` (`:8092` / `:1088`), `Hyprland` + `wayvnc` (`:5900`), and Suwayomi Java 27 + `/suwayomi/api/graphql` subpath, and updated Section 16 & Section 18 (`Directory Structure`).
+  - Verified `gh repo view imyash0722/tinapple` returns description, homepage URL, and all 20 topics cleanly.
+
+### Commit `0e04ec2` | feat(networker/suwayomi/wifi): release v0.0.15 (2026-11-26)
+- **Commit**: `0e04ec2` (prior `fac8805` `docs: document v0.0.14 release in ledger`)
+- **Subject**: feat(networker/suwayomi/wifi): release v0.0.15 with ProtonVPN & Tor split-tunneling, Android v2.0.4, Suwayomi Java 27 fix, and Wi-Fi watchdog hardening
 
 ### Maintenance (2026-11-26) | feat(networker/suwayomi/wifi): add tinapple-networker split-tunneling daemon, web & android ProtonVPN/Tor UI, Suwayomi Java 27 fix, and Broadcom Wi-Fi watchdog hardening
 - **Scope**: Fixed `suwayomi-server` crash loop caused by Java 17 default runtime, diagnosed and hardened `tinapple-wifi-watchdog` for Broadcom `wl` (`wlp3s0`) DFS/association lockups, designed and deployed standalone `tinapple-networker` harness in `/mnt/shared/projects/tinapple-networker`, built full ProtonVPN & Tor split-tunneling pages in both `tinapple-hub` and `tinapple-android` (v2.0.4, versionCode 8), and verified live endpoints, Firefox rendering, and Android APK release packaging.
