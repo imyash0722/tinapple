@@ -206,7 +206,10 @@ func SetupRoutes(r *gin.Engine, cfg *config.Manifest, svcMgr *services.SystemdMa
 		v1.POST("/tailscale/prefs", h.SetTailscalePrefs)
 		v1.POST("/tailscale/ping", h.PingTailscalePeer)
 
-		// Tor & Proton Anonymity & Privacy Exit
+		// Tor & Proton Anonymity & Privacy Exit (backed by tinapple-networker)
+		v1.GET("/networker/status", h.ProxyNetworker)
+		v1.POST("/networker/*path", h.ProxyNetworker)
+		v1.DELETE("/networker/*path", h.ProxyNetworker)
 		v1.GET("/system/tor-exit", h.GetTorStatus)
 		v1.POST("/system/tor-exit", h.ToggleTorStatus)
 		v1.GET("/system/proton-exit", h.GetProtonStatus)
@@ -307,6 +310,9 @@ func SetupRoutes(r *gin.Engine, cfg *config.Manifest, svcMgr *services.SystemdMa
 	r.GET("/api/widgets/ombi", h.WidgetOmbi)
 	r.GET("/api/widgets/seerr", h.WidgetOmbi)
 	r.GET("/api/beeper/status", h.BeeperStatus)
+	r.GET("/api/networker/status", h.ProxyNetworker)
+	r.POST("/api/networker/*path", h.ProxyNetworker)
+	r.DELETE("/api/networker/*path", h.ProxyNetworker)
 	r.GET("/api/system/tor-exit", h.GetTorStatus)
 	r.POST("/api/system/tor-exit", h.ToggleTorStatus)
 	r.GET("/api/system/proton-exit", h.GetProtonStatus)
@@ -978,8 +984,25 @@ func (h *Handler) SystemAutostart(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "ok"})
 }
 
-// GetTorStatus returns whether Tor service / exit is active
+// GetTorStatus returns whether Tor service / exit is active (including live country via tinapple-networker)
 func (h *Handler) GetTorStatus(c *gin.Context) {
+	if st, err := fetchNetworkerStatusLite(false); err == nil {
+		status := "stopped"
+		if st.Tor.Active {
+			status = "running"
+		}
+		c.JSON(http.StatusOK, gin.H{
+			"active":       st.Tor.Active,
+			"status":       status,
+			"bootstrapped": st.Tor.Bootstrapped,
+			"exitIp":       st.Tor.ExitIP,
+			"country":      st.Tor.Country,
+			"countryCode":  st.Tor.CountryCode,
+			"city":         st.Tor.City,
+			"isp":          st.Tor.ISP,
+		})
+		return
+	}
 	active := exec.Command("systemctl", "is-active", "--quiet", "tor.service").Run() == nil
 	status := "stopped"
 	if active {
@@ -993,6 +1016,10 @@ func (h *Handler) GetTorStatus(c *gin.Context) {
 
 // GetProtonStatus returns whether Proton VPN exit node is active
 func (h *Handler) GetProtonStatus(c *gin.Context) {
+	if st, err := fetchNetworkerStatusLite(false); err == nil {
+		c.JSON(http.StatusOK, formatLegacyProtonResponse(st))
+		return
+	}
 	if _, err := os.Stat("/usr/local/bin/tinapple-proton"); err == nil {
 		out, err := exec.Command("/usr/local/bin/tinapple-proton", "status").CombinedOutput()
 		if err == nil {
@@ -1086,11 +1113,21 @@ func (h *Handler) ToggleProtonStatus(c *gin.Context) {
 		if *req.Autostart {
 			arg = "enable"
 		}
-		if _, err := os.Stat("/usr/local/bin/tinapple-proton"); err == nil {
+		if _, err := os.Stat("/usr/local/bin/tinapple-networker"); err == nil {
+			_ = exec.Command("systemctl", arg, "tinapple-networker.service").Run()
+		} else if _, err := os.Stat("/usr/local/bin/tinapple-proton"); err == nil {
 			_, _ = exec.Command("/usr/local/bin/tinapple-proton", "set-autostart", arg).CombinedOutput()
 		} else {
 			_ = exec.Command("systemctl", arg, "wg-quick@proton.service").Run()
 		}
+	}
+
+	if st, raw, code, err := postNetworkerAction("/api/v1/networker/proton/toggle", map[string]bool{"active": req.Active}); err == nil {
+		c.JSON(http.StatusOK, formatLegacyProtonResponse(st))
+		return
+	} else if len(raw) > 0 && code >= 400 && code < 500 {
+		c.Data(code, "application/json", raw)
+		return
 	}
 
 	if _, err := os.Stat("/usr/local/bin/tinapple-proton"); err == nil {
@@ -1242,14 +1279,27 @@ func (h *Handler) GetProtonWireGuard(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"exists": false})
 }
 
-// ProtonSetWireGuard updates /etc/wireguard/proton.conf
+// ProtonSetWireGuard uploads a new WireGuard config via tinapple-networker
 func (h *Handler) ProtonSetWireGuard(c *gin.Context) {
 	var req struct {
+		FileName   string `json:"fileName"`
 		Config     string `json:"config" binding:"required"`
 		ConnectNow bool   `json:"connect_now"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if st, raw, code, err := postNetworkerAction("/api/v1/networker/proton/upload", map[string]any{
+		"fileName":   req.FileName,
+		"config":     req.Config,
+		"connectNow": req.ConnectNow,
+	}); err == nil {
+		c.JSON(http.StatusOK, formatLegacyProtonResponse(st))
+		return
+	} else if len(raw) > 0 && code >= 400 && code < 500 {
+		c.Data(code, "application/json", raw)
 		return
 	}
 
@@ -1287,13 +1337,34 @@ func (h *Handler) ProtonClearWireGuard(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"success": true})
 }
 
-// ToggleTorStatus starts or stops tor.service
+// ToggleTorStatus starts or stops tor.service via tinapple-networker
 func (h *Handler) ToggleTorStatus(c *gin.Context) {
 	var req struct {
 		Active bool `json:"active"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if st, raw, code, err := postNetworkerAction("/api/v1/networker/tor/toggle", map[string]bool{"active": req.Active}); err == nil {
+		status := "stopped"
+		if st.Tor.Active {
+			status = "running"
+		}
+		c.JSON(http.StatusOK, gin.H{
+			"active":       st.Tor.Active,
+			"status":       status,
+			"bootstrapped": st.Tor.Bootstrapped,
+			"exitIp":       st.Tor.ExitIP,
+			"country":      st.Tor.Country,
+			"countryCode":  st.Tor.CountryCode,
+			"city":         st.Tor.City,
+			"isp":          st.Tor.ISP,
+		})
+		return
+	} else if len(raw) > 0 && code >= 400 && code < 500 {
+		c.Data(code, "application/json", raw)
 		return
 	}
 

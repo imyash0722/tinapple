@@ -203,6 +203,14 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
       badgeColor: 'bg-primary/20 text-primary border-primary/30',
     },
     {
+      id: 'networker',
+      label: 'Proton & Tor',
+      desc: 'Split-Tunneling & Exit',
+      icon: <Shield className="w-5 h-5 shrink-0" />,
+      badge: 'VPN',
+      badgeColor: 'bg-[#6d4aff]/20 text-[#b7a5ff] border-[#6d4aff]/30',
+    },
+    {
       id: 'services',
       label: 'Services',
       desc: 'Appliance Daemons',
@@ -556,14 +564,14 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
               )}
             </button>
 
-            {/* Proton Privacy Exit Node */}
+            {/* ProtonVPN & Tor Split-Tunneling */}
             {onOpenProton && (
               <button
                 onClick={() => {
                   onOpenProton();
                   setMobileOpen(false);
                 }}
-                title="Proton VPN Privacy Exit Node (Swiss WireGuard & Media Bypass)"
+                title="ProtonVPN & Tor Split-Tunneling Control Page"
                 className={`transition-all group ${
                   isCollapsed
                     ? 'w-12 h-12 mx-auto flex items-center justify-center rounded-2xl text-on-surface-variant hover:text-[#a48eff] hover:bg-purple-500/10 border border-transparent p-0'
@@ -575,9 +583,9 @@ export const Sidebar: React.FC<SidebarProps> = React.memo(({
                 </div>
                 {!isCollapsed && (
                   <div className="flex items-center justify-between w-full">
-                    <span className="font-semibold text-xs">Proton Exit</span>
+                    <span className="font-semibold text-xs">Proton & Tor</span>
                     <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-purple-500/20 text-purple-300 font-bold">
-                      Swiss
+                      VPN
                     </span>
                   </div>
                 )}

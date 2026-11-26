@@ -22,6 +22,7 @@ import org.tinapple.hub.data.DEFAULT_PINNED_APPS
 import org.tinapple.hub.data.JellyfinMediaItem
 import org.tinapple.hub.data.MangaItem
 import org.tinapple.hub.data.MusicNowPlayingState
+import org.tinapple.hub.data.NetworkerStatus
 import org.tinapple.hub.data.ProtonStatus
 import org.tinapple.hub.data.ServiceItem
 import org.tinapple.hub.data.SystemInfo
@@ -125,6 +126,9 @@ data class MainUiState(
     val isRefreshing: Boolean = false,
     val togglingServiceMap: Map<String, Boolean> = emptyMap(),
     val isTogglingProton: Boolean = false,
+    val networkerStatus: NetworkerStatus = NetworkerStatus(),
+    val networkerBusyKey: String? = null,
+    val networkerError: String? = null,
     val errorMessage: String? = null
 )
 
@@ -375,6 +379,13 @@ class TinappleViewModel(application: Application) : AndroidViewModel(application
             }
         }
 
+        val netRes = apiClient.getNetworkerStatus(false)
+        if (netRes.isSuccess) {
+            netRes.getOrNull()?.let { net ->
+                _uiState.update { it.copy(networkerStatus = net) }
+            }
+        }
+
         val sysRes = apiClient.getSystemInfo()
         if (sysRes.isSuccess) {
             sysRes.getOrNull()?.let { sys ->
@@ -450,6 +461,13 @@ class TinappleViewModel(application: Application) : AndroidViewModel(application
                 if (protonRes.isSuccess) {
                     protonRes.getOrNull()?.let { proton ->
                         _uiState.update { it.copy(protonStatus = proton) }
+                    }
+                }
+
+                val netRes = apiClient.getNetworkerStatus(false)
+                if (netRes.isSuccess) {
+                    netRes.getOrNull()?.let { net ->
+                        _uiState.update { it.copy(networkerStatus = net) }
                     }
                 }
 
@@ -554,4 +572,62 @@ class TinappleViewModel(application: Application) : AndroidViewModel(application
             _uiState.update { it.copy(isTogglingProton = false) }
         }
     }
+
+    fun clearNetworkerError() {
+        _uiState.update { it.copy(networkerError = null) }
+    }
+
+    private fun runNetworkerAction(busyKey: String, call: suspend () -> Result<NetworkerStatus>) {
+        _uiState.update { it.copy(networkerBusyKey = busyKey, networkerError = null) }
+        viewModelScope.launch(Dispatchers.IO) {
+            val res = call()
+            if (res.isSuccess) {
+                res.getOrNull()?.let { next ->
+                    _uiState.update { cur ->
+                        cur.copy(
+                            networkerStatus = next,
+                            networkerError = next.error,
+                            protonStatus = cur.protonStatus.copy(
+                                active = next.proton.active,
+                                status = if (next.proton.active) "connected" else "stopped",
+                                ip = next.proton.exitIp,
+                                country = next.proton.country,
+                                configured = next.proton.configured
+                            )
+                        )
+                    }
+                }
+            } else {
+                _uiState.update { it.copy(networkerError = res.exceptionOrNull()?.message ?: "Request failed") }
+            }
+            _uiState.update { it.copy(networkerBusyKey = null) }
+        }
+    }
+
+    fun refreshNetworker(forceGeoIp: Boolean = true) =
+        runNetworkerAction("refresh") { apiClient.getNetworkerStatus(forceGeoIp) }
+
+    fun toggleNetworkerProton(active: Boolean) =
+        runNetworkerAction("proton-toggle") { apiClient.toggleNetworkerProton(active) }
+
+    fun reloadNetworkerProton() =
+        runNetworkerAction("proton-reload") { apiClient.reloadNetworkerProton() }
+
+    fun selectNetworkerProtonProfile(id: String) =
+        runNetworkerAction("proton-select") { apiClient.selectNetworkerProtonProfile(id) }
+
+    fun uploadNetworkerProtonConfig(fileName: String, config: String, connectNow: Boolean = true) =
+        runNetworkerAction("proton-upload") { apiClient.uploadNetworkerProtonConfig(fileName, config, connectNow) }
+
+    fun deleteNetworkerProtonProfile(id: String) =
+        runNetworkerAction("proton-delete") { apiClient.deleteNetworkerProtonProfile(id) }
+
+    fun toggleNetworkerTor(active: Boolean) =
+        runNetworkerAction("tor-toggle") { apiClient.toggleNetworkerTor(active) }
+
+    fun reloadNetworkerTor() =
+        runNetworkerAction("tor-reload") { apiClient.reloadNetworkerTor() }
+
+    fun setNetworkerRoute(id: String, mode: String) =
+        runNetworkerAction("route:$id") { apiClient.setNetworkerRoute(id, mode) }
 }

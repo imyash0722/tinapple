@@ -13,6 +13,7 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import org.tinapple.hub.data.JellyfinWidgetResponse
 import org.tinapple.hub.data.MangaWidgetResponse
 import org.tinapple.hub.data.MusicNowPlayingState
+import org.tinapple.hub.data.NetworkerStatus
 import org.tinapple.hub.data.NowPlayingTrack
 import org.tinapple.hub.data.ProtonStatus
 import org.tinapple.hub.data.ServiceItem
@@ -31,6 +32,12 @@ class TinappleApiClient(private val baseUrlProvider: () -> String) {
         .connectTimeout(5, TimeUnit.SECONDS)
         .readTimeout(8, TimeUnit.SECONDS)
         .writeTimeout(8, TimeUnit.SECONDS)
+        .build()
+
+    private val networkerClient = OkHttpClient.Builder()
+        .connectTimeout(6, TimeUnit.SECONDS)
+        .readTimeout(25, TimeUnit.SECONDS)
+        .writeTimeout(15, TimeUnit.SECONDS)
         .build()
 
     private val nonWebServices = setOf(
@@ -413,4 +420,83 @@ class TinappleApiClient(private val baseUrlProvider: () -> String) {
             Result.failure(e)
         }
     }
+
+    private suspend fun executeNetworkerRequest(
+        path: String,
+        method: String = "GET",
+        payload: Any? = null
+    ): Result<NetworkerStatus> = withContext(Dispatchers.IO) {
+        try {
+            val origin = baseUrlProvider().trimEnd('/')
+            val builder = Request.Builder()
+                .url("$origin/api/v1/networker$path")
+                .header("User-Agent", "TinappleAndroid/2.0")
+
+            val reqBody = if (payload != null) {
+                gson.toJson(payload).toRequestBody(jsonMediaType)
+            } else if (method == "POST") {
+                "{}".toRequestBody(jsonMediaType)
+            } else {
+                null
+            }
+
+            when (method.uppercase()) {
+                "POST" -> builder.post(reqBody ?: "{}".toRequestBody(jsonMediaType))
+                "DELETE" -> builder.delete()
+                else -> builder.get()
+            }
+
+            networkerClient.newCall(builder.build()).execute().use { response ->
+                val bodyStr = response.body?.string() ?: "{}"
+                if (!response.isSuccessful) {
+                    val errMsg = try {
+                        val obj = gson.fromJson(bodyStr, JsonObject::class.java)
+                        obj?.get("error")?.asString ?: obj?.get("message")?.asString
+                    } catch (_: Exception) {
+                        null
+                    } ?: "HTTP ${response.code}: ${response.message}"
+                    return@withContext Result.failure(Exception(errMsg))
+                }
+                val parsed = gson.fromJson(bodyStr, NetworkerStatus::class.java)
+                Result.success(parsed)
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getNetworkerStatus(refresh: Boolean = false): Result<NetworkerStatus> =
+        executeNetworkerRequest(if (refresh) "/status?refresh=1" else "/status", "GET")
+
+    suspend fun toggleNetworkerProton(active: Boolean): Result<NetworkerStatus> =
+        executeNetworkerRequest("/proton/toggle", "POST", mapOf("active" to active))
+
+    suspend fun reloadNetworkerProton(): Result<NetworkerStatus> =
+        executeNetworkerRequest("/proton/reload", "POST", emptyMap<String, Any>())
+
+    suspend fun selectNetworkerProtonProfile(id: String): Result<NetworkerStatus> =
+        executeNetworkerRequest("/proton/select", "POST", mapOf("id" to id))
+
+    suspend fun uploadNetworkerProtonConfig(
+        fileName: String,
+        config: String,
+        connectNow: Boolean = true
+    ): Result<NetworkerStatus> =
+        executeNetworkerRequest(
+            "/proton/upload",
+            "POST",
+            mapOf("fileName" to fileName, "config" to config, "connectNow" to connectNow)
+        )
+
+    suspend fun deleteNetworkerProtonProfile(id: String): Result<NetworkerStatus> =
+        executeNetworkerRequest("/proton/config/${java.net.URLEncoder.encode(id, "UTF-8")}", "DELETE")
+
+    suspend fun toggleNetworkerTor(active: Boolean): Result<NetworkerStatus> =
+        executeNetworkerRequest("/tor/toggle", "POST", mapOf("active" to active))
+
+    suspend fun reloadNetworkerTor(): Result<NetworkerStatus> =
+        executeNetworkerRequest("/tor/reload", "POST", emptyMap<String, Any>())
+
+    suspend fun setNetworkerRoute(id: String, mode: String): Result<NetworkerStatus> =
+        executeNetworkerRequest("/route", "POST", mapOf("id" to id, "mode" to mode))
 }

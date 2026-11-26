@@ -542,6 +542,10 @@ def main():
         print(json.dumps(res, indent=2))
 
     elif cmd == "setup-routing":
+        if os.path.exists("/usr/local/bin/tinapple-networker"):
+            code, out, err = run_cmd(["/usr/local/bin/tinapple-networker", "reconcile"], timeout=15)
+            print(json.dumps({"success": code == 0, "message": "Reconciled via tinapple-networker.", "output": out or err}))
+            return
         ensure_routing_safeguards()
         ensure_systemd_override()
         ensure_networkmanager_dispatcher()
@@ -549,6 +553,10 @@ def main():
         print(json.dumps({"success": True, "message": "Routing safeguards, systemd overrides, and NetworkManager dispatchers verified."}))
 
     elif cmd == "connect":
+        if os.path.exists("/usr/local/bin/tinapple-networker"):
+            code, out, err = run_cmd(["/usr/local/bin/tinapple-networker", "proton", "on"], timeout=20)
+            print(out or json.dumps({"success": code == 0, "error": err}))
+            sys.exit(0 if code == 0 else 1)
         ok, msg = connect_vpn()
         st = get_status()
         st["message"] = msg
@@ -557,6 +565,10 @@ def main():
         sys.exit(0 if ok else 1)
 
     elif cmd == "disconnect":
+        if os.path.exists("/usr/local/bin/tinapple-networker"):
+            code, out, err = run_cmd(["/usr/local/bin/tinapple-networker", "proton", "off"], timeout=20)
+            print(out or json.dumps({"success": code == 0, "error": err}))
+            return
         ok, msg = disconnect_vpn()
         st = get_status()
         st["message"] = msg

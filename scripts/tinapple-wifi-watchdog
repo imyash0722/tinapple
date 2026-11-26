@@ -8,6 +8,7 @@ set -u
 
 CHECK_INTERVAL=45
 FAIL_COUNT=0
+LAST_GW_FILE="/run/tinapple-wifi-watchdog.gw"
 
 log() {
   echo "[$(date '+%Y-%m-%d %H:%M:%S')] [tinapple-wifi-watchdog] $*"
@@ -18,17 +19,30 @@ detect_wifi() {
   WIFI_IFACE=$(nmcli -t -f DEVICE,TYPE device 2>/dev/null | awk -F: '$2=="wifi" && $1 !~ /wlp0s20/ {print $1; exit}')
   WIFI_IFACE="${WIFI_IFACE:-wlp3s0}"
 
-  WIFI_CONN=$(nmcli -t -f NAME,TYPE connection show 2>/dev/null | awk -F: '$2=="802-11-wireless" && $1 !~ /pineapple|hotspot/ {print $1; exit}')
-  WIFI_CONN="${WIFI_CONN:-PESU-EC-Campus}"
+  # Prefer active connection profile, otherwise first non-hotspot wifi profile by autoconnect priority
+  WIFI_CONN=$(nmcli -t -f NAME,TYPE,DEVICE connection show --active 2>/dev/null | awk -F: -v iface="$WIFI_IFACE" '$2=="802-11-wireless" && $3==iface {print $1; exit}')
+  if [[ -z "${WIFI_CONN}" ]]; then
+    WIFI_CONN=$(nmcli -t -f NAME,TYPE connection show 2>/dev/null | awk -F: '$2=="802-11-wireless" && $1 !~ /pineapple|hotspot/ {print $1; exit}')
+  fi
+  WIFI_CONN="${WIFI_CONN:-PESU-EC-Campus-5G}"
 }
 
 get_gateway() {
   local gw
   gw=$(ip route show default dev "${WIFI_IFACE}" 2>/dev/null | awk '/default via/{print $3; exit}')
   if [[ -z "${gw}" ]]; then
-    gw=$(ip route show default 2>/dev/null | awk '/default via/{print $3; exit}')
+    gw=$(ip route show default 2>/dev/null | grep -v "dev proton" | awk '/default via/{print $3; exit}')
   fi
-  echo "${gw:-192.168.1.1}"
+  if [[ -n "${gw}" ]]; then
+    echo "${gw}" > "${LAST_GW_FILE}" 2>/dev/null || true
+    echo "${gw}"
+    return
+  fi
+  if [[ -f "${LAST_GW_FILE}" ]]; then
+    cat "${LAST_GW_FILE}" 2>/dev/null || echo "10.3.0.1"
+    return
+  fi
+  echo "10.3.0.1"
 }
 
 check_connectivity() {
@@ -36,12 +50,58 @@ check_connectivity() {
   if ping -c 1 -W 2 "${gw}" >/dev/null 2>&1; then
     return 0
   fi
-  # Fallback check against global DNS in case gateway ignores ICMP
+  # Fallback check against global DNS over physical interface in case gateway ignores ICMP
+  if ping -I "${WIFI_IFACE}" -c 1 -W 2 1.1.1.1 >/dev/null 2>&1 || ping -I "${WIFI_IFACE}" -c 1 -W 2 8.8.8.8 >/dev/null 2>&1; then
+    return 0
+  fi
   if ping -c 1 -W 2 1.1.1.1 >/dev/null 2>&1 || ping -c 1 -W 2 8.8.8.8 >/dev/null 2>&1; then
     return 0
   fi
   return 1
 }
+
+is_driver_wedged() {
+  journalctl -u wpa_supplicant --since "2 minutes ago" --no-pager 2>/dev/null | grep -q "Association request to the driver failed"
+}
+
+reload_wifi_driver() {
+  local hard_pci_reset="${1:-0}"
+  if lsmod | grep -q "^iwlwifi"; then
+    log "Level 4: Reloading Intel iwlwifi kernel modules..."
+    modprobe -r iwlmvm iwlwifi >/dev/null 2>&1 || true
+    sleep 2
+    modprobe iwlwifi >/dev/null 2>&1 || true
+    modprobe iwlmvm >/dev/null 2>&1 || true
+  elif lsmod | grep -q "^wl"; then
+    log "Level 4: Reloading Broadcom wl kernel module (leaving hotspot wlp0s20u1 untouched)..."
+    nmcli device set "${WIFI_IFACE}" managed no >/dev/null 2>&1 || true
+    ip link set "${WIFI_IFACE}" down >/dev/null 2>&1 || true
+    modprobe -r wl >/dev/null 2>&1 || rmmod wl >/dev/null 2>&1 || true
+    sleep 2
+    if [[ "${hard_pci_reset}" == "1" ]]; then
+      local pci_addr
+      pci_addr=$(basename "$(readlink -f "/sys/class/net/${WIFI_IFACE}/device" 2>/dev/null)" 2>/dev/null || echo "")
+      [[ -z "${pci_addr}" && -d "/sys/bus/pci/devices/0000:03:00.0" ]] && pci_addr="0000:03:00.0"
+      if [[ -n "${pci_addr}" && -e "/sys/bus/pci/devices/${pci_addr}/reset" ]]; then
+        log "Level 5: Triggering PCIe hardware reset on ${pci_addr}..."
+        echo 1 > "/sys/bus/pci/devices/${pci_addr}/reset" 2>/dev/null || true
+        sleep 2
+      fi
+    fi
+    modprobe cfg80211 >/dev/null 2>&1 || true
+    iw reg set IN >/dev/null 2>&1 || true
+    modprobe wl >/dev/null 2>&1 || true
+    sleep 3
+    nmcli device set "${WIFI_IFACE}" managed yes >/dev/null 2>&1 || true
+  fi
+  systemctl restart wpa_supplicant NetworkManager >/dev/null 2>&1 || true
+  sleep 4
+  nmcli connection up "${WIFI_CONN}" ifname "${WIFI_IFACE}" >/dev/null 2>&1 || nmcli device connect "${WIFI_IFACE}" >/dev/null 2>&1 || true
+  systemctl is-active --quiet tinapple-hotspot || systemctl restart tinapple-hotspot >/dev/null 2>&1 || true
+}
+
+# Ensure regulatory domain allows active 5GHz scanning cleanly on boot
+iw reg set IN >/dev/null 2>&1 || true
 
 log "Starting Wi-Fi watchdog daemon (check interval: ${CHECK_INTERVAL}s)..."
 detect_wifi
@@ -60,36 +120,39 @@ while true; do
     FAIL_COUNT=$((FAIL_COUNT + 1))
     log "Reachability check failed (streak: ${FAIL_COUNT}, gateway: ${GW})."
 
-    if [[ ${FAIL_COUNT} -eq 2 ]]; then
-      # ~90 seconds of loss: gentle reconnect
-      log "Level 1: Re-triggering NetworkManager connection for '${WIFI_CONN}'..."
+    # Immediate fast-path: if Broadcom/cfg80211 driver is reporting Association request failed repeatedly, escalate faster
+    if [[ ${FAIL_COUNT} -ge 3 ]] && is_driver_wedged && [[ $((FAIL_COUNT % 4)) -eq 3 ]]; then
+      log "Detected wedged driver ('Association request to the driver failed'). Triggering immediate driver recovery..."
+      reload_wifi_driver 0
+    elif [[ ${FAIL_COUNT} -eq 2 ]]; then
+      # ~90 seconds of loss: gentle reconnect + regdom refresh
+      log "Level 1: Refreshing regdom and re-triggering NetworkManager connection for '${WIFI_CONN}'..."
+      iw reg set IN >/dev/null 2>&1 || true
       nmcli connection up "${WIFI_CONN}" ifname "${WIFI_IFACE}" >/dev/null 2>&1 || nmcli device connect "${WIFI_IFACE}" >/dev/null 2>&1
     elif [[ ${FAIL_COUNT} -eq 4 ]]; then
       # ~3 minutes of loss: cycle client interface to clear firmware stalls without killing global radio
       log "Level 2: Cycling client Wi-Fi interface '${WIFI_IFACE}' to clear firmware stalls..."
-      nmcli device disconnect "${WIFI_IFACE}" >/dev/null 2>&1
+      nmcli device disconnect "${WIFI_IFACE}" >/dev/null 2>&1 || true
+      ip link set "${WIFI_IFACE}" down >/dev/null 2>&1 || true
       sleep 2
-      nmcli device connect "${WIFI_IFACE}" >/dev/null 2>&1
+      ip link set "${WIFI_IFACE}" up >/dev/null 2>&1 || true
+      iw reg set IN >/dev/null 2>&1 || true
+      nmcli device connect "${WIFI_IFACE}" >/dev/null 2>&1 || true
       sleep 3
-      nmcli connection up "${WIFI_CONN}" ifname "${WIFI_IFACE}" >/dev/null 2>&1
+      nmcli connection up "${WIFI_CONN}" ifname "${WIFI_IFACE}" >/dev/null 2>&1 || true
     elif [[ ${FAIL_COUNT} -eq 6 ]]; then
       # ~4.5 minutes of loss: restart wpa_supplicant and NetworkManager
       log "Level 3: Restarting wpa_supplicant and NetworkManager services..."
       systemctl restart wpa_supplicant NetworkManager >/dev/null 2>&1
-      sleep 2
-      # Ensure hotspot service was not disrupted
+      sleep 3
+      nmcli connection up "${WIFI_CONN}" ifname "${WIFI_IFACE}" >/dev/null 2>&1 || true
       systemctl is-active --quiet tinapple-hotspot || systemctl restart tinapple-hotspot >/dev/null 2>&1 || true
-    elif [[ ${FAIL_COUNT} -ge 12 && $((FAIL_COUNT % 6)) -eq 0 ]]; then
-      # >9 minutes of persistent failure: reload wireless kernel modules if Intel iwlwifi
-      if lsmod | grep -q "^iwlwifi"; then
-        log "Level 4: Reloading iwlwifi kernel modules..."
-        modprobe -r iwlmvm iwlwifi >/dev/null 2>&1 || true
-        sleep 2
-        modprobe iwlwifi >/dev/null 2>&1 || true
-        modprobe iwlmvm >/dev/null 2>&1 || true
-        sleep 3
-        systemctl restart NetworkManager >/dev/null 2>&1 || true
-      fi
+    elif [[ ${FAIL_COUNT} -ge 8 && $((FAIL_COUNT % 8)) -eq 0 ]]; then
+      # Persistent failure with driver reload failing: perform PCIe reset + driver reload
+      reload_wifi_driver 1
+    elif [[ ${FAIL_COUNT} -ge 8 && $((FAIL_COUNT % 4)) -eq 0 ]]; then
+      # Reload wireless kernel modules (iwlwifi or Broadcom wl)
+      reload_wifi_driver 0
     fi
   fi
 

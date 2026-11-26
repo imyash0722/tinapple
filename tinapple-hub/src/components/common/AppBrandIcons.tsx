@@ -380,7 +380,7 @@ export const AppBrandIcon: React.FC<IconProps> = ({
             maxHeight: size - badgePadding * 2,
           }}
           className="object-contain filter drop-shadow-sm shrink-0 flex-shrink-0 aspect-square"
-          loading="lazy"
+          loading="eager"
         />
       </div>
     );
@@ -401,7 +401,7 @@ export const AppBrandIcon: React.FC<IconProps> = ({
         maxHeight: size,
       }}
       className={`inline-block object-contain filter drop-shadow-sm shrink-0 flex-shrink-0 aspect-square select-none ${className}`}
-      loading="lazy"
+      loading="eager"
     />
   );
 };

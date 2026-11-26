@@ -70,6 +70,7 @@ const ServerToolsModal = lazy(() => import('./components/widgets/ServerToolsModa
 const WelcomeInstaller = lazy(() => import('./components/installer/WelcomeInstaller').then((m) => ({ default: m.WelcomeInstaller })));
 const ProtonModal = lazy(() => import('./components/common/ProtonModal').then((m) => ({ default: m.ProtonModal })));
 const TailscalePage = lazy(() => import('./components/widgets/TailscalePage').then((m) => ({ default: m.TailscalePage })));
+const NetworkerPage = lazy(() => import('./components/widgets/NetworkerPage').then((m) => ({ default: m.NetworkerPage })));
 
 import { api, MOCK_SYSTEM_INFO, MOCK_TELEMETRY, MOCK_SERVICES, MOCK_HARDWARE } from './services/api';
 import { SystemInfo, TelemetrySnapshot, ServiceInfo, HardwareInfo, SessionMode } from './types/api';
@@ -100,6 +101,7 @@ export const App: React.FC = () => {
     const path = window.location.pathname.toLowerCase();
     if (path === '/guides' || path.startsWith('/guides/')) return 'guides';
     if (path === '/tailscale' || path === '/tailscale/') return 'tailscale';
+    if (path === '/networker' || path === '/networker/' || path === '/proton' || path === '/tor') return 'networker';
     if (path === '/logs' || path === '/logs/' || path === '/errors' || path === '/errors/') return 'logs';
     const params = new URLSearchParams(window.location.search);
     const tabParam = params.get('tab');
@@ -135,6 +137,9 @@ export const App: React.FC = () => {
           }
         } else if (path === '/tailscale' || path === '/tailscale/') {
           setSelectedTab('tailscale');
+          setViewingAppId(null);
+        } else if (path === '/networker' || path === '/networker/' || path === '/proton' || path === '/tor') {
+          setSelectedTab('networker');
           setViewingAppId(null);
         }
         const params = new URLSearchParams(window.location.search);
@@ -771,7 +776,7 @@ export const App: React.FC = () => {
         onOpenGuides={() => handleSelectTab('guides')}
         onOpenAppearance={() => setAppearanceOpen(true)}
         onOpenTailscale={() => setTailscaleOpen(true)}
-        onOpenProton={() => setProtonModalOpen(true)}
+        onOpenProton={() => handleSelectTab('networker')}
         onOpenTerminal={() => setSelectedTab('terminal')}
         onOpenTools={() => setServerToolsOpen(true)}
         onRunUpdate={handleRunSystemUpdate}
@@ -819,6 +824,8 @@ export const App: React.FC = () => {
                     ? (systemInfo?.hostname || 'Tinapple')
                     : activeTab === 'tailscale'
                     ? 'Tailscale'
+                    : activeTab === 'networker'
+                    ? 'Proton & Tor'
                     : activeTab === 'store'
                     ? 'Store'
                     : activeTab === 'services'
@@ -861,7 +868,7 @@ export const App: React.FC = () => {
                     </button>
                     <span className="text-xs text-outline">/</span>
                     <span className="text-sm font-sans font-semibold text-on-surface capitalize truncate">
-                      {activeTab === 'tailscale' ? 'Tailscale Mesh & Exit Nodes' : activeTab === 'store' ? 'App Store & Packs' : activeTab === 'guides' ? 'Appliance Guides' : activeTab === 'terminal' ? 'Appliance Web Terminal' : (activeTab === 'errors' || activeTab === 'logs') ? 'System Logs & Diagnostics' : activeTab}
+                      {activeTab === 'tailscale' ? 'Tailscale Mesh & Exit Nodes' : activeTab === 'networker' ? 'ProtonVPN & Tor Split-Tunneling' : activeTab === 'store' ? 'App Store & Packs' : activeTab === 'guides' ? 'Appliance Guides' : activeTab === 'terminal' ? 'Appliance Web Terminal' : (activeTab === 'errors' || activeTab === 'logs') ? 'System Logs & Diagnostics' : activeTab}
                     </span>
                     <span className="hidden 2xl:inline-flex text-[10px] font-sans px-2.5 py-0.5 rounded-full bg-surface-container-highest border border-outline-variant text-primary font-medium whitespace-nowrap">
                       {systemInfo?.sessionMode === 'headless' ? 'Headless Server' : 'Niri Desktop'}
@@ -1075,7 +1082,7 @@ export const App: React.FC = () => {
                       setSettingsModalApp({ id: app.id || app.name, name: app.displayName || app.name });
                     }}
                     onOpenTailscale={() => setTailscaleOpen(true)}
-                    onOpenProton={() => setProtonModalOpen(true)}
+                    onOpenProton={() => handleSelectTab('networker')}
                     onOpenTerminal={() => setSelectedTab('terminal')}
                     onOpenTools={() => setServerToolsOpen(true)}
                     onOpenGuide={handleOpenGuide}
@@ -1107,6 +1114,27 @@ export const App: React.FC = () => {
                 }
               >
                 <TailscalePage />
+              </Suspense>
+            </motion.div>
+          )}
+
+          {activeTab === 'networker' && (
+            <motion.div
+              key="networker"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+              className="space-y-4"
+            >
+              <Suspense
+                fallback={
+                  <div className="h-96 rounded-[28px] bg-surface-container-low border border-outline-variant flex items-center justify-center font-sans text-xs text-on-surface-variant">
+                    Loading ProtonVPN & Tor Split-Tunneling...
+                  </div>
+                }
+              >
+                <NetworkerPage />
               </Suspense>
             </motion.div>
           )}

@@ -1,4 +1,4 @@
-import { SystemInfo, TelemetrySnapshot, ServiceInfo, HardwareInfo, SessionMode, AppInfo, AppActionResult, InstallProgressState, InstallLogMessage, TailscaleStatus, DetailedTailscaleStatus, TailscaleNetcheckResult, TailscalePrefsPayload, TailscalePingResponse, AppliancePackStatus, WallpaperItem, OpenPortInfo, AppConfigDetails, MaintenanceResult, FailedUnitsResult, UserManagementData, ProtonStatus, ProtonWireGuardInfo, SystemUpdateManifest } from '../types/api';
+import { SystemInfo, TelemetrySnapshot, ServiceInfo, HardwareInfo, SessionMode, AppInfo, AppActionResult, InstallProgressState, InstallLogMessage, TailscaleStatus, DetailedTailscaleStatus, TailscaleNetcheckResult, TailscalePrefsPayload, TailscalePingResponse, AppliancePackStatus, WallpaperItem, OpenPortInfo, AppConfigDetails, MaintenanceResult, FailedUnitsResult, UserManagementData, ProtonStatus, ProtonWireGuardInfo, SystemUpdateManifest, NetworkerStatus, NetworkRouteMode } from '../types/api';
 import { serviceRegistry, ApplianceService } from './serviceRegistry';
 import { Capacitor } from '@capacitor/core';
 
@@ -1922,6 +1922,87 @@ class ApiService {
     } catch {
       return null;
     }
+  }
+
+  private async requestNetworkerJson(path: string, init?: RequestInit): Promise<NetworkerStatus> {
+    const res = await fetch(`${getApiBaseUrl()}/networker${path}`, {
+      headers: { 'Content-Type': 'application/json', ...(init?.headers || {}) },
+      ...init,
+    });
+    const text = await res.text();
+    let payload: any = null;
+    try {
+      payload = text ? JSON.parse(text) : {};
+    } catch {
+      payload = { error: text || `HTTP ${res.status}` };
+    }
+    if (!res.ok) {
+      throw new Error(payload?.error || payload?.message || `Networker request failed (${res.status})`);
+    }
+    return payload as NetworkerStatus;
+  }
+
+  async getNetworkerStatus(refresh: boolean = false): Promise<NetworkerStatus> {
+    return this.requestNetworkerJson(refresh ? '/status?refresh=1' : '/status');
+  }
+
+  async toggleNetworkerProton(active: boolean): Promise<NetworkerStatus> {
+    return this.requestNetworkerJson('/proton/toggle', {
+      method: 'POST',
+      body: JSON.stringify({ active }),
+    });
+  }
+
+  async reloadNetworkerProton(): Promise<NetworkerStatus> {
+    return this.requestNetworkerJson('/proton/reload', {
+      method: 'POST',
+      body: JSON.stringify({}),
+    });
+  }
+
+  async selectNetworkerProtonProfile(id: string): Promise<NetworkerStatus> {
+    return this.requestNetworkerJson('/proton/select', {
+      method: 'POST',
+      body: JSON.stringify({ id }),
+    });
+  }
+
+  async uploadNetworkerProtonConfig(fileName: string, config: string, connectNow: boolean = true): Promise<NetworkerStatus> {
+    return this.requestNetworkerJson('/proton/upload', {
+      method: 'POST',
+      body: JSON.stringify({ fileName, config, connectNow }),
+    });
+  }
+
+  async deleteNetworkerProtonProfile(id: string): Promise<NetworkerStatus> {
+    return this.requestNetworkerJson(`/proton/config/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async toggleNetworkerTor(active: boolean): Promise<NetworkerStatus> {
+    return this.requestNetworkerJson('/tor/toggle', {
+      method: 'POST',
+      body: JSON.stringify({ active }),
+    });
+  }
+
+  async reloadNetworkerTor(): Promise<NetworkerStatus> {
+    return this.requestNetworkerJson('/tor/reload', {
+      method: 'POST',
+      body: JSON.stringify({}),
+    });
+  }
+
+  async setNetworkerRoute(
+    id: string,
+    mode: NetworkRouteMode,
+    flags?: { protonvpn?: boolean; tor?: boolean }
+  ): Promise<NetworkerStatus> {
+    return this.requestNetworkerJson('/route', {
+      method: 'POST',
+      body: JSON.stringify({ id, mode, ...(flags || {}) }),
+    });
   }
 }
 

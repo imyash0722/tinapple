@@ -51,6 +51,75 @@ data class ProtonStatus(
     @SerializedName("error") val error: String? = null
 )
 
+data class ProtonProfileMeta(
+    @SerializedName("id") val id: String = "",
+    @SerializedName("name") val name: String = "",
+    @SerializedName("fileName") val fileName: String = "",
+    @SerializedName("countryCode") val countryCode: String = "",
+    @SerializedName("country") val country: String = "",
+    @SerializedName("serverLabel") val serverLabel: String = "",
+    @SerializedName("endpoint") val endpoint: String = "",
+    @SerializedName("endpointHost") val endpointHost: String = "",
+    @SerializedName("address") val address: String = "",
+    @SerializedName("dns") val dns: String = "",
+    @SerializedName("freeTier") val freeTier: Boolean = false,
+    @SerializedName("p2pSupported") val p2pSupported: Boolean = true,
+    @SerializedName("updatedAt") val updatedAt: String = ""
+)
+
+data class NetworkerProtonState(
+    @SerializedName("enabled") val enabled: Boolean = false,
+    @SerializedName("active") val active: Boolean = false,
+    @SerializedName("configured") val configured: Boolean = false,
+    @SerializedName("activeProfileId") val activeProfileId: String = "",
+    @SerializedName("endpoint") val endpoint: String? = null,
+    @SerializedName("exitIp") val exitIp: String? = null,
+    @SerializedName("country") val country: String? = null,
+    @SerializedName("countryCode") val countryCode: String? = null,
+    @SerializedName("city") val city: String? = null,
+    @SerializedName("org") val org: String? = null,
+    @SerializedName("freeTier") val freeTier: Boolean = false,
+    @SerializedName("p2pSupported") val p2pSupported: Boolean = true,
+    @SerializedName("profiles") val profiles: List<ProtonProfileMeta> = emptyList()
+)
+
+data class NetworkerTorState(
+    @SerializedName("enabled") val enabled: Boolean = false,
+    @SerializedName("active") val active: Boolean = false,
+    @SerializedName("bootstrapped") val bootstrapped: Boolean = false,
+    @SerializedName("exitIp") val exitIp: String? = null,
+    @SerializedName("country") val country: String? = null,
+    @SerializedName("countryCode") val countryCode: String? = null,
+    @SerializedName("city") val city: String? = null,
+    @SerializedName("isp") val isp: String? = null,
+    @SerializedName("error") val error: String? = null
+)
+
+data class NetworkerTarget(
+    @SerializedName("id") val id: String = "",
+    @SerializedName("name") val name: String = "",
+    @SerializedName("subtitle") val subtitle: String = "",
+    @SerializedName("kind") val kind: String = "systemd",
+    @SerializedName("unit") val unit: String? = null,
+    @SerializedName("iface") val iface: String? = null,
+    @SerializedName("category") val category: String = "",
+    @SerializedName("p2pRisk") val p2pRisk: Boolean = false,
+    @SerializedName("p2pWarning") val p2pWarning: String? = null,
+    @SerializedName("extraNote") val extraNote: String? = null,
+    @SerializedName("mode") val mode: String = "direct",
+    @SerializedName("effectiveMode") val effectiveMode: String? = null,
+    @SerializedName("p2pWarningActive") val p2pWarningActive: Boolean = false,
+    @SerializedName("conflictBlocked") val conflictBlocked: Boolean = false
+)
+
+data class NetworkerStatus(
+    @SerializedName("proton") val proton: NetworkerProtonState = NetworkerProtonState(),
+    @SerializedName("tor") val tor: NetworkerTorState = NetworkerTorState(),
+    @SerializedName("targets") val targets: List<NetworkerTarget> = emptyList(),
+    @SerializedName("warnings") val warnings: List<String> = emptyList(),
+    @SerializedName("error") val error: String? = null
+)
+
 data class SystemInfo(
     @SerializedName("hostname") val hostname: String = "tinapple-server",
     @SerializedName("kernel") val kernel: String? = null,

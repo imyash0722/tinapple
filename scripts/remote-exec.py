@@ -24,7 +24,7 @@ async def exec_remote(cmd: str):
         seen_marker = 0
         while True:
             try:
-                c = await asyncio.wait_for(ws.recv(), timeout=30.0)
+                c = await asyncio.wait_for(ws.recv(), timeout=120.0)
                 text = c.decode("utf-8", errors="ignore") if isinstance(c, bytes) else c
                 chunks.append(text)
                 if marker in text:

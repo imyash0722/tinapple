@@ -67,6 +67,7 @@ import coil.decode.SvgDecoder
 import coil.request.ImageRequest
 import org.tinapple.hub.ui.ServerHomeScreen
 import org.tinapple.hub.ui.components.AppearancePage
+import org.tinapple.hub.ui.components.NetworkPrivacyScreen
 import org.tinapple.hub.ui.components.ProtonVpnCard
 import org.tinapple.hub.ui.components.ServicesSection
 import org.tinapple.hub.ui.components.SystemWidgetsCard
@@ -83,7 +84,8 @@ import org.tinapple.hub.ui.viewmodel.TinappleViewModel
 enum class ActiveScreen {
     HOME,
     APPEARANCE,
-    TERMINAL
+    TERMINAL,
+    NETWORKER
 }
 
 class MainActivity : ComponentActivity() {
@@ -176,7 +178,7 @@ class MainActivity : ComponentActivity() {
                             )
                         }
 
-                        // Screen Navigation: Dashboard vs Appearance Page vs Kotlin Terminal
+                        // Screen Navigation: Dashboard vs Appearance Page vs Kotlin Terminal vs Networker
                         when (currentScreen) {
                             ActiveScreen.APPEARANCE -> {
                                 AppearancePage(
@@ -203,11 +205,32 @@ class MainActivity : ComponentActivity() {
                                     onBack = { currentScreen = ActiveScreen.HOME }
                                 )
                             }
+                            ActiveScreen.NETWORKER -> {
+                                NetworkPrivacyScreen(
+                                    status = uiState.networkerStatus,
+                                    busyKey = uiState.networkerBusyKey,
+                                    errorBanner = uiState.networkerError,
+                                    onRefresh = { viewModel.refreshNetworker(true) },
+                                    onDismissError = { viewModel.clearNetworkerError() },
+                                    onToggleProton = { viewModel.toggleNetworkerProton(it) },
+                                    onReloadProton = { viewModel.reloadNetworkerProton() },
+                                    onSelectProfile = { viewModel.selectNetworkerProtonProfile(it) },
+                                    onUploadConfig = { name, conf, connectNow ->
+                                        viewModel.uploadNetworkerProtonConfig(name, conf, connectNow)
+                                    },
+                                    onDeleteProfile = { viewModel.deleteNetworkerProtonProfile(it) },
+                                    onToggleTor = { viewModel.toggleNetworkerTor(it) },
+                                    onReloadTor = { viewModel.reloadNetworkerTor() },
+                                    onSetRoute = { id, mode -> viewModel.setNetworkerRoute(id, mode) },
+                                    onBack = { currentScreen = ActiveScreen.HOME }
+                                )
+                            }
                             ActiveScreen.HOME -> {
                                 ServerHomeScreen(
                                     viewModel = viewModel,
                                     onOpenAppearance = { currentScreen = ActiveScreen.APPEARANCE },
                                     onOpenTerminal = { currentScreen = ActiveScreen.TERMINAL },
+                                    onOpenNetworker = { currentScreen = ActiveScreen.NETWORKER },
                                     onOpenPortal = ::openBrowserUrl
                                 )
                             }

@@ -89,6 +89,7 @@ fun ServerHomeScreen(
     viewModel: TinappleViewModel,
     onOpenAppearance: () -> Unit,
     onOpenTerminal: () -> Unit,
+    onOpenNetworker: () -> Unit,
     onOpenPortal: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -221,8 +222,10 @@ fun ServerHomeScreen(
             item(key = "server_controls") {
                 ServerControlsCard(
                     protonStatus = uiState.protonStatus,
+                    networkerStatus = uiState.networkerStatus,
                     isTogglingProton = uiState.isTogglingProton,
-                    onToggleProton = { active -> viewModel.toggleProton(active) }
+                    onToggleProton = { active -> viewModel.toggleProton(active) },
+                    onOpenNetworker = onOpenNetworker
                 )
             }
         }
@@ -883,37 +886,52 @@ private fun ClientToolsStrip(
     }
 }
 
-/** Quick Controls for Proton VPN and Tailscale MagicDNS with Copy button */
+/** Quick Controls for Proton VPN, Tor Proxy Split-Tunneling, and Tailscale MagicDNS */
 @Composable
 private fun ServerControlsCard(
     protonStatus: org.tinapple.hub.data.ProtonStatus?,
+    networkerStatus: org.tinapple.hub.data.NetworkerStatus,
     isTogglingProton: Boolean,
-    onToggleProton: (Boolean) -> Unit
+    onToggleProton: (Boolean) -> Unit,
+    onOpenNetworker: () -> Unit
 ) {
     val cs = MaterialTheme.colorScheme
     val context = LocalContext.current
     val clipboardManager = LocalClipboardManager.current
-    val isVpnActive = protonStatus?.active == true
+    val isVpnActive = protonStatus?.active == true || networkerStatus.proton.active
+    val isTorActive = networkerStatus.tor.active
+    val routedCount = networkerStatus.targets.count { it.mode != "direct" }
     val magicDnsHost = DiscoveryEngine.DEFAULT_TAILSCALE_HOST
 
+    val protonSummary = buildString {
+        append(if (isVpnActive) "Proton: ${networkerStatus.proton.exitIp ?: protonStatus?.ip ?: "Active"}" else "Proton: Off")
+        append(" · ")
+        append(if (isTorActive) "Tor: ${networkerStatus.tor.country ?: "Active"}" else "Tor: Off")
+        if (routedCount > 0) append(" · $routedCount routed")
+    }
+
     CardGroup {
-        // Proton VPN Exit Node Row
+        // Clickable Tile opening Full ProtonVPN & Tor Split-Tunneling Management Page
         ToolRow(
-            title = "Proton VPN Exit Node",
-            summary = if (isVpnActive) "Active Egress: ${protonStatus?.ip ?: "Proton WG"}" else "Direct Ingress / Offline",
+            title = "ProtonVPN & Tor Routing",
+            summary = protonSummary,
             icon = R.drawable.rounded_vpn_lock,
-            tint = if (isVpnActive) Tint.PRIMARY else Tint.SECONDARY,
+            tint = if (isVpnActive || isTorActive) Tint.PRIMARY else Tint.SECONDARY,
+            onClick = onOpenNetworker,
             trailing = {
                 if (isTogglingProton) {
                     CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
                 } else {
-                    Switch(
-                        checked = isVpnActive,
-                        onCheckedChange = { onToggleProton(it) },
-                        colors = SwitchDefaults.colors(
-                            checkedThumbColor = cs.primary,
-                            checkedTrackColor = cs.primaryContainer
-                        )
+                    Pill(
+                        text = "Manage",
+                        container = cs.primaryContainer,
+                        content = cs.onPrimaryContainer
+                    )
+                    Icon(
+                        painter = painterResource(R.drawable.rounded_chevron_right),
+                        contentDescription = "Open ProtonVPN & Tor Manager",
+                        tint = cs.onSurfaceVariant,
+                        modifier = Modifier.size(20.dp)
                     )
                 }
             }

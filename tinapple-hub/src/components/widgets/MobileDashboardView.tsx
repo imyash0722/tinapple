@@ -382,17 +382,33 @@ export const MobileDashboardView: React.FC<MobileDashboardViewProps> = ({
           )}
         </div>
 
-        {/* 1-Tap Launch Button */}
-        <a
-          href={getServiceUrl('ombi')}
-          target="_blank"
-          rel="noreferrer"
-          onClick={() => AndroidBridge.performHaptic('medium')}
-          className="w-full py-2 px-3 rounded-xl bg-primary text-on-primary font-bold text-xs flex items-center justify-center gap-1.5 hover:bg-primary/90 active:scale-95 transition-all shadow-none"
-        >
-          <span>Open Ombi Media Portal</span>
-          <ArrowRight className="w-3.5 h-3.5" />
-        </a>
+        <div className="grid grid-cols-2 gap-2 mt-2">
+          {onSelectTab && (
+            <button
+              type="button"
+              onClick={() => {
+                AndroidBridge.performHaptic('light');
+                onSelectTab('networker');
+              }}
+              className="w-full py-2 px-3 rounded-xl bg-surface-container hover:bg-surface-container-high border border-outline-variant text-on-surface font-bold text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all"
+            >
+              <AppBrandIcon id="protonvpn" size={16} />
+              <span>ProtonVPN & Tor</span>
+            </button>
+          )}
+
+          {/* 1-Tap Launch Button */}
+          <a
+            href={getServiceUrl('ombi')}
+            target="_blank"
+            rel="noreferrer"
+            onClick={() => AndroidBridge.performHaptic('medium')}
+            className="w-full py-2 px-3 rounded-xl bg-primary text-on-primary font-bold text-xs flex items-center justify-center gap-1.5 hover:bg-primary/90 active:scale-95 transition-all shadow-none"
+          >
+            <span>Open Ombi</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </a>
+        </div>
       </div>
     </div>
   );

@@ -129,6 +129,17 @@ func applySuwayomiGovernor() error {
 	if err := os.WriteFile(filepath.Join(dropInDir, "tinapple-override.conf"), []byte(content), 0644); err != nil {
 		return err
 	}
+	// Ensure suwayomi-server uses Java 21+ / 27 when present so JRE-17 default does not trigger UnsupportedClassVersionError
+	for _, javaBin := range []string{"/usr/lib/jvm/java-27-openjdk/bin/java", "/usr/lib/jvm/java-21-openjdk/bin/java"} {
+		if _, err := os.Stat(javaBin); err == nil {
+			unitPath := "/etc/systemd/system/suwayomi-server.service"
+			if unitData, uerr := os.ReadFile(unitPath); uerr == nil && strings.Contains(string(unitData), "ExecStart=/usr/bin/java ") {
+				updated := strings.Replace(string(unitData), "ExecStart=/usr/bin/java ", "ExecStart="+javaBin+" ", 1)
+				_ = os.WriteFile(unitPath, []byte(updated), 0644)
+			}
+			break
+		}
+	}
 	suwayomiConf := "/etc/suwayomi/server.conf"
 	if confBytes, err := os.ReadFile(suwayomiConf); err == nil {
 		confStr := string(confBytes)

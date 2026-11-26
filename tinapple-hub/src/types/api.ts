@@ -415,6 +415,82 @@ export interface SystemUpdateManifest {
   checked_at?: string;
 }
 
+export interface ProtonProfileMeta {
+  id: string;
+  name: string;
+  fileName: string;
+  countryCode: string;
+  country: string;
+  serverLabel: string;
+  endpoint: string;
+  endpointHost: string;
+  address: string;
+  dns: string;
+  freeTier: boolean;
+  p2pSupported: boolean;
+  updatedAt: string;
+}
+
+export interface NetworkerProtonState {
+  enabled: boolean;
+  active: boolean;
+  configured: boolean;
+  activeProfileId?: string;
+  endpoint?: string;
+  exitIp?: string;
+  country?: string;
+  countryCode?: string;
+  city?: string;
+  org?: string;
+  freeTier: boolean;
+  p2pSupported: boolean;
+  latestHandshake?: number;
+  rxBytes?: number;
+  txBytes?: number;
+  profiles: ProtonProfileMeta[];
+}
+
+export interface NetworkerTorState {
+  enabled: boolean;
+  active: boolean;
+  bootstrapped: boolean;
+  exitIp?: string;
+  country?: string;
+  countryCode?: string;
+  city?: string;
+  isp?: string;
+  error?: string;
+}
+
+export type NetworkRouteMode = 'direct' | 'protonvpn' | 'tor';
+
+export interface NetworkerTarget {
+  id: string;
+  name: string;
+  subtitle: string;
+  kind: 'interface' | 'systemd' | 'docker' | string;
+  unit?: string;
+  iface?: string;
+  category: string;
+  p2pRisk: boolean;
+  p2pWarning?: string;
+  extraNote?: string;
+  mode: NetworkRouteMode;
+  effectiveMode?: NetworkRouteMode | string;
+  p2pWarningActive: boolean;
+  conflictBlocked?: boolean;
+}
+
+export interface NetworkerStatus {
+  proton: NetworkerProtonState;
+  tor: NetworkerTorState;
+  targets: NetworkerTarget[];
+  warnings?: string[];
+  updatedAt?: string;
+  error?: string;
+}
+
+
 
 
 
