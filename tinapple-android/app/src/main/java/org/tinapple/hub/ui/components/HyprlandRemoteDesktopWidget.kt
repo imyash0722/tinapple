@@ -5,6 +5,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -42,6 +44,7 @@ import org.tinapple.hub.ui.theme.Expressive
 import org.tinapple.hub.ui.theme.StatusRunning
 import org.tinapple.hub.utils.ClientAppLauncher
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun HyprlandRemoteDesktopWidget(
     serverOrigin: String,
@@ -124,13 +127,14 @@ fun HyprlandRemoteDesktopWidget(
                 }
             }
 
-            // Specs badges row
-            Row(
+            // Specs badges row (wrapping cleanly on narrow screens)
+            FlowRow(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 Pill(
-                    text = "1920x1080 @ 60Hz",
+                    text = "1080p @ 60Hz",
                     container = cs.primaryContainer,
                     content = cs.onPrimaryContainer
                 )
@@ -140,7 +144,7 @@ fun HyprlandRemoteDesktopWidget(
                     content = cs.onSurface
                 )
                 Pill(
-                    text = "xdg-desktop-portal",
+                    text = "xdph portal",
                     container = cs.tertiaryContainer,
                     content = cs.onTertiaryContainer
                 )

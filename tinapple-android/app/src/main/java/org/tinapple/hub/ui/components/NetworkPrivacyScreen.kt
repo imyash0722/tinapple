@@ -138,6 +138,7 @@ fun NetworkPrivacyScreen(
     onReloadTor: () -> Unit,
     onSetRoute: (targetId: String, mode: String) -> Unit,
     onBack: () -> Unit,
+    showBackButton: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     val cs = MaterialTheme.colorScheme
@@ -174,9 +175,8 @@ fun NetworkPrivacyScreen(
         modifier = modifier
             .fillMaxSize()
             .displayCutoutPadding()
-            .statusBarsPadding()
-            .navigationBarsPadding(),
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp),
+            .statusBarsPadding(),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         // Header Bar
@@ -187,22 +187,24 @@ fun NetworkPrivacyScreen(
                     .padding(vertical = 6.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(
-                    onClick = onBack,
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(CircleShape)
-                        .background(Layer.pane)
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
-                        contentDescription = "Back",
-                        tint = cs.onSurface,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
+                if (showBackButton) {
+                    IconButton(
+                        onClick = onBack,
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .background(Layer.pane)
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                            contentDescription = "Back",
+                            tint = cs.onSurface,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
 
-                Spacer(Modifier.width(12.dp))
+                    Spacer(Modifier.width(12.dp))
+                }
 
                 Column(modifier = Modifier.weight(1f)) {
                     Text(

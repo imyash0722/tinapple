@@ -24,10 +24,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.displayCutoutPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -41,6 +43,11 @@ import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.ErrorOutline
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -57,7 +64,10 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.Coil
@@ -65,7 +75,10 @@ import coil.ImageLoader
 import coil.compose.AsyncImage
 import coil.decode.SvgDecoder
 import coil.request.ImageRequest
+import org.tinapple.hub.ui.Layer
 import org.tinapple.hub.ui.ServerHomeScreen
+import org.tinapple.hub.ui.ServerMediaScreen
+import org.tinapple.hub.ui.ServerServicesScreen
 import org.tinapple.hub.ui.components.AppearancePage
 import org.tinapple.hub.ui.components.NetworkPrivacyScreen
 import org.tinapple.hub.ui.components.ProtonVpnCard
@@ -81,11 +94,12 @@ import org.tinapple.hub.ui.theme.TinappleSurfaceLow
 import org.tinapple.hub.ui.theme.TinappleTheme
 import org.tinapple.hub.ui.viewmodel.TinappleViewModel
 
-enum class ActiveScreen {
-    HOME,
-    APPEARANCE,
-    TERMINAL,
-    NETWORKER
+enum class AppTab(val label: String, val iconRes: Int) {
+    HOME("Home", R.drawable.rounded_home),
+    MEDIA("Media", R.drawable.rounded_theaters),
+    NETWORK("Network", R.drawable.rounded_vpn_lock),
+    SERVICES("Services", R.drawable.rounded_dns),
+    TERMINAL("Terminal", R.drawable.rounded_terminal)
 }
 
 class MainActivity : ComponentActivity() {
@@ -124,10 +138,15 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             val uiState by viewModel.uiState.collectAsState()
-            var currentScreen by remember { mutableStateOf(ActiveScreen.HOME) }
+            var currentTab by remember { mutableStateOf(AppTab.HOME) }
+            var showAppearance by remember { mutableStateOf(false) }
 
-            BackHandler(enabled = currentScreen != ActiveScreen.HOME) {
-                currentScreen = ActiveScreen.HOME
+            BackHandler(enabled = showAppearance || currentTab != AppTab.HOME) {
+                if (showAppearance) {
+                    showAppearance = false
+                } else {
+                    currentTab = AppTab.HOME
+                }
             }
 
             TinappleTheme(
@@ -178,9 +197,55 @@ class MainActivity : ComponentActivity() {
                             )
                         }
 
-                        // Screen Navigation: Dashboard vs Appearance Page vs Kotlin Terminal vs Networker
-                        when (currentScreen) {
-                            ActiveScreen.APPEARANCE -> {
+                        // Navigation Shell: Dedicated Bottom Nav Pages + Appearance Settings Overlay
+                        val cs = MaterialTheme.colorScheme
+                        val isImeVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
+                        val showBottomBar = !showAppearance && !(currentTab == AppTab.TERMINAL && isImeVisible)
+
+                        Scaffold(
+                            containerColor = Color.Transparent,
+                            bottomBar = {
+                                if (showBottomBar) {
+                                    NavigationBar(
+                                        containerColor = Layer.pane.copy(alpha = 0.94f),
+                                        contentColor = cs.onSurface,
+                                        tonalElevation = 0.dp
+                                    ) {
+                                        AppTab.entries.forEach { tab ->
+                                            val selected = currentTab == tab
+                                            NavigationBarItem(
+                                                selected = selected,
+                                                onClick = { currentTab = tab },
+                                                icon = {
+                                                    Icon(
+                                                        painter = painterResource(tab.iconRes),
+                                                        contentDescription = tab.label,
+                                                        modifier = Modifier.size(22.dp)
+                                                    )
+                                                },
+                                                label = {
+                                                    Text(
+                                                        text = tab.label,
+                                                        fontSize = 10.sp,
+                                                        maxLines = 1,
+                                                        softWrap = false,
+                                                        overflow = TextOverflow.Clip
+                                                    )
+                                                },
+                                                colors = NavigationBarItemDefaults.colors(
+                                                    selectedIconColor = cs.onPrimaryContainer,
+                                                    selectedTextColor = cs.primary,
+                                                    indicatorColor = cs.primaryContainer,
+                                                    unselectedIconColor = cs.onSurfaceVariant,
+                                                    unselectedTextColor = cs.onSurfaceVariant
+                                                )
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        ) { innerPadding ->
+                            if (showAppearance) {
                                 AppearancePage(
                                     currentPalette = uiState.selectedPalette,
                                     wallpapers = uiState.wallpapers,
@@ -194,45 +259,67 @@ class MainActivity : ComponentActivity() {
                                     onUpdateBlur = { viewModel.updateBlurDp(it) },
                                     onUpdateDim = { viewModel.updateDimAlpha(it) },
                                     onUpdateGlass = { viewModel.updateGlassTranslucency(it) },
-                                    onBack = { currentScreen = ActiveScreen.HOME }
+                                    onBack = { showAppearance = false }
                                 )
-                            }
-                            ActiveScreen.TERMINAL -> {
-                                TerminalScreen(
-                                    serverOrigin = uiState.activeServerOrigin,
-                                    hostname = uiState.systemInfo.hostname,
-                                    viewModel = terminalViewModel,
-                                    onBack = { currentScreen = ActiveScreen.HOME }
-                                )
-                            }
-                            ActiveScreen.NETWORKER -> {
-                                NetworkPrivacyScreen(
-                                    status = uiState.networkerStatus,
-                                    busyKey = uiState.networkerBusyKey,
-                                    errorBanner = uiState.networkerError,
-                                    onRefresh = { viewModel.refreshNetworker(true) },
-                                    onDismissError = { viewModel.clearNetworkerError() },
-                                    onToggleProton = { viewModel.toggleNetworkerProton(it) },
-                                    onReloadProton = { viewModel.reloadNetworkerProton() },
-                                    onSelectProfile = { viewModel.selectNetworkerProtonProfile(it) },
-                                    onUploadConfig = { name, conf, connectNow ->
-                                        viewModel.uploadNetworkerProtonConfig(name, conf, connectNow)
-                                    },
-                                    onDeleteProfile = { viewModel.deleteNetworkerProtonProfile(it) },
-                                    onToggleTor = { viewModel.toggleNetworkerTor(it) },
-                                    onReloadTor = { viewModel.reloadNetworkerTor() },
-                                    onSetRoute = { id, mode -> viewModel.setNetworkerRoute(id, mode) },
-                                    onBack = { currentScreen = ActiveScreen.HOME }
-                                )
-                            }
-                            ActiveScreen.HOME -> {
-                                ServerHomeScreen(
-                                    viewModel = viewModel,
-                                    onOpenAppearance = { currentScreen = ActiveScreen.APPEARANCE },
-                                    onOpenTerminal = { currentScreen = ActiveScreen.TERMINAL },
-                                    onOpenNetworker = { currentScreen = ActiveScreen.NETWORKER },
-                                    onOpenPortal = ::openBrowserUrl
-                                )
+                            } else {
+                                when (currentTab) {
+                                    AppTab.HOME -> {
+                                        ServerHomeScreen(
+                                            viewModel = viewModel,
+                                            onOpenAppearance = { showAppearance = true },
+                                            onOpenNetworker = { currentTab = AppTab.NETWORK },
+                                            onOpenPortal = ::openBrowserUrl,
+                                            modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding())
+                                        )
+                                    }
+                                    AppTab.MEDIA -> {
+                                        ServerMediaScreen(
+                                            viewModel = viewModel,
+                                            onOpenTerminal = { currentTab = AppTab.TERMINAL },
+                                            onOpenPortal = ::openBrowserUrl,
+                                            modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding())
+                                        )
+                                    }
+                                    AppTab.NETWORK -> {
+                                        NetworkPrivacyScreen(
+                                            status = uiState.networkerStatus,
+                                            busyKey = uiState.networkerBusyKey,
+                                            errorBanner = uiState.networkerError,
+                                            onRefresh = { viewModel.refreshNetworker(true) },
+                                            onDismissError = { viewModel.clearNetworkerError() },
+                                            onToggleProton = { viewModel.toggleNetworkerProton(it) },
+                                            onReloadProton = { viewModel.reloadNetworkerProton() },
+                                            onSelectProfile = { viewModel.selectNetworkerProtonProfile(it) },
+                                            onUploadConfig = { name, conf, connectNow ->
+                                                viewModel.uploadNetworkerProtonConfig(name, conf, connectNow)
+                                            },
+                                            onDeleteProfile = { viewModel.deleteNetworkerProtonProfile(it) },
+                                            onToggleTor = { viewModel.toggleNetworkerTor(it) },
+                                            onReloadTor = { viewModel.reloadNetworkerTor() },
+                                            onSetRoute = { id, mode -> viewModel.setNetworkerRoute(id, mode) },
+                                            onBack = { currentTab = AppTab.HOME },
+                                            showBackButton = false,
+                                            modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding())
+                                        )
+                                    }
+                                    AppTab.SERVICES -> {
+                                        ServerServicesScreen(
+                                            viewModel = viewModel,
+                                            onOpenPortal = ::openBrowserUrl,
+                                            modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding())
+                                        )
+                                    }
+                                    AppTab.TERMINAL -> {
+                                        TerminalScreen(
+                                            serverOrigin = uiState.activeServerOrigin,
+                                            hostname = uiState.systemInfo.hostname,
+                                            viewModel = terminalViewModel,
+                                            onBack = { currentTab = AppTab.HOME },
+                                            showBackButton = false,
+                                            modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding())
+                                        )
+                                    }
+                                }
                             }
                         }
 

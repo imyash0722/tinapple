@@ -70,6 +70,7 @@ fun TerminalScreen(
     hostname: String,
     viewModel: TerminalViewModel,
     onBack: () -> Unit,
+    showBackButton: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -96,7 +97,6 @@ fun TerminalScreen(
         modifier = modifier
             .fillMaxSize()
             .statusBarsPadding()
-            .navigationBarsPadding()
             .imePadding(),
         color = Color(0xFF090A0F)
     ) {
@@ -110,18 +110,22 @@ fun TerminalScreen(
                     .padding(horizontal = 12.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(
-                    onClick = onBack,
-                    modifier = Modifier.size(38.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.ArrowBack,
-                        contentDescription = "Back",
-                        tint = cs.onSurface
-                    )
-                }
+                if (showBackButton) {
+                    IconButton(
+                        onClick = onBack,
+                        modifier = Modifier.size(38.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.ArrowBack,
+                            contentDescription = "Back",
+                            tint = cs.onSurface
+                        )
+                    }
 
-                Spacer(modifier = Modifier.width(6.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                } else {
+                    Spacer(modifier = Modifier.width(4.dp))
+                }
 
                 Column(modifier = Modifier.weight(1f)) {
                     Text(

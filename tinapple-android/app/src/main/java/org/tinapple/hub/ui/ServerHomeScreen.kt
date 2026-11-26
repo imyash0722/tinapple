@@ -8,6 +8,7 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -19,6 +20,7 @@ import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.displayCutoutPadding
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -26,18 +28,26 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
@@ -88,7 +98,6 @@ import kotlin.math.roundToInt
 fun ServerHomeScreen(
     viewModel: TinappleViewModel,
     onOpenAppearance: () -> Unit,
-    onOpenTerminal: () -> Unit,
     onOpenNetworker: () -> Unit,
     onOpenPortal: (String) -> Unit,
     modifier: Modifier = Modifier
@@ -121,7 +130,7 @@ fun ServerHomeScreen(
             Spacer(modifier = Modifier.height(34.dp))
         }
 
-        // 1. Server Hero Card
+        // 1. Server Hero Card (keeps Refresh, Customize & Appearance Settings right at top)
         if (uiState.enabledWidgets.contains("hero")) {
             item(key = "server_hero") {
                 ServerHeroCard(
@@ -133,38 +142,30 @@ fun ServerHomeScreen(
                     dimAlpha = uiState.appearanceSettings.dimAlpha,
                     isRefreshing = uiState.isRefreshing || uiState.isDiscovering,
                     onRefresh = { viewModel.refreshAll(forceDiscovery = true) },
-                    onOpenTerminal = onOpenTerminal,
                     onOpenAppearance = onOpenAppearance,
                     onOpenCustomize = { isShowingCustomizer = true }
                 )
             }
         }
 
-        // 2. Navidrome Now Playing & Music Controls Card
-        if (uiState.enabledWidgets.contains("now_playing")) {
-            item(key = "now_playing") {
-                NowPlayingCard(
-                    nowPlaying = uiState.nowPlaying,
-                    onLaunchVibrdrome = {
-                        val navService = uiState.services.firstOrNull {
-                            ClientAppLauncher.getServiceKey(it.name, it.displayName) == "navidrome"
-                        }
-                        val portalUrl = navService?.let { viewModel.apiClient.getServicePortalUrl(it) }
-                        val res = ClientAppLauncher.launchByServiceKey(context, "vibrdrome", portalUrl)
-                        if (res is LaunchResult.OpenedWeb) {
-                            onOpenPortal(res.url)
-                        }
-                    }
-                )
-            }
-        }
-
-        // 3. System Telemetry Card (Host System Load)
+        // 2. System Telemetry Card (Host System Load)
         if (uiState.enabledWidgets.contains("telemetry")) {
             item(key = "server_perf") {
                 ServerPerfCard(
                     telemetry = uiState.telemetry,
                     onRefresh = { viewModel.refreshAll(forceDiscovery = false) }
+                )
+            }
+        }
+
+        // 3. Quick Server Controls & Network (1-tap jump into Network page + MagicDNS copy)
+        if (uiState.enabledWidgets.contains("controls")) {
+            item(key = "server_controls") {
+                ServerControlsCard(
+                    protonStatus = uiState.protonStatus,
+                    networkerStatus = uiState.networkerStatus,
+                    isTogglingProton = uiState.isTogglingProton,
+                    onOpenNetworker = onOpenNetworker
                 )
             }
         }
@@ -181,78 +182,266 @@ fun ServerHomeScreen(
             }
         }
 
-        // 5. Suwayomi Manga Shelf (Tsumiru 1-Tap Open)
-        if (uiState.enabledWidgets.contains("manga")) {
-            item(key = "suwayomi_manga_shelf") {
-                SuwayomiShelfWidget(
-                    mangaList = uiState.mangaItems,
-                    serverOrigin = uiState.activeServerOrigin,
-                    onOpenTsumiru = {
-                        ClientAppLauncher.launchByServiceKey(context, "tsumiru")
-                    }
-                )
-            }
-        }
-
-        // 6. Jellyfin Media Shelf (Plezy 1-Tap Open)
-        if (uiState.enabledWidgets.contains("jellyfin")) {
-            item(key = "jellyfin_media_shelf") {
-                JellyfinMediaWidget(
-                    mediaList = uiState.jellyfinRecent,
-                    serverOrigin = uiState.activeServerOrigin,
-                    onOpenPlezy = {
-                        ClientAppLauncher.launchByServiceKey(context, "plezy")
-                    }
-                )
-            }
-        }
-
-        // 7. Hyprland Remote Desktop & Screen Mirroring
-        if (uiState.enabledWidgets.contains("remote_desktop")) {
-            item(key = "hyprland_remote_desktop") {
-                HyprlandRemoteDesktopWidget(
-                    serverOrigin = uiState.activeServerOrigin,
-                    onOpenTerminal = onOpenTerminal
-                )
-            }
-        }
-
-        // 8. Quick Server Controls & Network
-        if (uiState.enabledWidgets.contains("controls")) {
-            item(key = "server_controls") {
-                ServerControlsCard(
-                    protonStatus = uiState.protonStatus,
-                    networkerStatus = uiState.networkerStatus,
-                    isTogglingProton = uiState.isTogglingProton,
-                    onToggleProton = { active -> viewModel.toggleProton(active) },
-                    onOpenNetworker = onOpenNetworker
-                )
-            }
-        }
-
-        // 6. Homelab Services Group
-        if (uiState.enabledWidgets.contains("services")) {
-            item(key = "services_header") {
-                SectionHeader(
-                    title = "Homelab Daemons",
-                    actionIcon = R.drawable.rounded_refresh,
-                    onAction = { viewModel.refreshAll(forceDiscovery = false) }
-                )
-            }
-
-            item(key = "services_list") {
-                ServerServicesGroup(
-                    services = uiState.services,
-                    togglingServiceMap = uiState.togglingServiceMap,
-                    getPortalUrl = { svc -> viewModel.apiClient.getServicePortalUrl(svc) },
-                    onToggleService = { svc, start -> viewModel.toggleService(svc, start) },
-                    onOpenPortal = onOpenPortal
-                )
-            }
-        }
-
         item(key = "bottom_spacer") {
-            Spacer(modifier = Modifier.height(28.dp))
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+    }
+}
+
+/** Dedicated Media & Remote Screen Page (Music, Suwayomi Manga, Jellyfin, Hyprland VNC) */
+@Composable
+fun ServerMediaScreen(
+    viewModel: TinappleViewModel,
+    onOpenTerminal: () -> Unit,
+    onOpenPortal: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val uiState by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
+
+    LazyColumn(
+        modifier = modifier
+            .fillMaxSize()
+            .displayCutoutPadding()
+            .statusBarsPadding(),
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
+    ) {
+        item(key = "media_header") {
+            SectionHeader(
+                title = "Media & Remote",
+                actionIcon = R.drawable.rounded_refresh,
+                onAction = { viewModel.refreshAll(forceDiscovery = false) }
+            )
+        }
+
+        item(key = "now_playing") {
+            NowPlayingCard(
+                nowPlaying = uiState.nowPlaying,
+                onLaunchVibrdrome = {
+                    val navService = uiState.services.firstOrNull {
+                        ClientAppLauncher.getServiceKey(it.name, it.displayName) == "navidrome"
+                    }
+                    val portalUrl = navService?.let { viewModel.apiClient.getServicePortalUrl(it) }
+                    val res = ClientAppLauncher.launchByServiceKey(context, "vibrdrome", portalUrl)
+                    if (res is LaunchResult.OpenedWeb) {
+                        onOpenPortal(res.url)
+                    }
+                }
+            )
+        }
+
+        item(key = "suwayomi_manga_shelf") {
+            SuwayomiShelfWidget(
+                mangaList = uiState.mangaItems,
+                serverOrigin = uiState.activeServerOrigin,
+                onOpenTsumiru = {
+                    ClientAppLauncher.launchByServiceKey(context, "tsumiru")
+                }
+            )
+        }
+
+        item(key = "jellyfin_media_shelf") {
+            JellyfinMediaWidget(
+                mediaList = uiState.jellyfinRecent,
+                serverOrigin = uiState.activeServerOrigin,
+                onOpenPlezy = {
+                    ClientAppLauncher.launchByServiceKey(context, "plezy")
+                }
+            )
+        }
+
+        item(key = "hyprland_remote_desktop") {
+            HyprlandRemoteDesktopWidget(
+                serverOrigin = uiState.activeServerOrigin,
+                onOpenTerminal = onOpenTerminal
+            )
+        }
+
+        item(key = "media_bottom_spacer") {
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+    }
+}
+
+/** Dedicated Searchable & Filterable Services Page */
+@Composable
+fun ServerServicesScreen(
+    viewModel: TinappleViewModel,
+    onOpenPortal: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val uiState by viewModel.uiState.collectAsState()
+    val cs = MaterialTheme.colorScheme
+    val context = LocalContext.current
+
+    var searchQuery by remember { mutableStateOf("") }
+    var statusFilter by remember { mutableStateOf("all") }
+
+    val filteredServices = remember(uiState.services, searchQuery, statusFilter) {
+        uiState.services.filter { svc ->
+            val matchesStatus = when (statusFilter) {
+                "running" -> svc.running
+                "stopped" -> !svc.running
+                else -> true
+            }
+            val q = searchQuery.trim().lowercase()
+            val matchesQuery = q.isEmpty() ||
+                (svc.displayName ?: svc.name).lowercase().contains(q) ||
+                svc.name.lowercase().contains(q) ||
+                (svc.displayPort?.toString() ?: "").contains(q)
+            matchesStatus && matchesQuery
+        }
+    }
+    val runningCount = uiState.services.count { it.running }
+
+    LazyColumn(
+        modifier = modifier
+            .fillMaxSize()
+            .displayCutoutPadding()
+            .statusBarsPadding(),
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        item(key = "services_header") {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column {
+                    Text(
+                        text = "Homelab Daemons",
+                        style = Expressive.wide(22.sp),
+                        color = cs.onSurface
+                    )
+                    Text(
+                        text = "$runningCount running · ${uiState.services.size} total",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = cs.onSurfaceVariant
+                    )
+                }
+
+                IconButton(
+                    onClick = { viewModel.refreshAll(forceDiscovery = false) },
+                    modifier = Modifier
+                        .size(38.dp)
+                        .clip(CircleShape)
+                        .background(Layer.pane)
+                ) {
+                    if (uiState.isRefreshing) {
+                        CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                    } else {
+                        Icon(
+                            painter = painterResource(R.drawable.rounded_refresh),
+                            contentDescription = "Refresh services",
+                            tint = cs.primary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
+            }
+        }
+
+        item(key = "services_search_filter") {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    placeholder = { Text("Search services or ports...", maxLines = 1) },
+                    leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
+                    trailingIcon = {
+                        if (searchQuery.isNotEmpty()) {
+                            IconButton(onClick = { searchQuery = "" }) {
+                                Icon(Icons.Rounded.Close, contentDescription = "Clear search")
+                            }
+                        }
+                    },
+                    singleLine = true,
+                    shape = RoundedCornerShape(16.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = Layer.pane,
+                        unfocusedContainerColor = Layer.pane
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf(
+                        "all" to "All (${uiState.services.size})",
+                        "running" to "Running ($runningCount)",
+                        "stopped" to "Stopped (${uiState.services.size - runningCount})"
+                    ).forEach { (key, label) ->
+                        FilterChip(
+                            selected = statusFilter == key,
+                            onClick = { statusFilter = key },
+                            label = { Text(label, maxLines = 1) }
+                        )
+                    }
+                }
+            }
+        }
+
+        items(filteredServices, key = { it.name }) { service ->
+            val isToggling = uiState.togglingServiceMap[service.name] == true
+            val portalUrl = viewModel.apiClient.getServicePortalUrl(service)
+            val serviceKey = ClientAppLauncher.getServiceKey(service.name, service.displayName)
+            val isInstalled = ClientAppLauncher.findInstalledClient(context, serviceKey) != null
+            val shortType = when {
+                isInstalled -> "Native app"
+                portalUrl != null -> "Web UI"
+                else -> "Daemon"
+            }
+            val portLabel = service.displayPort ?: service.port
+
+            ToolRow(
+                title = service.displayName ?: service.name,
+                summary = if (portLabel != null) ":$portLabel · $shortType" else shortType,
+                icon = R.drawable.rounded_terminal,
+                tint = if (service.running) Tint.PRIMARY else Tint.SECONDARY,
+                leading = {
+                    val iconAsset = ServiceBrandIconResolver.getIconAssetPath(service.name, service.displayName)
+                    if (iconAsset != null) {
+                        AsyncImage(
+                            model = ImageRequest.Builder(context)
+                                .data("file:///android_asset/$iconAsset")
+                                .build(),
+                            contentDescription = service.displayName,
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(cs.surfaceContainerHigh)
+                                .padding(6.dp)
+                        )
+                    } else {
+                        IconBadge(R.drawable.rounded_dns, if (service.running) Tint.PRIMARY else Tint.SECONDARY)
+                    }
+                },
+                trailing = {
+                    if (isToggling) {
+                        CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                    } else {
+                        Switch(
+                            checked = service.running,
+                            onCheckedChange = { viewModel.toggleService(service, it) },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = cs.primary,
+                                checkedTrackColor = cs.primaryContainer
+                            )
+                        )
+                    }
+                },
+                onClick = {
+                    val res = ClientAppLauncher.launchService(context, service, portalUrl)
+                    if (res is LaunchResult.OpenedWeb) {
+                        onOpenPortal(res.url)
+                    }
+                }
+            )
+        }
+
+        item(key = "services_bottom_spacer") {
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }
@@ -268,7 +457,6 @@ private fun ServerHeroCard(
     dimAlpha: Float,
     isRefreshing: Boolean,
     onRefresh: () -> Unit,
-    onOpenTerminal: () -> Unit,
     onOpenAppearance: () -> Unit,
     onOpenCustomize: () -> Unit
 ) {
@@ -285,16 +473,6 @@ private fun ServerHeroCard(
         label = "pulseScale"
     )
 
-    val cleanHost = if (serverOrigin.contains("taildb42a2.ts.net")) {
-        DiscoveryEngine.DEFAULT_TAILSCALE_HOST
-    } else {
-        serverOrigin
-            .removePrefix("http://")
-            .removePrefix("https://")
-            .removeSuffix(":8088")
-            .ifEmpty { DiscoveryEngine.DEFAULT_TAILSCALE_HOST }
-    }
-
     val uptimeText = if (uptimeSeconds > 0) {
         val days = uptimeSeconds / 86400
         val hours = (uptimeSeconds % 86400) / 3600
@@ -305,7 +483,7 @@ private fun ServerHeroCard(
     ExpressiveCard(
         color = cs.primaryContainer,
         contentColor = cs.onPrimaryContainer,
-        modifier = Modifier.height(260.dp),
+        modifier = Modifier.height(186.dp),
         radius = Radius.card
     ) {
         // Wallpaper Backdrop with dynamic Blur & Scrim
@@ -346,7 +524,7 @@ private fun ServerHeroCard(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            // Online status pill with MagicDNS host
+            // Compact online status pill
             Row(
                 modifier = Modifier
                     .clip(CircleShape)
@@ -364,10 +542,9 @@ private fun ServerHeroCard(
                         .background(StatusRunning)
                 )
                 Text(
-                    text = cleanHost,
-                    style = Expressive.title(14.sp),
+                    text = if (serverOrigin.contains("100.") || serverOrigin.contains(".ts.net")) "Tailscale Online" else "LAN Online",
+                    style = Expressive.title(13.sp),
                     color = cs.onSurface,
-                    fontFamily = FontFamily.Monospace,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -415,24 +592,7 @@ private fun ServerHeroCard(
                     )
                 }
 
-                // SSH / PTY Terminal Action
-                IconButton(
-                    onClick = onOpenTerminal,
-                    colors = IconButtonDefaults.iconButtonColors(
-                        containerColor = cs.surfaceContainerHigh.copy(alpha = 0.85f),
-                        contentColor = cs.onSurface
-                    ),
-                    modifier = Modifier.size(36.dp)
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.rounded_terminal),
-                        contentDescription = "SSH Terminal",
-                        tint = cs.onSurface,
-                        modifier = Modifier.size(19.dp)
-                    )
-                }
-
-                // Themes & Preferences Action using clean Material Symbols palette
+                // Themes & Appearance Settings
                 IconButton(
                     onClick = onOpenAppearance,
                     colors = IconButtonDefaults.iconButtonColors(
@@ -767,15 +927,14 @@ private fun ServerPerfCard(
                     activeColor = cs.secondary
                 )
 
-                // DISK: Free / Total GB
+                // DISK: Free GB (with total in sub-label so digits never collide)
                 val freeGb = t?.disk?.let { (it.freeBytes / 1_073_741_824L) }
                 val totalGb = t?.disk?.let { (it.totalBytes / 1_073_741_824L) }
-                val diskValue = if (freeGb != null && totalGb != null && totalGb > 0) "$freeGb/$totalGb" else (freeGb?.toString() ?: "—")
 
                 LoadColumn(
-                    value = diskValue,
+                    value = freeGb?.toString() ?: "—",
                     unit = "GB",
-                    label = "Free / Tot",
+                    label = totalGb?.let { "Free / ${it}G" } ?: "Disk Free",
                     fraction = t?.disk?.let { (it.usedPercent / 100.0).toFloat() },
                     modifier = Modifier.weight(1f),
                     activeColor = cs.tertiary
@@ -795,7 +954,7 @@ private fun ServerPerfCard(
     }
 }
 
-/** Client App Launcher Strip dynamically rendering user-pinned apps */
+/** Minimal icon-only Android app launcher dock (no title, no bulky card or text labels) */
 @Composable
 private fun ClientToolsStrip(
     services: List<ServiceItem>,
@@ -810,76 +969,53 @@ private fun ClientToolsStrip(
         AVAILABLE_CLIENT_APPS.firstOrNull { it.key == key }
     }
 
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        SectionHeader(
-            title = "Client Apps",
-            action = null
-        )
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState())
+            .padding(horizontal = 4.dp, vertical = 2.dp),
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        for (app in activeApps) {
+            val serviceKey = app.key
+            val label = app.name
+            val fallbackIconRes = app.iconRes
+            val matchingService = services.firstOrNull {
+                ClientAppLauncher.getServiceKey(it.name, it.displayName) == serviceKey
+            }
+            val portalUrl = matchingService?.let { getPortalUrl(it) }
+            val installedPkg = ClientAppLauncher.findInstalledClient(context, serviceKey)
 
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            for (app in activeApps) {
-                val serviceKey = app.key
-                val label = app.name
-                val fallbackIconRes = app.iconRes
-                val matchingService = services.firstOrNull {
-                    ClientAppLauncher.getServiceKey(it.name, it.displayName) == serviceKey
-                }
-                val portalUrl = matchingService?.let { getPortalUrl(it) }
-                val installedPkg = ClientAppLauncher.findInstalledClient(context, serviceKey)
-                val isInstalled = installedPkg != null
-
-                Column(
-                    modifier = Modifier
-                        .width(96.dp)
-                        .clip(RoundedCornerShape(20.dp))
-                        .background(Layer.pane)
-                        .clickable {
-                            val res = ClientAppLauncher.launchByServiceKey(context, serviceKey, portalUrl)
-                            if (res is LaunchResult.OpenedWeb) {
-                                onOpenPortal(res.url)
-                            }
+            Box(
+                modifier = Modifier
+                    .size(54.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .clickable {
+                        val res = ClientAppLauncher.launchByServiceKey(context, serviceKey, portalUrl)
+                        if (res is LaunchResult.OpenedWeb) {
+                            onOpenPortal(res.url)
                         }
-                        .padding(horizontal = 8.dp, vertical = 14.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    if (installedPkg != null) {
-                        AppIcon(pkg = installedPkg.packageName, size = 46.dp)
-                    } else {
-                        Box(
-                            modifier = Modifier
-                                .size(46.dp)
-                                .clip(RoundedCornerShape(14.dp))
-                                .background(cs.secondaryContainer),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                painter = painterResource(fallbackIconRes),
-                                contentDescription = label,
-                                tint = cs.onSecondaryContainer,
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                if (installedPkg != null) {
+                    AppIcon(pkg = installedPkg.packageName, size = 50.dp)
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .size(50.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(Layer.pane),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            painter = painterResource(fallbackIconRes),
+                            contentDescription = label,
+                            tint = cs.primary,
+                            modifier = Modifier.size(26.dp)
+                        )
                     }
-
-                    Text(
-                        text = label,
-                        style = Expressive.title(12.sp),
-                        color = cs.onSurface,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-
-                    Pill(
-                        text = if (isInstalled) "App" else "Get",
-                        container = if (isInstalled) Color(0xFF10B981).copy(alpha = 0.2f) else cs.secondaryContainer.copy(alpha = 0.6f),
-                        content = if (isInstalled) Color(0xFF10B981) else cs.onSecondaryContainer
-                    )
                 }
             }
         }
@@ -892,7 +1028,6 @@ private fun ServerControlsCard(
     protonStatus: org.tinapple.hub.data.ProtonStatus?,
     networkerStatus: org.tinapple.hub.data.NetworkerStatus,
     isTogglingProton: Boolean,
-    onToggleProton: (Boolean) -> Unit,
     onOpenNetworker: () -> Unit
 ) {
     val cs = MaterialTheme.colorScheme
@@ -904,16 +1039,16 @@ private fun ServerControlsCard(
     val magicDnsHost = DiscoveryEngine.DEFAULT_TAILSCALE_HOST
 
     val protonSummary = buildString {
-        append(if (isVpnActive) "Proton: ${networkerStatus.proton.exitIp ?: protonStatus?.ip ?: "Active"}" else "Proton: Off")
+        append(if (isVpnActive) "Proton: ${networkerStatus.proton.countryCode ?: "On"}" else "Proton: Off")
         append(" · ")
-        append(if (isTorActive) "Tor: ${networkerStatus.tor.country ?: "Active"}" else "Tor: Off")
+        append(if (isTorActive) "Tor: ${networkerStatus.tor.countryCode ?: networkerStatus.tor.country ?: "On"}" else "Tor: Off")
         if (routedCount > 0) append(" · $routedCount routed")
     }
 
     CardGroup {
         // Clickable Tile opening Full ProtonVPN & Tor Split-Tunneling Management Page
         ToolRow(
-            title = "ProtonVPN & Tor Routing",
+            title = "ProtonVPN & Tor",
             summary = protonSummary,
             icon = R.drawable.rounded_vpn_lock,
             tint = if (isVpnActive || isTorActive) Tint.PRIMARY else Tint.SECONDARY,
@@ -922,11 +1057,6 @@ private fun ServerControlsCard(
                 if (isTogglingProton) {
                     CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
                 } else {
-                    Pill(
-                        text = "Manage",
-                        container = cs.primaryContainer,
-                        content = cs.onPrimaryContainer
-                    )
                     Icon(
                         painter = painterResource(R.drawable.rounded_chevron_right),
                         contentDescription = "Open ProtonVPN & Tor Manager",
@@ -963,74 +1093,6 @@ private fun ServerControlsCard(
     }
 }
 
-/** Homelab Services Group formatted in CardGroup & ToolRow */
-@Composable
-private fun ServerServicesGroup(
-    services: List<ServiceItem>,
-    togglingServiceMap: Map<String, Boolean>,
-    getPortalUrl: (ServiceItem) -> String?,
-    onToggleService: (ServiceItem, Boolean) -> Unit,
-    onOpenPortal: (String) -> Unit
-) {
-    val cs = MaterialTheme.colorScheme
-    val context = LocalContext.current
-
-    CardGroup {
-        for (service in services) {
-            val isToggling = togglingServiceMap[service.name] == true
-            val portalUrl = getPortalUrl(service)
-            val serviceKey = ClientAppLauncher.getServiceKey(service.name, service.displayName)
-            val installedPkg = ClientAppLauncher.findInstalledClient(context, serviceKey)
-            val isInstalled = installedPkg != null
-
-            ToolRow(
-                title = service.displayName ?: service.name,
-                summary = "Port: ${service.displayPort ?: service.port ?: "systemd"} · ${if (isInstalled) "● Native Client Available" else if (portalUrl != null) "● Web Portal" else "● Background Service"}",
-                icon = R.drawable.rounded_terminal,
-                tint = if (service.running) Tint.PRIMARY else Tint.SECONDARY,
-                leading = {
-                    val iconAsset = ServiceBrandIconResolver.getIconAssetPath(service.name, service.displayName)
-                    if (iconAsset != null) {
-                        AsyncImage(
-                            model = ImageRequest.Builder(context)
-                                .data("file:///android_asset/$iconAsset")
-                                .build(),
-                            contentDescription = service.displayName,
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(cs.surfaceContainerHigh)
-                                .padding(6.dp)
-                        )
-                    } else {
-                        IconBadge(R.drawable.rounded_dns, if (service.running) Tint.PRIMARY else Tint.SECONDARY)
-                    }
-                },
-                trailing = {
-                    if (isToggling) {
-                        CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                    } else {
-                        Switch(
-                            checked = service.running,
-                            onCheckedChange = { onToggleService(service, it) },
-                            colors = SwitchDefaults.colors(
-                                checkedThumbColor = cs.primary,
-                                checkedTrackColor = cs.primaryContainer
-                            )
-                        )
-                    }
-                },
-                onClick = {
-                    val res = ClientAppLauncher.launchService(context, service, portalUrl)
-                    if (res is LaunchResult.OpenedWeb) {
-                        onOpenPortal(res.url)
-                    }
-                }
-            )
-        }
-    }
-}
-
 /** Customize Widgets Bottom Sheet */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -1046,14 +1108,9 @@ private fun CustomizeWidgetsSheet(
 
     val widgetOptions = listOf(
         "hero" to ("Server Overview & Host Status" to "Wallpaper backdrop, hardware specs & live origin"),
-        "now_playing" to ("Navidrome Music Stream" to "Live Subsonic playback stream & Vibrdrome remote"),
         "telemetry" to ("Host System Load" to "Compact 4-metric gauges: CPU, RAM, Disk & Temp"),
-        "client_apps" to ("Quick Client Apps Strip" to "Syncthing, Bitwarden, Tsumiru, Plezy, Vibrdrome"),
-        "manga" to ("Suwayomi Manga Shelf" to "Recent manhwa & comics with 1-tap open in Tsumiru"),
-        "jellyfin" to ("Jellyfin Media Shelf" to "Continue watching & recent movies with 1-tap open in Plezy"),
-        "remote_desktop" to ("Hyprland Remote Desktop" to "Virtual 1080p display with 1-tap connect in AVNC"),
-        "controls" to ("Proton VPN & Tailscale Controls" to "Exit node gateway & MagicDNS direct peer"),
-        "services" to ("Homelab Daemons List" to "Full list of systemd homelab services & switches")
+        "controls" to ("ProtonVPN, Tor & MagicDNS" to "Quick VPN summary link and MagicDNS copy"),
+        "client_apps" to ("Quick Client Apps Strip" to "Syncthing, Bitwarden, Tsumiru, Plezy, Vibrdrome")
     )
 
     ModalBottomSheet(

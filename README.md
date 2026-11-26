@@ -1,6 +1,6 @@
 # tinapple
 
-Turnkey **self-hosted homelab OS and home server appliance platform** engineered for bare-metal home servers, repurposed laptops, and mini-PCs. Built on Arch Linux and CachyOS performance packages with a Go control plane (`tinapple-dash`), React web dashboard (`tinapple-hub`), pure native Kotlin Android app (`tinapple-android` v2.0.4), and kernel WireGuard/Tor split-tunneling (`tinapple-networker`).
+Turnkey **self-hosted homelab OS and home server appliance platform** engineered for bare-metal home servers, repurposed laptops, and mini-PCs. Built on Arch Linux and CachyOS performance packages with a Go control plane (`tinapple-dash`), React web dashboard (`tinapple-hub`), pure native Kotlin Android app (`tinapple-android` v2.0.5), and kernel WireGuard/Tor split-tunneling (`tinapple-networker`).
 
 [![Latest Release](https://img.shields.io/github/v/release/imyash0722/tinapple)](https://github.com/imyash0722/tinapple/releases/latest)
 [![Platform](https://img.shields.io/badge/OS-Arch%20Linux%20%7C%20CachyOS-1793D1)](https://github.com/imyash0722/tinapple)
@@ -50,7 +50,7 @@ tinapple transforms standard commodity x86_64 computer hardware or retired lapto
 - **Unified Reverse Proxy & Encrypted Tunnels**: Caddy terminating Let's Encrypt HTTPS certificates over Tailscale (`:443`) paired with Cloudflare Tunnel ingress (`tinapple-cloudflared`) so the dashboard stays reachable across symmetric NAT.
 - **Kernel Split-Tunneling (`tinapple-networker`)**: Routes individual systemd services, the Wi-Fi hotspot AP (`wlp0s20u1`), or Tailscale Exit Node traffic through **ProtonVPN WireGuard** or **Tor transparent circuits** (`TransPort :9040` / `ControlPort :9051` `NEWNYM`), with strict mutual exclusion (`HTTP 409`), P2P Free-tier warnings, and automatic LAN/Tailscale bypass.
 - **Integrated Self-Hosted Suite**: Pre-configured Jellyfin (movies/shows), Navidrome + PineMusic (music streaming & lossless queue), Suwayomi (manga server on Java 27), Vaultwarden (password vault), qBittorrent + Servarr stack, AdGuard Home, Syncthing, CouchDB (Obsidian LiveSync), and headless Hyprland + wayvnc (`:5900`) remote desktop.
-- **Cross-Platform Clients**: Web dashboard (`tinapple-hub`), Tauri desktop apps (Linux, Windows, macOS), and pure native Kotlin Jetpack Compose Android companion (`tinapple-android` v2.0.4).
+- **Cross-Platform Clients**: Web dashboard (`tinapple-hub`), Tauri desktop apps (Linux, Windows, macOS), and pure native Kotlin Jetpack Compose Android companion (`tinapple-android` v2.0.5).
 
 ---
 
@@ -63,7 +63,7 @@ The tinapple self-hosted platform separates edge ingress, control plane manageme
 ```text
 +-------------------------------------------------------------------------------+
 |                               Client Layer                                    |
-|  Web Browser (HTTPS)  |  Tauri Desktop Apps  |  tinapple-android (v2.0.4 APK) |
+|  Web Browser (HTTPS)  |  Tauri Desktop Apps  |  tinapple-android (v2.0.5 APK) |
 |  - Homarr 2D Canvas   |  - Local Web Bundle  |  - Jetpack Compose + Matugen   |
 |  - Proton & Tor Page  |  - Cross-Platform    |  - Kotlin SSH/PTY & TV/VNC     |
 +---------------------------------------+---------------------------------------+
@@ -106,7 +106,7 @@ The tinapple self-hosted platform separates edge ingress, control plane manageme
 flowchart TB
     subgraph Clients["Client Devices"]
         Web["Web Hub React 18"]
-        Android["Android App Kotlin v2.0.4"]
+        Android["Android App Kotlin v2.0.5"]
         Desktop["Tauri Desktop Linux Win macOS"]
     end
 
@@ -155,7 +155,7 @@ flowchart TB
 - **`tinapple-dash`**: Go (Gin) appliance backend (`tinapple-dash.service` on port `:8088`). Manages system telemetry, systemd lifecycles, log streams, Chaddy Store app packs, PTY WebSocket terminals, Suwayomi/Jellyfin/Navidrome widgets, `/download/apk` distribution, and proxies `/api/v1/networker/*`.
 - **`tinapple-networker`**: Standalone Go kernel split-tunneling daemon (`tinapple-networker.service`, `:8092` HTTP control API, `:1088` cgroup-aware smart proxy). Orchestrates ProtonVPN WireGuard profiles via `wg setconf` (multi-`.conf` switching without breaking host DNS), Tor transparent circuits (`NEWNYM`), Hotspot & Tailscale Exit Node routing, and mutual exclusion (`Direct` | `ProtonVPN` | `Tor`).
 - **`tinapple-hub`**: Single-page control UI built with React 18, TypeScript, Tailwind CSS, Lucide icons, and Framer Motion, compiled to `/usr/share/tinapple-dash/web/dist`. Includes the draggable 2D Homarr canvas and the dedicated **Proton & Tor** split-tunneling page.
-- **`tinapple-android`**: Pure native Android companion (`org.tinapple.hub`, v2.0.4, `versionCode 8`) written in Kotlin 2.0.21 with Jetpack Compose Material 3, Matugen wallpaper theming, interactive SSH/PTY terminal, media shelves, and a dedicated ProtonVPN & Tor split-tunneling screen.
+- **`tinapple-android`**: Pure native Android companion (`org.tinapple.hub`, v2.0.5, `versionCode 9`) written in Kotlin 2.0.21 with Jetpack Compose Material 3, Matugen wallpaper theming, interactive SSH/PTY terminal, media shelves, and a dedicated ProtonVPN & Tor split-tunneling screen.
 - **`tinapple-hw` & `tinapple-wifi-watchdog`**: Hardware power/ACPI daemon (80% battery ceiling, lid-close clamshell operation) paired with a multi-level Broadcom/iwlwifi link recovery watchdog (`IN` regdom + PCIe/module recovery).
 - **`Hyprland + wayvnc` (`tinapple-hyprland.service`)**: Headless Wayland compositor spawning a virtual `HEADLESS-1` 1080p display and `wayvnc` RFB 3.8 remote desktop server on port `:5900`.
 - **`tinapple-config-generator`**: Renders service manifests (`/etc/tinapple/tinapple.json`) into native Caddy, Navidrome, qBittorrent, and systemd configurations.
@@ -661,9 +661,9 @@ GitHub Actions workflow [`.github/workflows/client-releases.yml`](.github/workfl
 
 ---
 
-### 2. Pure Native Kotlin Android Companion Client (`tinapple-android`, v2.0.4)
+### 2. Pure Native Kotlin Android Companion Client (`tinapple-android`, v2.0.5)
 
-The Android companion app (`org.tinapple.hub`, `versionCode 8`, Kotlin 2.0.21) is built with Jetpack Compose and Material 3:
+The Android companion app (`org.tinapple.hub`, `versionCode 9`, Kotlin 2.0.21) is built with Jetpack Compose and Material 3:
 
 - **Pure Native Compose Architecture**: 14 MB signed APK (`minSdk 26`, `targetSdk 35`) built for responsive 120Hz scrolling.
 - **ProtonVPN & Tor Split-Tunneling Page (`NetworkPrivacyScreen`)**: Clickable **ProtonVPN & Tor Routing** home tile opening master ProtonVPN/Tor controls, WireGuard `.conf` dropdown with SAF file upload (`+ Add more`), live Tor exit country readout, and per-service / Hotspot / Exit Node toggles with P2P Free-tier warnings.
@@ -873,7 +873,7 @@ tinapple/
 ├── out/releases/                 # Compiled client packages (APK, AppImage, DMG, EXE, IPA, SHA256SUMS)
 ├── scripts/                      # Deployment, Wi-Fi watchdog, Proton/Tor helpers & packagers
 ├── tasks/                        # Implementation notes and milestones
-├── tinapple-android/             # Native Kotlin 2.0 / Jetpack Compose Android app (v2.0.4)
+├── tinapple-android/             # Native Kotlin 2.0 / Jetpack Compose Android app (v2.0.5)
 ├── tinapple-base/                # Base Arch Linux filesystem overlays
 ├── tinapple-config-generator/    # Dynamic template parser for manifests
 ├── tinapple-dash/                # Core appliance Go daemon (:8088)

@@ -262,35 +262,50 @@ fun ToolRow(
     val trailingContent: (@Composable () -> Unit)? = trailing?.let {
         { Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) { it() } }
     }
-    val colors = ListItemDefaults.colors(containerColor = container)
+    val colors = container
     val titleText: @Composable () -> Unit = {
-        Text(title, style = Expressive.title(16.sp), color = cs.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(
+            title,
+            style = Expressive.title(15.sp),
+            color = cs.onSurface,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
     }
     val rowModifier = modifier
         .fillMaxWidth()
         .clip(RoundedCornerShape(Radius.join))
+        .background(colors)
+        .let { base ->
+            if (onClick != null) {
+                base.clickable {
+                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                    onClick()
+                }
+            } else base
+        }
+        .padding(horizontal = 14.dp, vertical = 12.dp)
 
-    if (onClick != null) {
-        ListItem(
-            headlineContent = titleText,
-            supportingContent = supporting,
-            leadingContent = leadingContent,
-            trailingContent = trailingContent,
-            colors = colors,
-            modifier = rowModifier.clickable {
-                haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                onClick()
+    Row(
+        modifier = rowModifier,
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        if (leadingContent != null) {
+            leadingContent()
+        }
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+            titleText()
+            if (supporting != null) {
+                supporting()
             }
-        )
-    } else {
-        ListItem(
-            headlineContent = titleText,
-            supportingContent = supporting,
-            leadingContent = leadingContent,
-            trailingContent = trailingContent,
-            colors = colors,
-            modifier = rowModifier
-        )
+        }
+        if (trailingContent != null) {
+            trailingContent()
+        }
     }
 }
 
@@ -306,22 +321,23 @@ fun LoadColumn(
 ) {
     val cs = MaterialTheme.colorScheme
     Column(modifier, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Row(Modifier.height(36.dp), verticalAlignment = Alignment.Bottom) {
+        Row(Modifier.height(34.dp), verticalAlignment = Alignment.Bottom) {
             val digitSize = when {
-                value.length > 5 -> 17.sp
+                value.length > 4 -> 17.sp
                 value.length > 3 -> 20.sp
-                else -> 26.sp
+                else -> 24.sp
             }
             Text(
                 value,
                 style = Expressive.digits(digitSize),
                 maxLines = 1,
                 softWrap = false,
+                overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f, fill = false),
             )
             Text(
                 unit,
-                style = Expressive.digitsSoft(12.sp),
+                style = Expressive.digitsSoft(11.sp),
                 color = cs.onSurfaceVariant,
                 maxLines = 1,
                 softWrap = false,
@@ -389,6 +405,9 @@ fun Pill(text: String, container: Color, content: Color) {
             text,
             style = MaterialTheme.typography.labelMedium,
             fontWeight = FontWeight.SemiBold,
+            maxLines = 1,
+            softWrap = false,
+            overflow = TextOverflow.Ellipsis,
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
         )
     }
